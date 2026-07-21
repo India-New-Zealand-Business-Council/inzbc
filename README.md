@@ -62,6 +62,7 @@ to `main`.
 
 ## Key documents
 - Programme brief: `docs/inzbc-ai-operating-system.md`
+- Module map (full scope): `docs/modules/README.md`
 - Discovery, IA, risks: `docs/discovery.md`
 - Site page specs: `docs/page-specs.md`
 - FTA source corpus: `docs/fta-source-corpus.md`

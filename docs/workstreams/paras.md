@@ -12,6 +12,11 @@ Ordered backlog; take the top **Next up** item. Move finished items to **Done**.
 ```
 Design: follow `DESIGN.local.md`. Do not invent a look; brand tokens come from INZBC's kit.
 
+## Modules I own (see [docs/modules](../modules/README.md))
+[Public website](../modules/website.md) + [Member portal](../modules/member-portal.md) +
+[Events & delegations](../modules/events-delegations.md) + [Dashboards](../modules/dashboards.md) +
+SIP review/approval UI + Comms Assistant UI + FTA Explainer embed.
+
 ## Depends on
 The shared API + auth for anything that reads/writes data. Roshan's FTA service for the Explainer UI.
 

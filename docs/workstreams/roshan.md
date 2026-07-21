@@ -13,6 +13,11 @@ Ordered backlog; take the top **Next up** item. Move finished items to **Done**.
 Cross-repo: the collection engine lives in `daily-india-nz-news-agent`. Improve it there via its
 own PR flow; this lane is the integration that pulls its output into SIP.
 
+## Modules I own (see [docs/modules](../modules/README.md))
+[SIP pipeline](../sip/) (collection, sources, candidates, verification) +
+[FTA Implementation Centre](../modules/fta-centre.md) + Explainer service +
+[Communications Assistant](../modules/comms-assistant.md) service side (Paras owns its UI).
+
 ## Depends on (Bhanu's contracts)
 DB schema, API contract, auth. Build against them; don't write to control-plane tables.
 
