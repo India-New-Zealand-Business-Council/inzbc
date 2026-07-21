@@ -28,3 +28,17 @@ Repo-specific rules. General workflow is in [CONTRIBUTING.md](./CONTRIBUTING.md)
 - Branch, open a PR into `main`. No direct pushes to `main`; only the tech lead merges.
 - Imperative commit subjects under ~60 chars. No AI attribution anywhere (commits, PRs, code).
 - Run a secret scan before pushing. Never commit `.env*` or credentials.
+
+## Team workflow — "I'm <name>, continue my work"
+
+See [docs/workstreams/README.md](./docs/workstreams/README.md). When a developer says
+"I'm <name>, continue my work":
+1. Read their worklog `docs/workstreams/<name>.md` (git-ignored, local to each dev).
+2. `git fetch`; if the worklog's recorded SHA is behind `main`, stop and ask them to reconcile.
+3. Take the top unchecked task; branch `feat/<name>/<slug>` off fresh `main`.
+4. Follow the quality ladder: understand → research (context7/web, no guessing) →
+   **reuse before writing** (grep/LSP for an existing helper; do not reinvent) → smallest diff →
+   root-cause bug-check → AI review (`/code-review`, or `/codex:adversarial-review` if
+   security-touching) → lint/typecheck/test pass → PR with the evidence block.
+5. Stay in your lane (per-dev paths); shared contracts (`/services/api`, `/database`, `/schemas`)
+   change only via the tech lead.
