@@ -1,3 +1,38 @@
+# Secrets and environment — never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+id_rsa*
+*.p12
+*_secret*
+*secret*.json
+credentials.json
+
+# Node / npm
+node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Build output
+dist/
+build/
+.next/
+out/
+
+# Logs and OS cruft
+*.log
+.DS_Store
+Thumbs.db
+
 # Internal / personal docs — kept local, not for the shared repo
 docs/services-agreement-draft.md
 docs/sunil-requests.md
