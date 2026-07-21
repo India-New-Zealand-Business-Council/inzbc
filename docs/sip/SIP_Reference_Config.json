@@ -1,0 +1,47 @@
+{
+  "name": "INZBC Strategic Intelligence Platform",
+  "short_name": "SIP",
+  "timezone": "Pacific/Auckland",
+  "production_enabled": false,
+  "default_coverage_hours": 24,
+  "approval_required": true,
+  "mandatory_nz_media": [
+    "New Zealand Herald", "RNZ", "1News", "Stuff", "Newsroom",
+    "BusinessDesk", "Newstalk ZB", "Rural News", "Farmers Weekly",
+    "Relevant New Zealand Indian media"
+  ],
+  "source_outcomes": [
+    "Included", "Used as Context", "Suppressed", "Inaccessible",
+    "Excluded: Freshness", "Excluded: Relevance",
+    "Excluded: Confidence", "No Relevant Result"
+  ],
+  "signal_levels": ["Low", "Medium", "High", "Critical"],
+  "verification_states": [
+    "Verified", "Partially Verified", "Context Only",
+    "Conflicting Evidence", "Unverified", "Rejected"
+  ],
+  "approval_states": [
+    "Draft", "Ready for Review", "Changes Requested",
+    "Approved Internal", "Approved Member", "Approved Public",
+    "Rejected", "Superseded", "Archived"
+  ],
+  "action_statuses": [
+    "Proposed", "Open", "In Progress", "Awaiting Evidence",
+    "Escalated", "Closed", "Closed - Superseded",
+    "Closed - Merged", "Closed - Expired",
+    "Deferred", "Rejected", "Transferred"
+  ],
+  "registers": [
+    "Daily Intelligence", "Active Intelligence", "Opportunities",
+    "Threats", "Actions", "Issues", "Agent Feedback",
+    "Missed Intelligence", "Decisions", "Releases"
+  ],
+  "controls": {
+    "official_verification_required_for_high": true,
+    "official_verification_required_for_critical": true,
+    "mandatory_source_gap_blocks_qa": true,
+    "public_output_requires_separate_approval": true,
+    "carry_forward_requires_reason": true,
+    "approved_records_are_immutable": true
+  }
+}
