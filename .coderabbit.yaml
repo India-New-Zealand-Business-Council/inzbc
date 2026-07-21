@@ -1,0 +1,10 @@
+# CodeRabbit config. Requires the CodeRabbit GitHub App installed on the org.
+# https://docs.coderabbit.ai/
+language: en-US
+reviews:
+  profile: assertive
+  request_changes_workflow: false
+  high_level_summary: true
+  auto_review:
+    enabled: true
+    drafts: false
