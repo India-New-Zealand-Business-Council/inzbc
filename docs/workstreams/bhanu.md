@@ -13,6 +13,11 @@ Ordered backlog; take the top **Next up** item. Move finished items to **Done**.
 /.github/**   (CI, CODEOWNERS)
 ```
 
+## Modules I own (see [docs/modules](../modules/README.md))
+Foundation + shared services + [Membership/CRM](../modules/membership-crm.md) (decision-gated) +
+[Sponsors & trade services](../modules/sponsors-trade-services.md) + dashboards data layer + SIP core.
+Modules 3–4 build only after the four foundation decisions; foundation work is unblocked now.
+
 ## Contracts I own (ship first — they unblock Roshan and Paras)
 - DB schema + migrations (from the Intelligence Database v1.9 model).
 - API contract (OpenAPI) for pipeline + control endpoints.
