@@ -16,3 +16,11 @@ jobs:
       # Add app lint/test jobs here as /apps and /services gain code.
       - name: Validate JSON
         run: python -c "import json,glob;[json.load(open(f,encoding='utf-8')) for f in glob.glob('**/*.json',recursive=True)];print('JSON valid')"
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Free, no API key, no SaaS. Blocks the PR if a secret is committed.
+      - name: Secret scan (gitleaks)
+        run: docker run --rm -v "${{ github.workspace }}:/repo" ghcr.io/gitleaks/gitleaks:latest detect --source /repo --no-git --redact
