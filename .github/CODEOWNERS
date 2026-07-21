@@ -1,0 +1,15 @@
+# Code owners for INZBC. Enforced once branch protection has
+# "Require review from Code Owners" enabled (needs repo admin + a paid plan).
+# Until then this file is documentation only.
+
+# Default: the tech lead reviews everything.
+*                       @bhanuGupta1
+
+# Sensitive paths: always the tech lead, no exceptions.
+/.github/               @bhanuGupta1
+/CODEOWNERS             @bhanuGupta1
+/.github/CODEOWNERS     @bhanuGupta1
+/CLAUDE.md              @bhanuGupta1
+/CONTRIBUTING.md        @bhanuGupta1
+/.gitignore             @bhanuGupta1
+/docs/sip/              @bhanuGupta1
