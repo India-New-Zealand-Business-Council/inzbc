@@ -25,20 +25,19 @@ Repo-specific rules. General workflow is in [CONTRIBUTING.md](./CONTRIBUTING.md)
 
 ## Git
 
-- Branch, open a PR into `main`. No direct pushes to `main`; only the tech lead merges.
+- Branch, open a PR into `main`. No direct pushes to `main`; only Bhanu merges.
 - Imperative commit subjects under ~60 chars. No AI attribution anywhere (commits, PRs, code).
 - Run a secret scan before pushing. Never commit `.env*` or credentials.
 
-## Team workflow — "I'm <name>, continue my work"
+## Development workflow
 
-See [docs/workstreams/README.md](./docs/workstreams/README.md). When a developer says
-"I'm <name>, continue my work":
-1. Read their worklog `docs/workstreams/<name>.md` (git-ignored, local to each dev).
-2. `git fetch`; if the worklog's recorded SHA is behind `main`, stop and ask them to reconcile.
-3. Take the top unchecked task; branch `feat/<name>/<slug>` off fresh `main`.
-4. Follow the quality ladder: understand → research (context7/web, no guessing) →
-   **reuse before writing** (grep/LSP for an existing helper; do not reinvent) → smallest diff →
-   root-cause bug-check → AI review (`/code-review`, or `/codex:adversarial-review` if
-   security-touching) → lint/typecheck/test pass → PR with the evidence block.
-5. Stay in your lane (per-dev paths); shared contracts (`/services/api`, `/database`, `/schemas`)
-   change only via the tech lead.
+See [docs/workstreams/README.md](./docs/workstreams/README.md). Work is backlog-driven: each
+engineer keeps a worklog at `docs/workstreams/<name>.md` and takes the top open item.
+1. Fetch `main`; rebase if the worklog's base commit is behind.
+2. Branch `feat/<name>/<slug>` off fresh `main`.
+3. Quality standard: understand the task and code it touches; research library/API specifics
+   (no guessing); **reuse before writing** (search for an existing helper; do not reinvent);
+   smallest diff; root-cause bug-check; self-review (adversarial review if security-touching);
+   lint/typecheck/test pass; PR with the evidence block.
+4. Stay in your lane; shared contracts (`/services/api`, `/database`, `/schemas`) change only via
+   Bhanu.

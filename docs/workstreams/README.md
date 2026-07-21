@@ -1,68 +1,60 @@
-# Workstreams — how the team works with Claude Code
+# Workstreams — team development workflow
 
-Three developers, one monorepo, zero collisions, top-tier output. Each person opens Claude Code,
-says **"I'm <name>, continue my work"**, and the session picks up their backlog and ships a PR to
-the quality bar below. Bhanu reviews and merges.
+Three engineers, one monorepo. Each owns a worklog (their task backlog) and works in their own
+lanes, so all three ship in parallel without collisions. Every change lands via a reviewed pull
+request into `main`; Bhanu merges.
 
-## The "continue" protocol
-1. Dev opens Claude Code in the `inzbc` repo and says: **"I'm Paras, continue my work."**
-2. Claude reads that dev's worklog: `docs/workstreams/<name>.md`.
-3. It confirms the repo is current (`git fetch`; if the worklog's recorded SHA ≠ latest, it stops
-   and asks the dev to reconcile — never continues on a stale base).
-4. It takes the **top unchecked task**, creates a branch `feat/<name>/<slug>` off fresh `main`.
-5. It builds to the **quality bar**, opens a **PR with the evidence block**, and appends a done
-   line to the worklog.
-6. Bhanu reviews the PR and merges.
+## Working from your worklog
+Each engineer keeps a worklog at `docs/workstreams/<name>.md` — an ordered backlog, a done log,
+current blockers, and a definition of done.
 
-Nothing else to memorise. The worklog is the backlog; the branch is the unit of work.
+1. Fetch `main`. If your worklog's recorded base commit is behind `main`, rebase first.
+2. Take the top item in **Next up**.
+3. Branch `feat/<name>/<slug>` off fresh `main`.
+4. Build it to the quality standard below.
+5. Open a PR with the evidence block, and move the item to **Done**.
 
-## The quality bar (the ladder — same order every time)
-Encoded in the repo `CLAUDE.md`; the Stop gate + `verify` script enforce the last rungs.
-1. **Understand** — read the task + the code it touches; trace the real flow.
-2. **Research** — use context7 / web for any library or API; never guess versions or props.
-3. **Reuse before writing** — grep/LSP for an existing helper, type, or pattern. Reuse it. Do
-   not reinvent a formatter, client, or validator the repo already has.
-4. **Smallest diff** — only the files that must change. No speculative abstraction, no dead flexibility.
-5. **Self bug-check** — root-cause, not symptom; check every caller of a changed function.
-6. **AI review** — run `/code-review` (or `/codex:adversarial-review` for security-touching code)
-   and fix real findings before the PR.
-7. **Lint / typecheck / test** — run the repo's own checks; they must pass. ("Done" = checks ran and passed.)
+## Quality standard (every change)
+1. **Understand** — read the task and the code it touches; trace the real flow.
+2. **Research** — confirm library/API specifics from docs; do not guess versions or props.
+3. **Reuse before writing** — search (grep/LSP) for an existing helper, type, or pattern and use
+   it. Do not reinvent a formatter, client, or validator the repo already has.
+4. **Smallest diff** — change only what must change. No speculative abstraction, no dead flexibility.
+5. **Root-cause bug-check** — fix the cause, not the symptom; check every caller of a changed function.
+6. **Review** — self-review the diff; security-touching changes get an adversarial review.
+7. **Checks pass** — lint, typecheck and tests all green before the PR. ("Done" = checks ran and passed.)
 8. **PR** — open it with the evidence block. No AI attribution in commits or PRs.
 
-## Collision rules (why three can work at once)
-- **Lanes:** each dev owns folders (see per-dev files + `.github/CODEOWNERS`). Do not edit
-  another dev's lane without a `SHARED-OK:` note and their nod.
-- **Shared contracts** live in `/services/api` + `/database` + `/schemas` and are owned by Bhanu.
-  Roshan and Paras build against them; contract changes go through Bhanu.
-- **Branches:** short-lived, one per task, `feat/<name>/<slug>`, off fresh `main`. Rebase before PR.
-- **Never** push directly to `main`. PRs only. Bhanu merges.
+## Lanes (how three work at once without colliding)
+- Each engineer owns folders (see the per-engineer worklogs and `.github/CODEOWNERS`). Do not edit
+  another engineer's lane without a `SHARED-OK:` note and their agreement.
+- Shared contracts live in `/services/api`, `/database`, `/schemas` and are owned by Bhanu.
+  Others build against them; contract changes go through Bhanu.
+- Branches are short-lived, one per task, `feat/<name>/<slug>`, off fresh `main`. Rebase before PR.
+- Never push directly to `main`. PRs only.
 
-## PR evidence block (put this in every PR)
+## PR evidence block (include in every PR)
 ```
 ## Evidence
 - Task: <worklog item>
 - Reused: <existing helpers/types reused, or "none — searched, none fit">
 - Sources: <docs/URLs used, or "n/a">
-- Checks: lint ✓ typecheck ✓ tests ✓  (paste the command output)
-- AI review: /code-review run, findings addressed
-- Unsure about: <the 1-2 things the reviewer should look hardest at>
+- Checks: lint / typecheck / tests  (paste the command output)
+- Review: self-reviewed; adversarial review if security-touching
+- Watch closely: <the 1-2 things the reviewer should look hardest at>
 ```
-The "Unsure about" line is required — a PR claiming total confidence gets a harder look.
 
 ## Repo layout (monorepo)
 ```
-/apps/site        Wix Velo + site content specs   (Paras)
+/apps/site        site (Velo) + content specs     (Paras)
 /apps/sip         SIP control app                 (Bhanu core, Paras UI)
 /apps/fta         FTA Explainer service + corpus  (Roshan)
-/apps/comms       AI Comms Assistant              (Roshan/Paras)
+/apps/comms       Communications Assistant        (Roshan/Paras)
 /services/api     shared API, auth, audit         (Bhanu)
 /database         schema + migrations             (Bhanu)
 /schemas          shared types + API contract     (Bhanu)
 /docs             planning + governance
-/docs/workstreams this folder: per-dev worklogs
+/docs/workstreams this folder: per-engineer worklogs
 ```
-The `daily-india-nz-news-agent` repo stays separate — it is the SIP collection engine. No new
-repos unless a component genuinely needs isolation; the monorepo is the default.
-
-## Files
-- `bhanu.md`, `roshan.md`, `paras.md` — each dev's lanes, backlog, and definition of done.
+The `daily-india-nz-news-agent` repo stays separate — the SIP collection engine. New repos only
+when a component genuinely needs isolation; the monorepo is the default.
