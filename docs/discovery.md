@@ -98,10 +98,11 @@ the AI service layer (embed / iframe / API).
 
 | ID   | Item | Owner | Status |
 |------|------|-------|--------|
-| OI-1 | **Wix MCP not connected** in build environment. Cannot scaffold on Wix until the official Wix MCP server is registered (`claude mcp add --transport http wix <url> --headers …`). | Team | Blocking build |
-| OI-2 | **Domain scope unconfirmed** — new separate domain vs subdomain/staging under inzbc.org. Determines DNS/deploy + which Wix site the MCP targets. Confirm with INZBC in writing. | Client | Open |
-| OI-3 | **Scope-change not yet flagged in writing** — proposal described a lighter "refresh key pages"; client verbally confirmed a full new build. Send written confirmation to INZBC. | Team | Open |
+| OI-1 | **Wix build tooling not connected.** Sunil granted the *team* access to the INZBC Wix account, but the Wix MCP is still not connected in this build environment (confirmed: no Wix tools available). The team can create/build the new site in the Wix editor now; for programmatic build, connect the Wix MCP (`claude mcp add --transport http wix <url> --headers …`). | Team | Blocking programmatic build |
+| OI-2 | **Domain: RESOLVED.** Sunil confirmed the site keeps the **inzbc.org** address. Plan: build a new, separate Wix site in the existing account, then point inzbc.org at it at go-live (cutover). No new domain or DNS purchase needed. | Client | Resolved |
+| OI-3 | **Scope/vision outreach started** — message 1 sent to Sunil asking his vision for the new site. Full written scope confirmation pending his reply. | Team | In progress |
 | OI-4 | Page-by-page audit done except `/events` (404 on that slug — confirm real Events/Calendar URLs). | Team | Mostly done |
 | OI-5 | Named human reviewer for AI-drafted content to be designated. | Client/Team | Open |
 | OI-6 | Executive Council names/bios must be sourced from live site or INZBC directly at build time — never from crawler/LLM output (guardrail: never invent board names). | Team | Open |
 | OI-7 | Confirm what stays external vs on-site: Member Jungle (membership/directory), Mailchimp/eocampaign (newsletters). Affects integration scope. | Client/Team | Open |
+| OI-8 | **Go-live cutover touches the live site.** Same-domain means the new site replaces the current inzbc.org at launch. Before cutover: take a full backup/snapshot of the current site's content, and get explicit written go-live sign-off (guardrail: do not modify live inzbc.org without sign-off). Building the new site separately is fine; the domain switch is the sensitive moment. | Team/Client | Open (go-live) |
