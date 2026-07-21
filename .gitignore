@@ -37,3 +37,13 @@ Thumbs.db
 docs/services-agreement-draft.md
 docs/sunil-requests.md
 docs/inzbc-talking-points.md
+docs/sip/sunil-update.md
+
+# Per-developer worklogs — private, sent to each dev directly, read locally by their agent
+docs/workstreams/bhanu.md
+docs/workstreams/roshan.md
+docs/workstreams/paras.md
+
+# Render/preview artifacts
+*.png
+.playwright-mcp/

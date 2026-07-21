@@ -5,6 +5,21 @@
 # Default: the tech lead reviews everything.
 *                       @bhanuGupta1
 
+# Per-developer lanes (see docs/workstreams). The tech lead still reviews all PRs into main.
+/services/               @bhanuGupta1
+/database/               @bhanuGupta1
+/schemas/                @bhanuGupta1
+/deployment/             @bhanuGupta1
+/apps/sip/core/          @bhanuGupta1
+/apps/fta/               @roshanaryal1 @bhanuGupta1
+/apps/comms/             @roshanaryal1 @bhanuGupta1
+/apps/sip/pipeline/      @roshanaryal1 @bhanuGupta1
+/apps/sip/collector/     @roshanaryal1 @bhanuGupta1
+/apps/site/              @Paras-22 @bhanuGupta1
+/apps/sip/ui/            @Paras-22 @bhanuGupta1
+/apps/comms/ui/          @Paras-22 @bhanuGupta1
+/apps/fta/ui/            @Paras-22 @bhanuGupta1
+
 # Sensitive paths: always the tech lead, no exceptions.
 /.github/               @bhanuGupta1
 /CODEOWNERS             @bhanuGupta1
