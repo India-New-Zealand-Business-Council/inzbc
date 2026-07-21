@@ -18,6 +18,12 @@ Repo-specific rules. General workflow is in [CONTRIBUTING.md](./CONTRIBUTING.md)
 - Wix MCP writes hit **live data instantly** (no draft). Do not point write calls at the live
   site. A publish guard hook (`wix-no-publish.sh`) blocks MCP publishes.
 
+## Membership and data
+- Membership runs on **Member Jungle** (provisional system of record). Do **not** rebuild
+  membership on Wix before the retain/integrate/replace assessment. Link out; do not duplicate.
+- One system of record per data type; never maintain the member or payment register in two places.
+- Build only after the business rule is decided. Do not fill an unresolved rule with an assumption.
+
 ## SIP (Trade Intelligence Platform)
 
 - It is a **code application, not a Wix build** (Postgres, server-side model calls, auth,
