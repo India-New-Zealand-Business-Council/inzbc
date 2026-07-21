@@ -24,3 +24,21 @@ jobs:
       # Free, no API key, no SaaS. Blocks the PR if a secret is committed.
       - name: Secret scan (gitleaks)
         run: docker run --rm -v "${{ github.workspace }}:/repo" ghcr.io/gitleaks/gitleaks:latest detect --source /repo --no-git --redact
+
+  workflows:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint workflows (actionlint)
+        run: docker run --rm -v "${{ github.workspace }}:/repo" -w /repo rhysd/actionlint:latest -color
+
+  links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Report-only: surfaces broken doc links without blocking on flaky external URLs.
+      - name: Check doc links (lychee)
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: --no-progress "./**/*.md"
+          fail: false
