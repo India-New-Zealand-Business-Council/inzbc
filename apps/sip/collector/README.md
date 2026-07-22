@@ -8,6 +8,9 @@ Owner: Roshan. Maps the `daily-india-nz-news-agent` repo's output onto
   output dicts into a `Candidate` (SIP-184 step 5, raw capture only — no scoring, verification,
   duplicate or routing decisions; those are later SOP steps). Read from the actual agent source
   in `india-new-zealand-business-council/daily-india-nz-news-agent`, not an assumed schema.
+  **Known simplification:** `in_coverage_window` is hardcoded `True` rather than computed
+  against the run's locked window — see the docstring on `map_article` for why the agent's own
+  rolling filter isn't quite the same boundary as SIP-184's fixed 07:00-to-07:00 NZT window.
 - `ingest.py` — `ingest_articles()`: maps a batch and POSTs each to `/api/candidates` via
   `SipPipelineClient.create_candidate`, collecting per-item failures instead of aborting the
   batch on the first one.

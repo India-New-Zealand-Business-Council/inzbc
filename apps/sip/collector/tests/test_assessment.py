@@ -95,3 +95,39 @@ def test_apply_candidate_assessment_allows_critical_using_current_verification()
     assert client.patched == [
         (CANDIDATE_ID, {"signal": "Critical", "reason": "Confirmed by MFAT"})
     ]
+
+
+def test_apply_candidate_assessment_blocks_verification_downgrade_on_existing_critical() -> None:
+    # The candidate is already Critical (current_signal); this assessment only touches
+    # verification, downgrading it to Unverified. That must be caught even though this
+    # particular PATCH never sets `signal` itself.
+    client = _FakeClient()
+    assessment = CandidateAssessment(verification=VerificationState.UNVERIFIED)
+
+    with pytest.raises(UnverifiedHighSignalError):
+        apply_candidate_assessment(
+            client,
+            CANDIDATE_ID,
+            assessment,
+            current_signal=SignalStrength.CRITICAL,
+        )
+
+    assert client.patched == []
+
+
+def test_apply_candidate_assessment_allows_unrelated_patch_on_existing_critical_verified() -> None:
+    # The candidate is already Critical and Verified (both passed as "current_*"); a patch that
+    # only sets an unrelated field shouldn't be blocked just because signal/verification aren't
+    # touched in this call.
+    client = _FakeClient()
+    assessment = CandidateAssessment(proposed_routing="Daily Brief")
+
+    apply_candidate_assessment(
+        client,
+        CANDIDATE_ID,
+        assessment,
+        current_signal=SignalStrength.CRITICAL,
+        current_verification=VerificationState.VERIFIED,
+    )
+
+    assert client.patched == [(CANDIDATE_ID, {"proposed_routing": "Daily Brief"})]

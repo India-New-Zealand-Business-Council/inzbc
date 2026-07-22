@@ -78,9 +78,17 @@ def map_article(
     `source_lookup` maps a source name (`article["source"]`) to a `source_library.id`; omit it
     (or leave a name unmatched) to capture the candidate with `source_id=None`.
 
-    Sets `in_coverage_window=True` unconditionally: `articles` is expected to already be
-    `clean_articles()`'s output for one run's locked 24h window (agent.py filters to
-    `max_age_hours` before this point), not an arbitrary mix of items from different windows.
+    KNOWN SIMPLIFICATION - `in_coverage_window` is hardcoded True, not computed against the
+    locked window: SIP-184 step 2 locks a *fixed* 24h Pacific/Auckland window (previous day
+    07:00 to current day 07:00) at run start, but agent.py's `is_recent_article`/`fetch_news`
+    filter on a *rolling* cutoff (`datetime.now(timezone.utc) - max_age_hours`) computed whenever
+    the agent happens to run - the two windows are usually close but are not the same boundary,
+    and can disagree by however late/early the agent's run lands relative to 07:00 NZT. This is
+    accepted here because `articles` is still always the agent's own within-window output, not
+    an arbitrary mix, but it is not the same thing as evaluating each item against the run's
+    actual locked `coverage_start_utc`/`coverage_end_utc`. Fix properly by comparing each
+    article's parsed `published_at` against the run's locked window once the run object is
+    threaded through here, rather than trusting the agent's rolling filter as a proxy for it.
     """
     source_name = str(article.get("source", "")).strip()
     source_id = source_lookup.get(source_name) if source_lookup else None

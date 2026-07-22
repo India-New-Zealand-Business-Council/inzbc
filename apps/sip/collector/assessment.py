@@ -46,15 +46,21 @@ def apply_candidate_assessment(
     candidate_id: str,
     assessment: CandidateAssessment,
     current_verification: VerificationState | None = None,
+    current_signal: SignalStrength | None = None,
 ) -> dict:
     """PATCHes `candidate_id` with whichever fields of `assessment` were actually set.
 
-    If this assessment sets `signal` to High or Critical, verification must resolve to
-    something other than Unverified/Rejected - either set in this same assessment, or already
-    known and passed as `current_verification` (e.g. from a prior GET of the candidate). See
-    `verification.enforce_verification_gate` for why an unknown state is treated as unverified.
+    The effective signal/verification for the gate is whatever this assessment sets, falling
+    back to `current_signal`/`current_verification` (e.g. from a prior GET of the candidate) for
+    whichever side it leaves unset. This catches a PATCH that downgrades verification on a
+    candidate that's already High/Critical, not only a PATCH that sets both at once - pass
+    `current_signal` whenever the candidate's existing signal is known. See
+    `verification.enforce_verification_gate` for why an unknown verification state is treated as
+    unverified.
     """
-    enforce_verification_gate(assessment.signal, assessment.verification or current_verification)
+    effective_signal = assessment.signal or current_signal
+    effective_verification = assessment.verification or current_verification
+    enforce_verification_gate(effective_signal, effective_verification)
 
     fields = assessment.model_dump(mode="json", exclude_none=True)
     return client.patch_candidate(candidate_id, fields)

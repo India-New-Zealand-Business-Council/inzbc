@@ -47,16 +47,10 @@ class ExplainerAnswer:
     notes: str | None = None
 
 
-def _next_step(entry: TariffOutcome) -> str:
-    if not entry.confirmed:
-        return (
-            "This figure is not yet confirmed against an official source - contact INZBC "
-            "before relying on it."
-        )
-    return (
-        "Confirm the exact tariff line in the FTA's Annex 2A schedule, or contact INZBC for "
-        "product-specific guidance."
-    )
+_NEXT_STEP = (
+    "Confirm the exact tariff line in the FTA's Annex 2A schedule, or contact INZBC for "
+    "product-specific guidance."
+)
 
 
 def _to_answer(entry: TariffOutcome) -> ExplainerAnswer:
@@ -69,7 +63,7 @@ def _to_answer(entry: TariffOutcome) -> ExplainerAnswer:
         verified_at=entry.verified_at,
         status_line=FTA_STATUS_LINE,
         jurisdiction=JURISDICTION,
-        next_step=_next_step(entry),
+        next_step=_NEXT_STEP,
         disclaimer=DISCLAIMER_PLACEHOLDER,
         notes=entry.notes,
     )
@@ -78,8 +72,14 @@ def _to_answer(entry: TariffOutcome) -> ExplainerAnswer:
 def answer_query(query: str) -> list[ExplainerAnswer]:
     """Matches `query` against the corpus by shared keyword with each entry's topic or sector.
 
-    Returns every matching entry (a sector query like "dairy" naturally maps to more than one
-    tariff outcome). Returns `[]` when nothing matches, including when `query` is empty or only
+    Returns every matching **confirmed** entry (a sector query like "dairy" naturally maps to
+    more than one tariff outcome). `confirmed=False` corpus entries (e.g. the still-unconfirmed
+    ~70% tariff-line figure) are never surfaced here - docs/fta-source-corpus.md explicitly says
+    not to cite that figure in the Explainer until it's confirmed against a primary source, so a
+    query that only matches an unconfirmed entry gets the same `[]` as no match at all, not a
+    caveated figure.
+
+    Returns `[]` when nothing confirmed matches, including when `query` is empty or only
     stopwords - the caller routes that to INZBC rather than guessing.
     """
     query_keywords = _keywords(query)
@@ -89,6 +89,7 @@ def answer_query(query: str) -> list[ExplainerAnswer]:
     matches = [
         entry
         for entry in CORPUS
-        if query_keywords & _keywords(entry.topic) or query_keywords & _keywords(entry.sector)
+        if entry.confirmed
+        and (query_keywords & _keywords(entry.topic) or query_keywords & _keywords(entry.sector))
     ]
     return [_to_answer(entry) for entry in matches]

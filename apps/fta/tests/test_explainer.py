@@ -39,12 +39,13 @@ def test_answer_query_returns_empty_for_blank_query() -> None:
     assert answer_query("   ") == []
 
 
-def test_unconfirmed_entry_is_never_presented_as_confirmed() -> None:
+def test_unconfirmed_entry_is_suppressed_from_member_answers() -> None:
+    # docs/fta-source-corpus.md is explicit: do not cite the ~70% tariff-line figure in the
+    # Explainer until it's confirmed against a primary source. A query that only matches that
+    # unconfirmed entry must escalate to INZBC ([]), not surface it with a caveat.
     answers = answer_query("tariff line")
-    unconfirmed = [a for a in answers if not a.confirmed]
-    assert unconfirmed
-    for answer in unconfirmed:
-        assert "not yet confirmed" in answer.next_step
+    assert answers == []
+    assert all(entry.confirmed for entry in answer_query("dairy"))
 
 
 def test_every_answer_carries_status_line_and_disclaimer_placeholder() -> None:

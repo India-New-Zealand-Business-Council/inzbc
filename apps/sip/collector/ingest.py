@@ -9,9 +9,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from pydantic import ValidationError
+
 from apps.sip.pipeline.client import SipApiError, SipPipelineClient
 
-from .mapping import map_articles
+from .mapping import map_article
 
 
 @dataclass
@@ -34,21 +36,21 @@ def ingest_articles(
     source_lookup: dict[str, str] | None = None,
 ) -> IngestResult:
     """POSTs each of `articles` (daily-india-nz-news-agent's `clean_articles()` output) to
-    `/api/candidates` for `run_id`. Continues past individual write failures instead of
-    aborting the batch — SIP-185's fallback rules require never silently dropping a potentially
-    relevant item, so one bad write must not hide the rest from review; failures are returned,
-    not swallowed.
+    `/api/candidates` for `run_id`. Continues past individual mapping *or* write failures instead
+    of aborting the batch — SIP-185's fallback rules require never silently dropping a
+    potentially relevant item, so one malformed article (e.g. a missing `title`) must not abort
+    every later item in the batch; each article is mapped and sent inside its own try/except,
+    not mapped eagerly for the whole batch up front.
     """
     result = IngestResult()
-    for mapped in map_articles(articles, run_id, source_lookup):
+    for article in articles:
+        source_name = str(article.get("source", "")).strip()
+        headline = str(article.get("title", ""))
         try:
+            mapped = map_article(article, run_id, source_lookup)
             result.created.append(client.create_candidate(mapped.candidate))
-        except SipApiError as error:
+        except (SipApiError, ValidationError, KeyError) as error:
             result.failed.append(
-                IngestFailure(
-                    source_name=mapped.source_name,
-                    headline=mapped.candidate.headline,
-                    error=str(error),
-                )
+                IngestFailure(source_name=source_name, headline=headline, error=str(error))
             )
     return result
