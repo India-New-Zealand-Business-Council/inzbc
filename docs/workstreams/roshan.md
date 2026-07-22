@@ -22,7 +22,8 @@ own PR flow; this lane is the integration that pulls its output into SIP.
 DB schema, API contract, auth. Build against them; don't write to control-plane tables.
 
 ## Next up
-- [ ] FTA Explainer service: sector query to sourced answer with citation + effective date + next step.
+All backlog items below are done; see Blocked / decisions needed for what's still open before any
+of this runs live (secrets, `source_library` lookup, SIP-050, INZBC sector/disclaimer sign-off).
 
 ## Done
 - [x] Wire the collection-engine output into SIP candidate capture via the API (run to
@@ -53,6 +54,12 @@ DB schema, API contract, auth. Build against them; don't write to control-plane 
   citation, so the still-unconfirmed ~70% tariff-line figure stays marked unconfirmed rather than
   omitted or asserted). `stale_entries()` gives freshness tracking by `verified_at` age; it takes
   `review_after_days` with no default since INZBC hasn't set a review cadence — see blockers.
+- [x] FTA Explainer service: sector query to sourced answer with citation + effective date +
+  next step. `apps/fta/explainer.py`: `answer_query()` matches a query against the corpus by
+  shared keyword (no model call) and returns treatment + status line + jurisdiction + citation +
+  verified date + next step + disclaimer per match; `[]` on no match routes to INZBC rather than
+  guessing. Disclaimer field is a literal `[[INZBC-approved disclaimer wording pending]]`
+  placeholder, not authored copy — see blockers.
 
 ## Blocked / decisions needed
 - FTA sectors in scope + disclaimer wording (INZBC to confirm).
