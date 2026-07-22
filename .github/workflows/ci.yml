@@ -8,7 +8,7 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -19,7 +19,7 @@ jobs:
   python:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -35,7 +35,7 @@ jobs:
   security:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # Free, no API key, no SaaS. Blocks the PR if a secret is committed.
       - name: Secret scan (gitleaks)
         run: docker run --rm -v "${{ github.workspace }}:/repo" ghcr.io/gitleaks/gitleaks:latest detect --source /repo --no-git --redact
@@ -43,14 +43,14 @@ jobs:
   workflows:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Lint workflows (actionlint)
         run: docker run --rm -v "${{ github.workspace }}:/repo" -w /repo rhysd/actionlint:latest -color
 
   links:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # Report-only: surfaces broken doc links without blocking on flaky external URLs.
       - name: Check doc links (lychee)
         uses: lycheeverse/lychee-action@v2
