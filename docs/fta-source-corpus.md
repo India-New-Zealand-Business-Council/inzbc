@@ -86,8 +86,19 @@ infrastructure per the About page) get first-pass coverage; dairy's exclusion is
 explicitly rather than omitted.
 
 ## Open items
-- Manually open the PIB press note and Dept of Commerce factsheet (links above) to confirm the
-  ~70% tariff-line figure before it's cited anywhere — automated fetch is blocked on both.
-- Read Annex 2A-1/2A-2 (now published) for any product-level tariff lines the Explainer needs
-  beyond what the NIA's summary table already covers.
+- **PIB / Dept of Commerce still blocked (checked again 22 Jul 2026).** Tried the press note
+  and factsheet directly, a search-cache route, and an archive route — all blocked or empty.
+  This needs a person with a real browser to open
+  https://www.pib.gov.in/PressNoteDetails.aspx?NoteId=158370 and
+  https://www.commerce.gov.in/files/2026-04/final_1.pdf and confirm the ~70% tariff-line figure
+  before it's cited anywhere. Not resolvable with the tools available in this session — stop
+  retrying it here.
+- **Annex 2A (India's and NZ's line-by-line tariff schedules) confirmed to exist and be the
+  legally authoritative source** (FTA Chapter 2, Article 2.3: each Party's tariff commitments
+  are "in accordance with its Schedule to Annex 2A"). Chapter 2 itself is legal/procedural text
+  with no product-level figures. Annex 2A is reported elsewhere as ~800 pages / ~12,500 tariff
+  lines for India's schedule alone — too large to read wholesale here. Treat it as a lookup
+  source for a specific product/tariff line when a member question needs one, not something to
+  ingest up front; the NIA's key-outcomes table already covers the sectors most relevant to
+  INZBC members (agriculture, dairy, forestry, wine, honey) at summary level.
 - INZBC to confirm which member sectors to prioritise in the first release.
