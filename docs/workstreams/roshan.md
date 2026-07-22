@@ -22,8 +22,15 @@ own PR flow; this lane is the integration that pulls its output into SIP.
 DB schema, API contract, auth. Build against them; don't write to control-plane tables.
 
 ## Next up
-All backlog items below are done; see Blocked / decisions needed for what's still open before any
-of this runs live (secrets, `source_library` lookup, SIP-050, INZBC sector/disclaimer sign-off).
+- [ ] Wire the now-live `GET /api/source-library` (PR #25) into `source_lookup` so candidate and
+  source-check writes resolve real ids instead of degrading to `source_id=None`/raising
+  `SourceIdUnresolved`. Flagged as a follow-up in Bhanu's PR #23 review, not done in that PR.
+- [ ] Build real relevance/signal/confidence scoring against SIP-050
+  (`docs/sip/launch/SIP-050_master_prompt_v1.1.md`, PR #26, now in the repo) — `assessment.py`
+  currently only validates and carries these values through; same review, same reason.
+
+See Blocked / decisions needed for what's still open before any of this runs live (secrets,
+INZBC sector/disclaimer sign-off).
 
 ## Done
 - [x] Wire the collection-engine output into SIP candidate capture via the API (run to
@@ -60,19 +67,21 @@ of this runs live (secrets, `source_library` lookup, SIP-050, INZBC sector/discl
   verified date + next step + disclaimer per match; `[]` on no match routes to INZBC rather than
   guessing. Disclaimer field is a literal `[[INZBC-approved disclaimer wording pending]]`
   placeholder, not authored copy — see blockers.
+- [x] Addressed Bhanu's PR #23 review (CHANGES_REQUESTED). Blocking: `verification.py` switched
+  to an allowlist (only Verified/Partially Verified pass for High/Critical — `Not Required` now
+  correctly fails closed too, per SIP-050 sections 14/27); `explainer.py` now suppresses
+  `confirmed=False` corpus entries entirely from member answers (escalates to INZBC instead of
+  returning the unconfirmed ~70% tariff-line figure with a caveat). Notes addressed:
+  `apply_candidate_assessment()` takes `current_signal` (mirroring `current_verification`) so a
+  verification downgrade on an already-High/Critical candidate is caught; `mapping.py`'s
+  `in_coverage_window=True` simplification documented explicitly (agent's rolling filter vs.
+  SIP-184's fixed 07:00 NZT window); `ingest_articles()` now maps each article inside its own
+  try/except so one malformed article no longer aborts the whole batch.
 
 ## Blocked / decisions needed
 - FTA sectors in scope + disclaimer wording (INZBC to confirm).
 - Collection-engine secrets in the org repo (needs the values) — blocks running the collector
   end-to-end even though the mapping is written.
-- `source_library` name lookup: no endpoint in `schemas/api-contract.md` to resolve a source
-  name to its DB id. Candidate capture degrades to `source_id=None` without it (the column is
-  nullable); source-check recording cannot — `record_source_outcome()` raises rather than
-  writing an invalid row. Needs a contract change from Bhanu (`GET /api/source-library` or
-  similar) before source outcomes can actually be submitted.
-- SIP-050 (approved scoring/prompt framework) isn't in this repo yet (`docs/sip/README.md` TODO)
-  — blocks building actual relevance/signal/confidence scoring logic; `assessment.py` currently
-  only carries analyst/model-supplied values through with validation.
 
 ## Definition of done
 A run opens, sources are recorded with outcomes, candidates captured and verified, and written to

@@ -60,3 +60,19 @@ def test_ingest_articles_collects_failures_without_aborting_the_batch() -> None:
     assert "server error" in result.failed[0].error
     # The failure did not stop the second candidate from being written.
     assert client.created_payloads[0]["headline"] == "Second"
+
+
+def test_ingest_articles_records_a_malformed_article_without_aborting_the_batch() -> None:
+    # A missing "title" fails inside map_article (Candidate.headline is required) - that must
+    # not prevent the well-formed articles around it from being captured.
+    client = _FakeClient()
+    malformed = _article()
+    del malformed["title"]
+    articles = [_article(title="Before"), malformed, _article(title="After")]
+
+    result = ingest_articles(client, RUN_ID, articles)
+
+    assert {c["headline"] for c in client.created_payloads} == {"Before", "After"}
+    assert len(result.failed) == 1
+    assert result.failed[0].headline == ""
+    assert result.failed[0].source_name == "RNZ Business"
