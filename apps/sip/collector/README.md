@@ -1,18 +1,66 @@
 # apps/sip/collector — integration with the collection agent
 
-Owner: Roshan. Meant to map the `daily-india-nz-news-agent` repo's output onto
-`apps/sip/pipeline`'s `Candidate`/`SourceCheck` models, then write it into a run via
+Owner: Roshan. Maps the `daily-india-nz-news-agent` repo's output onto
+`apps/sip/pipeline`'s `Candidate` model, then writes it into an existing run via
 `apps/sip/pipeline/client.py`.
 
-**Intentionally empty beyond this README.** Two things block writing the actual mapping code:
+- `mapping.py` — `map_article()`/`map_articles()`: turns one of `agent.py`'s `clean_articles()`
+  output dicts into a `Candidate` (SIP-184 step 5, raw capture only — no scoring, verification,
+  duplicate or routing decisions; those are later SOP steps). Read from the actual agent source
+  in `india-new-zealand-business-council/daily-india-nz-news-agent`, not an assumed schema.
+  **Known simplification:** `in_coverage_window` is hardcoded `True` rather than computed
+  against the run's locked window — see the docstring on `map_article` for why the agent's own
+  rolling filter isn't quite the same boundary as SIP-184's fixed 07:00-to-07:00 NZT window.
+- `ingest.py` — `ingest_articles()`: maps a batch and POSTs each to `/api/candidates` via
+  `SipPipelineClient.create_candidate`, collecting per-item failures instead of aborting the
+  batch on the first one.
+- `source_register.py` — SIP-185's mandatory source worklist (`MANDATORY_SOURCES`), the fallback
+  sequence, `missing_mandatory_outcomes()` (client-side check mirroring SIP-184's "blank
+  mandatory-source outcome is a Critical stop"), and `record_source_outcome()` to build a
+  `SourceCheck` per source, folding a fallback-attempt trail into `notes` since the table has no
+  separate attempts column.
+- `dedupe.py` — `find_duplicate_of()`: matches a new article against already-captured candidates
+  (e.g. from `SipPipelineClient.list_candidates`) by normalized url then normalized headline, for
+  setting `duplicate_of` on capture. `clean_articles()` only dedupes within one fetch; this
+  covers the same story recurring across runs.
+- `assessment.py` — `CandidateAssessment` + `apply_candidate_assessment()`: the SIP-184 step 6-7
+  update path (relevance, signal, confidence, verification, duplicate status, routing) applied
+  to an already-captured candidate via `PATCH /api/candidates/:id`. Carries values through with
+  the same 0-5 relevance validation `Candidate` enforces; does not compute them (see below).
+  Runs every assessment through `verification.enforce_verification_gate()` first.
+- `verification.py` — `enforce_verification_gate()`: refuses to submit a High/Critical-signal
+  assessment whose verification is Unverified, Rejected, or unknown (SIP-184 step 7 and
+  `docs/sip/SIP_Reference_Config.json`'s `official_verification_required_for_high/critical`).
+  Mirrors the "unverified Critical claim" fail-closed condition from
+  `schemas/api-contract.md` client-side, ahead of the server's own enforcement of the same rule.
+- `tests/` — local checks against fixture article dicts and a fake client; no live agent or API
+  needed.
 
-1. **`daily-india-nz-news-agent`'s real output schema is unknown here.** It's a separate repo,
-   not available in this environment. Guessing its field names/format instead of reading them
-   would mean this module needs a rewrite the moment someone actually checks — not worth doing.
-2. **Collection-engine secrets aren't supplied yet** (tracked in `docs/workstreams/roshan.md`'s
-   blocked list) — nothing here could run against a real feed even with the mapping written.
+## Known gap: no scoring framework built yet
+`apply_candidate_assessment()` is a validated write path, not a scorer — it does not decide
+`nz_relevance`/`india_relevance`/`member_relevance`/`signal`/`confidence`. SIP-050 (the approved
+scoring/prompt framework) now exists in the repo, and the SIP non-negotiables put "scoring, model
+calls" server-side only — so those values come from an analyst or a future server-side
+recommendation, not from this module.
 
-Once both are available: read the agent's actual output shape, write a
-`map_agent_output_to_candidate()` function against it (targeting `apps.sip.pipeline.models.Candidate`),
-and wire it to `apps.sip.pipeline.client.SipPipelineClient.create_candidate`. Do not build this
-against an assumed schema in the meantime.
+## Known gap: source_id resolution not wired up here
+Both the agent's articles and SIP-185's source register only give a free-text source name (e.g.
+`"RNZ Business"`, `"MFAT"`). A `GET /api/source-library` lookup endpoint exists to resolve a
+name to its DB id; wiring it into this module's callers is tracked in
+`docs/workstreams/roshan.md`, not done in this PR.
+- `map_article`/`map_articles`/`ingest_articles` take an optional `source_lookup: dict[str,
+  str]` (name → id); candidates write with `source_id=None` when a name doesn't resolve —
+  `candidates.source_id` is nullable, so this is a degraded-but-valid write.
+- `record_source_outcome()` requires `source_lookup` to resolve the name and raises
+  `SourceIdUnresolved` if it doesn't — `source_checks.source_id` is **NOT NULL**
+  (`database/schema.sql`), so there is no valid source check without one; this can't degrade
+  gracefully the way candidate capture can.
+Tracked in `docs/workstreams/roshan.md`'s blocked list — a contract change needs Bhanu.
+
+## Still blocked
+- **Live runs.** Collection-engine secrets (`OPENAI_API_KEY`, `PERPLEXITY_API_KEY`, etc.) aren't
+  supplied here, and `services/api` is still a stub — nothing in this module can be exercised
+  end-to-end yet, only unit-tested against fixtures. Wire `ingest_articles()` to a real run once
+  both exist: create the run via `SipPipelineClient.create_run`, call
+  `agent.clean_articles(agent.fetch_news(24))` (or however the agent's `main()` is refactored to
+  expose that list), then `ingest_articles(client, run_id, articles)`.

@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from enum import Enum
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class SignalStrength(str, Enum):
@@ -121,9 +121,9 @@ class Candidate(SipModel):
     published_at: str | None = None
     captured_at: str | None = None
     in_coverage_window: bool | None = None
-    nz_relevance: int | None = None  # 0..5
-    india_relevance: int | None = None
-    member_relevance: int | None = None
+    nz_relevance: int | None = Field(default=None, ge=0, le=5)
+    india_relevance: int | None = Field(default=None, ge=0, le=5)
+    member_relevance: int | None = Field(default=None, ge=0, le=5)
     signal: SignalStrength | None = None
     confidence: SourceConfidence | None = None
     verification: VerificationState = VerificationState.UNVERIFIED
