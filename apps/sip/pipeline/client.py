@@ -14,6 +14,7 @@ from __future__ import annotations
 from typing import Any
 
 import requests
+from pydantic import BaseModel
 
 from .models import Candidate, Run, SourceCheck
 
@@ -47,7 +48,7 @@ class SipPipelineClient:
     # ---------- runs ----------
 
     def create_run(self, run: Run) -> dict:
-        return self._request("POST", "/api/runs", json=_dataclass_json(run))
+        return self._request("POST", "/api/runs", json=_model_json(run))
 
     def list_runs(self) -> list[dict]:
         return self._request("GET", "/api/runs")
@@ -76,7 +77,7 @@ class SipPipelineClient:
         return self._request(
             "POST",
             f"/api/runs/{run_id}/source-checks",
-            json=_dataclass_json(source_check),
+            json=_model_json(source_check),
         )
 
     # ---------- candidates ----------
@@ -85,7 +86,7 @@ class SipPipelineClient:
         return self._request("GET", "/api/candidates", params={"run": run_id})
 
     def create_candidate(self, candidate: Candidate) -> dict:
-        return self._request("POST", "/api/candidates", json=_dataclass_json(candidate))
+        return self._request("POST", "/api/candidates", json=_model_json(candidate))
 
     def patch_candidate(self, candidate_id: str, fields: dict) -> dict:
         return self._request("PATCH", f"/api/candidates/{candidate_id}", json=fields)
@@ -110,13 +111,6 @@ def _safe_json(response: requests.Response) -> Any:
         return response.text
 
 
-def _dataclass_json(obj: Any) -> dict:
-    """Dataclass -> JSON-safe dict, dropping unset (None) fields and unwrapping enums."""
-    import dataclasses
-
-    out = {}
-    for key, value in dataclasses.asdict(obj).items():
-        if value is None:
-            continue
-        out[key] = value
-    return out
+def _model_json(model: BaseModel) -> dict:
+    """Pydantic model -> JSON-safe dict, dropping unset (None) fields, enums as plain strings."""
+    return model.model_dump(mode="json", exclude_none=True)

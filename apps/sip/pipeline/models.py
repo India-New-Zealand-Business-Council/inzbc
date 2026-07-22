@@ -1,14 +1,21 @@
 """Typed shapes for the SIP pipeline API, mirrored field-for-field from database/schema.sql.
 
+Pydantic per ADR-0001 (docs/decisions/0001-backend-language.md): "Pydantic enforces validation
+at trust boundaries." These models are the trust boundary between apps/sip/pipeline and Bhanu's
+API — client.py never sends a raw dict, only a validated model.
+
 These are not an ORM and don't talk to a database directly — apps/sip/pipeline writes through
 Bhanu's API only (see client.py). Keeping the enums and field names here in lockstep with
-database/schema.sql is what tests/test_models.py checks.
+database/schema.sql is what tests/test_models.py checks. Once Bhanu's API publishes real Pydantic
+models via OpenAPI (ADR-0001, "contract-first"), these should be regenerated from that spec
+instead of hand-mirrored from the SQL file.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from enum import Enum
+
+from pydantic import BaseModel, ConfigDict
 
 
 class SignalStrength(str, Enum):
@@ -63,8 +70,13 @@ class RunState(str, Enum):
     WITHDRAWN = "Withdrawn"
 
 
-@dataclass
-class Run:
+class SipModel(BaseModel):
+    """Shared base: reject unknown fields so a typo or a schema drift fails loudly, not silently."""
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class Run(SipModel):
     """Mirrors the `runs` table."""
 
     run_number: str  # RUN-YYYYMMDD-01
@@ -83,8 +95,7 @@ class Run:
     qa_status: str | None = None
 
 
-@dataclass
-class SourceCheck:
+class SourceCheck(SipModel):
     """Mirrors the `source_checks` table. One row per mandatory source per run."""
 
     run_id: str
@@ -98,8 +109,7 @@ class SourceCheck:
     notes: str | None = None
 
 
-@dataclass
-class Candidate:
+class Candidate(SipModel):
     """Mirrors the `candidates` table."""
 
     run_id: str
