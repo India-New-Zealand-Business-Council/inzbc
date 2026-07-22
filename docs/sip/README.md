@@ -29,12 +29,14 @@ Security-heavy (MFA, auth, audit, secrets, external LLM). Build gets `/codex:adv
 before any staff use — same gate already required for the AI Comms Assistant.
 
 ## Control boundary (current SIP approval state — do not promote drafts)
-- **Approved/controlling:** SIP-050 Prompt v1.0, Intelligence DB v1.7, SIP-171 Tracker v3.0,
+- **Approved/controlling:** SIP-050 Master Prompt v1.1 (supersedes v1.0), Intelligence DB v1.7, SIP-171 Tracker v3.0,
   SIP-182 v1.0, SIP-183 v1.0, Pilot Runs 1–10.
 - **Review drafts only (not controlling):** SIP-183A v0.9, Intelligence DB v1.8, Tracker v3.1.
 
 ## Files in this folder
 - `SIP_Reference_Config.json` — machine-readable defaults (production disabled, weights, states).
+- `launch/SIP-050_master_prompt_v1.1.md`: canonical Master Prompt (relevance/signal/verification
+  framework, sections 11-14 plus the signal-strength table). The controlling scoring/prompt source.
 - **TODO:** add the full `SIP_Website_Agent_Implementation_Spec.md` and
   `SIP_Agent_System_Prompt_v1.0.txt` here verbatim (paste the canonical copies to avoid drift).
 
