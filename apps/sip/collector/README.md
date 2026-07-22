@@ -24,6 +24,12 @@ Owner: Roshan. Maps the `daily-india-nz-news-agent` repo's output onto
   update path (relevance, signal, confidence, verification, duplicate status, routing) applied
   to an already-captured candidate via `PATCH /api/candidates/:id`. Carries values through with
   the same 0-5 relevance validation `Candidate` enforces; does not compute them (see below).
+  Runs every assessment through `verification.enforce_verification_gate()` first.
+- `verification.py` — `enforce_verification_gate()`: refuses to submit a High/Critical-signal
+  assessment whose verification is Unverified, Rejected, or unknown (SIP-184 step 7 and
+  `docs/sip/SIP_Reference_Config.json`'s `official_verification_required_for_high/critical`).
+  Mirrors the "unverified Critical claim" fail-closed condition from
+  `schemas/api-contract.md` client-side, ahead of the server's own enforcement of the same rule.
 - `tests/` — local checks against fixture article dicts and a fake client; no live agent or API
   needed.
 

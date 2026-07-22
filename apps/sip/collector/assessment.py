@@ -21,6 +21,8 @@ from apps.sip.pipeline.models import (
     VerificationState,
 )
 
+from .verification import enforce_verification_gate
+
 
 class CandidateAssessment(SipModel):
     """A partial update to a Candidate's assessment fields. Every field is optional so a caller
@@ -40,8 +42,19 @@ class CandidateAssessment(SipModel):
 
 
 def apply_candidate_assessment(
-    client: SipPipelineClient, candidate_id: str, assessment: CandidateAssessment
+    client: SipPipelineClient,
+    candidate_id: str,
+    assessment: CandidateAssessment,
+    current_verification: VerificationState | None = None,
 ) -> dict:
-    """PATCHes `candidate_id` with whichever fields of `assessment` were actually set."""
+    """PATCHes `candidate_id` with whichever fields of `assessment` were actually set.
+
+    If this assessment sets `signal` to High or Critical, verification must resolve to
+    something other than Unverified/Rejected - either set in this same assessment, or already
+    known and passed as `current_verification` (e.g. from a prior GET of the candidate). See
+    `verification.enforce_verification_gate` for why an unknown state is treated as unverified.
+    """
+    enforce_verification_gate(assessment.signal, assessment.verification or current_verification)
+
     fields = assessment.model_dump(mode="json", exclude_none=True)
     return client.patch_candidate(candidate_id, fields)

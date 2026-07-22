@@ -22,7 +22,6 @@ own PR flow; this lane is the integration that pulls its output into SIP.
 DB schema, API contract, auth. Build against them; don't write to control-plane tables.
 
 ## Next up
-- [ ] Verification/citation controls: High/Critical claims need an official/high-confidence source; block unverified Critical.
 - [ ] FTA source corpus (Tier 1 official first) + freshness/effective-date tracking.
 - [ ] FTA Explainer service: sector query to sourced answer with citation + effective date + next step.
 
@@ -44,6 +43,11 @@ DB schema, API contract, auth. Build against them; don't write to control-plane 
   (`CandidateAssessment`/`apply_candidate_assessment`, the PATCH path for scoring/verification/
   routing) and `dedupe.py` (`find_duplicate_of`, cross-run duplicate matching by url/headline).
   Does not compute relevance/signal/confidence values itself — see blockers.
+- [x] Verification/citation controls: High/Critical claims need an official/high-confidence
+  source; block unverified Critical. `apps/sip/collector/verification.py`:
+  `enforce_verification_gate()` refuses a High/Critical assessment when verification is
+  Unverified, Rejected, or unknown (unknown treated as unverified, fail closed). Wired into
+  `apply_candidate_assessment()` ahead of every PATCH.
 
 ## Blocked / decisions needed
 - FTA sectors in scope + disclaimer wording (INZBC to confirm).
