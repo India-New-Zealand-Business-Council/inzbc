@@ -26,15 +26,16 @@ Modules 3–4 build only after the four foundation decisions; foundation work is
 - Webhook contract for Wix to internal.
 
 ## Next up
-- [ ] Scaffold monorepo folders + CI (lint/typecheck/test) so checks exist to run.
-- [ ] DB schema v0.1 + migrations: runs, candidates, daily_intelligence, action_register, watch_lists, source_library, approvals, audit, exceptions.
-- [ ] API contract v0.1 (OpenAPI) covering pipeline + control endpoints.
+- [ ] Turn the state-machine + schema drafts into migrations once the internal-platform decision is made.
 - [ ] Auth + role model (roles from launch-config) + audit-log middleware.
-- [ ] SIP run state machine with server-side guards + disabled-control flags.
+- [ ] Webhook contract for Wix to internal.
 - [ ] Backup + run-monitoring design (confirm each scheduled run started, finished, produced output).
 
 ## Done
-- (none yet)
+- Monorepo scaffold + per-lane READMEs; CI already in place (lint/gitleaks/actionlint/links).
+- DB schema v0.1 (`database/schema.sql`) grounded in Intelligence Database v1.9.
+- API contract v0.1 (`schemas/api-contract.md`) covering pipeline + control endpoints.
+- Run state machine v0.1 (`schemas/state-machine.md`) with allowed/illegal transitions.
 
 ## Blocked / decisions needed
 - Internal platform: Microsoft 365 vs repo-hosted service (AIOS foundation decision).
