@@ -3,7 +3,11 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from apps.sip.collector.assessment import CandidateAssessment, apply_candidate_assessment
+from apps.sip.collector.assessment import (
+    CandidateAssessment,
+    MissingCurrentSignalError,
+    apply_candidate_assessment,
+)
 from apps.sip.collector.verification import UnverifiedHighSignalError
 from apps.sip.pipeline.models import SignalStrength, SourceConfidence, VerificationState
 
@@ -113,6 +117,34 @@ def test_apply_candidate_assessment_blocks_verification_downgrade_on_existing_cr
         )
 
     assert client.patched == []
+
+
+def test_apply_candidate_assessment_refuses_downgrade_without_current_signal() -> None:
+    # No current_signal supplied and this patch doesn't set signal either - the candidate's
+    # existing signal is genuinely unknown. Silently letting effective_signal resolve to None
+    # would fail the gate open; this must refuse instead.
+    client = _FakeClient()
+    assessment = CandidateAssessment(verification=VerificationState.UNVERIFIED)
+
+    with pytest.raises(MissingCurrentSignalError):
+        apply_candidate_assessment(client, CANDIDATE_ID, assessment)
+
+    assert client.patched == []
+
+
+def test_apply_candidate_assessment_allows_downgrade_when_signal_set_in_same_patch() -> None:
+    # Setting verification away from Verified is fine on its own as long as this same patch also
+    # states the candidate isn't High/Critical - no ambiguity to refuse.
+    client = _FakeClient()
+    assessment = CandidateAssessment(
+        signal=SignalStrength.LOW, verification=VerificationState.UNVERIFIED
+    )
+
+    apply_candidate_assessment(client, CANDIDATE_ID, assessment)
+
+    assert client.patched == [
+        (CANDIDATE_ID, {"signal": "Low", "verification": "Unverified"})
+    ]
 
 
 def test_apply_candidate_assessment_allows_unrelated_patch_on_existing_critical_verified() -> None:

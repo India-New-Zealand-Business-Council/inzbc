@@ -21,7 +21,19 @@ from apps.sip.pipeline.models import (
     VerificationState,
 )
 
-from .verification import enforce_verification_gate
+from .verification import VERIFIED_STATES, enforce_verification_gate
+
+
+class MissingCurrentSignalError(RuntimeError):
+    """Raised when a patch sets verification to a non-verified state without also setting
+    signal, and the candidate's existing signal wasn't supplied either.
+
+    Without `current_signal`, `effective_signal` would silently resolve to `None`, and
+    `enforce_verification_gate` treats `None` as "not High/Critical" - so a verification
+    downgrade on a candidate that actually is High/Critical would fail open instead of closed.
+    Refusing outright forces the caller to state what they know, rather than this module
+    assuming a downgrade is safe just because this particular PATCH didn't mention signal.
+    """
 
 
 class CandidateAssessment(SipModel):
@@ -57,7 +69,21 @@ def apply_candidate_assessment(
     `current_signal` whenever the candidate's existing signal is known. See
     `verification.enforce_verification_gate` for why an unknown verification state is treated as
     unverified.
+
+    Raises `MissingCurrentSignalError` if this assessment sets `verification` to a non-verified
+    state without also setting `signal`, and `current_signal` wasn't supplied - an unknown
+    signal must not be treated as "safe to downgrade" (see that error's docstring).
     """
+    verification_downgrading = (
+        assessment.verification is not None and assessment.verification not in VERIFIED_STATES
+    )
+    if verification_downgrading and assessment.signal is None and current_signal is None:
+        raise MissingCurrentSignalError(
+            f"patch sets verification={assessment.verification.value!r} without setting signal, "
+            "and current_signal was not supplied - cannot tell whether this candidate is "
+            "High/Critical, so the downgrade is refused rather than assumed safe"
+        )
+
     effective_signal = assessment.signal or current_signal
     effective_verification = assessment.verification or current_verification
     enforce_verification_gate(effective_signal, effective_verification)

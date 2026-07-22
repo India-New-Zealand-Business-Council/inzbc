@@ -24,7 +24,14 @@ JURISDICTION = "New Zealand-India"
 
 _WORD_RE = re.compile(r"[a-z0-9]+")
 _STOPWORDS = frozenset(
-    {"and", "or", "the", "a", "an", "of", "in", "on", "for", "to", "at", "over", "with"}
+    {
+        "and", "or", "the", "a", "an", "of", "in", "on", "for", "to", "at", "over", "with",
+        # Jurisdiction terms: nearly every corpus entry is about NZ-India trade, so these carry
+        # no discriminating power - matching on them alone lets an unrelated query (e.g.
+        # "education in India") pull in a cross-sector entry instead of correctly returning []
+        # and escalating to INZBC.
+        "india", "indian", "nz", "new", "zealand",
+    }
 )
 
 

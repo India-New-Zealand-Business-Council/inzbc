@@ -79,6 +79,20 @@ def test_record_source_outcome_single_attempt_is_not_a_fallback() -> None:
     assert check.method == "Direct access"
 
 
+def test_record_source_outcome_single_non_direct_attempt_is_a_fallback() -> None:
+    # Only one attempt was recorded, but it skipped straight past "Direct access" - that's still
+    # a fallback, not "no fallback used" (len(fallback_attempts) > 1 alone would miss this).
+    check = record_source_outcome(
+        RUN_ID,
+        "MFAT",
+        SourceOutcome.INCLUDED,
+        LOOKUP,
+        fallback_attempts=["RSS or approved feed"],
+    )
+    assert check.fallback_used is True
+    assert check.method == "RSS or approved feed"
+
+
 def test_record_source_outcome_combines_trail_and_extra_notes() -> None:
     check = record_source_outcome(
         RUN_ID,

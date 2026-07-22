@@ -36,17 +36,18 @@ Owner: Roshan. Maps the `daily-india-nz-news-agent` repo's output onto
 - `tests/` — local checks against fixture article dicts and a fake client; no live agent or API
   needed.
 
-## Known gap: no scoring framework in this repo yet
+## Known gap: no scoring framework built yet
 `apply_candidate_assessment()` is a validated write path, not a scorer — it does not decide
-`nz_relevance`/`india_relevance`/`member_relevance`/`signal`/`confidence`. `docs/sip/README.md`
-still has a TODO to paste in SIP-050 (the approved scoring/prompt framework) and the SIP
-non-negotiables put "scoring, model calls" server-side only — so those values come from an
-analyst or a future server-side recommendation, not from this module.
+`nz_relevance`/`india_relevance`/`member_relevance`/`signal`/`confidence`. SIP-050 (the approved
+scoring/prompt framework) now exists in the repo, and the SIP non-negotiables put "scoring, model
+calls" server-side only — so those values come from an analyst or a future server-side
+recommendation, not from this module.
 
-## Known gap: source_id resolution
+## Known gap: source_id resolution not wired up here
 Both the agent's articles and SIP-185's source register only give a free-text source name (e.g.
-`"RNZ Business"`, `"MFAT"`); there is no `source_library` lookup endpoint in
-`schemas/api-contract.md` yet to resolve a name to its DB id.
+`"RNZ Business"`, `"MFAT"`). A `GET /api/source-library` lookup endpoint exists to resolve a
+name to its DB id; wiring it into this module's callers is tracked in
+`docs/workstreams/roshan.md`, not done in this PR.
 - `map_article`/`map_articles`/`ingest_articles` take an optional `source_lookup: dict[str,
   str]` (name → id); candidates write with `source_id=None` when a name doesn't resolve —
   `candidates.source_id` is nullable, so this is a degraded-but-valid write.

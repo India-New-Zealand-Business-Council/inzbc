@@ -34,6 +34,13 @@ def test_answer_query_returns_empty_for_stopwords_only() -> None:
     assert answer_query("the and of") == []
 
 
+def test_answer_query_does_not_match_on_jurisdiction_words_alone() -> None:
+    # "education" has no corpus entry; matching on "india" alone would wrongly surface an
+    # unrelated cross-sector entry instead of escalating to INZBC.
+    assert answer_query("education in India") == []
+    assert answer_query("new zealand") == []
+
+
 def test_answer_query_returns_empty_for_blank_query() -> None:
     assert answer_query("") == []
     assert answer_query("   ") == []

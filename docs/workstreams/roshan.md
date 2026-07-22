@@ -77,6 +77,22 @@ INZBC sector/disclaimer sign-off).
   `in_coverage_window=True` simplification documented explicitly (agent's rolling filter vs.
   SIP-184's fixed 07:00 NZT window); `ingest_articles()` now maps each article inside its own
   try/except so one malformed article no longer aborts the whole batch.
+- [x] Addressed Bhanu's second PR #23 review round (CHANGES_REQUESTED again, closer read of the
+  first fixes). `apply_candidate_assessment()` now refuses (`MissingCurrentSignalError`) a patch
+  that downgrades verification away from Verified/Partially Verified without also setting
+  `signal`, when `current_signal` wasn't supplied either — previously that case silently fell
+  through to `effective_signal=None`, failing the gate open exactly when a candidate is already
+  High/Critical. `parse_published_at()` now checks `isinstance(raw, str)` instead of calling
+  `.strip()` unconditionally, so a non-string `published` value (untrusted agent output) is
+  treated as unparseable instead of raising `AttributeError` past `ingest_articles()`'s catch
+  list. `explainer.py` stopwords jurisdiction terms (india/indian/nz/new/zealand) so a query
+  like "education in India" can't spuriously match on the jurisdiction word alone and returns
+  `[]` (escalate to INZBC) instead of a wrong cross-sector entry. Also: `record_source_outcome`'s
+  `fallback_used` now checks whether the final attempt differs from `FALLBACK_SEQUENCE[0]`
+  rather than `len(fallback_attempts) > 1`, so a single non-direct attempt is correctly flagged
+  as a fallback; stale "no lookup endpoint yet" comments in `source_register.py`/`mapping.py`/
+  the collector README updated to reflect that `GET /api/source-library` exists (PR #25),
+  wiring it in is just tracked separately, not done in this PR.
 
 ## Blocked / decisions needed
 - FTA sectors in scope + disclaimer wording (INZBC to confirm).

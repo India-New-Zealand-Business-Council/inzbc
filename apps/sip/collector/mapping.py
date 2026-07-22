@@ -27,13 +27,15 @@ from apps.sip.pipeline.models import Candidate
 _GDELT_DATE_FORMATS = ("%Y%m%dT%H%M%SZ", "%Y%m%d%H%M%S")
 
 
-def parse_published_at(raw: str | None) -> str | None:
+def parse_published_at(raw: object) -> str | None:
     """Best-effort parse of the agent's `published` field into an ISO 8601 string.
 
-    Returns None on anything empty or unrecognised rather than guessing — a missing capture
-    time is preferable to a wrong one.
+    Returns None on anything empty, non-string, or unrecognised rather than guessing or raising
+    - the agent's output is untrusted external data, so a wrong-typed value (e.g. an int) here
+    is treated the same as an unparseable one, not a crash. A missing capture time is preferable
+    to a wrong one.
     """
-    if not raw or not raw.strip():
+    if not isinstance(raw, str) or not raw.strip():
         return None
     value = raw.strip()
 
@@ -60,10 +62,10 @@ class MappedCandidate(BaseModel):
     """A Candidate ready to write, plus the agent's raw source label.
 
     `candidate.source_id` is left unset unless `source_lookup` resolves it: the agent only
-    emits a free-text source name (e.g. "RNZ Business", "GDELT"), and schemas/api-contract.md
-    has no source_library lookup endpoint yet to resolve a name to its DB id (tracked in
-    docs/workstreams/roshan.md's blocked list). `source_name` is kept alongside so a resolver
-    can be applied later without re-reading the agent's output.
+    emits a free-text source name (e.g. "RNZ Business", "GDELT"). A `GET /api/source-library`
+    endpoint exists (PR #25) to build that map; wiring it into this module's callers is tracked
+    in docs/workstreams/roshan.md, not done by this function itself. `source_name` is kept
+    alongside so a resolver can be applied later without re-reading the agent's output.
     """
 
     candidate: Candidate

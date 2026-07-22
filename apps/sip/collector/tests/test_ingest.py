@@ -62,6 +62,26 @@ def test_ingest_articles_collects_failures_without_aborting_the_batch() -> None:
     assert client.created_payloads[0]["headline"] == "Second"
 
 
+def test_ingest_articles_handles_non_string_published_without_aborting_the_batch() -> None:
+    # A non-string `published` value used to raise AttributeError inside parse_published_at,
+    # which this function's per-item except didn't catch - aborting the whole batch. It's now
+    # treated as unparseable (published_at=None) instead of crashing, so this article succeeds
+    # like any other, just without a captured publish time.
+    client = _FakeClient()
+    articles = [
+        _article(title="Before"),
+        _article(title="Malformed", published=20260721193200),
+        _article(title="After"),
+    ]
+
+    result = ingest_articles(client, RUN_ID, articles)
+
+    assert {c["headline"] for c in client.created_payloads} == {"Before", "Malformed", "After"}
+    assert result.failed == []
+    malformed_payload = next(c for c in client.created_payloads if c["headline"] == "Malformed")
+    assert "published_at" not in malformed_payload
+
+
 def test_ingest_articles_records_a_malformed_article_without_aborting_the_batch() -> None:
     # A missing "title" fails inside map_article (Candidate.headline is required) - that must
     # not prevent the well-formed articles around it from being captured.

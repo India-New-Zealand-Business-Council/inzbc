@@ -18,7 +18,7 @@ from __future__ import annotations
 from apps.sip.pipeline.models import SignalStrength, VerificationState
 
 _SIGNALS_REQUIRING_VERIFICATION = (SignalStrength.HIGH, SignalStrength.CRITICAL)
-_VERIFIED_STATES = (VerificationState.VERIFIED, VerificationState.PARTIALLY_VERIFIED)
+VERIFIED_STATES = (VerificationState.VERIFIED, VerificationState.PARTIALLY_VERIFIED)
 
 
 class UnverifiedHighSignalError(RuntimeError):
@@ -33,7 +33,7 @@ def enforce_verification_gate(
     unknown (None) are all blocked - an unknown state is treated as unverified (fail closed)
     rather than assumed safe.
     """
-    if signal in _SIGNALS_REQUIRING_VERIFICATION and verification not in _VERIFIED_STATES:
+    if signal in _SIGNALS_REQUIRING_VERIFICATION and verification not in VERIFIED_STATES:
         got = verification.value if verification else "unknown"
         raise UnverifiedHighSignalError(
             f"{signal.value} signal requires a verified source (got verification={got})"

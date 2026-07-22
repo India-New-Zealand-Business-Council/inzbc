@@ -45,6 +45,14 @@ def test_parse_published_at_returns_none_for_unrecognised_value() -> None:
     assert parse_published_at("not a date") is None
 
 
+def test_parse_published_at_returns_none_for_non_string_input() -> None:
+    # The agent's output is untrusted external data - a wrong-typed value (e.g. an int from a
+    # malformed article) must not raise, just be treated as unparseable.
+    assert parse_published_at(20260721193200) is None
+    assert parse_published_at(["2026-07-21"]) is None
+    assert parse_published_at({"date": "2026-07-21"}) is None
+
+
 # ---------- map_article ----------
 
 

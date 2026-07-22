@@ -97,19 +97,22 @@ def record_source_outcome(
     fallback attempt and the reason, so the trail is folded into `notes` rather than dropped
     (the source_checks table has no separate attempts column to put it in).
 
-    `source_lookup` must resolve `name` to a source_library id - see docs/workstreams/roshan.md's
-    blocked list: there is no source_library lookup endpoint yet, so callers currently have to
-    supply this map from wherever the DB ids are known until one exists.
+    `source_lookup` must resolve `name` to a source_library id - a `GET /api/source-library`
+    endpoint exists (PR #25) to build this map; wiring it into this module's callers is tracked
+    in docs/workstreams/roshan.md, not done by this function itself.
     """
     source_id = source_lookup.get(name)
     if not source_id:
         raise SourceIdUnresolved(
             f"no source_library id for {name!r}; source_checks.source_id is required "
-            "(database/schema.sql) and there is no lookup endpoint yet - see "
-            "docs/workstreams/roshan.md's blocked list"
+            "(database/schema.sql) and source_lookup did not resolve it - see "
+            "docs/workstreams/roshan.md for wiring GET /api/source-library into the caller"
         )
 
-    fallback_used = bool(fallback_attempts) and len(fallback_attempts) > 1
+    # A fallback happened if the final method actually tried isn't the first step in the
+    # sequence - a single recorded attempt that skipped straight to a later step (e.g. only
+    # "RSS or approved feed" was tried) is still a fallback, not "no fallback used".
+    fallback_used = bool(fallback_attempts) and fallback_attempts[-1] != FALLBACK_SEQUENCE[0]
     method = fallback_attempts[-1] if fallback_attempts else None
 
     trail_note = None
