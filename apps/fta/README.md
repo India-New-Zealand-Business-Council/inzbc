@@ -12,6 +12,18 @@ Sourced answers only (Tier 1 citations + effective dates). UI embed: Paras (`app
   Update `docs/fta-source-corpus.md` first, then mirror the change here — that doc is the
   controlling reference, same relationship `apps/sip/collector/source_register.py` has to
   SIP-185.
+- `explainer.py` — `answer_query()`: matches a sector/product query against the corpus by shared
+  keyword and returns each match as an `ExplainerAnswer` (treatment, status line, jurisdiction,
+  citation, effective/verified date, next step, disclaimer). No model call — matching is
+  keyword-only, so there is nothing here to hallucinate a fact. Returns `[]` on no match (or an
+  empty/stopword-only query) — the caller routes that to INZBC rather than guessing, per
+  `docs/modules/fta-centre.md`'s "unsupported-answer behaviour" requirement.
+
+## Known gap: disclaimer wording
+`explainer.py`'s `DISCLAIMER_PLACEHOLDER` is a literal `[[INZBC-approved disclaimer wording
+pending]]`, not authored copy — disclaimer wording is explicitly still "INZBC to confirm"
+(`docs/modules/fta-centre.md`'s dependencies). Do not show this placeholder to a member; replace
+it with approved wording before this goes anywhere near a real query.
 
 ## Known gap: freshness re-verification
 `stale_entries()` only flags entries by how long ago they were last verified — it cannot check
