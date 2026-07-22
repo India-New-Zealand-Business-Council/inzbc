@@ -18,8 +18,8 @@ From SIP-185: all applicable mandatory sources, triggered selective sources, ACT
 WL-006 monitoring sources.
 
 ## 4. Record an outcome for every applicable mandatory source
-Codes: Included, Context, Suppressed, Inaccessible, Excluded, No Qualifying Item. A blank
-mandatory-source outcome is a Critical stop at QA.
+Codes: Included, Context, Suppressed, Inaccessible, Excluded, No Qualifying Item (full detail
+and sub-reasons in SIP-185). A blank mandatory-source outcome is a Critical stop at QA.
 
 ## 5. Capture candidate intelligence
 Every potentially relevant item before selection, with full fields (candidate ID, source,

@@ -42,6 +42,20 @@ education, tech/AI, aviation, energy, manufacturing, investment, geopolitics).
 - Retest weekly. Keep the source mandatory. Never silently omit it.
 
 ## Source outcome codes
-Included · Context · Suppressed · Inaccessible · Excluded · No Qualifying Item
-(plus, if used operationally: No Material New Signal · Duplicate · Not Applicable ·
-Verification Failed · Outside Coverage Window).
+Canonical list, mirrored in `docs/sip/SIP_Reference_Config.json` (`source_outcomes`) — this is
+the list SIP-184 §4 requires an entry from for every mandatory source, and the one SIP-188 checks
+for blanks:
+
+**Included · Context · Suppressed · Inaccessible · Excluded · No Qualifying Item**
+
+- `Excluded` takes a reason from `source_outcome_excluded_reasons` in the reference config —
+  **Freshness · Relevance · Confidence** — recorded alongside the code, not as a separate
+  top-level outcome. (Previously the reference config listed these as three separate codes,
+  `Excluded: Freshness` etc., which didn't match this document; reconciled 22 Jul 2026 — the
+  config now uses the same six codes as this document, plus the reason as a sub-field.)
+- Operational extras (`source_outcome_extras` in the config) — **Duplicate · Not Applicable ·
+  Verification Failed · Outside Coverage Window** — record on a source when applicable, in
+  addition to one of the six core codes.
+- **`No Material New Signal` is not a per-source outcome code** — it's the day-level conclusion
+  in SIP-184 §9 / SIP-186 §11, recorded once for the run when every source came back with
+  nothing qualifying. A single source with nothing to report still gets `No Qualifying Item`.

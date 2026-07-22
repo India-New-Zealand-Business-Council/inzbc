@@ -11,9 +11,15 @@
     "Relevant New Zealand Indian media"
   ],
   "source_outcomes": [
-    "Included", "Used as Context", "Suppressed", "Inaccessible",
-    "Excluded: Freshness", "Excluded: Relevance",
-    "Excluded: Confidence", "No Relevant Result"
+    "Included", "Context", "Suppressed", "Inaccessible",
+    "Excluded", "No Qualifying Item"
+  ],
+  "source_outcome_excluded_reasons": [
+    "Freshness", "Relevance", "Confidence"
+  ],
+  "source_outcome_extras": [
+    "No Material New Signal", "Duplicate", "Not Applicable",
+    "Verification Failed", "Outside Coverage Window"
   ],
   "signal_levels": ["Low", "Medium", "High", "Critical"],
   "verification_states": [
