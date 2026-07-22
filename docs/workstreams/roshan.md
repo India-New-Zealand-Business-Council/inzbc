@@ -22,13 +22,8 @@ own PR flow; this lane is the integration that pulls its output into SIP.
 DB schema, API contract, auth. Build against them; don't write to control-plane tables.
 
 ## Next up
-- [ ] Build real relevance/signal/confidence scoring against SIP-050
-  (`docs/sip/launch/SIP-050_master_prompt_v1.1.md`, PR #26, now in the repo) — `assessment.py`
-  currently only validates and carries these values through. Flagged as a follow-up in Bhanu's
-  PR #23 review, not done in that PR.
-
-See Blocked / decisions needed for what's still open before any of this runs live (secrets,
-INZBC sector/disclaimer sign-off).
+Nothing queued. See Blocked / decisions needed for what's open before any of this runs live, and
+for the relevance/signal/confidence scoring decision that needs Bhanu, not more Roshan-side code.
 
 ## Done
 - [x] Wire the collection-engine output into SIP candidate capture via the API (run to
@@ -81,11 +76,24 @@ INZBC sector/disclaimer sign-off).
   `apps/sip/collector/source_lookup.py`'s `fetch_source_lookup()`/`build_source_lookup()` build
   the name → id map that `map_article`/`ingest_articles`/`record_source_outcome` already accepted
   as `source_lookup`. Only `active` source_library rows resolve.
+- [x] Read SIP-050 in full (PR #26) to scope the "build real scoring" follow-up. Only section 7
+  (Coverage Window and Freshness) is mechanically computable from a timestamp; sections 11-13
+  (NZ/member relevance tests, signal strength, source confidence) are qualitative judgment calls
+  for an analyst or a model-assisted recommendation, not something a keyword heuristic here could
+  compute honestly — see the decision recorded in Blocked / decisions needed. Implemented the
+  mechanical part: `apps/sip/collector/freshness.py`'s `compute_in_coverage_window()` (inclusive
+  start / exclusive end, `None` when a timestamp is missing/unparseable/timezone-naive rather
+  than guessing) now replaces `mapping.py`'s hardcoded `in_coverage_window=True`; `map_article`/
+  `map_articles`/`ingest_articles` take the run's `coverage_start_utc`/`coverage_end_utc`.
 
 ## Blocked / decisions needed
 - FTA sectors in scope + disclaimer wording (INZBC to confirm).
 - Collection-engine secrets in the org repo (needs the values) — blocks running the collector
   end-to-end even though the mapping is written.
+- Relevance/signal/confidence scoring (SIP-050 sections 11-13) needs a model-calling service —
+  `docs/sip/README.md`'s non-negotiables put "scoring, model calls" server-side only, which is
+  `services/api` (Bhanu's lane), not `apps/sip/collector`. This isn't a Roshan-side coding task
+  until that service/decision exists; `assessment.py` stays a validated pass-through until then.
 
 ## Definition of done
 A run opens, sources are recorded with outcomes, candidates captured and verified, and written to

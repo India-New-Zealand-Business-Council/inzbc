@@ -4,6 +4,8 @@ from apps.sip.collector.ingest import ingest_articles
 from apps.sip.pipeline.client import SipApiError
 
 RUN_ID = "11111111-1111-1111-1111-111111111111"
+COVERAGE_START = "2026-07-21T07:00:00+00:00"
+COVERAGE_END = "2026-07-22T07:00:00+00:00"
 
 
 class _FakeClient:
@@ -40,7 +42,7 @@ def test_ingest_articles_creates_every_candidate() -> None:
     client = _FakeClient()
     articles = [_article(title="First"), _article(title="Second")]
 
-    result = ingest_articles(client, RUN_ID, articles)
+    result = ingest_articles(client, RUN_ID, COVERAGE_START, COVERAGE_END, articles)
 
     assert len(result.created) == 2
     assert result.failed == []
@@ -51,7 +53,7 @@ def test_ingest_articles_collects_failures_without_aborting_the_batch() -> None:
     client = _FakeClient(fail_headlines={"First"})
     articles = [_article(title="First"), _article(title="Second")]
 
-    result = ingest_articles(client, RUN_ID, articles)
+    result = ingest_articles(client, RUN_ID, COVERAGE_START, COVERAGE_END, articles)
 
     assert len(result.created) == 1
     assert len(result.failed) == 1
@@ -70,7 +72,7 @@ def test_ingest_articles_records_a_malformed_article_without_aborting_the_batch(
     del malformed["title"]
     articles = [_article(title="Before"), malformed, _article(title="After")]
 
-    result = ingest_articles(client, RUN_ID, articles)
+    result = ingest_articles(client, RUN_ID, COVERAGE_START, COVERAGE_END, articles)
 
     assert {c["headline"] for c in client.created_payloads} == {"Before", "After"}
     assert len(result.failed) == 1

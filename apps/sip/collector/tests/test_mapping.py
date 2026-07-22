@@ -3,6 +3,8 @@ from __future__ import annotations
 from apps.sip.collector.mapping import map_article, map_articles, parse_published_at
 
 RUN_ID = "11111111-1111-1111-1111-111111111111"
+COVERAGE_START = "2026-07-21T07:00:00+00:00"
+COVERAGE_END = "2026-07-22T07:00:00+00:00"
 
 
 def _article(**overrides: object) -> dict:
@@ -18,6 +20,10 @@ def _article(**overrides: object) -> dict:
     }
     base.update(overrides)
     return base
+
+
+def _map(article: dict, source_lookup: dict[str, str] | None = None):
+    return map_article(article, RUN_ID, COVERAGE_START, COVERAGE_END, source_lookup)
 
 
 # ---------- parse_published_at ----------
@@ -49,7 +55,7 @@ def test_parse_published_at_returns_none_for_unrecognised_value() -> None:
 
 
 def test_map_article_maps_core_fields() -> None:
-    mapped = map_article(_article(), RUN_ID)
+    mapped = _map(_article())
 
     assert mapped.candidate.run_id == RUN_ID
     assert mapped.candidate.headline == "India, NZ discuss FTA next steps"
@@ -60,25 +66,35 @@ def test_map_article_maps_core_fields() -> None:
     assert mapped.source_name == "RNZ Business"
 
 
+def test_map_article_computes_in_coverage_window_false_outside_window() -> None:
+    mapped = _map(_article(published="2026-07-19 19:32:00+00:00"))
+    assert mapped.candidate.in_coverage_window is False
+
+
+def test_map_article_computes_in_coverage_window_none_when_unparseable() -> None:
+    mapped = _map(_article(published="not a date"))
+    assert mapped.candidate.in_coverage_window is None
+
+
 def test_map_article_leaves_source_id_unset_without_lookup() -> None:
-    mapped = map_article(_article(), RUN_ID)
+    mapped = _map(_article())
     assert mapped.candidate.source_id is None
 
 
 def test_map_article_resolves_source_id_from_lookup() -> None:
     lookup = {"RNZ Business": "22222222-2222-2222-2222-222222222222"}
-    mapped = map_article(_article(), RUN_ID, source_lookup=lookup)
+    mapped = _map(_article(), source_lookup=lookup)
     assert mapped.candidate.source_id == "22222222-2222-2222-2222-222222222222"
 
 
 def test_map_article_leaves_unmatched_source_unresolved() -> None:
     lookup = {"Some Other Source": "22222222-2222-2222-2222-222222222222"}
-    mapped = map_article(_article(), RUN_ID, source_lookup=lookup)
+    mapped = _map(_article(), source_lookup=lookup)
     assert mapped.candidate.source_id is None
 
 
 def test_map_article_does_not_score_or_route() -> None:
-    mapped = map_article(_article(), RUN_ID)
+    mapped = _map(_article())
 
     assert mapped.candidate.nz_relevance is None
     assert mapped.candidate.india_relevance is None
@@ -92,13 +108,13 @@ def test_map_article_does_not_score_or_route() -> None:
 
 
 def test_map_article_treats_blank_url_and_description_as_absent() -> None:
-    mapped = map_article(_article(url="", description=""), RUN_ID)
+    mapped = _map(_article(url="", description=""))
     assert mapped.candidate.url is None
     assert mapped.candidate.summary is None
 
 
 def test_map_articles_maps_each_item_in_order() -> None:
     articles = [_article(title="First"), _article(title="Second")]
-    mapped = map_articles(articles, RUN_ID)
+    mapped = map_articles(articles, RUN_ID, COVERAGE_START, COVERAGE_END)
 
     assert [item.candidate.headline for item in mapped] == ["First", "Second"]

@@ -7,10 +7,14 @@ Owner: Roshan. Maps the `daily-india-nz-news-agent` repo's output onto
 - `mapping.py` — `map_article()`/`map_articles()`: turns one of `agent.py`'s `clean_articles()`
   output dicts into a `Candidate` (SIP-184 step 5, raw capture only — no scoring, verification,
   duplicate or routing decisions; those are later SOP steps). Read from the actual agent source
-  in `india-new-zealand-business-council/daily-india-nz-news-agent`, not an assumed schema.
-  **Known simplification:** `in_coverage_window` is hardcoded `True` rather than computed
-  against the run's locked window — see the docstring on `map_article` for why the agent's own
-  rolling filter isn't quite the same boundary as SIP-184's fixed 07:00-to-07:00 NZT window.
+  in `india-new-zealand-business-council/daily-india-nz-news-agent`, not an assumed schema. Takes
+  the run's `coverage_start_utc`/`coverage_end_utc` and computes `in_coverage_window` against
+  them via `freshness.compute_in_coverage_window` (previously hardcoded `True`).
+- `freshness.py` — `compute_in_coverage_window()`: SIP-050 section 7's mechanical freshness
+  rule (inclusive start, exclusive end against the run's locked window). Only the mechanical
+  part of section 7 - "Active Carry-Forward"/"Context"/"Stale" all require judgment about
+  whether an older item still has a live trigger, which isn't derivable from a timestamp alone,
+  so this module doesn't attempt them.
 - `ingest.py` — `ingest_articles()`: maps a batch and POSTs each to `/api/candidates` via
   `SipPipelineClient.create_candidate`, collecting per-item failures instead of aborting the
   batch on the first one.
@@ -42,12 +46,19 @@ Owner: Roshan. Maps the `daily-india-nz-news-agent` repo's output onto
 - `tests/` — local checks against fixture article dicts and a fake client; no live agent or API
   needed.
 
-## Known gap: no scoring framework in this repo yet
+## Deliberately not built: relevance/signal/confidence scoring
 `apply_candidate_assessment()` is a validated write path, not a scorer — it does not decide
-`nz_relevance`/`india_relevance`/`member_relevance`/`signal`/`confidence`. SIP-050
-(`docs/sip/launch/SIP-050_master_prompt_v1.1.md`) is now in the repo (PR #26), so the framework
-exists, but this module hasn't been changed to compute against it yet — see
-`docs/workstreams/roshan.md`'s Next up.
+`nz_relevance`/`india_relevance`/`member_relevance`/`signal`/`confidence`, and that's not
+planned to change here. SIP-050 (`docs/sip/launch/SIP-050_master_prompt_v1.1.md`, PR #26) is now
+in the repo, and its sections 11-13 define these tests, but they're qualitative judgment calls
+("a direct effect on New Zealand trade...", "what changes?", "why it matters") for a human
+analyst or a model-assisted recommendation — not something a keyword heuristic in this module
+could compute honestly. Faking that judgment in plain Python risks producing wrong signal/
+confidence values inside a system that's explicitly fail-closed on exactly those fields
+(SIP-050 section 27). `docs/sip/README.md`'s non-negotiables also put "scoring, model calls"
+server-side only, which is `services/api` (Bhanu's lane), not this collector module. What SIP-050
+section 7 *does* let this module compute mechanically is freshness/coverage-window - see
+`freshness.py` above.
 
 ## Still blocked
 - **Live runs.** Collection-engine secrets (`OPENAI_API_KEY`, `PERPLEXITY_API_KEY`, etc.) aren't

@@ -11,6 +11,10 @@ Only SIP-184 step 5 (raw candidate capture) is done here. `nz_relevance`/`india_
 `proposed_routing` are later SOP steps (6-7) and are intentionally left unset — the agent's own
 `score` and `nz_relevance_score` are unrelated point scales, not the approved 0-5 relevance
 rubric, so forcing them into those fields would misrepresent unscored candidates as scored ones.
+SIP-050 sections 11-13 (relevance tests, signal strength, source confidence) are qualitative
+judgment calls for an analyst or a model-assisted recommendation - not something derivable from
+raw article text by keyword heuristics here, and the SIP non-negotiables put model calls
+server-side, not in this collector module.
 """
 
 from __future__ import annotations
@@ -20,6 +24,8 @@ from datetime import datetime
 from pydantic import BaseModel
 
 from apps.sip.pipeline.models import Candidate
+
+from .freshness import compute_in_coverage_window
 
 # GDELT's DOC 2.0 API `seendate` field; RSS entries are parsed by parse_published_at's
 # fromisoformat branches instead (agent.py stores str(datetime) there, e.g. from
@@ -71,27 +77,24 @@ class MappedCandidate(BaseModel):
 
 
 def map_article(
-    article: dict, run_id: str, source_lookup: dict[str, str] | None = None
+    article: dict,
+    run_id: str,
+    coverage_start_utc: str,
+    coverage_end_utc: str,
+    source_lookup: dict[str, str] | None = None,
 ) -> MappedCandidate:
     """Maps one `clean_articles()` output dict onto a Candidate for run `run_id`.
 
     `source_lookup` maps a source name (`article["source"]`) to a `source_library.id`; omit it
     (or leave a name unmatched) to capture the candidate with `source_id=None`.
 
-    KNOWN SIMPLIFICATION - `in_coverage_window` is hardcoded True, not computed against the
-    locked window: SIP-184 step 2 locks a *fixed* 24h Pacific/Auckland window (previous day
-    07:00 to current day 07:00) at run start, but agent.py's `is_recent_article`/`fetch_news`
-    filter on a *rolling* cutoff (`datetime.now(timezone.utc) - max_age_hours`) computed whenever
-    the agent happens to run - the two windows are usually close but are not the same boundary,
-    and can disagree by however late/early the agent's run lands relative to 07:00 NZT. This is
-    accepted here because `articles` is still always the agent's own within-window output, not
-    an arbitrary mix, but it is not the same thing as evaluating each item against the run's
-    actual locked `coverage_start_utc`/`coverage_end_utc`. Fix properly by comparing each
-    article's parsed `published_at` against the run's locked window once the run object is
-    threaded through here, rather than trusting the agent's rolling filter as a proxy for it.
+    `coverage_start_utc`/`coverage_end_utc` are the run's own locked window (`Run` model) -
+    `in_coverage_window` is computed against them via `freshness.compute_in_coverage_window`
+    (SIP-050 section 7), not assumed True from the agent's own rolling fetch filter.
     """
     source_name = str(article.get("source", "")).strip()
     source_id = source_lookup.get(source_name) if source_lookup else None
+    published_at = parse_published_at(article.get("published"))
 
     candidate = Candidate(
         run_id=run_id,
@@ -99,13 +102,22 @@ def map_article(
         source_id=source_id,
         url=article.get("url") or None,
         summary=article.get("description") or None,
-        published_at=parse_published_at(article.get("published")),
-        in_coverage_window=True,
+        published_at=published_at,
+        in_coverage_window=compute_in_coverage_window(
+            published_at, coverage_start_utc, coverage_end_utc
+        ),
     )
     return MappedCandidate(candidate=candidate, source_name=source_name)
 
 
 def map_articles(
-    articles: list[dict], run_id: str, source_lookup: dict[str, str] | None = None
+    articles: list[dict],
+    run_id: str,
+    coverage_start_utc: str,
+    coverage_end_utc: str,
+    source_lookup: dict[str, str] | None = None,
 ) -> list[MappedCandidate]:
-    return [map_article(article, run_id, source_lookup) for article in articles]
+    return [
+        map_article(article, run_id, coverage_start_utc, coverage_end_utc, source_lookup)
+        for article in articles
+    ]
