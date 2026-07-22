@@ -109,6 +109,20 @@ class SourceCheck(SipModel):
     notes: str | None = None
 
 
+class SourceLibraryEntry(SipModel):
+    """Mirrors the `source_library` table. Read-only from the pipeline's side - returned by
+    `GET /api/source-library` (schemas/api-contract.md), never written here.
+    """
+
+    id: str
+    name: str
+    layer: int
+    mandatory: bool = False
+    base_url: str | None = None
+    fallback_note: str | None = None
+    active: bool = True
+
+
 class Candidate(SipModel):
     """Mirrors the `candidates` table."""
 

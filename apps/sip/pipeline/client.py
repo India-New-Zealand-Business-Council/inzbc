@@ -68,6 +68,11 @@ class SipPipelineClient:
     def complete_run(self, run_id: str) -> dict:
         return self._request("POST", f"/api/runs/{run_id}/complete")
 
+    # ---------- source library ----------
+
+    def list_source_library(self) -> list[dict]:
+        return self._request("GET", "/api/source-library")
+
     # ---------- source checks ----------
 
     def list_source_checks(self, run_id: str) -> list[dict]:

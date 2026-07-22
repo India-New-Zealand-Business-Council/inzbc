@@ -22,12 +22,10 @@ own PR flow; this lane is the integration that pulls its output into SIP.
 DB schema, API contract, auth. Build against them; don't write to control-plane tables.
 
 ## Next up
-- [ ] Wire the now-live `GET /api/source-library` (PR #25) into `source_lookup` so candidate and
-  source-check writes resolve real ids instead of degrading to `source_id=None`/raising
-  `SourceIdUnresolved`. Flagged as a follow-up in Bhanu's PR #23 review, not done in that PR.
 - [ ] Build real relevance/signal/confidence scoring against SIP-050
   (`docs/sip/launch/SIP-050_master_prompt_v1.1.md`, PR #26, now in the repo) — `assessment.py`
-  currently only validates and carries these values through; same review, same reason.
+  currently only validates and carries these values through. Flagged as a follow-up in Bhanu's
+  PR #23 review, not done in that PR.
 
 See Blocked / decisions needed for what's still open before any of this runs live (secrets,
 INZBC sector/disclaimer sign-off).
@@ -77,6 +75,12 @@ INZBC sector/disclaimer sign-off).
   `in_coverage_window=True` simplification documented explicitly (agent's rolling filter vs.
   SIP-184's fixed 07:00 NZT window); `ingest_articles()` now maps each article inside its own
   try/except so one malformed article no longer aborts the whole batch.
+- [x] Wired the now-live `GET /api/source-library` (PR #25) into the collector.
+  `apps/sip/pipeline/client.py`'s `list_source_library()` + `models.py`'s `SourceLibraryEntry`
+  (column parity checked against `database/schema.sql`, same guard style as the enum test), and
+  `apps/sip/collector/source_lookup.py`'s `fetch_source_lookup()`/`build_source_lookup()` build
+  the name → id map that `map_article`/`ingest_articles`/`record_source_outcome` already accepted
+  as `source_lookup`. Only `active` source_library rows resolve.
 
 ## Blocked / decisions needed
 - FTA sectors in scope + disclaimer wording (INZBC to confirm).
