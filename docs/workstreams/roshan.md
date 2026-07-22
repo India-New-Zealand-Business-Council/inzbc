@@ -22,7 +22,6 @@ own PR flow; this lane is the integration that pulls its output into SIP.
 DB schema, API contract, auth. Build against them; don't write to control-plane tables.
 
 ## Next up
-- [ ] Candidate capture: all fields (relevance, signal, confidence, verification, duplicate status, routing).
 - [ ] Verification/citation controls: High/Critical claims need an official/high-confidence source; block unverified Critical.
 - [ ] FTA source corpus (Tier 1 official first) + freshness/effective-date tracking.
 - [ ] FTA Explainer service: sector query to sourced answer with citation + effective date + next step.
@@ -38,6 +37,13 @@ DB schema, API contract, auth. Build against them; don't write to control-plane 
   client-side, `record_source_outcome()` builds a `SourceCheck` and folds the fallback-attempt
   trail into `notes`. `source_checks.source_id` is NOT NULL in the DB, so unlike candidate
   capture this cannot degrade to an unresolved id — it raises `SourceIdUnresolved` instead.
+- [x] Candidate capture: all fields (relevance, signal, confidence, verification, duplicate
+  status, routing). Tightened `Candidate.nz/india/member_relevance` to actually enforce 0..5
+  (ADR-0001 commits to Pydantic validation at the trust boundary; the comment said 0..5 but
+  nothing enforced it). Added `apps/sip/collector/assessment.py`
+  (`CandidateAssessment`/`apply_candidate_assessment`, the PATCH path for scoring/verification/
+  routing) and `dedupe.py` (`find_duplicate_of`, cross-run duplicate matching by url/headline).
+  Does not compute relevance/signal/confidence values itself — see blockers.
 
 ## Blocked / decisions needed
 - FTA sectors in scope + disclaimer wording (INZBC to confirm).
@@ -48,6 +54,9 @@ DB schema, API contract, auth. Build against them; don't write to control-plane 
   nullable); source-check recording cannot — `record_source_outcome()` raises rather than
   writing an invalid row. Needs a contract change from Bhanu (`GET /api/source-library` or
   similar) before source outcomes can actually be submitted.
+- SIP-050 (approved scoring/prompt framework) isn't in this repo yet (`docs/sip/README.md` TODO)
+  — blocks building actual relevance/signal/confidence scoring logic; `assessment.py` currently
+  only carries analyst/model-supplied values through with validation.
 
 ## Definition of done
 A run opens, sources are recorded with outcomes, candidates captured and verified, and written to

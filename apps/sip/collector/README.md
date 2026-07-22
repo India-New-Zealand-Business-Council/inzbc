@@ -16,8 +16,23 @@ Owner: Roshan. Maps the `daily-india-nz-news-agent` repo's output onto
   mandatory-source outcome is a Critical stop"), and `record_source_outcome()` to build a
   `SourceCheck` per source, folding a fallback-attempt trail into `notes` since the table has no
   separate attempts column.
+- `dedupe.py` — `find_duplicate_of()`: matches a new article against already-captured candidates
+  (e.g. from `SipPipelineClient.list_candidates`) by normalized url then normalized headline, for
+  setting `duplicate_of` on capture. `clean_articles()` only dedupes within one fetch; this
+  covers the same story recurring across runs.
+- `assessment.py` — `CandidateAssessment` + `apply_candidate_assessment()`: the SIP-184 step 6-7
+  update path (relevance, signal, confidence, verification, duplicate status, routing) applied
+  to an already-captured candidate via `PATCH /api/candidates/:id`. Carries values through with
+  the same 0-5 relevance validation `Candidate` enforces; does not compute them (see below).
 - `tests/` — local checks against fixture article dicts and a fake client; no live agent or API
   needed.
+
+## Known gap: no scoring framework in this repo yet
+`apply_candidate_assessment()` is a validated write path, not a scorer — it does not decide
+`nz_relevance`/`india_relevance`/`member_relevance`/`signal`/`confidence`. `docs/sip/README.md`
+still has a TODO to paste in SIP-050 (the approved scoring/prompt framework) and the SIP
+non-negotiables put "scoring, model calls" server-side only — so those values come from an
+analyst or a future server-side recommendation, not from this module.
 
 ## Known gap: source_id resolution
 Both the agent's articles and SIP-185's source register only give a free-text source name (e.g.
