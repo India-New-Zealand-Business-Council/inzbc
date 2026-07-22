@@ -22,7 +22,6 @@ own PR flow; this lane is the integration that pulls its output into SIP.
 DB schema, API contract, auth. Build against them; don't write to control-plane tables.
 
 ## Next up
-- [ ] FTA source corpus (Tier 1 official first) + freshness/effective-date tracking.
 - [ ] FTA Explainer service: sector query to sourced answer with citation + effective date + next step.
 
 ## Done
@@ -48,6 +47,12 @@ DB schema, API contract, auth. Build against them; don't write to control-plane 
   `enforce_verification_gate()` refuses a High/Critical assessment when verification is
   Unverified, Rejected, or unknown (unknown treated as unverified, fail closed). Wired into
   `apply_candidate_assessment()` ahead of every PATCH.
+- [x] FTA source corpus (Tier 1 official first) + freshness/effective-date tracking.
+  `apps/fta/corpus.py` mirrors `docs/fta-source-corpus.md`'s Tier 1/2 sources and verified
+  tariff outcomes as structured `TariffOutcome` entries (each with its own `confirmed` flag and
+  citation, so the still-unconfirmed ~70% tariff-line figure stays marked unconfirmed rather than
+  omitted or asserted). `stale_entries()` gives freshness tracking by `verified_at` age; it takes
+  `review_after_days` with no default since INZBC hasn't set a review cadence — see blockers.
 
 ## Blocked / decisions needed
 - FTA sectors in scope + disclaimer wording (INZBC to confirm).
