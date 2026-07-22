@@ -44,12 +44,16 @@ def ingest_articles(
     """
     result = IngestResult()
     for article in articles:
-        source_name = str(article.get("source", "")).strip()
-        headline = str(article.get("title", ""))
+        source_name = ""
+        headline = ""
         try:
+            if not isinstance(article, dict):
+                raise TypeError(f"expected a dict article, got {type(article).__name__}")
+            source_name = str(article.get("source", "")).strip()
+            headline = str(article.get("title", ""))
             mapped = map_article(article, run_id, source_lookup)
             result.created.append(client.create_candidate(mapped.candidate))
-        except (SipApiError, ValidationError, KeyError) as error:
+        except (SipApiError, ValidationError, KeyError, TypeError) as error:
             result.failed.append(
                 IngestFailure(source_name=source_name, headline=headline, error=str(error))
             )
