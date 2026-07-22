@@ -22,7 +22,6 @@ own PR flow; this lane is the integration that pulls its output into SIP.
 DB schema, API contract, auth. Build against them; don't write to control-plane tables.
 
 ## Next up
-- [ ] Source register + per-source outcomes (Included/Context/Suppressed/Inaccessible/Excluded/No Qualifying Item) with fallback attempts recorded.
 - [ ] Candidate capture: all fields (relevance, signal, confidence, verification, duplicate status, routing).
 - [ ] Verification/citation controls: High/Critical claims need an official/high-confidence source; block unverified Critical.
 - [ ] FTA source corpus (Tier 1 official first) + freshness/effective-date tracking.
@@ -33,14 +32,22 @@ DB schema, API contract, auth. Build against them; don't write to control-plane 
   candidates). `apps/sip/collector/mapping.py` + `ingest.py`, mapped against the real
   `daily-india-nz-news-agent` `clean_articles()` output. Raw capture only (SIP-184 step 5); no
   live run yet — see blockers below.
+- [x] Source register + per-source outcomes (SIP-185), fallback attempts recorded.
+  `apps/sip/collector/source_register.py`: `MANDATORY_SOURCES` mirrors SIP-185's worklist,
+  `missing_mandatory_outcomes()` enforces the "blank mandatory outcome is a Critical stop" rule
+  client-side, `record_source_outcome()` builds a `SourceCheck` and folds the fallback-attempt
+  trail into `notes`. `source_checks.source_id` is NOT NULL in the DB, so unlike candidate
+  capture this cannot degrade to an unresolved id — it raises `SourceIdUnresolved` instead.
 
 ## Blocked / decisions needed
 - FTA sectors in scope + disclaimer wording (INZBC to confirm).
 - Collection-engine secrets in the org repo (needs the values) — blocks running the collector
   end-to-end even though the mapping is written.
-- `source_library` name lookup: candidates currently write with `source_id=None` because
-  `schemas/api-contract.md` has no endpoint to resolve the agent's free-text source name to a
-  DB id. Needs a contract change from Bhanu (`GET /api/source-library` or similar).
+- `source_library` name lookup: no endpoint in `schemas/api-contract.md` to resolve a source
+  name to its DB id. Candidate capture degrades to `source_id=None` without it (the column is
+  nullable); source-check recording cannot — `record_source_outcome()` raises rather than
+  writing an invalid row. Needs a contract change from Bhanu (`GET /api/source-library` or
+  similar) before source outcomes can actually be submitted.
 
 ## Definition of done
 A run opens, sources are recorded with outcomes, candidates captured and verified, and written to
