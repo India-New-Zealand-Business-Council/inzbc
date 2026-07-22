@@ -1,0 +1,54 @@
+"""Writes an agent run's articles into an existing SIP run as candidates.
+
+Assumes the run itself already exists (created via `SipPipelineClient.create_run` — this
+module has no way to invent `initiated_by`, `prompt_version` or the coverage window; those
+come from the run authority step, SIP-184 step 1, not the collection engine).
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+
+from apps.sip.pipeline.client import SipApiError, SipPipelineClient
+
+from .mapping import map_articles
+
+
+@dataclass
+class IngestFailure:
+    source_name: str
+    headline: str
+    error: str
+
+
+@dataclass
+class IngestResult:
+    created: list[dict] = field(default_factory=list)
+    failed: list[IngestFailure] = field(default_factory=list)
+
+
+def ingest_articles(
+    client: SipPipelineClient,
+    run_id: str,
+    articles: list[dict],
+    source_lookup: dict[str, str] | None = None,
+) -> IngestResult:
+    """POSTs each of `articles` (daily-india-nz-news-agent's `clean_articles()` output) to
+    `/api/candidates` for `run_id`. Continues past individual write failures instead of
+    aborting the batch — SIP-185's fallback rules require never silently dropping a potentially
+    relevant item, so one bad write must not hide the rest from review; failures are returned,
+    not swallowed.
+    """
+    result = IngestResult()
+    for mapped in map_articles(articles, run_id, source_lookup):
+        try:
+            result.created.append(client.create_candidate(mapped.candidate))
+        except SipApiError as error:
+            result.failed.append(
+                IngestFailure(
+                    source_name=mapped.source_name,
+                    headline=mapped.candidate.headline,
+                    error=str(error),
+                )
+            )
+    return result
