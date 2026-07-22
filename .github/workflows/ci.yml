@@ -12,10 +12,25 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      # Docs/config repo for now: validate every JSON file parses.
-      # Add app lint/test jobs here as /apps and /services gain code.
+      # Validate every JSON file parses.
       - name: Validate JSON
         run: python -c "import json,glob;[json.load(open(f,encoding='utf-8')) for f in glob.glob('**/*.json',recursive=True)];print('JSON valid')"
+
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff -r apps/sip/pipeline/requirements.txt
+      - name: Lint (ruff)
+        run: ruff check apps
+      - name: Test (pytest)
+        run: pytest apps -q
 
   security:
     runs-on: ubuntu-latest
