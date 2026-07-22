@@ -16,10 +16,21 @@ every substantive claim traces to an official document below.
 **Tier 1 — official, citable for tariff/market-access facts**
 - MFAT NZ–India FTA hub: https://www.mfat.govt.nz/en/trade/free-trade-agreements/free-trade-agreements-concluded-but-not-in-force/new-zealand-india-free-trade-agreement
 - MFAT negotiations timeline (same path `/timeline-of-negotiations`).
-- The **agreement text** and annexes (tariff schedules) once MFAT publishes them.
-- MFAT **National Interest Analysis** and sector fact sheets (when available).
+- The **agreement text and full tariff schedules are now published** — confirmed at
+  https://www.mfat.govt.nz/en/trade/free-trade-agreements/free-trade-agreements-concluded-but-not-in-force/new-zealand-india-free-trade-agreement/text-of-the-agreement
+  (consolidated text + 20 chapters individually; Annex 2A-1 is India's tariff schedule,
+  Annex 2A-2 is New Zealand's; Annex 2B covers economic cooperation/TRQs; 6 side letters
+  including one on dairy). This closes the "no line-by-line schedule" gap — the Explainer
+  should cite Annex 2A directly for product-level tariff lines, not just the NIA summary.
+- MFAT **National Interest Analysis (NIA)** — now available:
+  https://www.mfat.govt.nz/assets/Trade-agreements/NZ-India-FTA/NZ-India-FTA-National-Interest-Analysis-NIA.pdf
+  (published ~2026; covers tariff outcomes, economic modelling, and treaty obligations chapter
+  by chapter). Sector fact sheets still to check for separately.
 - Indian government primary sources: Ministry of Commerce & Industry / PIB release
-  (PIB doc dated 27 Apr 2026) and India's published FTA summary.
+  (PIB doc dated 27 Apr 2026, https://www.pib.gov.in/PressNoteDetails.aspx?NoteId=158370) and
+  the Dept of Commerce factsheet (https://www.commerce.gov.in/files/2026-04/final_1.pdf).
+  **Both blocked automated fetch (403/bot protection) as of 22 Jul 2026** — read manually in a
+  browser before citing India-side-only figures (e.g. tariff-line counts) from these.
 
 **Tier 2 — context/narrative only, never the source of a number**
 - Asia Media Centre explainer, USDA GAIN report, law-firm summaries (Lexology, Mondaq).
@@ -33,14 +44,39 @@ every substantive claim traces to an official document below.
    INZBC — it does not guess.
 4. Sector claims are scoped to what the official schedules actually say for that product.
 
-## Reported outcomes to verify against Tier 1 (do NOT publish until confirmed)
-> Sourced from a news summary, flagged for verification against MFAT fact sheets/schedules.
-- Zero-duty access for ~100% of Indian exports into NZ.
-- India opening ~70% of tariff lines, covering ~95% of current NZ imports.
-- NZ winners reported: wool, wood, coal, wine, premium fruit (avocados, blueberries), agri-inputs.
-- **Dairy exclusion** — milk, cheese, butter reportedly left out. Material caveat for an NZ
-  trade body; must be stated accurately, not glossed.
-- Two-way trade ~NZ$3.95bn annually.
+## Verified against Tier 1 (MFAT NIA, checked 22 Jul 2026)
+- **NZ side:** New Zealand removes all tariffs on Indian imports from day one — confirmed,
+  100% (NIA §Executive Summary, in line with NZ's recent FTA practice).
+- **India side, for NZ exporters:** 95% of NZ's current exports to India get tariff elimination
+  or reduction over time — 57% duty-free from day one, rising to 82% once fully implemented,
+  the remaining 13% subject to sharp cuts (NIA §1.3, Tier 1, confirmed). This is the figure to
+  cite for NZ audiences.
+- **"~70% of tariff lines" figure — still not Tier-1-confirmed.** Secondary reporting says
+  India opened ~70.03% of its ~12,500 tariff lines and excluded ~29.97%, with the excluded
+  lines said to represent only ~5% of bilateral import value (which would reconcile with the
+  95% export-coverage figure above). But this figure traces back to news summaries and a
+  trading-blog aggregation, not a document I've read directly — the two Indian government
+  primary sources that would confirm it (PIB press note, Dept of Commerce factsheet) blocked
+  automated fetch. **Do not cite the tariff-line-count figure in the Explainer until someone
+  opens those two links in a browser and confirms the number directly.**
+- NZ winners **confirmed** in the NIA's key tariff outcomes table: forestry (tariff eliminated
+  on ~95%+ of exports at entry into force), wool (day 1), sheepmeat (day 1), coal (day 1), fish
+  & seafood (phased over 7 years), kiwifruit and apples (new quota access, NZ first mover),
+  wine (reduced at entry into force, cut further over 10 years), mānuka honey (75% cut over 5
+  years, NZ first mover), cherries/avocados/blueberries/persimmons (phased elimination).
+  "Agri-inputs" as a category is not named in the NIA outcomes table — treat as unconfirmed
+  until a specific product/tariff line is found.
+- **Dairy exclusion confirmed** — milk, cheese and butter are excluded; this is NZ's first FTA
+  to exclude major dairy products (NIA + corroborating reporting). Not a blanket dairy
+  exclusion though: bulk infant formula and other dairy-based food preparations phase out over
+  7 years, peptones phase out over 7 years, and albumins get a 50% cut within a quota. The
+  Explainer must distinguish "core dairy (milk/cheese/butter) excluded" from "some dairy-based
+  preparations get phased access" — do not collapse these into one line.
+- Two-way trade ~NZ$3.95bn annually — confirmed on the MFAT FTA hub page.
+- **New, not previously in this doc:** independent modelling (Motu, cited in the NIA) projects
+  NZ GDP 0.07% ($401m, 2024 dollars) above non-FTA baseline by 2037, growing to 0.1% ($657.7m)
+  by 2050. Useful context for an Explainer answer, not a tariff fact — keep separate from
+  product-level citations.
 
 ## Member-facing mapping (how a query becomes a sourced answer)
 Member selects sector/product → tool matches to the relevant tariff outcome in the schedule →
@@ -50,6 +86,8 @@ infrastructure per the About page) get first-pass coverage; dairy's exclusion is
 explicitly rather than omitted.
 
 ## Open items
-- Pull the official agreement text + tariff schedules from MFAT once published (Tier 1 gap today).
-- Confirm the reported figures above against MFAT fact sheets before any go-live.
+- Manually open the PIB press note and Dept of Commerce factsheet (links above) to confirm the
+  ~70% tariff-line figure before it's cited anywhere — automated fetch is blocked on both.
+- Read Annex 2A-1/2A-2 (now published) for any product-level tariff lines the Explainer needs
+  beyond what the NIA's summary table already covers.
 - INZBC to confirm which member sectors to prioritise in the first release.
