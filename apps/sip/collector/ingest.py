@@ -16,6 +16,12 @@ from apps.sip.pipeline.client import SipApiError, SipPipelineClient
 from .mapping import map_article
 
 
+class MalformedArticleError(TypeError):
+    """Raised when an article is not a dict. Caught as one failed item, unlike a bare
+    `except TypeError` which would also swallow unrelated type errors from mapping/client code.
+    """
+
+
 @dataclass
 class IngestFailure:
     source_name: str
@@ -33,7 +39,7 @@ def ingest_articles(
     client: SipPipelineClient,
     run_id: str,
     articles: list[dict],
-    source_lookup: dict[str, str] | None = None,
+    source_name_lookup: dict[str, str] | None = None,
 ) -> IngestResult:
     """POSTs each of `articles` (daily-india-nz-news-agent's `clean_articles()` output) to
     `/api/candidates` for `run_id`. Continues past individual mapping *or* write failures instead
@@ -48,12 +54,14 @@ def ingest_articles(
         headline = ""
         try:
             if not isinstance(article, dict):
-                raise TypeError(f"expected a dict article, got {type(article).__name__}")
+                raise MalformedArticleError(
+                    f"expected a dict article, got {type(article).__name__}"
+                )
             source_name = str(article.get("source", "")).strip()
             headline = str(article.get("title", ""))
-            mapped = map_article(article, run_id, source_lookup)
+            mapped = map_article(article, run_id, source_name_lookup)
             result.created.append(client.create_candidate(mapped.candidate))
-        except (SipApiError, ValidationError, KeyError, TypeError) as error:
+        except (SipApiError, ValidationError, KeyError, MalformedArticleError) as error:
             result.failed.append(
                 IngestFailure(source_name=source_name, headline=headline, error=str(error))
             )

@@ -1,0 +1,177 @@
+source_id,name,country,category,layer,official,mandatory
+NZ-OFF-001,New Zealand Parliament,New Zealand,Parliament,1,Official,true
+NZ-OFF-002,New Zealand Select Committees,New Zealand,Parliament,1,Official,true
+NZ-OFF-003,New Zealand Legislation,New Zealand,Legislation,1,Official,true
+NZ-OFF-004,New Zealand Gazette,New Zealand,Official notices,1,Official,true
+NZ-OFF-005,Beehive,New Zealand,Ministerial releases,1,Official,true
+NZ-OFF-006,Ministry of Foreign Affairs and Trade,New Zealand,Trade and foreign affairs,1,Official,true
+NZ-OFF-007,New Zealand Trade and Enterprise,New Zealand,Export development,1,Official,true
+NZ-OFF-008,"Ministry of Business, Innovation and Employment",New Zealand,Economic and regulatory policy,1,Official,true
+NZ-OFF-009,Ministry for Primary Industries,New Zealand,Primary industries regulator,1,Official,true
+NZ-OFF-010,New Zealand Customs Service,New Zealand,Customs and border,1,Official,true
+NZ-OFF-011,Immigration New Zealand,New Zealand,Immigration,1,Official,true
+NZ-OFF-012,Education New Zealand,New Zealand,International education,1,Official,true
+NZ-OFF-013,Stats NZ,New Zealand,Official statistics,1,Official,true
+NZ-OFF-014,Reserve Bank of New Zealand,New Zealand,Central bank,1,Official,true
+NZ-OFF-015,Commerce Commission,New Zealand,Competition and consumer regulator,1,Official,true
+NZ-OFF-016,New Zealand Treasury,New Zealand,Economic and fiscal policy,1,Official,true
+NZ-OFF-017,Inland Revenue,New Zealand,Tax authority,1,Official,true
+NZ-OFF-018,"Ministry for Cities, Environment, Regions and Transport",New Zealand,Transport and regional policy,1,Official,true
+NZ-OFF-019,New Zealand Transport Agency,New Zealand,Transport agency,1,Official,false
+NZ-OFF-020,Civil Aviation Authority and Aviation Security Service,New Zealand,Aviation regulator,1,Official,true
+NZ-OFF-021,Maritime New Zealand,New Zealand,Maritime regulator,1,Official,true
+NZ-OFF-022,Ministry for the Environment,New Zealand,Environment policy,1,Official,true
+NZ-OFF-023,Energy Efficiency and Conservation Authority,New Zealand,Energy and decarbonisation,1,Official,false
+NZ-OFF-024,Electricity Authority,New Zealand,Energy regulator,1,Official,false
+NZ-OFF-025,Financial Markets Authority,New Zealand,Financial regulator,1,Official,true
+NZ-OFF-026,New Zealand Companies Office,New Zealand,Company registry,1,Official,false
+NZ-OFF-027,Overseas Investment Office,New Zealand,Investment regulator,1,Official,true
+NZ-OFF-028,Ministry of Defence,New Zealand,Defence policy,1,Official,true
+NZ-OFF-029,New Zealand Defence Force,New Zealand,Defence operations,1,Official,false
+NZ-OFF-030,Ministry of Education,New Zealand,Education policy,1,Official,true
+NZ-OFF-031,Tertiary Education Commission,New Zealand,Tertiary education,1,Official,false
+NZ-OFF-032,Callaghan Innovation,New Zealand,Innovation agency,1,Official,false
+NZ-OFF-033,Tourism New Zealand,New Zealand,Tourism promotion,1,Official,true
+NZ-OFF-034,New Zealand Government Procurement,New Zealand,Government procurement,1,Official,false
+NZ-OFF-035,Ministry for Regulation,New Zealand,Regulatory policy,1,Official,true
+NZ-OFF-036,WorkSafe New Zealand,New Zealand,Workplace regulator,1,Official,false
+NZ-OFF-037,Environmental Protection Authority,New Zealand,Environmental regulator,1,Official,false
+NZ-OFF-038,Climate Change Commission,New Zealand,Climate policy,1,Official,false
+IND-OFF-001,Press Information Bureau,India,Government releases,1,Official,true
+IND-OFF-002,Department of Commerce,India,Trade policy,1,Official,true
+IND-OFF-003,Directorate General of Foreign Trade,India,Foreign trade regulation,1,Official,true
+IND-OFF-004,Directorate General of Trade Remedies,India,Trade remedies,1,Official,true
+IND-OFF-005,Ministry of External Affairs,India,Foreign affairs,1,Official,true
+IND-OFF-006,Reserve Bank of India,India,Central bank,1,Official,true
+IND-OFF-007,Ministry of Finance,India,Fiscal and financial policy,1,Official,true
+IND-OFF-008,Department of Economic Affairs,India,Economic policy,1,Official,true
+IND-OFF-009,Department of Revenue,India,Tax and customs policy,1,Official,true
+IND-OFF-010,Central Board of Indirect Taxes and Customs,India,Customs and indirect tax,1,Official,true
+IND-OFF-011,ICEGATE,India,Customs digital gateway,1,Official,true
+IND-OFF-012,GST Council,India,Indirect tax policy,1,Official,true
+IND-OFF-013,Ministry of Textiles,India,Textiles policy,1,Official,true
+IND-OFF-014,Department of Agriculture and Farmers Welfare,India,Agriculture policy,1,Official,true
+IND-OFF-015,Agricultural and Processed Food Products Export Development Authority,India,Agricultural export authority,1,Official,true
+IND-OFF-016,Food Safety and Standards Authority of India,India,Food regulator,1,Official,true
+IND-OFF-017,Marine Products Export Development Authority,India,Seafood export authority,1,Official,false
+IND-OFF-018,Ministry of Electronics and Information Technology,India,Digital and technology policy,1,Official,true
+IND-OFF-019,Department for Promotion of Industry and Internal Trade,India,Industry and investment policy,1,Official,true
+IND-OFF-020,Invest India,India,Investment promotion,1,Official,true
+IND-OFF-021,National Single Window System,India,Investment approvals,1,Official,false
+IND-OFF-022,Ministry of Corporate Affairs,India,Corporate regulation,1,Official,true
+IND-OFF-023,Securities and Exchange Board of India,India,Securities regulator,1,Official,true
+IND-OFF-024,International Financial Services Centres Authority,India,Financial regulator,1,Official,false
+IND-OFF-025,Department of Financial Services,India,Financial sector policy,1,Official,false
+IND-OFF-026,Ministry of Education,India,Education policy,1,Official,true
+IND-OFF-027,University Grants Commission,India,Higher education regulator,1,Official,false
+IND-OFF-028,Ministry of Tourism,India,Tourism policy,1,Official,true
+IND-OFF-029,Ministry of Civil Aviation,India,Aviation policy,1,Official,true
+IND-OFF-030,Directorate General of Civil Aviation,India,Aviation regulator,1,Official,false
+IND-OFF-031,Airports Authority of India,India,Airport operator and authority,1,Official,false
+IND-OFF-032,"Ministry of Ports, Shipping and Waterways",India,Maritime policy,1,Official,true
+IND-OFF-033,Indian Ports Association,India,Ports,1,Official,false
+IND-OFF-034,Ministry of Defence,India,Defence policy,1,Official,true
+IND-OFF-035,Defence Research and Development Organisation,India,Defence research,1,Official,false
+IND-OFF-036,Ministry of New and Renewable Energy,India,Renewable energy policy,1,Official,true
+IND-OFF-037,Solar Energy Corporation of India,India,Renewable energy implementation,1,Official,false
+IND-OFF-038,Indian Renewable Energy Development Agency,India,Renewable finance,1,Official,false
+IND-OFF-039,NITI Aayog,India,Policy institution,1,Official,true
+IND-OFF-040,Ministry of Statistics and Programme Implementation,India,Official statistics,1,Official,true
+IND-OFF-041,Bureau of Indian Standards,India,Standards regulator,1,Official,true
+IND-OFF-042,Government e-Marketplace,India,Public procurement,1,Official,false
+IND-OFF-043,Ministry of Labour and Employment,India,Labour policy,1,Official,true
+IND-OFF-044,"Ministry of Environment, Forest and Climate Change",India,Environment policy,1,Official,false
+IND-OFF-045,Central Pollution Control Board,India,Environmental regulator,1,Official,false
+IND-OFF-046,Central Drugs Standard Control Organisation,India,Medical products regulator,1,Official,false
+IND-STA-001,Guidance Tamil Nadu,India,State investment promotion,1,Official,false
+IND-STA-002,Invest Karnataka,India,State investment promotion,1,Official,false
+IND-STA-003,Invest Maharashtra,India,State investment promotion,1,Official,false
+IND-STA-004,Invest Uttar Pradesh,India,State investment promotion,1,Official,false
+IND-STA-005,iNDEXTb Gujarat,India,State investment promotion,1,Official,false
+IND-STA-006,Invest Odisha,India,State investment promotion,1,Official,false
+INT-001,World Trade Organization,International,Multilateral trade,2,Institutional,true
+INT-002,World Bank,International,Development and economic data,2,Institutional,true
+INT-003,International Monetary Fund,International,Macroeconomic institution,2,Institutional,true
+INT-004,Organisation for Economic Co-operation and Development,International,Economic policy institution,2,Institutional,true
+INT-005,Asian Development Bank,International,Development finance,2,Institutional,false
+INT-006,UN Trade and Development,International,Trade and investment,2,Institutional,false
+INT-007,International Trade Centre,International,Trade intelligence,2,Institutional,false
+INT-008,World Customs Organization,International,Customs institution,2,Institutional,false
+INT-009,Food and Agriculture Organization,International,Agriculture institution,2,Institutional,false
+INT-010,International Energy Agency,International,Energy institution,2,Institutional,false
+INT-011,International Air Transport Association,International,Aviation institution,2,Institutional,false
+INT-012,International Civil Aviation Organization,International,Aviation standards,2,Institutional,false
+INT-013,International Maritime Organization,International,Maritime standards,2,Institutional,false
+INT-014,International Labour Organization,International,Labour standards,2,Institutional,true
+INT-015,UN Comtrade,International,Trade data,2,Institutional,false
+NZ-SEC-001,BusinessNZ,New Zealand,Business association,3,Non-official,false
+NZ-SEC-002,ExportNZ,New Zealand,Exporter association,3,Non-official,true
+NZ-SEC-003,Employers and Manufacturers Association,New Zealand,Business association,3,Non-official,false
+NZ-SEC-004,DairyNZ,New Zealand,Dairy sector,3,Non-official,true
+NZ-SEC-005,Dairy Companies Association of New Zealand,New Zealand,Dairy trade association,3,Non-official,true
+NZ-SEC-006,Fonterra News and Media,New Zealand,Dairy company,3,Non-official,false
+NZ-SEC-007,Beef + Lamb New Zealand,New Zealand,Red meat sector,3,Non-official,true
+NZ-SEC-008,Meat Industry Association,New Zealand,Meat export association,3,Non-official,true
+NZ-SEC-009,Horticulture New Zealand,New Zealand,Horticulture sector,3,Non-official,true
+NZ-SEC-010,New Zealand Apples and Pears,New Zealand,Horticulture export association,3,Non-official,true
+NZ-SEC-011,Zespri,New Zealand,Kiwifruit exporter,3,Non-official,true
+NZ-SEC-012,Apiculture New Zealand,New Zealand,Honey sector,3,Non-official,true
+NZ-SEC-013,Mānuka Honey Appellation Society,New Zealand,Honey standards,3,Non-official,false
+NZ-SEC-014,Seafood New Zealand,New Zealand,Seafood sector,3,Non-official,true
+NZ-SEC-015,Aquaculture New Zealand,New Zealand,Aquaculture sector,3,Non-official,false
+NZ-SEC-016,New Zealand Winegrowers,New Zealand,Wine sector,3,Non-official,true
+NZ-SEC-017,New Zealand Forest Owners Association,New Zealand,Forestry sector,3,Non-official,true
+NZ-SEC-018,Wood Processors and Manufacturers Association,New Zealand,Wood processing sector,3,Non-official,false
+NZ-SEC-019,Wool Impact,New Zealand,Wool sector,3,Non-official,true
+NZ-SEC-020,Federated Farmers,New Zealand,Primary sector association,3,Non-official,false
+NZ-SEC-021,Universities New Zealand,New Zealand,Higher education sector,3,Non-official,true
+NZ-SEC-022,Tourism Industry Aotearoa,New Zealand,Tourism sector,3,Non-official,true
+NZ-SEC-023,Air New Zealand Newsroom,New Zealand,Aviation company,3,Non-official,true
+NZ-SEC-024,NZTech,New Zealand,Technology sector,3,Non-official,true
+NZ-SEC-025,Payments New Zealand,New Zealand,Payments sector,3,Non-official,true
+NZ-SEC-026,India New Zealand Business Council,New Zealand,Bilateral institution,3,Non-official,true
+NZ-SEC-027,Asia New Zealand Foundation,New Zealand,Research and bilateral context,3,Institutional,false
+IND-SEC-001,Federation of Indian Export Organisations,India,Exporter association,3,Non-official,true
+IND-SEC-002,Confederation of Indian Industry,India,Industry association,3,Non-official,true
+IND-SEC-003,Federation of Indian Chambers of Commerce and Industry,India,Business association,3,Non-official,true
+IND-SEC-004,ASSOCHAM,India,Business association,3,Non-official,false
+IND-SEC-005,NASSCOM,India,Technology sector,3,Non-official,true
+IND-SEC-006,Engineering Export Promotion Council India,India,Engineering exports,3,Non-official,true
+IND-SEC-007,Services Export Promotion Council,India,Services exports,3,Non-official,true
+IND-SEC-008,Confederation of Indian Textile Industry,India,Textiles association,3,Non-official,true
+IND-SEC-009,Bharat Tex,India,Textiles trade platform,3,Non-official,true
+IND-SEC-010,Apparel Export Promotion Council,India,Apparel exports,3,Non-official,false
+IND-SEC-011,The Cotton Textiles Export Promotion Council,India,Textiles exports,3,Non-official,false
+IND-SEC-012,National Payments Corporation of India,India,Payments infrastructure,3,Institutional,true
+IND-SEC-013,Society of Indian Defence Manufacturers,India,Defence industry,3,Non-official,false
+IND-SEC-014,Indian National Shipowners' Association,India,Shipping association,3,Non-official,false
+IND-SEC-015,Indian Association of Tour Operators,India,Tourism association,3,Non-official,false
+NZ-MED-001,New Zealand Herald,New Zealand,Media,4,Non-official,true
+NZ-MED-002,RNZ,New Zealand,Media,4,Public media,true
+NZ-MED-003,1News,New Zealand,Media,4,Public media,true
+NZ-MED-004,Stuff,New Zealand,Media,4,Non-official,true
+NZ-MED-005,Newsroom,New Zealand,Media,4,Non-official,true
+NZ-MED-006,BusinessDesk,New Zealand,Business media,4,Non-official,true
+NZ-MED-007,National Business Review,New Zealand,Business media,4,Non-official,true
+NZ-MED-008,Newstalk ZB,New Zealand,Media,4,Non-official,true
+NZ-MED-009,interest.co.nz,New Zealand,Financial media,4,Non-official,true
+NZ-MED-010,Rural News Group,New Zealand,Rural media,4,Non-official,true
+NZ-MED-011,Farmers Weekly,New Zealand,Rural media,4,Non-official,true
+NZ-MED-012,Indian Newslink,New Zealand,New Zealand Indian media,4,Non-official,true
+NZ-MED-013,Indian Weekender,New Zealand,New Zealand Indian media,4,Non-official,true
+NZ-MED-014,Awaaz,New Zealand,New Zealand Indian media,4,Non-official,true
+IND-MED-001,The Economic Times,India,Business media,4,Non-official,true
+IND-MED-002,Business Standard,India,Business media,4,Non-official,true
+IND-MED-003,Financial Express,India,Business media,4,Non-official,true
+IND-MED-004,The Hindu BusinessLine,India,Business media,4,Non-official,true
+IND-MED-005,Mint,India,Business media,4,Non-official,true
+IND-MED-006,Moneycontrol,India,Business media,4,Non-official,true
+IND-MED-007,The Hindu,India,Media,4,Non-official,false
+IND-MED-008,The Indian Express,India,Media,4,Non-official,false
+IND-MED-009,CNBC-TV18,India,Business media,4,Non-official,false
+IND-MED-010,Business Today India,India,Business media,4,Non-official,false
+GLB-MED-001,Reuters,International,Global media,4,Non-official,true
+GLB-MED-002,Bloomberg,International,Global business media,4,Non-official,false
+GLB-MED-003,Financial Times,International,Global business media,4,Non-official,false
+GLB-MED-004,Nikkei Asia,International,Asia business media,4,Non-official,false
+GLB-MED-005,S&P Global Market Intelligence,International,Market intelligence,4,Non-official,false

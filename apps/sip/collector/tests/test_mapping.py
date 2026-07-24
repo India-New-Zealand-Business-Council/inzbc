@@ -75,13 +75,13 @@ def test_map_article_leaves_source_id_unset_without_lookup() -> None:
 
 def test_map_article_resolves_source_id_from_lookup() -> None:
     lookup = {"RNZ Business": "22222222-2222-2222-2222-222222222222"}
-    mapped = map_article(_article(), RUN_ID, source_lookup=lookup)
+    mapped = map_article(_article(), RUN_ID, source_name_lookup=lookup)
     assert mapped.candidate.source_id == "22222222-2222-2222-2222-222222222222"
 
 
 def test_map_article_leaves_unmatched_source_unresolved() -> None:
     lookup = {"Some Other Source": "22222222-2222-2222-2222-222222222222"}
-    mapped = map_article(_article(), RUN_ID, source_lookup=lookup)
+    mapped = map_article(_article(), RUN_ID, source_name_lookup=lookup)
     assert mapped.candidate.source_id is None
 
 

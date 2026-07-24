@@ -61,7 +61,7 @@ def parse_published_at(raw: object) -> str | None:
 class MappedCandidate(BaseModel):
     """A Candidate ready to write, plus the agent's raw source label.
 
-    `candidate.source_id` is left unset unless `source_lookup` resolves it: the agent only
+    `candidate.source_id` is left unset unless `source_name_lookup` resolves it: the agent only
     emits a free-text source name (e.g. "RNZ Business", "GDELT"). A `GET /api/source-library`
     endpoint exists (PR #25) to build that map; wiring it into this module's callers is tracked
     in docs/workstreams/roshan.md, not done by this function itself. `source_name` is kept
@@ -73,11 +73,11 @@ class MappedCandidate(BaseModel):
 
 
 def map_article(
-    article: dict, run_id: str, source_lookup: dict[str, str] | None = None
+    article: dict, run_id: str, source_name_lookup: dict[str, str] | None = None
 ) -> MappedCandidate:
     """Maps one `clean_articles()` output dict onto a Candidate for run `run_id`.
 
-    `source_lookup` maps a source name (`article["source"]`) to a `source_library.id`; omit it
+    `source_name_lookup` maps a source name (`article["source"]`) to a `source_library.id`; omit it
     (or leave a name unmatched) to capture the candidate with `source_id=None`.
 
     KNOWN SIMPLIFICATION - `in_coverage_window` is hardcoded True, not computed against the
@@ -93,7 +93,7 @@ def map_article(
     threaded through here, rather than trusting the agent's rolling filter as a proxy for it.
     """
     source_name = str(article.get("source", "")).strip()
-    source_id = source_lookup.get(source_name) if source_lookup else None
+    source_id = source_name_lookup.get(source_name) if source_name_lookup else None
 
     candidate = Candidate(
         run_id=run_id,
@@ -108,6 +108,6 @@ def map_article(
 
 
 def map_articles(
-    articles: list[dict], run_id: str, source_lookup: dict[str, str] | None = None
+    articles: list[dict], run_id: str, source_name_lookup: dict[str, str] | None = None
 ) -> list[MappedCandidate]:
-    return [map_article(article, run_id, source_lookup) for article in articles]
+    return [map_article(article, run_id, source_name_lookup) for article in articles]

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from apps.sip.collector.ingest import ingest_articles
 from apps.sip.pipeline.client import SipApiError
 
@@ -98,14 +100,16 @@ def test_ingest_articles_records_a_malformed_article_without_aborting_the_batch(
     assert result.failed[0].source_name == "RNZ Business"
 
 
-def test_ingest_articles_records_a_non_dict_item_without_aborting_the_batch() -> None:
-    # A non-dict item (e.g. a bare string) would raise before the field access if that access
+@pytest.mark.parametrize("bad", ["not an article", 123])
+def test_ingest_articles_records_a_non_dict_item_without_aborting_the_batch(bad: object) -> None:
+    # A non-dict item (a bare string, an int) would raise before the field access if that access
     # ran outside the per-item try - it must be recorded as one failure, not abort the batch.
     client = _FakeClient()
-    articles = [_article(title="Before"), "not an article", _article(title="After")]
+    articles = [_article(title="Before"), bad, _article(title="After")]
 
     result = ingest_articles(client, RUN_ID, articles)
 
     assert {c["headline"] for c in client.created_payloads} == {"Before", "After"}
     assert len(result.failed) == 1
     assert result.failed[0].headline == ""
+    assert result.failed[0].source_name == ""
