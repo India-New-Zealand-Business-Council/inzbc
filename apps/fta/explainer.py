@@ -14,11 +14,13 @@ from dataclasses import dataclass
 from datetime import date
 
 from .corpus import CORPUS, FTA_STATUS_LINE, TariffOutcome
+from .standards import AI_INFORMATION_STANDARD, Confidence
 
-# Disclaimer wording is explicitly still "INZBC to confirm" (docs/modules/fta-centre.md's
-# dependencies) - this is a placeholder, not an authored disclaimer, and must not be shown to a
-# member as-is.
-DISCLAIMER_PLACEHOLDER = "[[INZBC-approved disclaimer wording pending]]"
+DISCLAIMER = AI_INFORMATION_STANDARD
+
+# The `[]` no-match path routes to INZBC rather than guessing; per the Information Confidence
+# Standard the caller surfaces that state as Action Required, with this meaning text.
+NO_MATCH_CONFIDENCE = Confidence.ACTION_REQUIRED
 
 JURISDICTION = "New Zealand-India"
 
@@ -51,6 +53,8 @@ class ExplainerAnswer:
     jurisdiction: str
     next_step: str
     disclaimer: str
+    confidence: Confidence
+    confidence_meaning: str
     notes: str | None = None
 
 
@@ -60,7 +64,20 @@ _NEXT_STEP = (
 )
 
 
+def _confidence_for(entry: TariffOutcome) -> Confidence:
+    """Information Confidence Standard rating (docs/information-standard.md).
+
+    Only confirmed entries reach members (answer_query filters on `confirmed`), so High/Medium
+    is decided by the cited source's tier. The Low branch covers an unconfirmed entry if a
+    future caller rates one directly - best-available-evidence, independently verify.
+    """
+    if not entry.confirmed:
+        return Confidence.LOW
+    return Confidence.HIGH if entry.source_tier == 1 else Confidence.MEDIUM
+
+
 def _to_answer(entry: TariffOutcome) -> ExplainerAnswer:
+    confidence = _confidence_for(entry)
     return ExplainerAnswer(
         topic=entry.topic,
         sector=entry.sector,
@@ -71,7 +88,9 @@ def _to_answer(entry: TariffOutcome) -> ExplainerAnswer:
         status_line=FTA_STATUS_LINE,
         jurisdiction=JURISDICTION,
         next_step=_NEXT_STEP,
-        disclaimer=DISCLAIMER_PLACEHOLDER,
+        disclaimer=DISCLAIMER,
+        confidence=confidence,
+        confidence_meaning=confidence.meaning,
         notes=entry.notes,
     )
 

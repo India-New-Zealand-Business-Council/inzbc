@@ -19,11 +19,13 @@ Sourced answers only (Tier 1 citations + effective dates). UI embed: Paras (`app
   empty/stopword-only query) — the caller routes that to INZBC rather than guessing, per
   `docs/modules/fta-centre.md`'s "unsupported-answer behaviour" requirement.
 
-## Known gap: disclaimer wording
-`explainer.py`'s `DISCLAIMER_PLACEHOLDER` is a literal `[[INZBC-approved disclaimer wording
-pending]]`, not authored copy — disclaimer wording is explicitly still "INZBC to confirm"
-(`docs/modules/fta-centre.md`'s dependencies). Do not show this placeholder to a member; replace
-it with approved wording before this goes anywhere near a real query.
+## Disclaimer + confidence (resolved 24 Jul 2026)
+Every answer now carries the INZBC AI Information Standard as its disclaimer plus an
+Information Confidence Standard rating — approved wording from Sunil Kaushal (CEO), canonical
+in `docs/information-standard.md`, mirrored in `standards.py`. Confidence derives from the
+cited source's tier (`TariffOutcome.source_tier`): Tier 1 official → High, Tier 2
+industry/secondary → Medium; unconfirmed entries stay suppressed, and the `[]` no-match path
+is surfaced as **Action Required** (`explainer.NO_MATCH_CONFIDENCE`).
 
 ## Known gap: freshness re-verification
 `stale_entries()` only flags entries by how long ago they were last verified — it cannot check

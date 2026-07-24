@@ -103,6 +103,9 @@ class TariffOutcome:
     citation: str
     verified_at: date
     notes: str | None = None
+    # 1 = the citation is a Tier 1 official/treaty source; 2 = industry/secondary reporting.
+    # Drives the Information Confidence Standard rating (docs/information-standard.md).
+    source_tier: int = 1
 
 
 CORPUS: tuple[TariffOutcome, ...] = (
@@ -137,6 +140,7 @@ CORPUS: tuple[TariffOutcome, ...] = (
         ),
         confirmed=False,
         citation="Secondary reporting only - not yet confirmed against a Tier 1 document",
+        source_tier=2,
         notes=(
             "The two Indian government primary sources that would confirm this (PIB press "
             "note, Dept of Commerce factsheet) block automated fetch. Do not cite this figure "
