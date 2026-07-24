@@ -26,10 +26,32 @@ Modules 3–4 build only after the four foundation decisions; foundation work is
 - Webhook contract for Wix to internal.
 
 ## Next up
-- [ ] Turn the state-machine + schema drafts into migrations once the internal-platform decision is made.
-- [ ] Auth + role model (roles from launch-config) + audit-log middleware.
-- [ ] Webhook contract for Wix to internal.
-- [ ] Backup + run-monitoring design (confirm each scheduled run started, finished, produced output).
+- [ ] [platform] Model gateway in `/services/api`: the single server-side model-call service
+      (retries, timeouts, model pinning, token/cost logging, audit hook). SIP/FTA/comms model
+      calls all route through it — spec says browser/model/DB keys never leave the server.
+- [ ] [security] Redaction layer ahead of every external model call (member/Board/confidential
+      data stripped) — SIP non-negotiable, currently unowned.
+- [ ] [ai] SIP-050 scoring engine: compute relevance/signal/confidence through the gateway
+      against the Master Prompt v1.1. Roshan's `assessment.py` validates and carries these
+      values; this produces them. (SHARED-OK: transferred from Roshan's backlog.)
+- [ ] [ai] Eval harness for SIP-050: golden article set + regression checks so prompt changes
+      are measured before they ship; include prompt-injection cases (article text is untrusted
+      model input); wire into CI.
+- [ ] [security] SIP adversarial security review before any staff use (threat model, authz
+      matrix, audit coverage) — required by docs/sip/README.md, currently unowned.
+- [ ] [security] Secrets management: org-repo secrets for the collection engine + rotation
+      policy (clears Roshan's end-to-end run blocker).
+- [ ] [security] Auth + role model (roles from launch-config) + audit-log middleware.
+- [ ] [lead] ADR-0002: internal platform decision (M365 vs repo-hosted) — drive it to a
+      decision; it gates the migrations below.
+- [ ] [platform] Turn the state-machine + schema drafts into migrations once ADR-0002 lands.
+- [ ] [platform] Webhook contract for Wix to internal, plus the internal receiver service for
+      site forms. (SHARED-OK: receiver side from Paras; he keeps the form UI + notifications.)
+- [ ] [security] Member portal access control: member roles + Members Area gating on the
+      auth/RBAC model. (SHARED-OK: from Paras; he keeps the portal shell/UI.)
+- [ ] [platform] Dashboards data layer: read endpoints for the executive dashboard (Paras
+      builds the UI against them).
+- [ ] [platform] Backup + run-monitoring design (confirm each scheduled run started, finished, produced output).
 
 ## Done
 - Monorepo scaffold + per-lane READMEs; CI already in place (lint/gitleaks/actionlint/links).
