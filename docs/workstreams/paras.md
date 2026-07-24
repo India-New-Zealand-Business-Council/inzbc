@@ -21,17 +21,29 @@ SIP review/approval UI + Comms Assistant UI + FTA Explainer embed.
 The shared API + auth for anything that reads/writes data. Roshan's FTA service for the Explainer UI.
 
 ## Next up
+- [ ] SIP review/approval UI against contract fixtures (startable now, no live backend): brief
+      builder (SIP-186), QA checklist (SIP-188), CEO decision + registers — and enforce the run
+      state machine client-side (illegal transitions disabled in the UI, mirroring
+      `schemas/state-machine.md`, with the server still the authority).
+- [ ] Design system from `DESIGN.local.md`: token-driven component library on placeholder brand
+      tokens (one-day swap when Sunil's kit arrives), WCAG 2.2 AA behaviour — focus order,
+      contrast, keyboard paths — built into each component rather than audited at the end.
+- [ ] FTA Explorer embed UI against Roshan's service contract: query → sourced answer rendering
+      (citation, effective date, next step, escalation path when the service returns no match).
+- [ ] Comms Assistant review UI: draft view with diff-against-previous and the named-reviewer
+      approval gate (nothing publishable without a recorded human approval).
 - [ ] Build the public site in Wix from `apps/site/content/` (blocked: Wix account access + brand kit).
-- [ ] CMS collections + dynamic pages (news, events, sector reports, board, sponsors).
+- [ ] CMS collection schemas mapped to page-specs now (news, events, sector reports, board,
+      sponsors), ready to create as dynamic pages the moment Wix access lands.
 - [ ] Member portal shell (Members Area); link out to Member Jungle for membership
       (do NOT rebuild membership — see the AIOS Member Jungle decision). SHARED-OK: member
       roles/access control moved to Bhanu's worklog — it builds on his auth/RBAC model.
 - [ ] Forms UI: confirmation email + owner notification. SHARED-OK: the webhook-to-internal
       delivery (contract + receiver service) moved to Bhanu's worklog.
-- [ ] SIP review/approval/registers UI: brief builder (SIP-186), QA (SIP-188), CEO decision, registers.
 - [ ] Executive dashboard UI (control state, open actions, QA/distribution status) — reads
       Bhanu's dashboards data-layer endpoints.
-- [ ] Accessibility pass to WCAG 2.2 AA on every public page.
+- [ ] Final WCAG 2.2 AA audit across every public page (components already carry the behaviour;
+      this is the end-to-end verification pass).
 
 ## Done
 - Drafted public-page content in `apps/site/content/` (home, about, events, members, connect) from

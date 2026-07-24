@@ -27,6 +27,17 @@ DB schema, API contract, auth. Build against them; don't write to control-plane 
   `SourceIdUnresolved`. Flagged as a follow-up in Bhanu's PR #23 review, not done in that PR.
 - SHARED-OK: SIP-050 relevance/signal/confidence scoring moved to Bhanu's worklog — it runs
   through the model gateway he owns. `assessment.py` stays the validation/carry layer here.
+- [ ] Comms Assistant service side (`apps/comms`): draft-generation flow with the named-reviewer
+  gate, per [docs/modules/comms-assistant.md](../modules/comms-assistant.md); model calls route
+  through Bhanu's gateway once it lands.
+- [ ] FTA Explainer retrieval upgrade: replace `explainer.py`'s keyword matching with ranked
+  retrieval over the corpus — still no answer without a Tier-1 citation; `[]`/escalate on
+  low-confidence matches stays.
+- [ ] End-to-end pipeline run once org-repo secrets land (Bhanu's item): collector → capture →
+  assessment live against the SIP-184 SOP; fix what breaks; record the run.
+- [ ] Pipeline integration test suite wired into CI: verification gate, dedupe, mandatory-source
+  stops, malformed-article handling — the fail-closed behaviour currently has no automated tests.
+- [ ] Collection-engine improvements in `daily-india-nz-news-agent` (via its own PR flow).
 
 See Blocked / decisions needed for what's still open before any of this runs live (secrets,
 INZBC sector/disclaimer sign-off).
