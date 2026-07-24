@@ -151,6 +151,54 @@ def test_hostile_article_with_valid_model_output_still_scores() -> None:
     assert 0 <= rec.nz_relevance <= 5
 
 
+# ---------- type-coercion vectors (pydantic v2 lax mode would otherwise accept these) ----------
+
+
+@pytest.mark.parametrize("coerced", ["5", True, 5.0])
+def test_wrong_typed_relevance_fails_closed(coerced: object) -> None:
+    # A JSON string "5", boolean true (-> 1), or float 5.0 is not a JSON integer. Lax pydantic
+    # would coerce them to a valid in-range score; strict=True must reject them.
+    payload = json.dumps(dict(VALID_PAYLOAD, nz_relevance=coerced))
+    with pytest.raises(ScoringParseError):
+        score_candidate(_gateway(payload), **CANDIDATE)
+
+
+def test_valid_integer_relevance_still_accepted() -> None:
+    # Guard against over-tightening: a genuine JSON integer must still pass.
+    rec = score_candidate(_gateway(json.dumps(dict(VALID_PAYLOAD, nz_relevance=0))), **CANDIDATE)
+    assert rec.nz_relevance == 0
+
+
+def test_duplicate_json_key_fails_closed() -> None:
+    # json.loads keeps the last of duplicate keys, so an out-of-range value could hide behind an
+    # in-range one. A raw string is needed because json.dumps(dict) cannot emit duplicates.
+    raw = '{"nz_relevance": 9, "nz_relevance": 4, "india_relevance": 3, "member_relevance": 5, ' \
+          '"signal": "High", "confidence": "Medium", "reason": "x"}'
+    with pytest.raises(ScoringParseError):
+        score_candidate(_gateway(raw), **CANDIDATE)
+
+
+@pytest.mark.parametrize("missing", list(_CONTRACT_KEYS))
+def test_missing_required_key_fails_closed(missing: str) -> None:
+    payload = {k: v for k, v in VALID_PAYLOAD.items() if k != missing}
+    with pytest.raises(ScoringParseError):
+        score_candidate(_gateway(json.dumps(payload)), **CANDIDATE)
+
+
+def test_unknown_enum_value_fails_closed() -> None:
+    # A homoglyph or near-miss enum value (Cyrillic 'Н' vs Latin 'H') is not a member of the
+    # SignalStrength enum, so it must fail closed rather than resolve to a real level.
+    payload = json.dumps(dict(VALID_PAYLOAD, signal="Нigh"))
+    with pytest.raises(ScoringParseError):
+        score_candidate(_gateway(payload), **CANDIDATE)
+
+
+def test_nested_json_object_for_scalar_fails_closed() -> None:
+    payload = json.dumps(dict(VALID_PAYLOAD, nz_relevance={"value": 5}))
+    with pytest.raises(ScoringParseError):
+        score_candidate(_gateway(payload), **CANDIDATE)
+
+
 # ---------- golden contract-regression set ----------
 
 # (recorded model output, expected parsed recommendation) pairs. Locks the JSON contract: if a
@@ -190,5 +238,6 @@ def test_golden_payloads_parse_to_expected_recommendation(
     assert (rec.nz_relevance, rec.india_relevance, rec.member_relevance) == (nz, india, member)
     assert rec.signal is signal
     assert rec.confidence is confidence
-    # A golden payload is, by construction, a valid ScoringRecommendation.
-    assert ScoringRecommendation(**payload)
+    # A golden payload round-trips: constructing directly yields the same field values.
+    direct = ScoringRecommendation(**payload)
+    assert direct.model_dump() == rec.model_dump()
