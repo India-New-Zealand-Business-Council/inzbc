@@ -58,7 +58,9 @@ create table runs (
 -- ---------- source coverage ----------
 create table source_library (
   id            uuid primary key default gen_random_uuid(),
-  name          text not null,
+  sip185_code   text unique,              -- SIP-185 register id, e.g. 'NZ-OFF-001'; stable, unique
+  name          text not null,            -- display name; NOT unique (NZ and India both have a
+                                          -- 'Ministry of Defence'/'Ministry of Education')
   layer         smallint not null,        -- 1 Official .. 5 Other
   mandatory     boolean not null default false,
   base_url      text,
