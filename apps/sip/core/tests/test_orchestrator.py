@@ -173,3 +173,33 @@ def test_unknown_target_raises_illegal_not_typeerror() -> None:
     with pytest.raises(IllegalTransition):
         orch.advance("Not A State", actor="agent")  # type: ignore[arg-type]
     assert orch.state is RunState.DRAFT
+
+
+class _FakeDecision:
+    """A truthy object that is not a HumanDecision - must never satisfy a gate."""
+
+    approver = "CEO"
+    decision = "approve"
+
+
+def test_fake_decision_object_cannot_satisfy_a_gate() -> None:
+    orch = Orchestrator()
+    with pytest.raises(TypeError):
+        orch.advance(RunState.RUN_AUTHORISED, actor="agent", human_decision=_FakeDecision())  # type: ignore[arg-type]
+    assert orch.state is RunState.DRAFT
+
+
+def test_legal_table_is_read_only() -> None:
+    from apps.sip.core import orchestrator as orch_mod
+
+    with pytest.raises(TypeError):
+        orch_mod._LEGAL[RunState.DRAFT] = frozenset({RunState.DISTRIBUTED})  # type: ignore[index]
+
+
+def test_history_property_is_a_copy() -> None:
+    orch = _authorised_run()
+    snapshot = orch.history
+    orch.advance(RunState.COVERAGE_LOCKED, actor="agent")
+    # Mutating after the snapshot does not change the earlier tuple.
+    assert len(snapshot) == 1
+    assert len(orch.history) == 2

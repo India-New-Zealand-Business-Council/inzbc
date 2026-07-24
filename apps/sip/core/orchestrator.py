@@ -159,6 +159,10 @@ class Orchestrator:
         `RunState`; an unknown value raises `IllegalTransition`, never a stray type error.
         """
         target = _as_state(target)
+        if human_decision is not None and not isinstance(human_decision, HumanDecision):
+            # A gate is satisfied by presence, so presence must mean a real, validated decision -
+            # a stray truthy object must never pass for one.
+            raise TypeError("human_decision must be a HumanDecision")
         current = self.__state
         allowed = _LEGAL.get(current, frozenset())
         if not allowed:
