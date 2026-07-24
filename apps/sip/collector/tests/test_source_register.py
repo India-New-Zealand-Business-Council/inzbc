@@ -6,6 +6,7 @@ from apps.sip.collector.source_register import (
     ALL_SOURCES,
     MANDATORY_SOURCES,
     SourceIdUnresolved,
+    _parse_mandatory,
     missing_mandatory_outcomes,
     record_source_outcome,
 )
@@ -30,6 +31,21 @@ def test_source_ids_are_unique() -> None:
     # both have a "Ministry of Defence"/"Ministry of Education").
     ids = [s.source_id for s in ALL_SOURCES]
     assert len(ids) == len(set(ids))
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"), [("true", True), ("false", False), (" TRUE ", True), ("False", False)]
+)
+def test_parse_mandatory_accepts_valid_bools(raw: str, expected: bool) -> None:
+    assert _parse_mandatory(raw, "NZ-OFF-001") is expected
+
+
+@pytest.mark.parametrize("raw", ["", "  ", "mandatory", "yes", "1", "selective"])
+def test_parse_mandatory_rejects_anything_else(raw: str) -> None:
+    # A blank/typo/garbled value must fail the load, not silently coerce to False and drop the
+    # source from the Critical-stop coverage gate (fail-open).
+    with pytest.raises(ValueError):
+        _parse_mandatory(raw, "NZ-OFF-001")
 
 
 def test_mandatory_sources_are_all_flagged_mandatory() -> None:

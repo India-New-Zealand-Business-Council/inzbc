@@ -47,16 +47,32 @@ class SourceRegisterEntry:
 def _load_register() -> tuple[SourceRegisterEntry, ...]:
     with _REGISTER_CSV.open(encoding="utf-8", newline="") as handle:
         rows = list(csv.DictReader(handle))
-    return tuple(
-        SourceRegisterEntry(
-            source_id=row["source_id"],
-            name=row["name"],
-            country=row["country"],
-            category=row["category"],
-            layer=int(row["layer"]),
-            mandatory=row["mandatory"].strip().lower() == "true",
+    return tuple(_row_to_entry(row) for row in rows)
+
+
+def _parse_mandatory(raw: str, source_id: str) -> bool:
+    """Strict bool parse. A blank/typo/encoding-garbled `mandatory` cell must fail the load, not
+    silently coerce to False - that would drop a source from MANDATORY_SOURCES and let the
+    Critical-stop coverage gate pass when it should block (fail-open on a compliance control).
+    """
+    value = raw.strip().lower()
+    if value not in {"true", "false"}:
+        raise ValueError(
+            f"source {source_id!r} has an invalid `mandatory` value {raw!r}; "
+            "expected 'true' or 'false' - refusing to load rather than silently under-count "
+            "the mandatory-source coverage gate"
         )
-        for row in rows
+    return value == "true"
+
+
+def _row_to_entry(row: dict[str, str]) -> SourceRegisterEntry:
+    return SourceRegisterEntry(
+        source_id=row["source_id"],
+        name=row["name"],
+        country=row["country"],
+        category=row["category"],
+        layer=int(row["layer"]),
+        mandatory=_parse_mandatory(row["mandatory"], row["source_id"]),
     )
 
 
