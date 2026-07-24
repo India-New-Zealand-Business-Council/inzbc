@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from apps.fta.explainer import DISCLAIMER_PLACEHOLDER, answer_query
+from apps.fta.explainer import DISCLAIMER, NO_MATCH_CONFIDENCE, answer_query
+from apps.fta.standards import AI_INFORMATION_STANDARD, Confidence
 
 
 def test_answer_query_matches_a_specific_product() -> None:
@@ -55,8 +56,27 @@ def test_unconfirmed_entry_is_suppressed_from_member_answers() -> None:
     assert all(entry.confirmed for entry in answer_query("dairy"))
 
 
-def test_every_answer_carries_status_line_and_disclaimer_placeholder() -> None:
+def test_every_answer_carries_status_line_and_approved_disclaimer() -> None:
     for answer in answer_query("wine"):
         assert "not yet in force" in answer.status_line.lower()
-        assert answer.disclaimer == DISCLAIMER_PLACEHOLDER
+        assert answer.disclaimer == DISCLAIMER == AI_INFORMATION_STANDARD
+        assert "[[" not in answer.disclaimer  # approved wording, no placeholder residue
+        assert "indicate this rather than speculate" in answer.disclaimer
         assert answer.jurisdiction == "New Zealand-India"
+
+
+def test_confirmed_tier1_answers_rate_high_confidence() -> None:
+    # Every corpus entry that reaches a member today cites a Tier 1 (MFAT) source, so the
+    # Information Confidence Standard rates them High, with the standard's meaning text.
+    answers = answer_query("dairy")
+    assert answers
+    for answer in answers:
+        assert answer.confidence is Confidence.HIGH
+        assert answer.confidence_meaning == Confidence.HIGH.meaning
+        assert "official government or treaty sources" in answer.confidence_meaning
+
+
+def test_no_match_confidence_is_action_required() -> None:
+    # The [] escalate-to-INZBC path is surfaced to users as Action Required per the standard.
+    assert NO_MATCH_CONFIDENCE is Confidence.ACTION_REQUIRED
+    assert "contacting the relevant government agency" in NO_MATCH_CONFIDENCE.meaning
