@@ -35,9 +35,12 @@ class ScoringParseError(RuntimeError):
 class ScoringRecommendation(SipModel):
     """The model's recommended assessment, validated at the trust boundary (ADR-0001)."""
 
-    nz_relevance: int = Field(ge=0, le=5)
-    india_relevance: int = Field(ge=0, le=5)
-    member_relevance: int = Field(ge=0, le=5)
+    # strict=True: pydantic v2 lax mode would otherwise coerce "5", True, or 5.0 into a valid
+    # int, so a model returning a string/bool/float would slip a wrong-typed score past the gate
+    # (True -> 1 is the dangerous one). A scoring contract must accept only a JSON integer.
+    nz_relevance: int = Field(strict=True, ge=0, le=5)
+    india_relevance: int = Field(strict=True, ge=0, le=5)
+    member_relevance: int = Field(strict=True, ge=0, le=5)
     signal: SignalStrength
     confidence: SourceConfidence
     reason: str
@@ -80,6 +83,18 @@ def build_scoring_prompt(
     )
 
 
+def _reject_duplicate_keys(pairs: list[tuple[str, object]]) -> dict:
+    """`json.loads` object_pairs_hook: fail closed on a duplicate key rather than silently
+    keeping the last value (which could hide an out-of-range score behind an in-range one).
+    """
+    seen: dict = {}
+    for key, value in pairs:
+        if key in seen:
+            raise ScoringParseError(f"model output had a duplicate key: {key!r}")
+        seen[key] = value
+    return seen
+
+
 def score_candidate(
     gateway: ModelGateway,
     *,
@@ -96,7 +111,10 @@ def score_candidate(
         build_scoring_prompt(headline, source, published, url, summary)
     )
     try:
-        payload = json.loads(result.text)
+        # object_pairs_hook rejects duplicate keys, which json.loads would otherwise collapse to
+        # the last value - a way to smuggle an in-range score past an out-of-range one. Its
+        # ScoringParseError propagates out of json.loads directly (not wrapped as JSONDecodeError).
+        payload = json.loads(result.text, object_pairs_hook=_reject_duplicate_keys)
     except json.JSONDecodeError as error:
         raise ScoringParseError("model output was not valid JSON") from error
     if not isinstance(payload, dict):
