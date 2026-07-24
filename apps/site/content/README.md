@@ -7,6 +7,7 @@ These are content drafts, not the Wix build. They drop into Wix CMS / pages once
 set up (blocked on: Wix account access, brand kit). The visual look comes from `DESIGN.local.md` +
 INZBC's brand kit, not from this copy.
 
-Pages here: home, about, events, members, connect, partners. The Digest and FTA Explainer pages are
-separate (gated modules) and live with their own specs. Board/Executive Council names and bios are
-pulled from INZBC at build time, never drafted here.
+Pages here: home, about, events, members, connect, partners, trade. The Digest and FTA Explainer
+pages are separate (gated modules) and live with their own specs; `trade.md` links to the FTA
+Explainer rather than duplicating it. Board/Executive Council names and bios are pulled from INZBC
+at build time, never drafted here.
