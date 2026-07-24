@@ -45,5 +45,10 @@ Phase 1 (per spec §13): auth + roles, DB schema, source registry, manual run, r
 assessment+scoring, Daily Brief review, Action Register, doc/version control, audit log,
 global production-disabled control. Automation/crawler/public publish behind feature flags after.
 
-Blocked on the same items as the rest of the AI layer: a host (free-tier decision), Claude API
-access (Sunil), and the account/auth setup. None of it is a Wix task.
+Blocked on: a host (free-tier decision) and the account/auth setup. Model API access is NOT a
+blocker: the daily-india-nz-news-agent already runs the daily brief on OpenAI (`gpt-4.1-mini`)
+with an optional Perplexity pass, keys held as that repo's GitHub Actions secrets
+(`OPENAI_API_KEY`, `PERPLEXITY_API_KEY`). The gateway (`services/api/model_gateway.py`) builds
+on the same keys - copy them into this repo's secrets to run. One open question for Sunil,
+governance not access: whose account those keys bill to, and whether production SIP moves to a
+dedicated INZBC account at launch. None of it is a Wix task.

@@ -26,14 +26,13 @@ Modules 3–4 build only after the four foundation decisions; foundation work is
 - Webhook contract for Wix to internal.
 
 ## Next up
-- [ ] [platform] Model gateway in `/services/api`: the single server-side model-call service
-      (retries, timeouts, model pinning, token/cost logging, audit hook). SIP/FTA/comms model
-      calls all route through it — spec says browser/model/DB keys never leave the server.
+- [ ] [platform] Model gateway v0.2: token/cost logging + audit-log persistence on top of the
+      shipped v0.1 (see Done); wire Perplexity as a second provider behind the same interface.
 - [ ] [security] Redaction layer ahead of every external model call (member/Board/confidential
       data stripped) — SIP non-negotiable, currently unowned.
-- [ ] [ai] SIP-050 scoring engine: compute relevance/signal/confidence through the gateway
-      against the Master Prompt v1.1. Roshan's `assessment.py` validates and carries these
-      values; this produces them. (SHARED-OK: transferred from Roshan's backlog.)
+- [ ] [ai] SIP-050 scoring v0.2: run the shipped v0.1 engine (see Done) against real captured
+      candidates once repo secrets land; calibrate the prompt against SIP-050's pilot-run
+      expectations; add batch scoring to the ingest flow. (SHARED-OK: from Roshan's backlog.)
 - [ ] [ai] Eval harness for SIP-050: golden article set + regression checks so prompt changes
       are measured before they ship; include prompt-injection cases (article text is untrusted
       model input); wire into CI.
@@ -54,6 +53,15 @@ Modules 3–4 build only after the four foundation decisions; foundation work is
 - [ ] [platform] Backup + run-monitoring design (confirm each scheduled run started, finished, produced output).
 
 ## Done
+- Model gateway v0.1 (`services/api/model_gateway.py`): single server-side model-call path,
+  env-configured (no keys in code), retry + fail-closed `GatewayNotConfiguredError`, injectable
+  client for tests. Runs on the same OpenAI account/model (`gpt-4.1-mini`) the
+  daily-india-nz-news-agent already uses — no new API procurement needed.
+- SIP-050 scoring engine v0.1 (`apps/sip/core/scoring.py`): candidate → validated
+  `ScoringRecommendation` (relevance 0..5, signal, confidence, reason) via the gateway; strict
+  JSON contract, `ScoringParseError` fail-closed on any deviation; `to_assessment()` feeds the
+  existing `apply_candidate_assessment` PATCH path and never sets verification (model
+  recommends, human decides; verification stays evidence/human-owned).
 - Monorepo scaffold + per-lane READMEs; CI already in place (lint/gitleaks/actionlint/links).
 - DB schema v0.1 (`database/schema.sql`) grounded in Intelligence Database v1.9.
 - API contract v0.1 (`schemas/api-contract.md`) covering pipeline + control endpoints.
