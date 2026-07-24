@@ -39,7 +39,7 @@ def ingest_articles(
     client: SipPipelineClient,
     run_id: str,
     articles: list[dict],
-    source_lookup: dict[str, str] | None = None,
+    source_name_lookup: dict[str, str] | None = None,
 ) -> IngestResult:
     """POSTs each of `articles` (daily-india-nz-news-agent's `clean_articles()` output) to
     `/api/candidates` for `run_id`. Continues past individual mapping *or* write failures instead
@@ -59,7 +59,7 @@ def ingest_articles(
                 )
             source_name = str(article.get("source", "")).strip()
             headline = str(article.get("title", ""))
-            mapped = map_article(article, run_id, source_lookup)
+            mapped = map_article(article, run_id, source_name_lookup)
             result.created.append(client.create_candidate(mapped.candidate))
         except (SipApiError, ValidationError, KeyError, MalformedArticleError) as error:
             result.failed.append(

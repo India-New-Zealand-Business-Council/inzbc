@@ -9,7 +9,7 @@ Sources are keyed by their SIP-185 source id (e.g. `NZ-OFF-001`), not by name: v
 non-unique names across jurisdictions (NZ and India both have a "Ministry of Defence" and a
 "Ministry of Education"), so name is not a safe key for a Critical-stop coverage gate. Resolving
 a source id to a `source_library` db uuid needs `source_library` to carry the SIP-185 code;
-until it does, callers supply `source_lookup` (see docs/workstreams/roshan.md).
+until it does, callers supply `source_id_lookup` (see docs/workstreams/roshan.md).
 """
 
 from __future__ import annotations
@@ -74,7 +74,7 @@ def missing_mandatory_outcomes(recorded_source_ids: set[str]) -> list[str]:
 
 
 class SourceIdUnresolved(RuntimeError):
-    """Raised when `source_lookup` has no db id for a source. `source_checks.source_id` is NOT
+    """Raised when `source_id_lookup` has no db id for a source. `source_checks.source_id` is NOT
     NULL in database/schema.sql - there is no such thing as a source check without one, so this
     fails loud rather than sending pydantic's generic validation error up to the caller.
     """
@@ -84,14 +84,14 @@ def record_source_outcome(
     run_id: str,
     source_id: str,
     outcome: SourceOutcome,
-    source_lookup: dict[str, str],
+    source_id_lookup: dict[str, str],
     fallback_attempts: list[str] | None = None,
     access_error: str | None = None,
     notes: str | None = None,
 ) -> SourceCheck:
     """Builds a SourceCheck for one source's outcome this run.
 
-    `source_id` is the SIP-185 register id (e.g. `NZ-OFF-001`). `source_lookup` maps that id to
+    `source_id` is the SIP-185 register id (e.g. `NZ-OFF-001`). `source_id_lookup` maps that id to
     its `source_library` db uuid - a `GET /api/source-library` endpoint exists (PR #25) to build
     the map once `source_library` carries the SIP-185 code; wiring it into this module's callers
     is tracked in docs/workstreams/roshan.md, not done by this function itself.
@@ -101,11 +101,11 @@ def record_source_outcome(
     fallback attempt and the reason, so the trail is folded into `notes` rather than dropped
     (the source_checks table has no separate attempts column to put it in).
     """
-    db_id = source_lookup.get(source_id)
+    db_id = source_id_lookup.get(source_id)
     if not db_id:
         raise SourceIdUnresolved(
             f"no source_library id for {source_id!r}; source_checks.source_id is required "
-            "(database/schema.sql) and source_lookup did not resolve it - see "
+            "(database/schema.sql) and source_id_lookup did not resolve it - see "
             "docs/workstreams/roshan.md for wiring GET /api/source-library into the caller"
         )
 

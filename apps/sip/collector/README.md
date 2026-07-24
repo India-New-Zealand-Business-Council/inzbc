@@ -48,11 +48,12 @@ Both the agent's articles and SIP-185's source register only give a free-text so
 `"RNZ Business"`, `"MFAT"`). A `GET /api/source-library` lookup endpoint exists to resolve a
 name to its DB id; wiring it into this module's callers is tracked in
 `docs/workstreams/roshan.md`, not done in this PR.
-- `map_article`/`map_articles`/`ingest_articles` take an optional `source_lookup: dict[str,
-  str]` (name → id); candidates write with `source_id=None` when a name doesn't resolve —
-  `candidates.source_id` is nullable, so this is a degraded-but-valid write.
-- `record_source_outcome()` requires `source_lookup` to resolve the name and raises
-  `SourceIdUnresolved` if it doesn't — `source_checks.source_id` is **NOT NULL**
+- `map_article`/`map_articles`/`ingest_articles` take an optional `source_name_lookup: dict[str,
+  str]` (article source **name** → id); candidates write with `source_id=None` when a name
+  doesn't resolve — `candidates.source_id` is nullable, so this is a degraded-but-valid write.
+- `record_source_outcome()` requires `source_id_lookup` to resolve the SIP-185 **source id**
+  (e.g. `NZ-OFF-001`) and raises `SourceIdUnresolved` if it doesn't — `source_checks.source_id`
+  is **NOT NULL**
   (`database/schema.sql`), so there is no valid source check without one; this can't degrade
   gracefully the way candidate capture can.
 Tracked in `docs/workstreams/roshan.md`'s blocked list — a contract change needs Bhanu.
