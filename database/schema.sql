@@ -58,7 +58,14 @@ create table runs (
 -- ---------- source coverage ----------
 create table source_library (
   id            uuid primary key default gen_random_uuid(),
-  name          text not null,
+  sip185_code   text unique,              -- SIP-185 register id, e.g. 'NZ-OFF-001'; stable, unique.
+                                          -- Nullable so an ad-hoc/non-register source can exist,
+                                          -- but every SIP-185-backed source MUST carry it at seed
+                                          -- time: source-check recording resolves by this code and
+                                          -- hard-fails without it (source_register.record_source_outcome).
+  name          text not null,            -- display / candidate-capture label only; NOT unique
+                                          -- (NZ and India both have a 'Ministry of Defence' and a
+                                          -- 'Ministry of Education') - never resolve a source-check by name.
   layer         smallint not null,        -- 1 Official .. 5 Other
   mandatory     boolean not null default false,
   base_url      text,
