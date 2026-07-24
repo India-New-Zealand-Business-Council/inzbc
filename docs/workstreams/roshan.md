@@ -22,9 +22,13 @@ own PR flow; this lane is the integration that pulls its output into SIP.
 DB schema, API contract, auth. Build against them; don't write to control-plane tables.
 
 ## Next up
-- [ ] Wire the now-live `GET /api/source-library` (PR #25) into `source_lookup` so candidate and
+- [ ] Wire the now-live `GET /api/source-library` (PR #25) into the two lookups so candidate and
   source-check writes resolve real ids instead of degrading to `source_id=None`/raising
-  `SourceIdUnresolved`. Flagged as a follow-up in Bhanu's PR #23 review, not done in that PR.
+  `SourceIdUnresolved`. Note the split keyspaces (PR #27): `mapping`/`ingest` take
+  `source_name_lookup` (article source **name** → db id), `record_source_outcome` takes
+  `source_id_lookup` (SIP-185 **source id** e.g. `NZ-OFF-001` → db id). Build them separately -
+  passing a name-keyed dict to the id-keyed gate silently misses mandatory sources. Flagged in
+  Bhanu's PR #23 review, not done in that PR.
 - SHARED-OK: SIP-050 relevance/signal/confidence scoring moved to Bhanu's worklog — it runs
   through the model gateway he owns. `assessment.py` stays the validation/carry layer here.
 - [ ] Comms Assistant service side (`apps/comms`): draft-generation flow with the named-reviewer
