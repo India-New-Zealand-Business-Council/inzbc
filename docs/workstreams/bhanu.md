@@ -25,6 +25,20 @@ Modules 3–4 build only after the four foundation decisions; foundation work is
 - Auth + RBAC roles; append-only audit log; server-side disabled-control flags.
 - Webhook contract for Wix to internal.
 
+## AI full-stack (strongest first)
+These are the flagship AI engineering builds; each is tracked as a GitHub issue on the SIP Platform project board.
+- [ ] [ai] Agentic SIP-184 daily-run orchestrator: LLM tool-use loop that drives the run state
+      machine, with every irreversible step behind a hard human gate and every fail-closed control
+      enforced in code, not by the model. Deterministic replay from the audit log. (#62)
+- [ ] [ai] Vector store + embeddings service (pgvector) through the gateway: nearest-neighbour
+      retrieval with score thresholds and metadata filters, powering FTA ranking and semantic
+      dedupe. (#63)
+- [ ] [ai] LLM-as-judge evaluation pipeline: score briefs against a SIP-188/SIP-050 rubric, golden
+      set + regression gating in CI, injection-hardened; advises QA, never replaces the human
+      gate. (#64)
+- [ ] [ai] Streaming Comms Assistant API (SSE): server-side token streaming through the gateway
+      with redaction ahead of the call and the named-reviewer gate before any publish. (#65)
+
 ## Next up
 - [ ] [platform] Model gateway v0.2: token/cost logging + audit-log persistence on top of the
       shipped v0.1 (see Done); wire Perplexity as a second provider behind the same interface.
