@@ -14,7 +14,7 @@ GET    /api/runs        /api/runs/:id
 POST   /api/runs/:id/start | /pause | /resume | /complete
 GET    /api/runs/:id/source-checks
 POST   /api/runs/:id/source-checks   record a per-source outcome (mandatory sources must have one)
-GET    /api/source-library           list source_library rows (id, sip185_code, name) to resolve a SIP-185 code or a source name to its id (for capture + source-checks)
+GET    /api/source-library           list source_library rows (id, sip185_code, name). sip185_code is authoritative for source-check resolution; name is display/candidate-capture only and is NOT unique, so never resolve a source-check by name
 GET    /api/candidates?run=:id
 POST   /api/candidates               capture a candidate (all scoring/verification fields)
 PATCH  /api/candidates/:id
