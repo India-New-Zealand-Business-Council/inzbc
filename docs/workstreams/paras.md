@@ -23,11 +23,14 @@ The shared API + auth for anything that reads/writes data. Roshan's FTA service 
 ## Next up
 - [ ] Build the public site in Wix from `apps/site/content/` (blocked: Wix account access + brand kit).
 - [ ] CMS collections + dynamic pages (news, events, sector reports, board, sponsors).
-- [ ] Member portal shell (Members Area) + member roles; link out to Member Jungle for membership
-      (do NOT rebuild membership — see the AIOS Member Jungle decision).
-- [ ] Forms: confirmation email + owner notification + webhook to internal (Bhanu's webhook contract).
+- [ ] Member portal shell (Members Area); link out to Member Jungle for membership
+      (do NOT rebuild membership — see the AIOS Member Jungle decision). SHARED-OK: member
+      roles/access control moved to Bhanu's worklog — it builds on his auth/RBAC model.
+- [ ] Forms UI: confirmation email + owner notification. SHARED-OK: the webhook-to-internal
+      delivery (contract + receiver service) moved to Bhanu's worklog.
 - [ ] SIP review/approval/registers UI: brief builder (SIP-186), QA (SIP-188), CEO decision, registers.
-- [ ] Executive dashboard (control state, open actions, QA/distribution status).
+- [ ] Executive dashboard UI (control state, open actions, QA/distribution status) — reads
+      Bhanu's dashboards data-layer endpoints.
 - [ ] Accessibility pass to WCAG 2.2 AA on every public page.
 
 ## Done

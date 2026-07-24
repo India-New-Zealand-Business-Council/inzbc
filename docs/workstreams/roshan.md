@@ -25,9 +25,8 @@ DB schema, API contract, auth. Build against them; don't write to control-plane 
 - [ ] Wire the now-live `GET /api/source-library` (PR #25) into `source_lookup` so candidate and
   source-check writes resolve real ids instead of degrading to `source_id=None`/raising
   `SourceIdUnresolved`. Flagged as a follow-up in Bhanu's PR #23 review, not done in that PR.
-- [ ] Build real relevance/signal/confidence scoring against SIP-050
-  (`docs/sip/launch/SIP-050_master_prompt_v1.1.md`, PR #26, now in the repo) — `assessment.py`
-  currently only validates and carries these values through; same review, same reason.
+- SHARED-OK: SIP-050 relevance/signal/confidence scoring moved to Bhanu's worklog — it runs
+  through the model gateway he owns. `assessment.py` stays the validation/carry layer here.
 
 See Blocked / decisions needed for what's still open before any of this runs live (secrets,
 INZBC sector/disclaimer sign-off).
@@ -97,7 +96,8 @@ INZBC sector/disclaimer sign-off).
 ## Blocked / decisions needed
 - FTA sectors in scope + disclaimer wording (INZBC to confirm).
 - Collection-engine secrets in the org repo (needs the values) — blocks running the collector
-  end-to-end even though the mapping is written.
+  end-to-end even though the mapping is written. (Bhanu owns org-repo secrets setup + rotation —
+  on his worklog.)
 
 ## Definition of done
 A run opens, sources are recorded with outcomes, candidates captured and verified, and written to
