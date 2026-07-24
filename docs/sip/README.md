@@ -47,8 +47,24 @@ global production-disabled control. Automation/crawler/public publish behind fea
 
 Blocked on: a host (free-tier decision) and the account/auth setup. Model API access is NOT a
 blocker: the daily-india-nz-news-agent already runs the daily brief on OpenAI (`gpt-4.1-mini`)
-with an optional Perplexity pass, keys held as that repo's GitHub Actions secrets
-(`OPENAI_API_KEY`, `PERPLEXITY_API_KEY`). The gateway (`services/api/model_gateway.py`) builds
-on the same keys - copy them into this repo's secrets to run. One open question for Sunil,
-governance not access: whose account those keys bill to, and whether production SIP moves to a
-dedicated INZBC account at launch. None of it is a Wix task.
+with an optional Perplexity pass. The gateway (`services/api/model_gateway.py`) builds on the
+same keys. One open question for Sunil, governance not access: whose account those keys bill
+to, and whether production SIP moves to a dedicated INZBC account at launch. None of it is a
+Wix task.
+
+## Secrets setup (run once, by a repo admin)
+Keys live as **GitHub Actions secrets** (repo → Settings → Secrets and variables → Actions),
+never in a file or commit. `.env.example` lists the variable names. Populate these with the
+current (rotated) values:
+
+| Secret | Provider | Used by |
+| --- | --- | --- |
+| `OPENAI_API_KEY` | platform.openai.com | model gateway / scoring |
+| `PERPLEXITY_API_KEY` | perplexity.ai | gateway v0.2 (optional) |
+| `NEWSAPI_KEY` | newsapi.org | collection engine |
+| `EMAIL_FROM` / `EMAIL_PASSWORD` / `EMAIL_TO` | Gmail (App Password) | brief delivery |
+| `GOOGLE_SCRIPT_URL` | Apps Script web app | sheet writes |
+
+If any secret has ever been pasted into a chat, issue, PR, or commit, **rotate it at the
+provider first**, then store the new value — an exposed key is compromised regardless of where
+it ends up next.
