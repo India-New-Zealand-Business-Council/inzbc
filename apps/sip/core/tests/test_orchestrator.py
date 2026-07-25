@@ -147,6 +147,9 @@ def test_blank_human_decision_cannot_be_constructed(approver: str, decision: str
         (RunState.QA_IN_PROGRESS, RunState.QA_FAILED),
         (RunState.QA_FAILED, RunState.REPORT_DRAFTED),
         (RunState.AWAITING_CEO_DECISION, RunState.APPROVED_FOR_MANUAL_DISTRIBUTION),
+        (RunState.AWAITING_CEO_DECISION, RunState.CONTINUE),
+        (RunState.AWAITING_CEO_DECISION, RunState.CONTINUE_WITH_CORRECTION),
+        (RunState.AWAITING_CEO_DECISION, RunState.PAUSED),
         (RunState.AWAITING_CEO_DECISION, RunState.STOPPED),
         (RunState.APPROVED_FOR_MANUAL_DISTRIBUTION, RunState.DISTRIBUTED),
         (RunState.PAUSED, RunState.COVERAGE_LOCKED),
@@ -187,6 +190,28 @@ def test_fake_decision_object_cannot_satisfy_a_gate() -> None:
     with pytest.raises(TypeError):
         orch.advance(RunState.RUN_AUTHORISED, actor="agent", human_decision=_FakeDecision())  # type: ignore[arg-type]
     assert orch.state is RunState.DRAFT
+
+
+def test_human_decision_subclass_that_skips_validation_is_refused() -> None:
+    # A subclass could override __post_init__ to skip the blank-field checks; the exact-type gate
+    # refuses it, so validation cannot be bypassed by subclassing.
+    class _Sneaky(HumanDecision):
+        def __post_init__(self) -> None:  # skips the blank-field validation
+            pass
+
+    sneaky = _Sneaky(approver="", decision="")
+    orch = Orchestrator()
+    with pytest.raises(TypeError):
+        orch.advance(RunState.RUN_AUTHORISED, actor="agent", human_decision=sneaky)
+    assert orch.state is RunState.DRAFT
+
+
+def test_ungated_transition_advances_without_a_decision() -> None:
+    # Guard against over-gating: Distributed -> Closed is not a human gate, so the agent advances
+    # it with no decision.
+    orch = Orchestrator(state=RunState.DISTRIBUTED)
+    orch.advance(RunState.CLOSED, actor="agent")
+    assert orch.state is RunState.CLOSED
 
 
 def test_legal_table_is_read_only() -> None:
