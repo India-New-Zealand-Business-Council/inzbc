@@ -3,14 +3,21 @@
 User documentation for the people who run SIP: the analyst who produces the brief, the reviewer who
 QAs it, and the CEO who decides on it. It walks through one full day in order.
 
-This is the plain-language companion to the controlled documents. Where the two ever disagree, the
-controlled document wins — `SIP-184` is the procedure of record, and this guide points at it
-throughout.
+This is the plain-language companion to the SIP operating documents. Where the two ever disagree,
+those documents win — `SIP-184` is the procedure this guide follows, and it is pointed at throughout.
+
+**Approval status.** The launch pack (`SIP-184`, `SIP-185`, `SIP-186`, `SIP-188`, the run record and
+the backup procedure) is at **v0.9 Review Draft**: authored, but not yet approved by the CEO and
+reviewers. The only approved controlling document is **SIP-050 Master Prompt v1.1**. Treat this guide
+and the v0.9 pack as the working procedure for the controlled launch, not as approved SIP-191-level
+artifacts.
 
 **Before you start, know the two rules that override everything else:**
 1. **Nothing is sent without a recorded CEO decision for that specific day's report.**
-2. **If a control fails, the run stops.** A Critical failure is never downgraded to a warning, and
-   never worked around to keep the day moving.
+2. **A Critical failure stops the run.** It is never downgraded to a warning or worked around to keep
+   the day moving. Lower-severity findings are handled differently: a Low defect is corrected during
+   close-out, and a Medium control weakness may continue with a recorded treatment and an owner
+   (SIP-050 §22). Only Critical is an automatic stop.
 
 ---
 
@@ -23,7 +30,10 @@ throughout.
 | CEO / SIP Owner | Sunil | Records the daily decision and authorises distribution |
 
 The analyst and reviewer for a run must be two different people. That separation is the point of the
-QA step — it is not a formality, and the database enforces it.
+QA step — it is not a formality. During the controlled launch this is enforced **procedurally**, by
+the reviewer and the QA checklist, because the run is operated on the Intelligence Database workbook.
+The platform schema carries a matching constraint (`analyst_id <> reviewer_id`) for when the
+application takes over, but that database is not yet migrated and is not what the launch runs on.
 
 ---
 
@@ -56,8 +66,16 @@ Write the actual timestamps down. Never record a vague label like "today" or "ov
 window is not exact, the freshness test later has nothing to test against.
 
 ### Step 3 — Load the source worklist
-Take the applicable mandatory sources from `SIP-185`, plus any triggered selective sources, plus the
-current ACT-009 and WL-006 monitoring sources.
+Take the applicable mandatory sources from the source register, plus any triggered selective sources,
+plus the current ACT-009 and WL-006 monitoring sources.
+
+**Use the approved v1.0 register for the worklist.** `SIP-185_source_register_v0.9.md` in this folder
+describes the categories, layers and the fallback ladder, but it does not enumerate the sources. The
+approved **SIP-185 Production Source Register v1.0** holds the actual worklist: **176 sources, 112 of
+them mandatory**, each with its own source id (for example `NZ-OFF-001`). That register is mirrored
+in the repository at `apps/sip/collector/data/sip185_sources_v1.0.csv`, which is what the coverage
+gate checks against. Record outcomes against **source ids**, not names — two register names are
+duplicated across New Zealand and India, so name-keying silently under-counts coverage.
 
 ### Step 4 — Record an outcome for every mandatory source
 This is the step most likely to fail QA, so take it slowly. **Every applicable mandatory source needs
@@ -91,8 +109,22 @@ acceptable outcome. Silently leaving it blank is not.
 > **Never** use an inaccessible article's headline as evidence for a High or Critical claim.
 
 ### Step 5 — Capture candidates
-Capture everything potentially relevant *before* you start selecting. Each candidate needs its
-source, publication and capture time, window status, headline, summary, URL, and an evidence link.
+Capture everything potentially relevant *before* you start selecting.
+
+Each candidate carries a full record (SIP-184 §5). The identifying and provenance fields are filled
+now; the assessment fields are filled at steps 6 and 7, but the row exists from capture:
+
+| Filled at capture | Filled during assessment |
+|---|---|
+| Candidate ID (linked to the Run ID) | NZ, India, INZBC and member relevance |
+| Source and source ID | Signal strength |
+| Publication time and capture time | Source confidence |
+| Coverage-window status | Verification status |
+| Headline and summary | Duplicate status |
+| URL and evidence link | Selection decision and reason |
+| | Proposed routing |
+
+Records go to both **Candidate Intelligence** and **Raw Intelligence** in the database.
 
 Capture first, judge second. Deciding while capturing is how relevant items get lost.
 
@@ -113,7 +145,8 @@ Signal strength is about consequence, not about how prestigious the source is.
 
 ### Step 8 — Carry forward what is still live
 Only items that genuinely remain material. State the original event, what triggered it back into
-view, what changed, and what is still open. Give it an owner and a review date.
+view, what changed, and what is still open. Give it an owner, a review date, and the **next watch
+point** — what specifically you are waiting to see happen.
 
 A carry-forward is never presented as though it were new today.
 
@@ -140,8 +173,16 @@ The CEO records exactly one decision, with reason, conditions, owner, evidence a
 
 Then, as a **separate** decision: **Distribution authorised — Yes / No.**
 
+Both are recorded against the **authorised report version** with a **timestamp**, so it is
+unambiguous which version was approved and when. A decision that is not bound to a version cannot be
+audited later.
+
 Approving the report and authorising distribution are two different decisions. Approval alone is not
 permission to send.
+
+**"Distribution authorised: No" does not stop the run.** It is a valid outcome: step 13 is skipped,
+and the run proceeds to close-out and is recorded as approved but not distributed. Only a Pause or
+Stop decision halts the run.
 
 ### Step 13 — Manual send (only if distribution was authorised)
 Send the approved file manually to the authorised recipient. Record sent time, sender, channel,
@@ -151,11 +192,16 @@ There is no automatic send, by design. During the controlled launch, member, ext
 social distribution are all off.
 
 ### Step 14 — Close out
-Assemble the evidence pack, route records to the database, reconcile the tracker, record exceptions
-and corrections, note the distribution result and set up tomorrow's carry-forwards.
+Assemble the evidence pack, route records to the database, record exceptions and corrections, note
+the distribution result, set the **final run status**, and set up tomorrow's carry-forwards.
 
-If the tracker and the database disagree about anything, that is a **Critical stop** — reconcile it
-before closing.
+**Reconcile the tracker against the database** on each of: action IDs, owners, statuses, dates,
+routing and evidence references. If they disagree on anything, that is a **Critical stop** —
+reconcile it before closing.
+
+**Take the daily backup** (`launch/backup-procedure_v0.9.md`): close the workbook, copy it to the
+cloud folder as the dated immutable file, record the SHA256, and note the backup in the run record.
+Do not overwrite previous days' copies.
 
 ---
 

@@ -131,9 +131,16 @@ stateDiagram-v2
 
 Where the platform refuses rather than guesses. Each is enforced in code and covered by tests.
 
+Two different mechanisms appear below, and the distinction matters. Most of these **raise** and so
+refuse the operation outright. The mandatory-source check is a **reporting** control:
+`missing_mandatory_outcomes()` returns the list of uncovered source ids and raises nothing. It is the
+QA step (SIP-188) that must treat a non-empty list as a Critical stop. The code surfaces the gap; the
+gate is procedural.
+
 ```mermaid
 flowchart TD
-    A["Mandatory source has no recorded outcome"] -->|missing_mandatory_outcomes| STOP1["Critical stop<br/>run cannot pass QA"]
+    A["Mandatory source has no recorded outcome"] -->|"missing_mandatory_outcomes() returns ids"| STOP1["Non-empty list = Critical stop at QA<br/>(reported, not raised)"]
+    A2["Source id cannot be resolved to a db id"] -->|SourceIdUnresolved| STOP7["Source check refused<br/>source_checks.source_id is NOT NULL"]
     B["Model returns malformed or out-of-range output"] -->|ScoringParseError| STOP2["Candidate stays unscored<br/>no assumed values"]
     C["High/Critical signal without verification"] -->|UnverifiedHighSignalError| STOP3["Assessment refused"]
     D["Gated transition without a human decision"] -->|HumanGateRequired| STOP4["State unchanged"]
@@ -189,19 +196,44 @@ Entity relationships from `database/schema.sql` (contract stage — not yet migr
 erDiagram
     roles ||--o{ users : "has"
     users ||--o{ runs : "initiates"
-    users ||--o{ action_register : "owns"
-    users ||--o{ exceptions : "owns"
-    users ||--o{ approvals : "approves"
-    users ||--o{ audit_log : "acts"
+    users |o--o{ runs : "analyst for"
+    users |o--o{ runs : "reviewer for"
+    users |o--o{ action_register : "owns"
+    users |o--o{ exceptions : "owns"
+    users |o--o{ approvals : "approves"
+    users |o--o{ audit_log : "acts"
     runs ||--o{ source_checks : "records"
     runs ||--o{ candidates : "captures"
     runs ||--o{ daily_intelligence : "produces"
-    runs ||--o{ exceptions : "raises"
+    runs |o--o{ exceptions : "raises"
     runs ||--o{ approvals : "gated by"
     source_library ||--o{ source_checks : "checked in"
-    source_library ||--o{ candidates : "sourced from"
-    candidates ||--o{ candidates : "duplicate_of"
-    candidates ||--o{ daily_intelligence : "promoted to"
+    source_library |o--o{ candidates : "sourced from"
+    candidates |o--o{ candidates : "duplicate_of"
+    candidates |o--o{ daily_intelligence : "promoted to"
+    watch_lists {
+        uuid id PK
+        text watch_code UK
+        text title
+        text status
+        date next_review
+    }
+    action_register {
+        uuid id PK
+        text action_code UK
+        text title
+        uuid owner_id FK
+        text status
+        date due_date
+    }
+    exceptions {
+        uuid id PK
+        uuid run_id FK
+        text exception_type
+        text severity
+        uuid owner_id FK
+        boolean original_preserved
+    }
 
     roles {
         smallint id PK
