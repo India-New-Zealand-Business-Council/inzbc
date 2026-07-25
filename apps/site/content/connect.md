@@ -15,21 +15,20 @@ existing placeholders (address, email, socials) are carried over unconfirmed; no
 person on the team will follow up.
 **Enquiry form fields:** first name, last name, email, subject (e.g. Membership, Partnership,
 Media, General), message.
-**Email:** [[preferred contact email — e.g. Sunil@inzbc.org, confirm]].
+**Email:** [[preferred public contact email — confirm]].
 **Phone:** [[office phone number, confirm]].
 **Post:** [[PO Box 20092, Glen Eden, Auckland 0641 — confirm current]].
 
 ## Follow
 [[Social links: X @inzbc, LinkedIn, Facebook, YouTube, Flickr — confirm current handles.]]
 
-## Partners
-Partner logos and profiles by tier: Strategic Partners (incl. gold tier), Industry partners,
-Government partners, and our Patron. [[Current sponsor/partner list and Patron details to confirm.]]
+## Sponsors and partners
+Sponsors by tier with logos, short descriptions and links (Strategic Partners incl. gold tier;
+Industry and Government partners). [[Current sponsor list to confirm.]]
 
-## Become a partner
-**CTA:** Partner with us → (missing on the current site) — links to a partnership enquiry form,
-distinct from the general contact form above.
-[[Partner tiers and benefits to confirm before this section can list specifics.]]
+## Become a sponsor
+Add a "Become a sponsor" call to action (missing on the current site) linking to a sponsorship
+enquiry form. [[Sponsorship tiers and benefits to confirm.]]
 
 ## Privacy
 Personal information handled under the NZ Privacy Act 2020. Link to the privacy statement.
