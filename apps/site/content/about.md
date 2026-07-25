@@ -14,10 +14,11 @@ for trade, investment and commercial ties with India.
 ## History
 Since 1988, INZBC has promoted and encouraged trade in goods and services, investment, and
 scientific, technical and economic cooperation between New Zealand and India. INZBC is recognised
-as the main industry body for the bilateral relationship by both governments, and has hosted the
-majority of visiting Government of India delegations to New Zealand, organising networking events
-on their behalf. [[Most recent delegation hosted — confirm current example with INZBC; the 2025
-brand guidelines cite an ICT delegation from Kerala, which may now be out of date.]]
+as the main industry body for the bilateral relationship by both governments, and has hosted
+visiting Government of India delegations to New Zealand, organising networking events on their
+behalf. [[Extent of delegations hosted (e.g. "the majority") — confirm with INZBC before
+publishing this claim.]] [[Most recent delegation hosted — confirm current example with INZBC;
+the 2025 brand guidelines cite an ICT delegation from Kerala, which may now be out of date.]]
 [[Key milestones since 1988 — confirm dates and events with INZBC.]]
 
 ## Mission
