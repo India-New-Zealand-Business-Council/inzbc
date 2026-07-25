@@ -22,8 +22,8 @@ intelligence, and the networks and events that turn FTA access into real deals.
   and human-reviewed before publication, so you can act on what's actually changed.
 - **Networks** — business development support, delegations and introductions across the NZ–India
   corridor.
-- **Events and access** — sector briefings, the annual INZBC Summit, and direct access to visiting
-  government delegations and trade missions.
+- **Events and access** — sector briefings, the annual INZBC Summit, and opportunities to engage
+  with visiting government delegations and trade missions.
 
 ## Membership plans
 [[Membership tiers and pricing — new structure effective 1 Jan 2026, to be supplied by INZBC. Once
