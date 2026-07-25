@@ -214,6 +214,28 @@ def test_ungated_transition_advances_without_a_decision() -> None:
     assert orch.state is RunState.CLOSED
 
 
+def test_bypass_constructed_blank_decision_is_refused_at_the_gate() -> None:
+    # A decision built by skipping __init__ (object.__new__ + object.__setattr__) carries blank
+    # fields but is the exact HumanDecision type. The gate re-validates fields, so it is refused.
+    sneaky = object.__new__(HumanDecision)
+    object.__setattr__(sneaky, "approver", "")
+    object.__setattr__(sneaky, "decision", "")
+    object.__setattr__(sneaky, "note", None)
+    orch = Orchestrator()
+    with pytest.raises(ValueError):
+        orch.advance(RunState.RUN_AUTHORISED, actor="agent", human_decision=sneaky)
+    assert orch.state is RunState.DRAFT
+
+
+def test_setattr_seal_blocks_direct_state_write() -> None:
+    orch = Orchestrator()
+    with pytest.raises(AttributeError):
+        orch.state = RunState.DISTRIBUTED  # type: ignore[misc]
+    with pytest.raises(AttributeError):
+        orch._Orchestrator__state = RunState.DISTRIBUTED  # the mangled name is sealed too
+    assert orch.state is RunState.DRAFT
+
+
 def test_legal_table_is_read_only() -> None:
     from apps.sip.core import orchestrator as orch_mod
 

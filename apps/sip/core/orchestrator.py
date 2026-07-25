@@ -110,10 +110,19 @@ class HumanDecision:
     note: str | None = None
 
     def __post_init__(self) -> None:
-        if not self.approver or not self.approver.strip():
-            raise ValueError("HumanDecision requires a non-blank approver")
-        if not self.decision or not self.decision.strip():
-            raise ValueError("HumanDecision requires a non-blank decision")
+        _require_non_blank(self)
+
+
+def _require_non_blank(decision: HumanDecision) -> None:
+    """Raise if approver or decision is blank/missing. Used both at construction and again at the
+    gate, so a decision built by bypassing __init__ still cannot satisfy a gate with empty fields.
+    """
+    approver = decision.approver
+    verdict = decision.decision
+    if not isinstance(approver, str) or not approver.strip():
+        raise ValueError("HumanDecision requires a non-blank approver")
+    if not isinstance(verdict, str) or not verdict.strip():
+        raise ValueError("HumanDecision requires a non-blank decision")
 
 
 @dataclass(frozen=True)
@@ -130,13 +139,30 @@ class TransitionRecord:
 class Orchestrator:
     """Holds a run's current state and its append-only transition history. `advance` is the only
     mutation. Construct at `Draft` (or resume by replaying recorded transitions).
+
+    Threat model: this enforces the state machine against its *callers* - the agent proposing a
+    structured transition, and eventually the HTTP layer. It does not, and cannot, defend against
+    arbitrary code running in the same Python process: such code can reach the mangled attributes
+    (`_Orchestrator__state`) via `object.__setattr__`, `ctypes`, or the gc, and could equally call
+    the model client or read the environment directly - at that point the whole process is
+    compromised regardless of this class. Defence against untrusted in-process code is process
+    isolation plus the append-only persistence/audit layer (the DB is the real source of truth),
+    not an in-language guard. What this class guarantees is that no *legitimate call path* - no
+    proposal an agent can make through `advance` - can skip a gate. The `__setattr__` seal below
+    stops the casual `orch._Orchestrator__state = ...` write; it is a speed bump, not the boundary.
     """
 
+    __slots__ = ("_Orchestrator__state", "_Orchestrator__history", "_Orchestrator__sealed")
+
     def __init__(self, state: RunState = RunState.DRAFT) -> None:
-        # Name-mangled so state only changes through advance(); a holder of the object cannot
-        # assign a new state or splice history to bypass the transition guards.
-        self.__state = _as_state(state)
-        self.__history: list[TransitionRecord] = []
+        object.__setattr__(self, "_Orchestrator__state", _as_state(state))
+        object.__setattr__(self, "_Orchestrator__history", [])
+        object.__setattr__(self, "_Orchestrator__sealed", True)
+
+    def __setattr__(self, name: str, value: object) -> None:
+        raise AttributeError(
+            "Orchestrator state is sealed; use advance() to change it, not attribute assignment"
+        )
 
     @property
     def state(self) -> RunState:
@@ -159,11 +185,16 @@ class Orchestrator:
         `RunState`; an unknown value raises `IllegalTransition`, never a stray type error.
         """
         target = _as_state(target)
-        if human_decision is not None and type(human_decision) is not HumanDecision:
+        if human_decision is not None:
             # A gate is satisfied by presence, so presence must mean a real, validated decision.
             # Exact-type (not isinstance): a subclass could override __post_init__ to skip the
-            # blank-field validation and still pass the gate, so subclasses are refused too.
-            raise TypeError("human_decision must be a HumanDecision")
+            # blank-field validation and still pass the gate.
+            if type(human_decision) is not HumanDecision:
+                raise TypeError("human_decision must be a HumanDecision")
+            # Re-validate the fields at the point of use, not just at construction: a decision
+            # built by bypassing __init__ (object.__new__ + object.__setattr__) would carry blank
+            # fields; checking here means a blank decision is refused however it was made.
+            _require_non_blank(human_decision)
         current = self.__state
         allowed = _LEGAL.get(current, frozenset())
         if not allowed:
@@ -184,8 +215,11 @@ class Orchestrator:
             at=datetime.now(timezone.utc),
             human_decision=human_decision,
         )
+        # __history is mutated in place (list.append), not reassigned, so the __setattr__ seal is
+        # not involved. __state is reassigned via object.__setattr__ because the seal blocks the
+        # normal `self.__state = ...` path (that block is what stops external writes).
         self.__history.append(record)
-        self.__state = target
+        object.__setattr__(self, "_Orchestrator__state", target)
         return record
 
 
