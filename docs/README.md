@@ -27,6 +27,9 @@ Two conventions hold across this tree:
 - [`sip/README.md`](sip/README.md) — SIP scope, non-negotiables and control boundary.
 
 ## I am building a module
+- [`requirements.md`](requirements.md) — user stories with acceptance criteria, the non-functional
+  requirements every story is bound by, and the traceability matrix linking each requirement to the
+  code and tests that satisfy it.
 - [`modules/`](modules/) — one spec per module: website, membership CRM, member portal, comms
   assistant, FTA centre, dashboards, events and delegations, sponsors and trade services.
 - [`../schemas/api-contract.md`](../schemas/api-contract.md) — the REST contract both pipeline and UI
