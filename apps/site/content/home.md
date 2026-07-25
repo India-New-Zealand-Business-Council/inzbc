@@ -23,12 +23,14 @@ Explainer workstream; do not restate tariff detail here without sign-off from Ro
 **CTA:** Understand the FTA →
 
 ## Trade opportunity, in numbers
-- NZ–India two-way trade: **$3.68b**
-- **95%** of current NZ exports to India receiving tariff removal or reduction under the FTA
-- **300,000**-strong Indian diaspora in New Zealand
+- NZ–India two-way trade: **NZ$3.95bn** annually
+- **95%** of NZ's current exports to India will receive tariff elimination or reduction once the
+  FTA enters into force
+- [[NZ Indian diaspora population — source and confirm before publish; not in the FTA source
+  corpus, do not estimate.]]
 - India's growing middle class — a long-term demand story for NZ exporters
-[[Confirm each figure against the current Trade Report / MFAT FTA outcome documents before
-publish — sourced from the June 2026 migration guide, may need refreshing.]]
+[[Two-way trade and tariff figures sourced from `apps/fta/corpus.py` (MFAT National Interest
+Analysis / MFAT FTA hub, verified 22 Jul 2026); the trade page uses the same figures.]]
 
 ## Credibility strip
 - Established 1988; recognised by the governments of New Zealand and India
