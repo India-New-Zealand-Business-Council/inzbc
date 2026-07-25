@@ -32,9 +32,11 @@ The shared API + auth for anything that reads/writes data. Roshan's FTA service 
       (citation, effective date, next step, escalation path when the service returns no match).
 - [ ] Comms Assistant review UI: draft view with diff-against-previous and the named-reviewer
       approval gate (nothing publishable without a recorded human approval).
-- [ ] Build the public site in Wix from `apps/site/content/` (blocked: Wix account access + brand kit).
+- [ ] Build the public site in Wix from `apps/site/content/` (account access granted at team
+      level — can start in the Wix editor now; programmatic build additionally needs the Wix MCP
+      connected; still blocked on the brand kit either way. See `docs/discovery.md` OI-1).
 - [ ] CMS collection schemas mapped to page-specs now (news, events, sector reports, board,
-      sponsors), ready to create as dynamic pages the moment Wix access lands.
+      sponsors), ready to create as dynamic pages now that Wix account access is in place.
 - [ ] Member portal shell (Members Area); link out to Member Jungle for membership
       (do NOT rebuild membership — see the AIOS Member Jungle decision). SHARED-OK: member
       roles/access control moved to Bhanu's worklog — it builds on his auth/RBAC model.
@@ -50,7 +52,8 @@ The shared API + auth for anything that reads/writes data. Roshan's FTA service 
   page-specs, executive tone, placeholders for INZBC facts. Ready to drop into Wix.
 
 ## Blocked / decisions needed
-- Wix account access + Wix MCP connection (to build the site).
+- Wix MCP connection, for programmatic build (account access is already granted at team level —
+  manual build in the Wix editor can start now; see `docs/discovery.md` OI-1).
 - Brand kit from Sunil (logo, colours, fonts, photos).
 - Membership platform decision (retain/integrate/replace Member Jungle) — build the portal against the choice.
 - Backend contracts are published (schema/API/state); SIP UI can start against them once there is a running API.
