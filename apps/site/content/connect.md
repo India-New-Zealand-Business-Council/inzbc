@@ -22,13 +22,10 @@ Media, General), message.
 ## Follow
 [[Social links: X @inzbc, LinkedIn, Facebook, YouTube, Flickr — confirm current handles.]]
 
-## Sponsors and partners
-Sponsors by tier with logos, short descriptions and links (Strategic Partners incl. gold tier;
-Industry and Government partners). [[Current sponsor list to confirm.]]
-
-## Become a sponsor
-Add a "Become a sponsor" call to action (missing on the current site) linking to a sponsorship
-enquiry form. [[Sponsorship tiers and benefits to confirm.]]
+## Partners
+Sponsor and partner tiers, benefits and the "Become a partner" enquiry pathway now live on the
+dedicated Partners page (see `partners.md`) rather than here, per the migration guide's
+recommended architecture. **Link:** Partners →
 
 ## Privacy
 Personal information handled under the NZ Privacy Act 2020. Link to the privacy statement.
