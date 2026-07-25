@@ -35,8 +35,8 @@ version yet).
 
 ## Consequences
 Positive: components are documented and regression-tested from day one; the state-machine-driven
-SIP UI gets real E2E coverage of its illegal-transition guards; the stack matches what the team
-will see in industry, which is good for the capstone and for hiring signal.
+SIP UI gets real E2E coverage of its illegal-transition guards; and the stack is current industry
+practice, so it is well documented and a future maintainer is likely to already know it.
 
 Negative / mitigations:
 - Four new tools is real setup cost. Mitigation: they land **incrementally with the first
