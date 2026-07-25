@@ -1,0 +1,307 @@
+# INZBC platform architecture
+
+System diagrams for the INZBC AI Operating System. Diagrams are Mermaid so they version with the
+code and render on GitHub. Update them in the same pull request as the change they describe.
+
+Status is marked on every component: **built** (merged, tested), **contract** (specified, not yet
+implemented) or **planned** (decided, not started). Nothing here is aspirational — if it says built,
+there is code and tests behind it.
+
+---
+
+## 1. System context
+
+Who and what the platform talks to.
+
+```mermaid
+graph TB
+    subgraph people[People]
+        CEO["CEO / SIP Owner<br/>authority + decisions"]
+        ANALYST["Analyst<br/>runs the daily SOP"]
+        REVIEWER["Quality Reviewer<br/>SIP-188 QA"]
+        MEMBER["INZBC member<br/>FTA questions"]
+    end
+
+    subgraph platform[INZBC platform]
+        SIP["SIP<br/>trade intelligence pipeline"]
+        FTA["FTA Opportunity Explainer"]
+        SITE["Public website content"]
+    end
+
+    subgraph external[External services]
+        AGENT["daily-india-nz-news-agent<br/>collection engine, separate repo"]
+        MODEL["Model provider<br/>OpenAI"]
+        SOURCES["112 mandatory sources<br/>SIP-185 register"]
+    end
+
+    ANALYST --> SIP
+    REVIEWER --> SIP
+    CEO --> SIP
+    MEMBER --> FTA
+    AGENT --> SIP
+    SOURCES --> AGENT
+    SIP --> MODEL
+    FTA -.->|no model call| MODEL
+    SIP --> CEO
+```
+
+The FTA Explainer deliberately makes **no model call** — it answers only from a sourced corpus, so
+it cannot hallucinate a trade fact.
+
+---
+
+## 2. SIP pipeline components
+
+```mermaid
+graph LR
+    subgraph collect["apps/sip/collector — built"]
+        MAP["mapping.py<br/>article to Candidate"]
+        ING["ingest.py<br/>batch write, per-item isolation"]
+        DED["dedupe.py<br/>cross-run duplicates"]
+        SRC["source_register.py<br/>112 mandatory, fail-closed gate"]
+        ASSESS["assessment.py<br/>validated PATCH path"]
+        VER["verification.py<br/>High/Critical gate"]
+    end
+
+    subgraph core["apps/sip/core — built"]
+        SCORE["scoring.py<br/>SIP-050 relevance/signal/confidence"]
+        ORCH["orchestrator.py<br/>run state machine + human gates"]
+    end
+
+    subgraph svc["services/api — built"]
+        GW["model_gateway.py<br/>single server-side model path"]
+    end
+
+    subgraph data["Persistence"]
+        DB[("Postgres<br/>database/schema.sql — contract")]
+        API["REST API<br/>schemas/api-contract.md — contract"]
+    end
+
+    MAP --> ING
+    DED --> ING
+    ING --> API
+    SRC --> API
+    ASSESS --> VER
+    ASSESS --> API
+    SCORE --> GW
+    SCORE --> ASSESS
+    ORCH --> SCORE
+    ORCH --> SRC
+    ORCH --> VER
+    API --> DB
+```
+
+---
+
+## 3. Run state machine
+
+The SIP-184 daily run. Transitions are enforced in code by `apps/sip/core/orchestrator.py`;
+`advance()` is the only path that mutates run state. Dashed transitions require a **recorded human
+decision** — an agent can never cross them alone.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Draft
+    Draft --> RunAuthorised: authority + version check (human)
+    RunAuthorised --> CoverageLocked: fix exact 24h window
+    CoverageLocked --> Scanning
+    Scanning --> CandidateReview
+    CandidateReview --> ReportDrafted
+    ReportDrafted --> QAInProgress
+    QAInProgress --> AwaitingCEODecision: QA pass (human)
+    QAInProgress --> QAFailed: Critical failure (human)
+    QAFailed --> ReportDrafted: correction + re-review (human)
+    AwaitingCEODecision --> ApprovedForManualDistribution: CEO decision (human)
+    AwaitingCEODecision --> Continue: (human)
+    AwaitingCEODecision --> ContinueWithCorrection: (human)
+    AwaitingCEODecision --> Paused: (human)
+    AwaitingCEODecision --> Stopped: (human)
+    ApprovedForManualDistribution --> Distributed: manual send recorded (human)
+    Distributed --> Closed
+    Paused --> CoverageLocked: resumption approval (human)
+    Stopped --> [*]
+    Closed --> [*]
+```
+
+`Stopped` is terminal for that run id — a stopped run is never resumed under the same id.
+
+---
+
+## 4. Fail-closed controls
+
+Where the platform refuses rather than guesses. Each is enforced in code and covered by tests.
+
+```mermaid
+flowchart TD
+    A["Mandatory source has no recorded outcome"] -->|missing_mandatory_outcomes| STOP1["Critical stop<br/>run cannot pass QA"]
+    B["Model returns malformed or out-of-range output"] -->|ScoringParseError| STOP2["Candidate stays unscored<br/>no assumed values"]
+    C["High/Critical signal without verification"] -->|UnverifiedHighSignalError| STOP3["Assessment refused"]
+    D["Gated transition without a human decision"] -->|HumanGateRequired| STOP4["State unchanged"]
+    E["FTA fact not confirmed against a Tier 1 source"] -->|confirmed filter| STOP5["Suppressed, escalate to INZBC"]
+    F["No model API key configured"] -->|GatewayNotConfiguredError| STOP6["No fabricated response"]
+```
+
+---
+
+## 5. Scoring and verification sequence
+
+The path a candidate takes from capture to an applied assessment.
+
+```mermaid
+sequenceDiagram
+    participant O as Orchestrator
+    participant S as scoring.py
+    participant G as model_gateway.py
+    participant M as Model provider
+    participant V as verification.py
+    participant API as SIP API
+
+    O->>S: score_candidate(headline, source, summary)
+    S->>G: complete(prompt)
+    G->>M: responses.create (retry once)
+    M-->>G: text
+    G-->>S: GatewayResult
+    S->>S: strict JSON parse, reject duplicate keys
+    S->>S: validate 0..5 bounds, strict types
+    alt output does not match contract
+        S-->>O: ScoringParseError (candidate stays unscored)
+    else valid
+        S-->>O: ScoringRecommendation
+        O->>V: enforce_verification_gate(signal, verification)
+        alt High/Critical and not verified
+            V-->>O: UnverifiedHighSignalError
+        else allowed
+            O->>API: PATCH candidate (analyst applies)
+        end
+    end
+```
+
+`to_assessment()` never sets `verification` — verification is evidence-driven and human-owned, so the
+fail-closed gate stays in charge of High and Critical.
+
+---
+
+## 6. Data model
+
+Entity relationships from `database/schema.sql` (contract stage — not yet migrated).
+
+```mermaid
+erDiagram
+    roles ||--o{ users : "has"
+    users ||--o{ runs : "initiates"
+    users ||--o{ action_register : "owns"
+    users ||--o{ exceptions : "owns"
+    users ||--o{ approvals : "approves"
+    users ||--o{ audit_log : "acts"
+    runs ||--o{ source_checks : "records"
+    runs ||--o{ candidates : "captures"
+    runs ||--o{ daily_intelligence : "produces"
+    runs ||--o{ exceptions : "raises"
+    runs ||--o{ approvals : "gated by"
+    source_library ||--o{ source_checks : "checked in"
+    source_library ||--o{ candidates : "sourced from"
+    candidates ||--o{ candidates : "duplicate_of"
+    candidates ||--o{ daily_intelligence : "promoted to"
+
+    roles {
+        smallint id PK
+        text name
+    }
+    users {
+        uuid id PK
+        text email UK
+        smallint role_id FK
+        boolean mfa_enabled
+    }
+    runs {
+        uuid id PK
+        text run_number UK
+        timestamptz coverage_start_utc
+        timestamptz coverage_end_utc
+        run_state state
+        text prompt_version
+        boolean production_enabled
+        uuid analyst_id FK
+        uuid reviewer_id FK
+    }
+    source_library {
+        uuid id PK
+        text sip185_code UK
+        text name
+        smallint layer
+        boolean mandatory
+    }
+    source_checks {
+        uuid id PK
+        uuid run_id FK
+        uuid source_id FK
+        source_outcome outcome
+        boolean fallback_used
+    }
+    candidates {
+        uuid id PK
+        uuid run_id FK
+        uuid source_id FK
+        text headline
+        smallint nz_relevance
+        signal_strength signal
+        verification_state verification
+        uuid duplicate_of FK
+    }
+    daily_intelligence {
+        uuid id PK
+        uuid run_id FK
+        uuid candidate_id FK
+        approval_state approval
+    }
+    approvals {
+        uuid id PK
+        uuid run_id FK
+        approval_state approval
+        distribution_state distribution
+        uuid approver_id FK
+    }
+    audit_log {
+        bigserial id PK
+        uuid user_id FK
+        text action
+        text old_value
+        text new_value
+    }
+```
+
+Two constraints the diagram cannot show, both enforced in the schema:
+- `runs` has a check that `analyst_id <> reviewer_id` — nobody reviews their own run.
+- `source_checks` has `unique (run_id, source_id)` — one outcome per source per run.
+
+---
+
+## 7. Repository layout
+
+```mermaid
+graph TD
+    ROOT["India-New-Zealand-Business-Council"]
+    ROOT --> INZBC["inzbc — monorepo"]
+    ROOT --> AGENT2["daily-india-nz-news-agent — collection engine"]
+
+    INZBC --> APPS["apps/ — site, sip, fta, comms"]
+    INZBC --> SERVICES["services/api — model gateway"]
+    INZBC --> SCHEMAS["schemas/ — API contract, state machine"]
+    INZBC --> DBDIR["database/ — schema"]
+    INZBC --> DOCS["docs/ — specs, ADRs, SIP controlled docs"]
+
+    AGENT2 --> AGENTPY["agent.py — fetch, score, digest"]
+    AGENT2 --> WF[".github/workflows — manual trigger only"]
+```
+
+The collection engine stays a separate repository: it has its own release cadence and runs the live
+daily digest, while `inzbc` holds the platform and the controlled documentation.
+
+---
+
+## Related documents
+- `schemas/api-contract.md` — endpoint contract
+- `schemas/state-machine.md` — the authoritative transition list this encodes
+- `database/schema.sql` — data model source
+- `docs/decisions/` — architecture decision records
+- `docs/sip/launch/` — the controlled SIP operating documents
