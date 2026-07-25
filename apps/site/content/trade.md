@@ -13,11 +13,13 @@ India, Import from India, Trade Missions and Shows, Market Opportunities, Market
 using the NZ–India Free Trade Agreement.
 
 ## Trade opportunity, in numbers
-- NZ–India two-way trade: **$3.68b**
-- **95%** of current NZ exports to India receiving tariff removal or reduction under the FTA
-- **300,000**-strong Indian diaspora in New Zealand
-[[Confirm each figure against the current Trade Report / MFAT FTA outcome documents before
-publish — sourced from the June 2026 migration guide; same figures used on the homepage.]]
+- NZ–India two-way trade: **NZ$3.95bn** annually
+- **95%** of NZ's current exports to India will receive tariff elimination or reduction once the
+  FTA enters into force
+- [[NZ Indian diaspora population — source and confirm before publish; not in the FTA source
+  corpus, do not estimate.]]
+[[Two-way trade and tariff figures sourced from `apps/fta/corpus.py` (MFAT National Interest
+Analysis / MFAT FTA hub, verified 22 Jul 2026); the homepage should use the same figures.]]
 
 ## Export to India
 A practical guide for New Zealand businesses preparing to export to India, build partnerships and
