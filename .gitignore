@@ -32,6 +32,7 @@ htmlcov/
 # Build output
 dist/
 build/
+*.egg-info/
 .next/
 out/
 

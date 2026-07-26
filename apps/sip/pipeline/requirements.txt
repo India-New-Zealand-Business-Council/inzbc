@@ -1,3 +1,8 @@
+# Superseded by the root pyproject.toml — install with `pip install -e ".[dev]"`.
+# Kept only so any external consumer (the daily-india-nz-news-agent integration) does not break
+# on a surprise deletion. SHARED-OK: Roshan to remove once he confirms nothing outside this repo
+# installs from it. Nothing inside the repo does — CI and the quality-gate skill both now read
+# the root manifest.
 requests>=2.31
 pydantic>=2.0
 pytest>=8.0
