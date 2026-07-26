@@ -20,8 +20,15 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'lcov'],
       include: ['src/**/*.{ts,tsx}'],
-      // Generated API types carry no logic; the drift check in CI is what guards them.
-      exclude: ['src/api/schema.ts', 'src/main.tsx'],
+      exclude: [
+        // Generated from OpenAPI; the drift check in CI is what guards this, not tests.
+        'src/api/schema.ts',
+        // Entry point: one createRoot call, no logic.
+        'src/main.tsx',
+        // Stories are exercised by Storybook (and Chromatic when it lands), not by Vitest.
+        // Counting them here measures nothing and pushes toward writing tests for fixtures.
+        '**/*.stories.tsx',
+      ],
       thresholds: {
         // Frontend gate is 80% per the plan; state and transition logic is held to 90%
         // as it lands. Presentational JSX is not worth chasing to 90%.

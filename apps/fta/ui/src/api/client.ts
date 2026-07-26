@@ -3,12 +3,29 @@ import type { components } from './schema'
 export type Answer = components['schemas']['AnswerOut']
 export type ActionRequired = components['schemas']['ActionRequiredOut']
 
+type Envelope = components['schemas']['FtaQueryResponse']
+
 /**
- * The API's status-tagged envelope. `status` is a discriminated union in the generated types,
- * so TypeScript refuses to compile a consumer that reads `action_required` without first
- * narrowing on `status` — a no-match cannot be silently dropped by checking `answers.length`.
+ * The API's status-tagged envelope, narrowed into a true discriminated union.
+ *
+ * OpenAPI cannot express "action_required is present exactly when status is no_match", so the
+ * generated type makes it nullable on both arms and a consumer needs a non-null assertion to
+ * render it. Deriving the union here moves that guarantee into the compiler: narrowing on
+ * `status === 'no_match'` yields a non-nullable `action_required`, and reading it on the matched
+ * arm does not type-check.
+ *
+ * Derived from the generated `Envelope` rather than hand-written, so a schema change still breaks
+ * this rather than silently drifting (ADR-0001).
  */
-export type FtaQueryResult = components['schemas']['FtaQueryResponse']
+export type FtaQueryResult =
+  | (Omit<Envelope, 'status' | 'action_required'> & {
+      status: 'matched'
+      action_required?: null
+    })
+  | (Omit<Envelope, 'status' | 'action_required'> & {
+      status: 'no_match'
+      action_required: ActionRequired
+    })
 
 export class FtaQueryError extends Error {}
 
