@@ -4,8 +4,10 @@ description: >
   Run the INZBC repo's pre-PR quality gate and produce the PR evidence block. Use before
   opening or updating any pull request in this repo, or whenever the user asks to "run the
   checks", "run the quality gate", "check before PR", or "generate the evidence block". Mirrors
-  every CI job (ruff, pytest+coverage, generated-type drift, frontend lint/typecheck/test/build,
-  Storybook, secret scan) so failures are caught locally first.
+  the main local development checks from CI (ruff, pytest+coverage, generated-type drift,
+  frontend lint/typecheck/test/build, Storybook, secret scan) so failures are caught locally
+  first; repository-wide JSON validation, SAST, workflow linting and link checks continue to run
+  in GitHub Actions.
 ---
 
 # Quality gate
@@ -17,6 +19,12 @@ formats the result, so a PR is never opened red.
 **Keep this file in step with `.github/workflows/ci.yml`.** If they diverge, a contributor can
 follow the official local process, get green, and still break CI — which is exactly what this
 skill exists to prevent. Any PR that changes the CI toolchain updates this file in the same PR.
+
+**Scope.** This covers the checks worth running locally: lint, tests, coverage, type drift and
+the frontend build. Four CI jobs are deliberately *not* mirrored here, because they need Docker
+or hit the network and would make the local gate slow enough that people skip it — `validate`
+(repo-wide JSON parse), `sast` (Semgrep), `workflows` (actionlint) and `links` (lychee). They
+still run on every PR, so a green local gate is necessary but not sufficient.
 
 ## Python steps
 
