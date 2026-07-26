@@ -4,6 +4,8 @@
 - Date: 2026-07-26
 - Deciders: Bhanu (tech lead), with INZBC to confirm anything that touches org-owned identity
 - Supersedes: nothing. Blocks: database migrations, the site-forms receiver service
+- Graduated to option B by [ADR-0004](0004-platform-graduation.md) on 2026-07-27 (trigger 1 met);
+  the blocks above are lifted there
 
 ## Context
 
