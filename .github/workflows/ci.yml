@@ -26,8 +26,9 @@ jobs:
       - name: Install deps
         run: |
           python -m pip install --upgrade pip
-          # ruff pinned: version bumps are deliberate, with any new-rule fixes in the same PR
-          pip install 'ruff==0.15.22' pytest-cov -r apps/sip/pipeline/requirements.txt
+          # Single source of truth is the root pyproject.toml; ruff stays pinned there so
+          # version bumps are deliberate, with any new-rule fixes in the same PR.
+          pip install -e ".[dev]"
       - name: Lint (ruff)
         run: ruff check apps services
       - name: Test (pytest + coverage)

@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "inzbc"
+version = "0.1.0"
+description = "INZBC AI Operating System — SIP, FTA Centre, and the shared API"
+requires-python = ">=3.11"
+dependencies = [
+  "requests>=2.31",
+  "pydantic>=2.0",
+  "openai>=1.0",
+  # Added by ADR-0004: the API graduates from a scheduled process to a hosted service.
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.32",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+  "pytest-cov>=5.0",
+  # ruff pinned: version bumps are deliberate, with any new-rule fixes in the same PR.
+  "ruff==0.15.22",
+]
+
+# Explicit, because flat-layout auto-discovery sees database/, docs/ and schemas/ as
+# candidate packages and refuses to guess.
+[tool.setuptools.packages.find]
+include = ["apps*", "services*"]
+
+# Test discovery previously worked only by accident of layout (rootdir insertion plus
+# __init__.py in every directory). Stating it makes a bare `pytest` behave like CI.
+[tool.pytest.ini_options]
+testpaths = ["apps", "services"]

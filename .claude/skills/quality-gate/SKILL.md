@@ -15,9 +15,10 @@ does and formats the result, so a PR is never opened red.
 
 ## Steps
 
-1. **Install the pinned toolchain** (match CI — do not use a floating ruff):
+1. **Install the pinned toolchain** (match CI — do not use a floating ruff; the pin lives in
+   the root `pyproject.toml`):
    ```bash
-   pip install 'ruff==0.15.22' pytest-cov -r apps/sip/pipeline/requirements.txt
+   pip install -e ".[dev]"
    ```
 
 2. **Lint** — same scope as CI (`apps` and `services`):
