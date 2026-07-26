@@ -1,0 +1,313 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "INZBC API",
+    "summary": "Trade intelligence and FTA services for the India New Zealand Business Council.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/fta/query": {
+      "get": {
+        "tags": [
+          "FTA Explainer"
+        ],
+        "summary": "Fta Query",
+        "description": "Answers an FTA question from the sourced corpus, or escalates.\n\nA query with no confirmed corpus match is **not** an error: it returns HTTP 200 with\n`status: \"no_match\"` and the Action Required escalation path. Returning 404 would push\ncallers toward an error branch that discards the guidance.",
+        "operationId": "fta_query_api_fta_query_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 500,
+              "description": "A sector or product question, e.g. 'dairy' or 'manuka honey'.",
+              "title": "Q"
+            },
+            "description": "A sector or product question, e.g. 'dairy' or 'manuka honey'."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FtaQueryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "Operations"
+        ],
+        "summary": "Health",
+        "description": "Liveness probe for the host's health check (ADR-0004).",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ActionRequiredOut": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "next_step": {
+            "type": "string",
+            "title": "Next Step"
+          },
+          "escalation_path": {
+            "type": "string",
+            "title": "Escalation Path"
+          },
+          "status_line": {
+            "type": "string",
+            "title": "Status Line"
+          },
+          "jurisdiction": {
+            "type": "string",
+            "title": "Jurisdiction"
+          },
+          "disclaimer": {
+            "type": "string",
+            "title": "Disclaimer"
+          },
+          "confidence": {
+            "type": "string",
+            "title": "Confidence"
+          },
+          "confidence_meaning": {
+            "type": "string",
+            "title": "Confidence Meaning"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "message",
+          "next_step",
+          "escalation_path",
+          "status_line",
+          "jurisdiction",
+          "disclaimer",
+          "confidence",
+          "confidence_meaning"
+        ],
+        "title": "ActionRequiredOut",
+        "description": "The escalation state. Carries no topic, treatment or citation, by design."
+      },
+      "AnswerOut": {
+        "properties": {
+          "topic": {
+            "type": "string",
+            "title": "Topic"
+          },
+          "sector": {
+            "type": "string",
+            "title": "Sector"
+          },
+          "treatment": {
+            "type": "string",
+            "title": "Treatment"
+          },
+          "confirmed": {
+            "type": "boolean",
+            "title": "Confirmed"
+          },
+          "citation": {
+            "type": "string",
+            "title": "Citation"
+          },
+          "verified_at": {
+            "type": "string",
+            "format": "date",
+            "title": "Verified At"
+          },
+          "status_line": {
+            "type": "string",
+            "title": "Status Line"
+          },
+          "jurisdiction": {
+            "type": "string",
+            "title": "Jurisdiction"
+          },
+          "next_step": {
+            "type": "string",
+            "title": "Next Step"
+          },
+          "disclaimer": {
+            "type": "string",
+            "title": "Disclaimer"
+          },
+          "confidence": {
+            "type": "string",
+            "title": "Confidence"
+          },
+          "confidence_meaning": {
+            "type": "string",
+            "title": "Confidence Meaning"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "topic",
+          "sector",
+          "treatment",
+          "confirmed",
+          "citation",
+          "verified_at",
+          "status_line",
+          "jurisdiction",
+          "next_step",
+          "disclaimer",
+          "confidence",
+          "confidence_meaning"
+        ],
+        "title": "AnswerOut",
+        "description": "A sourced FTA finding. Every field is evidence or the presentation it must carry."
+      },
+      "FtaQueryResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "matched",
+              "no_match"
+            ],
+            "title": "Status"
+          },
+          "query": {
+            "type": "string",
+            "title": "Query"
+          },
+          "answers": {
+            "items": {
+              "$ref": "#/components/schemas/AnswerOut"
+            },
+            "type": "array",
+            "title": "Answers"
+          },
+          "action_required": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ActionRequiredOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status",
+          "query",
+          "answers"
+        ],
+        "title": "FtaQueryResponse",
+        "description": "`status` is the field a client branches on \u2014 not the length of `answers`.\n\nA client that only checked `answers` would render an empty results list for a no-match and\nsilently drop the escalation path, which is the outcome docs/modules/fta-centre.md exists to\nprevent."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
