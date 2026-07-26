@@ -49,6 +49,7 @@ def _keywords(text: str) -> set[str]:
 
 @dataclass(frozen=True)
 class ExplainerAnswer:
+    id: str
     topic: str
     sector: str
     treatment: str
@@ -85,6 +86,7 @@ def _confidence_for(entry: TariffOutcome) -> Confidence:
 def _to_answer(entry: TariffOutcome) -> ExplainerAnswer:
     confidence = _confidence_for(entry)
     return ExplainerAnswer(
+        id=entry.id,
         topic=entry.topic,
         sector=entry.sector,
         treatment=entry.treatment,

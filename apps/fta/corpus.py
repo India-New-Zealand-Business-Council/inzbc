@@ -96,6 +96,12 @@ class TariffOutcome:
     never present one as a confirmed figure (see explainer.py).
     """
 
+    # Stable identifier, assigned once and never reused. Callers key React lists and DOM ids
+    # off this rather than `topic`: topic is prose (spaces, punctuation, parentheses), so it
+    # makes an invalid HTML id and an unstable key if the wording is ever revised. Follows the
+    # SIP-185 source-id convention (NZ-OFF-001), not a slug, so an editorial change to `topic`
+    # cannot silently change an entry's identity.
+    id: str
     topic: str
     sector: str
     treatment: str
@@ -110,6 +116,7 @@ class TariffOutcome:
 
 CORPUS: tuple[TariffOutcome, ...] = (
     TariffOutcome(
+        id="FTA-001",
         topic="NZ tariffs on Indian imports",
         sector="Cross-sector",
         treatment="New Zealand removes all tariffs on Indian imports from day one (100%).",
@@ -118,6 +125,7 @@ CORPUS: tuple[TariffOutcome, ...] = (
         verified_at=date(2026, 7, 22),
     ),
     TariffOutcome(
+        id="FTA-002",
         topic="India tariffs on NZ exports (overall)",
         sector="Cross-sector",
         treatment=(
@@ -131,6 +139,7 @@ CORPUS: tuple[TariffOutcome, ...] = (
         verified_at=date(2026, 7, 22),
     ),
     TariffOutcome(
+        id="FTA-003",
         topic="India tariff-line count (~70% of ~12,500 lines)",
         sector="Cross-sector",
         treatment=(
@@ -149,6 +158,7 @@ CORPUS: tuple[TariffOutcome, ...] = (
         verified_at=date(2026, 7, 22),
     ),
     TariffOutcome(
+        id="FTA-004",
         topic="Forestry",
         sector="Agriculture",
         treatment="Tariff eliminated on ~95%+ of exports at entry into force.",
@@ -157,6 +167,7 @@ CORPUS: tuple[TariffOutcome, ...] = (
         verified_at=date(2026, 7, 22),
     ),
     TariffOutcome(
+        id="FTA-005",
         topic="Wool",
         sector="Agriculture",
         treatment="Tariff eliminated day one.",
@@ -165,6 +176,7 @@ CORPUS: tuple[TariffOutcome, ...] = (
         verified_at=date(2026, 7, 22),
     ),
     TariffOutcome(
+        id="FTA-006",
         topic="Sheepmeat",
         sector="Agriculture",
         treatment="Tariff eliminated day one.",
@@ -173,6 +185,7 @@ CORPUS: tuple[TariffOutcome, ...] = (
         verified_at=date(2026, 7, 22),
     ),
     TariffOutcome(
+        id="FTA-007",
         topic="Coal",
         sector="Infrastructure",
         treatment="Tariff eliminated day one.",
@@ -181,6 +194,7 @@ CORPUS: tuple[TariffOutcome, ...] = (
         verified_at=date(2026, 7, 22),
     ),
     TariffOutcome(
+        id="FTA-008",
         topic="Fish and seafood",
         sector="Agriculture",
         treatment="Tariff phased out over 7 years.",
@@ -189,6 +203,7 @@ CORPUS: tuple[TariffOutcome, ...] = (
         verified_at=date(2026, 7, 22),
     ),
     TariffOutcome(
+        id="FTA-009",
         topic="Kiwifruit and apples",
         sector="Agriculture",
         treatment="New quota access; NZ is first mover.",
@@ -197,6 +212,7 @@ CORPUS: tuple[TariffOutcome, ...] = (
         verified_at=date(2026, 7, 22),
     ),
     TariffOutcome(
+        id="FTA-010",
         topic="Wine",
         sector="Agriculture",
         treatment="Tariff reduced at entry into force, cut further over 10 years.",
@@ -205,6 +221,7 @@ CORPUS: tuple[TariffOutcome, ...] = (
         verified_at=date(2026, 7, 22),
     ),
     TariffOutcome(
+        id="FTA-011",
         topic="Manuka honey",
         sector="Agriculture",
         treatment="Tariff cut 75% over 5 years; NZ is first mover.",
@@ -213,6 +230,7 @@ CORPUS: tuple[TariffOutcome, ...] = (
         verified_at=date(2026, 7, 22),
     ),
     TariffOutcome(
+        id="FTA-012",
         topic="Cherries, avocados, blueberries, persimmons",
         sector="Agriculture",
         treatment="Phased tariff elimination.",
@@ -221,6 +239,7 @@ CORPUS: tuple[TariffOutcome, ...] = (
         verified_at=date(2026, 7, 22),
     ),
     TariffOutcome(
+        id="FTA-013",
         topic="Dairy - milk, cheese, butter",
         sector="Dairy",
         treatment=(
@@ -233,6 +252,7 @@ CORPUS: tuple[TariffOutcome, ...] = (
         verified_at=date(2026, 7, 22),
     ),
     TariffOutcome(
+        id="FTA-014",
         topic="Dairy - bulk infant formula and other dairy-based food preparations",
         sector="Dairy",
         treatment="Tariff phases out over 7 years.",
@@ -241,6 +261,7 @@ CORPUS: tuple[TariffOutcome, ...] = (
         verified_at=date(2026, 7, 22),
     ),
     TariffOutcome(
+        id="FTA-015",
         topic="Dairy - peptones",
         sector="Dairy",
         treatment="Tariff phases out over 7 years.",
@@ -249,6 +270,7 @@ CORPUS: tuple[TariffOutcome, ...] = (
         verified_at=date(2026, 7, 22),
     ),
     TariffOutcome(
+        id="FTA-016",
         topic="Dairy - albumins",
         sector="Dairy",
         treatment="50% tariff cut within a quota.",
@@ -257,6 +279,7 @@ CORPUS: tuple[TariffOutcome, ...] = (
         verified_at=date(2026, 7, 22),
     ),
     TariffOutcome(
+        id="FTA-017",
         topic="Two-way trade value",
         sector="Cross-sector",
         treatment="Two-way trade is approximately NZ$3.95bn annually.",
@@ -265,6 +288,7 @@ CORPUS: tuple[TariffOutcome, ...] = (
         verified_at=date(2026, 7, 22),
     ),
     TariffOutcome(
+        id="FTA-018",
         topic="Independent GDP modelling",
         sector="Cross-sector",
         treatment=(

@@ -133,6 +133,10 @@
       },
       "AnswerOut": {
         "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
           "topic": {
             "type": "string",
             "title": "Topic"
@@ -197,6 +201,7 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
+          "id",
           "topic",
           "sector",
           "treatment",

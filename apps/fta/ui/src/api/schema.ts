@@ -79,6 +79,8 @@ export interface components {
          * @description A sourced FTA finding. Every field is evidence or the presentation it must carry.
          */
         AnswerOut: {
+            /** Id */
+            id: string;
             /** Topic */
             topic: string;
             /** Sector */
