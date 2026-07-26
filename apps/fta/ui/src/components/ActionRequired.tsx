@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import type { ActionRequired as ActionRequiredModel } from '../api/client'
 
 /**
@@ -11,9 +12,10 @@ import type { ActionRequired as ActionRequiredModel } from '../api/client'
  * word.
  */
 export function ActionRequired({ result }: { result: ActionRequiredModel }) {
+  const headingId = useId()
   return (
-    <section className="fta-action-required" aria-labelledby="action-required-heading">
-      <h3 id="action-required-heading">No verified answer — action required</h3>
+    <section className="fta-action-required" aria-labelledby={headingId}>
+      <h3 id={headingId}>No verified answer — action required</h3>
       <p>{result.message}</p>
       <dl>
         <dt>Confidence</dt>
