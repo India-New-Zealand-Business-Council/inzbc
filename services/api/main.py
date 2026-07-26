@@ -32,6 +32,8 @@ class AnswerOut(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+    # Stable corpus identifier. Clients key lists and DOM ids off this, never off `topic`.
+    id: str
     topic: str
     sector: str
     treatment: str
@@ -96,6 +98,7 @@ class FtaQueryResponse(BaseModel):
 
 def _answer_out(answer: ExplainerAnswer) -> AnswerOut:
     return AnswerOut(
+        id=answer.id,
         topic=answer.topic,
         sector=answer.sector,
         treatment=answer.treatment,

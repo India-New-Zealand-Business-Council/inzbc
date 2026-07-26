@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 from datetime import date
 
 from apps.fta.corpus import (
@@ -47,6 +49,7 @@ def test_tier_2_sources_are_marked_context_only() -> None:
 
 def test_stale_entries_flags_only_entries_past_the_window() -> None:
     fresh = TariffOutcome(
+        id="TEST-FRESH",
         topic="Fresh",
         sector="Cross-sector",
         treatment="t",
@@ -55,6 +58,7 @@ def test_stale_entries_flags_only_entries_past_the_window() -> None:
         verified_at=date(2026, 7, 1),
     )
     stale = TariffOutcome(
+        id="TEST-STALE",
         topic="Stale",
         sector="Cross-sector",
         treatment="t",
@@ -71,6 +75,7 @@ def test_stale_entries_flags_only_entries_past_the_window() -> None:
 def test_stale_entries_empty_when_nothing_past_the_window() -> None:
     entries = [
         TariffOutcome(
+            id="TEST-FRESH",
             topic="Fresh",
             sector="Cross-sector",
             treatment="t",
@@ -80,3 +85,17 @@ def test_stale_entries_empty_when_nothing_past_the_window() -> None:
         )
     ]
     assert stale_entries(entries, as_of=date(2026, 7, 22), review_after_days=90) == []
+
+
+def test_every_entry_has_a_unique_stable_id() -> None:
+    ids = [entry.id for entry in CORPUS]
+    assert len(ids) == len(set(ids)), "corpus ids must be unique — they key React lists and DOM ids"
+    assert all(ids), "every entry needs an id"
+
+
+def test_ids_are_safe_as_html_ids() -> None:
+    # topic is prose and makes an invalid HTML id / ARIA IDREF; id must not repeat that mistake.
+    for entry in CORPUS:
+        assert re.fullmatch(r"[A-Za-z][A-Za-z0-9\-_]*", entry.id), (
+            f"{entry.id!r} is not a valid HTML id — no spaces or punctuation"
+        )

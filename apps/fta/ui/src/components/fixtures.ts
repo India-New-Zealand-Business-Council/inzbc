@@ -2,6 +2,7 @@ import type { ActionRequired, Answer } from '../api/client'
 
 /** Shaped from the live API's response to `?q=wool`; not invented copy. */
 export const woolAnswer: Answer = {
+  id: 'FTA-005',
   topic: 'Wool',
   sector: 'Agriculture',
   treatment: 'Tariff eliminated day one.',
