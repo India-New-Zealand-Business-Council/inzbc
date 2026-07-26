@@ -27,9 +27,14 @@ export function FtaQuery({ baseUrl = '' }: { baseUrl?: string }) {
 
     try {
       const result = await queryFta(trimmed, { signal: controller.signal, baseUrl })
+      // Abort alone is not enough: if a response has already arrived when the next search
+      // starts, aborting cannot retract it, and this continuation would overwrite the newer
+      // result. Only the request that is still current may set state.
+      if (inFlight.current !== controller) return
       setState({ kind: 'result', result })
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return
+      if (inFlight.current !== controller) return
       setState({
         kind: 'error',
         message:
@@ -81,7 +86,7 @@ export function FtaQuery({ baseUrl = '' }: { baseUrl?: string }) {
               {state.result.answers.length === 1 ? 'answer' : 'answers'}
             </h2>
             {state.result.answers.map((answer) => (
-              <Answer key={answer.topic} answer={answer} />
+              <Answer key={answer.id} answer={answer} />
             ))}
           </>
         ) : null}

@@ -1,3 +1,11 @@
+/* Without this, padding and border add to the declared width, so the search field overflows a
+   320px viewport — a WCAG 2.2 reflow failure. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 :root {
   --ink: #14213d;
   --muted: #4a5568;
@@ -19,10 +27,13 @@
 }
 
 .fta-field { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: flex-end; }
+.fta-field > div { flex: 1 1 18rem; min-width: 0; }
 .fta-label { display: block; font-weight: 600; margin-bottom: 0.25rem; }
-.fta-input { padding: 0.6rem 0.75rem; border: 1px solid var(--line); border-radius: 6px; min-width: 18rem; font-size: 1rem; }
+.fta-input { padding: 0.6rem 0.75rem; border: 1px solid var(--line); border-radius: 6px; width: 100%; min-width: 0; font-size: 1rem; }
 .fta-submit { padding: 0.6rem 1.1rem; border: 0; border-radius: 6px; background: var(--accent); color: #fff; font-size: 1rem; cursor: pointer; }
 .fta-submit[disabled] { opacity: 0.6; cursor: progress; }
+
+main { padding: 1rem; max-width: 60rem; margin-inline: auto; }
 
 .fta-answer { border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 6px; padding: 1rem; background: var(--surface); margin-block: 1rem; }
 .fta-answer h3 { margin: 0 0 0.35rem; }
