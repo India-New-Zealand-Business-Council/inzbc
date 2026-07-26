@@ -40,7 +40,7 @@ These constrain every story and are drawn from the SIP non-negotiables and NZ la
 | NFR-03 | No AI-drafted output publishes without a named human reviewer | CLAUDE.md, SIP-050 §26 | Done (enforced by gates) |
 | NFR-04 | Member and personal data handled per the NZ Privacy Act 2020 | Legal | Planned (applies once member data is stored) |
 | NFR-05 | Automated, member, external and public distribution stay disabled until SIP-191 | launch-config | Done (flags default off) |
-| NFR-06 | Every significant technical decision is recorded as an ADR with alternatives | SCRUM contract | In progress (ADR-0001, 0003 done; 0002 open) |
+| NFR-06 | Every significant technical decision is recorded as an ADR with alternatives | SCRUM contract | In progress (ADR-0001–0004 recorded; standing practice, not a one-off) |
 | NFR-07 | Work lands via reviewed pull request; CI green; no direct pushes to `main` | CONTRIBUTING.md | Done |
 | NFR-08 | Controlled documents exist in exactly one location | SIP control model | Done |
 
@@ -281,7 +281,7 @@ Recorded rather than filled with assumptions:
 | Gap | Blocks | Owner |
 |---|---|---|
 | FTA sectors in scope and disclaimer wording | Final Explainer copy | INZBC |
-| Internal platform hosting decision (ADR-0002) | Database migrations, receiver service | Platform lane |
+| ~~Internal platform hosting decision~~ — closed by ADR-0002, graduated to option B by ADR-0004 | ~~Database migrations, receiver service~~ — unblocked | Platform lane |
 | Redaction policy — what counts as member/Board/confidential | Redaction layer (issue #37) | INZBC, with platform lane |
 | SIP-191 launch authority | Any automated distribution | INZBC |
 
