@@ -41,15 +41,44 @@ Adopt option B, with the following specifics.
 
 | Concern | Decision |
 |---|---|
-| API (FastAPI) | **Fly.io**, Docker deploy, scale-to-zero permitted |
+| API (FastAPI) | **Google Cloud Run**, `australia-southeast1` (Sydney); min 0 / max 1 instance |
 | Public FTA UI | **Cloudflare Pages** — static, CDN-backed, unauthenticated |
 | Staff SIP UI | **Served by the API as static files, same origin** |
-| Database | **Neon** free-tier Postgres, pooled connection string |
-| TLS + domain | Provider HTTPS on `*.fly.dev` and `*.pages.dev` |
+| Database | **Neon** Postgres, Sydney region, pooled connection string |
+| TLS + domain | Provider HTTPS on `*.run.app` and `*.pages.dev` |
 
-Fly and Neon both appear on the free-tier candidate list already recorded in
-`docs/ai-service-architecture.md`, and both keep ADR-0002's near-zero-cost constraint. A custom
-domain is `[[to confirm with INZBC]]` and is not on the critical path.
+### Correction, 2026-07-27: Fly.io was chosen on a false premise
+
+The first version of this ADR chose Fly.io and justified it on ADR-0002's near-zero-cost
+constraint. **That justification was wrong.** Fly removed its free allowance for new organisations
+in 2024; new signups get a short trial and then pay-as-you-go with a card required. The reasoning
+did not survive checking, so the decision does not either.
+
+Cloud Run replaces it: scale-to-zero, Docker, GitHub Actions deployment, a Sydney region, and it
+can serve the staff UI same-origin with the API.
+
+**On cost, stated honestly rather than asserted.** Cloud Run is usage-based billing with a
+monthly free allowance. Published secondary sources disagree on the mechanism — some describe it
+as a spending-based discount valued at Tier 1 (`us-central1`) pricing and available in any region;
+others describe it as usage credits restricted to `us-central1`, `us-east1` and `us-west1`. We were
+unable to confirm which from the primary documentation. **So: $0 is expected at this project's
+traffic, but not guaranteed, and a billing account with a payment method is required either way.**
+
+Sydney is chosen despite that uncertainty, because the reason for it does not depend on the answer:
+**Phase 2 stores member data, and NZ Privacy Act 2020 obligations make an Australian region the
+defensible choice over a US one.** Selecting a US region now to chase an unconfirmed discount would
+mean migrating exactly when data residency starts to matter.
+
+**Before anything is provisioned (task 1.4), confirm the actual cost mechanism** — deploy, run for
+a day, read the billing report — and record the result here. A budget alert at $5/month is a
+warning, not a hard stop; the real controls are scale-to-zero, max one instance, and rate limiting.
+
+If cost turns out to be material and no budget is approved, the no-card fallback is Render's free
+tier, accepting its 15-minute sleep and roughly one-minute cold start — adequate for staging,
+poor for a client UAT session.
+
+Cloudflare Pages and Neon are unchanged. A custom domain is `[[to confirm with INZBC]]` and is not
+on the critical path.
 
 Splitting the two front ends is a security decision, not an aesthetic one. **The authenticated
 surface is same-origin**, so session cookies never cross an origin boundary and CORS is not part of
@@ -64,21 +93,25 @@ nothing here changes the launch-approval requirement in `docs/sip/README.md`.
 - `staging` — auto-deploys on merge to `main`. Synthetic data only.
 - `uat` — promoted manually via `workflow_dispatch`. Used for the client acceptance session.
 
-Neon database branching gives each environment its own branch from one free-tier project.
+Neon database branching gives each environment its own branch from one project. `uat` is never
+recreated from `staging` once client testing begins — that would erase the acceptance evidence.
 
 ### Deploy and rollback
 
-Deployment is a GitHub Actions job; no local `fly deploy` from a laptop. Rollback is
-`fly releases` to find the prior release, then redeploy that image digest. Every deploy records the
-image digest in the job summary so the rollback target is never guessed. Migrations run as a
-separate step before the release is promoted, and are expand-then-contract so a rollback of the app
-does not require a rollback of the schema.
+Deployment is a GitHub Actions job; no deploying from a laptop. Images are built once, pushed to
+Artifact Registry, and **promoted by digest** — `uat` redeploys the exact image `staging` tested,
+never a rebuild. Rollback is `gcloud run services update-traffic` to a prior revision, and every
+deploy records the image digest in the job summary so the rollback target is never guessed.
+
+Migrations run as a separate job before a release is promoted, and are expand-then-contract so
+rolling the app back does not require rolling the schema back.
 
 ### Secrets
 
-GitHub Actions secrets for CI, Fly secrets for runtime, Neon connection strings held as Fly secrets.
-Never in a file, a commit, an issue or a PR. `.env.example` continues to list names only. This
-extends the existing rule in `docs/sip/README.md` rather than replacing it.
+GitHub Actions secrets for CI, Secret Manager for Cloud Run runtime configuration, with the Neon
+connection string held there and mounted as an environment variable. Never in a file, a commit, an
+issue or a PR. `.env.example` continues to list names only. This extends the existing rule in
+`docs/sip/README.md` rather than replacing it.
 
 ### Identity and authorization
 
@@ -110,7 +143,8 @@ not be its reviewer, and the Quality Reviewer keeps independent stop authority.
 ### Post-capstone ownership
 
 `[[INZBC to name an owner for the deployed services and the OAuth app]]`. **Default if unnamed at
-capstone end: the Fly and Neon resources are torn down and the system returns to option C.**
+capstone end: the Cloud Run, Cloudflare and Neon resources are exported, revoked and torn down, and
+the system returns to option C.**
 ADR-0002 declined to adopt infrastructure nobody was accountable for; leaving unowned services
 running would contradict that for no benefit. This is a deliberate default, not an oversight.
 
@@ -122,15 +156,17 @@ process, which is what makes the append-only audit requirement enforceable rathe
 Identity costs nothing new — everyone already has a GitHub account. ADR-0001's stack is untouched.
 
 **Negative, and the mitigations.**
-- Cost is no longer structurally zero; it is zero only while free tiers hold. Mitigation:
-  scale-to-zero on Fly, Neon's free branch limits sit well above a five-user system, and the
-  teardown default above bounds the exposure.
+- Cost is no longer structurally zero, and on Cloud Run it is usage-based rather than free-tier.
+  Mitigation: scale-to-zero, max one instance, rate limiting on the public endpoint, a $5/month
+  budget alert, and the teardown default below. The actual mechanism is confirmed before
+  provisioning, not assumed — see the correction above.
 - Identity is still not INZBC-owned in the Entra sense. Mitigation: an organisation-owned OAuth app
   plus a database allowlist means access is revocable by INZBC without depending on any individual.
 - There is now something to patch, deploy and keep alive — the burden ADR-0002 avoided.
   Mitigation: a container with two dependencies, deploys only via Actions, documented rollback.
-- Free-tier providers can change terms. Mitigation: the app is a plain Docker image against plain
-  Postgres; moving hosts is a redeploy, not a rewrite.
+- Providers can change terms, and this ADR has already been wrong about one. Mitigation: the app
+  is a plain Docker image against plain Postgres, so moving hosts is a redeploy, not a rewrite —
+  which is what made correcting the Fly decision cheap.
 
 ## References
 - [ADR-0002](0002-internal-platform.md) — the decision this graduates, and the trigger it defined

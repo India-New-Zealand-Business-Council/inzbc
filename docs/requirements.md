@@ -226,7 +226,9 @@ Acceptance criteria:
 **REQ-U-04 — FTA Explainer embed**
 > As an **INZBC member**, I need to ask an FTA question on the website and see a sourced answer.
 
-*Source: modules/fta-centre.md. Priority: Should. Status: Planned — issue #59.*
+*Source: modules/fta-centre.md. Priority: Should. Status: In progress — implemented locally
+(PRs #85–#87, #89, #91); closure pending deployed website integration and Playwright evidence,
+since the story is a member asking the question on the website. Issue #59.*
 
 Acceptance criteria:
 - [ ] Query renders citation, effective date, next step and confidence rating
@@ -258,7 +260,7 @@ example `test_orchestrator.py`'s 19 functions run as 32 cases).
 | REQ-U-01 | Review and QA interface | #57 | — | — | Planned |
 | REQ-U-02 | CEO decision screen | #57 | — | — | Planned |
 | REQ-U-03 | Accessible design system | #58 | — | — | Planned |
-| REQ-U-04 | FTA Explainer embed | #59 | — | — | Planned |
+| REQ-U-04 | FTA Explainer embed | #59 | #85–#87, #89, #91 | `apps/fta/ui`, `services/api/main.py` | In progress — local only |
 | NFR-01 | Server-side model calls | #36 | PR #34 | `services/api/model_gateway.py` | `test_model_gateway.py` (2) |
 | NFR-02 | Fail closed on Critical | — | PR #23, #34, #67 | across gates | `test_orchestrator.py`, `test_verification.py`, `test_scoring_injection.py` |
 | NFR-08 | Controlled docs single source | — | PR #72, agent PR #12 | `docs/sip/launch/` | Verified by diff; no automated test |

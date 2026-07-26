@@ -108,6 +108,24 @@ INZBC sector/disclaimer sign-off).
   the collector README updated to reflect that `GET /api/source-library` exists (PR #25),
   wiring it in is just tracked separately, not done in this PR.
 
+## SHARED-OK — work taken in this lane by Bhanu
+
+Recorded here, not only in the PR descriptions, per the lane rule in
+[docs/workstreams/README.md](README.md). Raised at the next stand-up; object if any of it should
+come back.
+
+- **`apps/fta/explainer.py` — `NoMatch` / `no_match()`** (PR #83, 26 Jul 2026). Builds the Action
+  Required state a caller renders when `answer_query` returns `[]`. Deliberately not shaped like
+  `ExplainerAnswer` so a renderer cannot present escalation as a sourced finding. `answer_query`
+  itself is unchanged. Taken to unblock the API endpoint on the critical path.
+- **`apps/fta/corpus.py` — stable `id` on every entry** (PR #89, 26 Jul 2026). `FTA-001`-style
+  codes following the SIP-185 convention. The UI was keying React lists and ARIA ids off `topic`,
+  which is prose containing spaces, so `aria-labelledby` silently failed. Ids are assigned once
+  and must never be renumbered or reused.
+- **Still yours:** FTA retrieval ranking, corpus content and sourcing, `assessment.py`, the
+  collector and pipeline. Nothing in this lane's judgement calls was changed — only identifiers
+  and an additive helper.
+
 ## Blocked / decisions needed
 - FTA sectors in scope + disclaimer wording (INZBC to confirm).
 - Collection-engine secrets in the org repo (needs the values) — blocks running the collector
