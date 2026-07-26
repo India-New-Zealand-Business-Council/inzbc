@@ -39,6 +39,45 @@ jobs:
           --cov-report=term-missing --cov-report=xml
           --cov-fail-under=90
 
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+      - name: Install deps
+        run: |
+          pip install -e ".[dev]"
+          pnpm install --frozen-lockfile
+      # The TypeScript client is generated from the API's OpenAPI schema and never hand-written
+      # (ADR-0001). Regenerating must be a no-op; if it is not, the committed types have drifted
+      # from the API and the frontend is building against a contract that no longer exists.
+      - name: Generated types are in sync
+        run: |
+          pnpm run codegen
+          # --porcelain, not `git diff`: it reports untracked files too, so a generated artifact
+          # that was never committed still fails the check instead of passing silently.
+          if [ -n "$(git status --porcelain -- schemas/openapi.json apps/fta/ui/src/api/schema.ts)" ]; then
+            echo "::error::Generated types are stale — run 'pnpm run codegen' and commit the result."
+            git --no-pager diff -- schemas/openapi.json apps/fta/ui/src/api/schema.ts
+            git status --porcelain -- schemas/openapi.json apps/fta/ui/src/api/schema.ts
+            exit 1
+          fi
+      - name: Lint
+        run: pnpm -r --if-present lint
+      - name: Typecheck
+        run: pnpm -r --if-present typecheck
+      - name: Test + coverage
+        run: pnpm --filter @inzbc/fta-ui run coverage
+      - name: Build
+        run: pnpm -r --if-present build
+
   sast:
     runs-on: ubuntu-latest
     steps:

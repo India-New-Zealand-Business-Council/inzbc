@@ -27,12 +27,14 @@ venv/
 .coverage.*
 coverage.xml
 htmlcov/
+coverage/
 .pytest_cache/
 
 # Build output
 dist/
 build/
 *.egg-info/
+.vite/
 .next/
 out/
 
