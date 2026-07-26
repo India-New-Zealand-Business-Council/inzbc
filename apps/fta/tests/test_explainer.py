@@ -1,6 +1,12 @@
 from __future__ import annotations
 
-from apps.fta.explainer import DISCLAIMER, NO_MATCH_CONFIDENCE, answer_query
+from apps.fta.explainer import (
+    DISCLAIMER,
+    NO_MATCH_CONFIDENCE,
+    ExplainerAnswer,
+    answer_query,
+    no_match,
+)
 from apps.fta.standards import AI_INFORMATION_STANDARD, Confidence
 
 
@@ -80,3 +86,46 @@ def test_no_match_confidence_is_action_required() -> None:
     # The [] escalate-to-INZBC path is surfaced to users as Action Required per the standard.
     assert NO_MATCH_CONFIDENCE is Confidence.ACTION_REQUIRED
     assert "contacting the relevant government agency" in NO_MATCH_CONFIDENCE.meaning
+
+
+def test_no_match_carries_escalation_not_an_answer() -> None:
+    result = no_match("semiconductor export controls")
+    assert result.query == "semiconductor export controls"
+    assert result.confidence is Confidence.ACTION_REQUIRED
+    assert result.confidence_meaning == Confidence.ACTION_REQUIRED.meaning
+    assert result.message and result.next_step and result.escalation_path
+    assert "INZBC" in result.escalation_path
+
+
+def test_no_match_is_structurally_not_an_answer() -> None:
+    # The safety property: a renderer must not be able to feed a no-match through the
+    # sourced-answer path and present escalation guidance as an FTA finding. Enforced by the
+    # type carrying none of the evidence fields, not by naming.
+    result = no_match("semiconductor export controls")
+    assert not isinstance(result, ExplainerAnswer)
+    for evidence_field in ("topic", "sector", "treatment", "citation", "verified_at", "confirmed"):
+        assert not hasattr(result, evidence_field), (
+            f"NoMatch must not expose {evidence_field!r} - it is what makes a response look sourced"
+        )
+
+
+def test_no_match_carries_status_line_and_approved_disclaimer() -> None:
+    result = no_match("anything unmatched")
+    assert "not yet in force" in result.status_line.lower()
+    assert result.disclaimer == DISCLAIMER == AI_INFORMATION_STANDARD
+    assert "[[" not in result.disclaimer
+    assert result.jurisdiction == "New Zealand-India"
+
+
+def test_no_match_never_asserts_a_tariff_outcome() -> None:
+    # Guards against someone later writing reassuring copy that reads like a finding.
+    result = no_match("semiconductor export controls")
+    prose = " ".join([result.message, result.next_step, result.escalation_path]).lower()
+    for claim in ("tariff eliminated", "duty-free", "duty free", "%", "no tariff"):
+        assert claim not in prose, f"no-match copy must not assert an outcome: found {claim!r}"
+
+
+def test_empty_and_stopword_queries_route_to_no_match() -> None:
+    for query in ("", "   ", "the and of"):
+        assert answer_query(query) == []
+        assert no_match(query).confidence is Confidence.ACTION_REQUIRED
