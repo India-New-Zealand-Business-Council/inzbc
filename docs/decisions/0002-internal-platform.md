@@ -118,4 +118,5 @@ ADR-0001's stack is untouched.
 - `schemas/state-machine.md`, `database/schema.sql` — the contracts this defers rather than changes
 - `apps/sip/core/orchestrator.py` — the entry point a scheduled job invokes
 - Issue #21 — where this blocker was recorded
-- Issue #44 — turning the schema and state machine into migrations, gated on this decision
+- Issue #44 — turning the schema and state machine into migrations, gated on this decision and
+  unblocked by [ADR-0004](0004-platform-graduation.md)

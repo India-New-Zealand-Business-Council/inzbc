@@ -55,9 +55,10 @@ These are the flagship AI engineering builds; each is tracked as a GitHub issue 
 - [ ] [security] Secrets management: org-repo secrets for the collection engine + rotation
       policy (clears Roshan's end-to-end run blocker).
 - [ ] [security] Auth + role model (roles from launch-config) + audit-log middleware.
-- [ ] [lead] ADR-0002: internal platform decision (M365 vs repo-hosted) — drive it to a
-      decision; it gates the migrations below.
-- [ ] [platform] Turn the state-machine + schema drafts into migrations once ADR-0002 lands.
+- [ ] [platform] Turn the state-machine + schema drafts into Alembic migrations. Unblocked:
+      ADR-0002 is Accepted and ADR-0004 graduated it to option B, so a database is now in scope.
+      Alembic owns initialisation — do not execute `schema.sql` against the database directly, or
+      the schema ends up with two executable sources of truth.
 - [ ] [platform] Webhook contract for Wix to internal, plus the internal receiver service for
       site forms. (SHARED-OK: receiver side from Paras; he keeps the form UI + notifications.)
 - [ ] [security] Member portal access control: member roles + Members Area gating on the
@@ -82,8 +83,11 @@ These are the flagship AI engineering builds; each is tracked as a GitHub issue 
 - Run state machine v0.1 (`schemas/state-machine.md`) with allowed/illegal transitions.
 
 ## Blocked / decisions needed
-- Internal platform: Microsoft 365 vs repo-hosted service (AIOS foundation decision).
-- SIP app hosting + private domain.
+- SIP app private domain. (Hosting itself is settled — [ADR-0004](../decisions/0004-platform-graduation.md)
+  picks Fly.io for the API and Cloudflare Pages for the public UI on provider-issued HTTPS; a custom
+  domain is still owed by INZBC and is not on the critical path.)
+- INZBC to register the GitHub OAuth app at organisation level, and to name the post-capstone owner
+  of the deployed services (ADR-0004). Unnamed at capstone end means the resources are torn down.
 
 ## Definition of done
 Contracts published and versioned; auth/audit/state/CI green; disabled-control flags enforced
