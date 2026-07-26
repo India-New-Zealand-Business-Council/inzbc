@@ -1,5 +1,7 @@
 [build-system]
-requires = ["setuptools>=68"]
+# Pinned, not floored. uv.lock fixes runtime and dev dependencies, but an unpinned build
+# backend can still change how the project is built between runs.
+requires = ["setuptools==79.0.1"]
 build-backend = "setuptools.build_meta"
 
 [project]

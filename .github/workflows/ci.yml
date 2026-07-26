@@ -29,7 +29,10 @@ jobs:
           # Install the locked resolution so a green CI run stays green: pyproject carries
           # lower bounds only, so an unrelated upstream release could otherwise change what
           # CI tests without a commit here.
-          pip install uv
+          # uv is pinned too: an unpinned installer defeats the lockfile, since a future
+          # uv release could change resolution or lockfile compatibility with no commit
+          # here. Bump deliberately, same rule as the ruff pin.
+          pip install "uv==0.8.17"
           uv sync --locked --extra dev
       - name: Lint (ruff)
         # `uv run` so every step uses the locked environment, not whatever pip left on PATH.
@@ -56,7 +59,10 @@ jobs:
           cache: 'pnpm'
       - name: Install deps
         run: |
-          pip install uv
+          # uv is pinned too: an unpinned installer defeats the lockfile, since a future
+          # uv release could change resolution or lockfile compatibility with no commit
+          # here. Bump deliberately, same rule as the ruff pin.
+          pip install "uv==0.8.17"
           uv sync --locked --extra dev
           pnpm install --frozen-lockfile
       # The TypeScript client is generated from the API's OpenAPI schema and never hand-written
@@ -81,9 +87,10 @@ jobs:
         run: pnpm --filter @inzbc/fta-ui run coverage
       - name: Build
         run: pnpm -r --if-present build
-      # Storybook config and stories ship with the components (ADR-0003); building it here
-      # means a broken story or a11y config fails the PR rather than being found later.
-      - name: Build Storybook
+      # Compile check only: proves the stories and Storybook config build. It does NOT run the
+      # a11y addon's checks — that needs the Storybook test-runner and lands with Playwright in
+      # task 1.2. Do not read a green tick here as accessibility compliance.
+      - name: Build Storybook (compile check)
         run: pnpm --filter @inzbc/fta-ui run build-storybook
 
   sast:
