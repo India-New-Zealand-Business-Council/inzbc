@@ -26,15 +26,21 @@ jobs:
       - name: Install deps
         run: |
           python -m pip install --upgrade pip
-          # Single source of truth is the root pyproject.toml; ruff stays pinned there so
-          # version bumps are deliberate, with any new-rule fixes in the same PR.
-          pip install -e ".[dev]"
+          # Install the locked resolution so a green CI run stays green: pyproject carries
+          # lower bounds only, so an unrelated upstream release could otherwise change what
+          # CI tests without a commit here.
+          # uv is pinned too: an unpinned installer defeats the lockfile, since a future
+          # uv release could change resolution or lockfile compatibility with no commit
+          # here. Bump deliberately, same rule as the ruff pin.
+          pip install "uv==0.8.17"
+          uv sync --locked --extra dev
       - name: Lint (ruff)
-        run: ruff check apps services
+        # `uv run` so every step uses the locked environment, not whatever pip left on PATH.
+        run: uv run ruff check apps services scripts
       - name: Test (pytest + coverage)
         # Coverage gate at 90% (baseline is ~97%); term-missing shows the gaps on the PR log.
         run: >
-          pytest apps services -q
+          uv run pytest apps services -q
           --cov=apps --cov=services
           --cov-report=term-missing --cov-report=xml
           --cov-fail-under=90
@@ -53,14 +59,18 @@ jobs:
           cache: 'pnpm'
       - name: Install deps
         run: |
-          pip install -e ".[dev]"
+          # uv is pinned too: an unpinned installer defeats the lockfile, since a future
+          # uv release could change resolution or lockfile compatibility with no commit
+          # here. Bump deliberately, same rule as the ruff pin.
+          pip install "uv==0.8.17"
+          uv sync --locked --extra dev
           pnpm install --frozen-lockfile
       # The TypeScript client is generated from the API's OpenAPI schema and never hand-written
       # (ADR-0001). Regenerating must be a no-op; if it is not, the committed types have drifted
       # from the API and the frontend is building against a contract that no longer exists.
       - name: Generated types are in sync
         run: |
-          pnpm run codegen
+          uv run pnpm run codegen
           # --porcelain, not `git diff`: it reports untracked files too, so a generated artifact
           # that was never committed still fails the check instead of passing silently.
           if [ -n "$(git status --porcelain -- schemas/openapi.json apps/fta/ui/src/api/schema.ts)" ]; then
@@ -77,6 +87,11 @@ jobs:
         run: pnpm --filter @inzbc/fta-ui run coverage
       - name: Build
         run: pnpm -r --if-present build
+      # Compile check only: proves the stories and Storybook config build. It does NOT run the
+      # a11y addon's checks — that needs the Storybook test-runner and lands with Playwright in
+      # task 1.2. Do not read a green tick here as accessibility compliance.
+      - name: Build Storybook (compile check)
+        run: pnpm --filter @inzbc/fta-ui run build-storybook
 
   sast:
     runs-on: ubuntu-latest
