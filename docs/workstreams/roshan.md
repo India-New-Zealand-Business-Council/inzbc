@@ -43,19 +43,25 @@ See Blocked / decisions needed for what's still open before any of this runs liv
 INZBC sector/disclaimer sign-off).
 
 ## Done
-- [x] Wired `GET /api/source-library` into the collector's two lookups (#52). New
+- [x] Client + lookup layer for `GET /api/source-library`, implemented locally ahead of the
+  endpoint (refs #52 — not closed; the endpoint itself isn't deployed yet, see below). New
   `apps/sip/collector/source_lookup.py`: `build_source_lookups()` splits one
   `SipPipelineClient.get_source_library()` response into `SourceNameLookup` (display name → db id,
   for `mapping`/`ingest`) and `SourceIdLookup` (SIP-185 code → db id, for
   `record_source_outcome`) — two distinct dataclasses, not interchangeable dicts, so a caller
-  can't pass a name-keyed lookup where the id-keyed coverage gate expects one;
-  `record_source_outcome` also raises `TypeError` at runtime if handed a `SourceNameLookup`
-  (the mixed-keyspace failure mode the issue called out — `source_library.name` is not unique
-  across NZ/India, so that mistake would otherwise silently miss most mandatory sources instead
-  of failing loudly). Added `SipPipelineClient.get_source_library()`. Candidate capture still
-  degrades to `source_id=None` on an unmatched name (nullable column); source-check recording
-  still raises `SourceIdUnresolved` on a miss (NOT NULL column) — unchanged from before, just now
-  reachable with a real lookup instead of an empty one.
+  can't pass a name-keyed lookup (or any non-`SourceIdLookup`, including a plain dict) where the
+  id-keyed coverage gate expects one; `record_source_outcome` checks positively for
+  `SourceIdLookup` and raises `TypeError` on anything else. A name shared by more than one record
+  (two exist in the v1.0 register — "Ministry of Defence", "Ministry of Education", once per
+  jurisdiction) is dropped from the name lookup rather than resolving to whichever record was
+  seen last (caught in Bhanu's PR #131 review — the initial version let the second record
+  silently overwrite the first). Added `SipPipelineClient.get_source_library()`. Candidate capture
+  still degrades to `source_id=None` on an unmatched name (nullable column); source-check
+  recording still raises `SourceIdUnresolved` on a miss (NOT NULL column) — unchanged from before.
+  **Not done here:** the `/api/source-library` endpoint itself — `services/api` only serves
+  `/api/fta/query` and `/health` today, so `get_source_library()` returns 404 until that server
+  work lands (separate PR, per ADR-0004's sequencing). Nothing in this PR is reachable end-to-end
+  yet; it's the client/lookup layer landing ahead of the server, the established pattern here.
 - [x] Wire the collection-engine output into SIP candidate capture via the API (run to
   candidates). `apps/sip/collector/mapping.py` + `ingest.py`, mapped against the real
   `daily-india-nz-news-agent` `clean_articles()` output. Raw capture only (SIP-184 step 5); no
