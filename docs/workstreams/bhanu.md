@@ -1,7 +1,8 @@
 # Worklog — Bhanu
 
 Role: foundation, security, integration. Owns the shared contracts the others build against.
-Ordered backlog; take the top **Next up** item. Move finished items to **Done**.
+Ordered backlog; take the top **Next up** item unless client priorities say otherwise, and note
+why if you skip one. Move finished items to **Done**.
 
 ## Lanes (my paths — others don't edit without SHARED-OK)
 ```
