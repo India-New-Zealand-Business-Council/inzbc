@@ -51,7 +51,7 @@ jobs:
       - name: Start it and check the endpoints it must serve
         run: |
           docker run -d --name fta -p 8000:8000 inzbc-fta:ci
-          for i in $(seq 1 30); do
+          for _ in $(seq 1 30); do
             curl -fsS http://127.0.0.1:8000/health >/dev/null 2>&1 && break
             sleep 2
           done
