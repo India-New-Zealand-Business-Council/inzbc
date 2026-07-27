@@ -33,6 +33,12 @@ Owner: Roshan. Maps the `daily-india-nz-news-agent` repo's output onto
   `docs/sip/SIP_Reference_Config.json`'s `official_verification_required_for_high/critical`).
   Mirrors the "unverified Critical claim" fail-closed condition from
   `schemas/api-contract.md` client-side, ahead of the server's own enforcement of the same rule.
+- `source_lookup.py` — `build_source_lookups()`: splits one `GET /api/source-library` response
+  (`SipPipelineClient.get_source_library()`) into `SourceNameLookup` (display name → id, for
+  candidate capture) and `SourceIdLookup` (SIP-185 code → id, for source-check recording). The two
+  are distinct types, not interchangeable dicts, on purpose — `source_library.name` is not unique
+  across jurisdictions, so passing the wrong one into `record_source_outcome` would otherwise
+  silently miss most mandatory sources instead of failing loudly (it raises `TypeError` instead).
 - `tests/` — local checks against fixture article dicts and a fake client; no live agent or API
   needed.
 
@@ -43,20 +49,17 @@ scoring/prompt framework) now exists in the repo, and the SIP non-negotiables pu
 calls" server-side only — so those values come from an analyst or a future server-side
 recommendation, not from this module.
 
-## Known gap: source_id resolution not wired up here
-Both the agent's articles and SIP-185's source register only give a free-text source name (e.g.
-`"RNZ Business"`, `"MFAT"`). A `GET /api/source-library` lookup endpoint exists to resolve a
-name to its DB id; wiring it into this module's callers is tracked in
-`docs/workstreams/roshan.md`, not done in this PR.
-- `map_article`/`map_articles`/`ingest_articles` take an optional `source_name_lookup: dict[str,
-  str]` (article source **name** → id); candidates write with `source_id=None` when a name
-  doesn't resolve — `candidates.source_id` is nullable, so this is a degraded-but-valid write.
-- `record_source_outcome()` requires `source_id_lookup` to resolve the SIP-185 **source id**
-  (e.g. `NZ-OFF-001`) and raises `SourceIdUnresolved` if it doesn't — `source_checks.source_id`
-  is **NOT NULL**
-  (`database/schema.sql`), so there is no valid source check without one; this can't degrade
-  gracefully the way candidate capture can.
-Tracked in `docs/workstreams/roshan.md`'s blocked list — a contract change needs Bhanu.
+## source_id resolution
+`GET /api/source-library` (`schemas/api-contract.md`) returns `id`, `sip185_code`, `name` for every
+`source_library` row. `source_lookup.build_source_lookups()` turns one call's response into both
+lookups this module needs:
+- `map_article`/`map_articles`/`ingest_articles` take an optional `source_name_lookup:
+  SourceNameLookup` (article source **name** → id); candidates write with `source_id=None` when a
+  name doesn't resolve — `candidates.source_id` is nullable, so this is a degraded-but-valid write.
+- `record_source_outcome()` requires a `source_id_lookup: SourceIdLookup` to resolve the SIP-185
+  **source id** (e.g. `NZ-OFF-001`) and raises `SourceIdUnresolved` if it doesn't —
+  `source_checks.source_id` is **NOT NULL** (`database/schema.sql`), so there is no valid source
+  check without one; this can't degrade gracefully the way candidate capture can.
 
 ## Still blocked
 - **Live runs.** Collection-engine secrets (`OPENAI_API_KEY`, `PERPLEXITY_API_KEY`, etc.) aren't

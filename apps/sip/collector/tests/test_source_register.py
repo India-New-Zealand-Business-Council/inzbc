@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from apps.sip.collector.source_lookup import SourceIdLookup, SourceNameLookup
 from apps.sip.collector.source_register import (
     ALL_SOURCES,
     MANDATORY_SOURCES,
@@ -16,7 +17,9 @@ RUN_ID = "11111111-1111-1111-1111-111111111111"
 # NZ-OFF-001 (New Zealand Parliament) is a real mandatory source in SIP-185 v1.0.
 PARLIAMENT_ID = "NZ-OFF-001"
 DB_ID = "22222222-2222-2222-2222-222222222222"
-LOOKUP = {PARLIAMENT_ID: DB_ID, "NZ-OFF-002": "33333333-3333-3333-3333-333333333333"}
+LOOKUP = SourceIdLookup(
+    {PARLIAMENT_ID: DB_ID, "NZ-OFF-002": "33333333-3333-3333-3333-333333333333"}
+)
 
 
 def test_register_loads_v1_0_counts() -> None:
@@ -81,7 +84,15 @@ def test_record_source_outcome_with_no_fallback() -> None:
 
 def test_record_source_outcome_raises_when_source_id_unresolved() -> None:
     with pytest.raises(SourceIdUnresolved):
-        record_source_outcome(RUN_ID, PARLIAMENT_ID, SourceOutcome.INCLUDED, {})
+        record_source_outcome(RUN_ID, PARLIAMENT_ID, SourceOutcome.INCLUDED, SourceIdLookup())
+
+
+def test_record_source_outcome_rejects_a_name_keyed_lookup() -> None:
+    # The wrong-keyspace guard: source_library.name is not unique across jurisdictions, so a
+    # SourceNameLookup passed here must fail loudly, not silently miss most mandatory sources.
+    name_lookup = SourceNameLookup({"New Zealand Parliament": DB_ID})
+    with pytest.raises(TypeError):
+        record_source_outcome(RUN_ID, PARLIAMENT_ID, SourceOutcome.INCLUDED, name_lookup)
 
 
 def test_record_source_outcome_folds_fallback_trail_into_notes() -> None:

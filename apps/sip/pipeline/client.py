@@ -68,6 +68,15 @@ class SipPipelineClient:
     def complete_run(self, run_id: str) -> dict:
         return self._request("POST", f"/api/runs/{run_id}/complete")
 
+    # ---------- source library ----------
+
+    def get_source_library(self) -> list[dict]:
+        """Returns every `source_library` row as `{"id", "sip185_code", "name"}` (see
+        `schemas/api-contract.md`). Feed this straight into
+        `apps.sip.collector.source_lookup.build_source_lookups`.
+        """
+        return self._request("GET", "/api/source-library")
+
     # ---------- source checks ----------
 
     def list_source_checks(self, run_id: str) -> list[dict]:

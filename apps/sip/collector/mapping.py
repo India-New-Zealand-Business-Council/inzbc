@@ -21,6 +21,8 @@ from pydantic import BaseModel
 
 from apps.sip.pipeline.models import Candidate
 
+from .source_lookup import SourceNameLookup
+
 # GDELT's DOC 2.0 API `seendate` field; RSS entries are parsed by parse_published_at's
 # fromisoformat branches instead (agent.py stores str(datetime) there, e.g. from
 # email.utils.parsedate_to_datetime).
@@ -62,9 +64,10 @@ class MappedCandidate(BaseModel):
     """A Candidate ready to write, plus the agent's raw source label.
 
     `candidate.source_id` is left unset unless `source_name_lookup` resolves it: the agent only
-    emits a free-text source name (e.g. "RNZ Business", "GDELT"). A `GET /api/source-library`
-    endpoint exists (PR #25) to build that map; wiring it into this module's callers is tracked
-    in docs/workstreams/roshan.md, not done by this function itself. `source_name` is kept
+    emits a free-text source name (e.g. "RNZ Business", "GDELT"), and `source_library.name` is
+    display/candidate-capture only — not unique (`schemas/api-contract.md`) — so an unmatched or
+    ambiguous name degrades to unset rather than guessing. Build `source_name_lookup` via
+    `source_lookup.build_source_lookups(client.get_source_library())`. `source_name` is kept
     alongside so a resolver can be applied later without re-reading the agent's output.
     """
 
@@ -73,7 +76,7 @@ class MappedCandidate(BaseModel):
 
 
 def map_article(
-    article: dict, run_id: str, source_name_lookup: dict[str, str] | None = None
+    article: dict, run_id: str, source_name_lookup: SourceNameLookup | None = None
 ) -> MappedCandidate:
     """Maps one `clean_articles()` output dict onto a Candidate for run `run_id`.
 
@@ -108,6 +111,6 @@ def map_article(
 
 
 def map_articles(
-    articles: list[dict], run_id: str, source_name_lookup: dict[str, str] | None = None
+    articles: list[dict], run_id: str, source_name_lookup: SourceNameLookup | None = None
 ) -> list[MappedCandidate]:
     return [map_article(article, run_id, source_name_lookup) for article in articles]
