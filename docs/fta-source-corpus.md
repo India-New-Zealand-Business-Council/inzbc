@@ -18,10 +18,11 @@ every substantive claim traces to an official document below.
 - MFAT negotiations timeline (same path `/timeline-of-negotiations`).
 - The **agreement text and full tariff schedules are now published** — confirmed at
   https://www.mfat.govt.nz/en/trade/free-trade-agreements/free-trade-agreements-concluded-but-not-in-force/new-zealand-india-free-trade-agreement/text-of-the-agreement
-  (consolidated text + 20 chapters individually; Annex 2A-1 is India's tariff schedule,
-  Annex 2A-2 is New Zealand's; Annex 2B covers economic cooperation/TRQs; 6 side letters
-  including one on dairy). This closes the "no line-by-line schedule" gap — the Explainer
-  should cite Annex 2A directly for product-level tariff lines, not just the NIA summary.
+  (consolidated text + 20 chapters individually; **Appendix 2A-1 to Annex 2A** is India's
+  schedule of tariff commitments, **Appendix 2A-2** is New Zealand's; Annex 2B covers economic
+  cooperation/TRQs; 6 side letters, one of them "Dairy Consultations"). This closes the
+  "no line-by-line schedule" gap — the Explainer should cite the Annex 2A appendices directly
+  for product-level tariff lines, not just the NIA summary.
 - MFAT **National Interest Analysis (NIA)** — now available:
   https://www.mfat.govt.nz/assets/Trade-agreements/NZ-India-FTA/NZ-India-FTA-National-Interest-Analysis-NIA.pdf
   (published ~2026; covers tariff outcomes, economic modelling, and treaty obligations chapter
@@ -66,13 +67,16 @@ every substantive claim traces to an official document below.
   years, NZ first mover), cherries/avocados/blueberries/persimmons (phased elimination).
   "Agri-inputs" as a category is not named in the NIA outcomes table — treat as unconfirmed
   until a specific product/tariff line is found.
-- **Dairy exclusion confirmed** — milk, cheese and butter are excluded; this is NZ's first FTA
-  to exclude major dairy products (NIA + corroborating reporting). Not a blanket dairy
-  exclusion though: bulk infant formula and other dairy-based food preparations phase out over
-  7 years, peptones phase out over 7 years, and albumins get a 50% cut within a quota. The
-  Explainer must distinguish "core dairy (milk/cheese/butter) excluded" from "some dairy-based
-  preparations get phased access" — do not collapse these into one line.
-- Two-way trade ~NZ$3.95bn annually — confirmed on the MFAT FTA hub page.
+- **Dairy exclusion confirmed** — milk, cheese and butter get no tariff concession from India
+  (NIA). Not a blanket dairy exclusion though: bulk infant formula and other dairy-based food
+  preparations phase out over 7 years, peptones phase out over 7 years, and albumins get a 50%
+  cut within a quota. The Explainer must distinguish "core dairy (milk/cheese/butter) excluded"
+  from "some dairy-based preparations get phased access" — do not collapse these into one line.
+  Reporting also calls this NZ's first FTA to exclude major dairy products; that is Tier 2, is
+  not a tariff fact, and the Explainer does not assert it. The agreement carries a "Dairy
+  Consultations" side letter, so the exclusion is not necessarily permanent.
+- Two-way goods and services trade ~NZ$3.95bn, year ended December 2025 — confirmed on the MFAT
+  key-facts page (re-checked 28 Jul 2026). Always publish the period alongside the figure.
 - **New, not previously in this doc:** independent modelling (Motu, cited in the NIA) projects
   NZ GDP 0.07% ($401m, 2024 dollars) above non-FTA baseline by 2037, growing to 0.1% ($657.7m)
   by 2050. Useful context for an Explainer answer, not a tariff fact — keep separate from
