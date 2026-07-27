@@ -13,9 +13,11 @@ wire, and `_check_envelope` enforces it rather than trusting callers to construc
 from __future__ import annotations
 
 from datetime import date
+from pathlib import Path
 from typing import Literal
 
 from fastapi import FastAPI, Query
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, model_validator
 
 from apps.fta.explainer import ExplainerAnswer, NoMatch, answer_query, no_match
@@ -162,3 +164,12 @@ def fta_query(
 def health() -> dict[str, str]:
     """Liveness probe for the host's health check (ADR-0004)."""
     return {"status": "ok"}
+
+
+# Serve the built UI from this same origin when the image contains it (see Dockerfile). Mounted
+# last so it can never shadow an /api or /health route. Absent in development and in tests, where
+# the Vite dev server proxies to this app instead, so the mount is conditional rather than assumed.
+_STATIC = Path(__file__).resolve().parents[2] / "static"
+if _STATIC.is_dir():
+    # html=True makes unknown paths fall back to index.html, which a client-side router needs.
+    app.mount("/", StaticFiles(directory=_STATIC, html=True), name="ui")

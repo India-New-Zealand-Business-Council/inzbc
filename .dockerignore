@@ -1,0 +1,21 @@
+# Keep the build context small and make sure nothing local or secret reaches the image.
+.git
+.github
+node_modules
+**/node_modules
+**/dist
+**/.venv
+**/__pycache__
+**/*.pyc
+.pytest_cache
+.ruff_cache
+htmlcov
+.coverage*
+coverage
+storybook-static
+**/*.local.md
+.env*
+*.key
+*.pem
+.remember
+docs
