@@ -95,6 +95,14 @@ def test_record_source_outcome_rejects_a_name_keyed_lookup() -> None:
         record_source_outcome(RUN_ID, PARLIAMENT_ID, SourceOutcome.INCLUDED, name_lookup)
 
 
+def test_record_source_outcome_rejects_a_plain_dict() -> None:
+    # The guard checks positively for SourceIdLookup rather than excluding just
+    # SourceNameLookup - a bare dict has the same .get() shape and would otherwise sail through
+    # and do the exact silent-wrong-resolution damage the guard exists to prevent.
+    with pytest.raises(TypeError):
+        record_source_outcome(RUN_ID, PARLIAMENT_ID, SourceOutcome.INCLUDED, {PARLIAMENT_ID: DB_ID})
+
+
 def test_record_source_outcome_folds_fallback_trail_into_notes() -> None:
     check = record_source_outcome(
         RUN_ID,

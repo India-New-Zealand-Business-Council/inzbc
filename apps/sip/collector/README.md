@@ -35,10 +35,13 @@ Owner: Roshan. Maps the `daily-india-nz-news-agent` repo's output onto
   `schemas/api-contract.md` client-side, ahead of the server's own enforcement of the same rule.
 - `source_lookup.py` — `build_source_lookups()`: splits one `GET /api/source-library` response
   (`SipPipelineClient.get_source_library()`) into `SourceNameLookup` (display name → id, for
-  candidate capture) and `SourceIdLookup` (SIP-185 code → id, for source-check recording). The two
-  are distinct types, not interchangeable dicts, on purpose — `source_library.name` is not unique
-  across jurisdictions, so passing the wrong one into `record_source_outcome` would otherwise
-  silently miss most mandatory sources instead of failing loudly (it raises `TypeError` instead).
+  candidate capture) and `SourceIdLookup` (SIP-185 code → id, for source-check recording). A name
+  shared by more than one record (two exist in the v1.0 register) is dropped from the name lookup
+  rather than resolving to whichever record was seen last. The two are distinct types, not
+  interchangeable dicts, on purpose — `source_library.name` is not unique across jurisdictions, so
+  `record_source_outcome` checks positively for `SourceIdLookup` and raises `TypeError` on
+  anything else (a `SourceNameLookup`, or a plain dict), rather than excluding only the one wrong
+  type it knows about.
 - `tests/` — local checks against fixture article dicts and a fake client; no live agent or API
   needed.
 
