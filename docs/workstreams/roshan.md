@@ -1,7 +1,8 @@
 # Worklog — Roshan
 
 Role: intelligence, sources, data, FTA. Writes data into the system through the shared API. No UI.
-Ordered backlog; take the top **Next up** item. Move finished items to **Done**.
+Ordered backlog; take the top **Next up** item unless client priorities say otherwise, and note
+why if you skip one. Move finished items to **Done**.
 
 ## Lanes (my paths)
 ```

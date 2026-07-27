@@ -1,7 +1,8 @@
 # Worklog — Paras
 
 Role: public site, member experience, and all UI. Presents data out; reads through the shared API.
-Ordered backlog; take the top **Next up** item. Move finished items to **Done**.
+Ordered backlog; take the top **Next up** item unless client priorities say otherwise, and note
+why if you skip one. Move finished items to **Done**.
 
 ## Lanes (my paths)
 ```
