@@ -98,7 +98,7 @@ the AI service layer (embed / iframe / API).
 
 | ID   | Item | Owner | Status |
 |------|------|-------|--------|
-| OI-1 | **Wix build tooling not connected.** Sunil granted the *team* access to the INZBC Wix account, but the Wix MCP is still not connected in this build environment (confirmed: no Wix tools available). The team can create/build the new site in the Wix editor now; for programmatic build, connect the Wix MCP (`claude mcp add --transport http wix <url> --headers …`). | Team | Blocking programmatic build |
+| OI-1 | **Wix build tooling not connected.** Sunil granted the *team* access to the INZBC Wix account, but the Wix MCP is still not connected in this build environment (confirmed: no Wix tools available). The team can create/build the new site in the Wix editor now; for programmatic build, connect the Wix MCP server in the build environment. | Team | Blocking programmatic build |
 | OI-2 | **Domain: RESOLVED.** Sunil confirmed the site keeps the **inzbc.org** address. Plan: build a new, separate Wix site in the existing account, then point inzbc.org at it at go-live (cutover). No new domain or DNS purchase needed. | Client | Resolved |
 | OI-3 | **Scope/vision outreach started** — message 1 sent to Sunil asking his vision for the new site. Full written scope confirmation pending his reply. | Team | In progress |
 | OI-4 | Page-by-page audit done except `/events` (404 on that slug — confirm real Events/Calendar URLs). | Team | Mostly done |
