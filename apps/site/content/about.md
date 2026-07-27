@@ -16,8 +16,8 @@ Since 1988, INZBC has promoted and encouraged trade in goods and services, inves
 scientific, technical and economic cooperation between New Zealand and India. INZBC is recognised
 as the main industry body for the bilateral relationship by both governments, and has hosted
 visiting Government of India delegations to New Zealand, organising networking events on their
-behalf. [[Extent of delegations hosted (e.g. "the majority") — confirm with INZBC before
-publishing this claim.]] [[Most recent delegation hosted — confirm current example with INZBC;
+behalf. Since 1988, INZBC has hosted and supported numerous government, business and sector delegations
+between India and New Zealand. `[[proposed wording — replaces an unsourced "majority" claim; pending INZBC confirmation]]` [[Most recent delegation hosted — confirm current example with INZBC;
 the 2025 brand guidelines cite an ICT delegation from Kerala, which may now be out of date.]]
 [[Key milestones since 1988 — confirm dates and events with INZBC.]]
 
@@ -35,8 +35,26 @@ by the New Zealand–India Free Trade Agreement.
 - Convene events, including the annual INZBC Summit.
 
 ## Executive Council
-[[Board and executive team — names, roles, short bios, photos and LinkedIn pulled directly from
-INZBC at build time. Not drafted here.]]
+**Board**
+- Edwin Paul — Chair
+- Tony Martin — Deputy Chair
+- Bharat Chawla — Treasurer
+- Antje Fiedler, Prince Kumar, Jonathan Manuel, Rachel Lynch, Jenny McGregor, Sumant Khedkar — Board Members
+
+**Executive team**
+- Sunil Kaushal — Chief Executive
+- Kanwaljit Singh Bakshi — Ex-Officio
+- Clive Antony — Strategic Communications Officer
+- Sandeep Sharma — Strategy and Trade Officer
+- Sreedhar Venkatram — Mumbai Chapter Head
+- Bharat Joshi — Delhi Chapter Head
+- Dr Pushpa Wood — Wellington Chapter Head
+- Michael Henstock — Christchurch Chapter Head
+
+Bios and photos migrate from the INZBC Executive Council page.
+
+`[[proposed — read from inzbc.org 27 Jul 2026; pending INZBC confirmation]]`
+The Board must confirm these remain current before publication.
 
 ## Governance
 [[Constitution / governance information approved for publication.]] INZBC is a member-based,

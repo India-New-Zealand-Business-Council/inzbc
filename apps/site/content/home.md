@@ -34,7 +34,7 @@ Analysis / MFAT FTA hub, verified 22 Jul 2026); the trade page uses the same fig
 
 ## Credibility strip
 - Established 1988; recognised by the governments of New Zealand and India
-- [[current member count]] members across agriculture, dairy, finance, education and infrastructure
+- More than 200 members `[[proposed — pending INZBC confirmation]]` across agriculture, dairy, finance, education and infrastructure
 - New Zealand's leading India trade and FTA platform
 
 ## Ways in
@@ -46,7 +46,7 @@ Four pathway cards:
 - **Become a member** → Membership page (Member Jungle)
 
 ## Featured events
-Dynamic: latest [[3]] upcoming events (title, date, venue, register). Anchor item: the INZBC Summit.
+Dynamic: latest 3 upcoming events (title, date, venue, register). Anchor item: the INZBC Summit.
 
 ## Trade Intelligence Digest teaser
 One-line intro + the latest published digest headline, linking to the Digest page.
@@ -78,4 +78,4 @@ Partner logos (Strategic Partners first). Links to the Partners page.
 **Buttons:** Join INZBC → | Contact us →
 
 ## Footer note
-Membership managed via Member Jungle. Contact [[secretariat email]]. NZ Privacy Act 2020 applies.
+Membership managed via Member Jungle. Contact sunil@inzbc.org until a dedicated secretariat address exists `[[proposed — pending INZBC confirmation]]`. NZ Privacy Act 2020 applies.

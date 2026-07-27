@@ -1,6 +1,6 @@
 # ADR-0004: Graduate to option B — hosted service, managed Postgres, GitHub identity
 
-- Status: Accepted
+- Status: Accepted, amended 27 July 2026 (zero-cost constraint — Cloud Run deferred, see below)
 - Date: 2026-07-27
 - Deciders: Bhanu (tech lead), with INZBC to confirm organisation ownership of the OAuth app and the
   post-capstone owner
@@ -46,6 +46,34 @@ Adopt option B, with the following specifics.
 | Staff SIP UI | **Served by the API as static files, same origin** |
 | Database | **Neon** Postgres, Sydney region, pooled connection string |
 | TLS + domain | Provider HTTPS on `*.run.app` and `*.pages.dev` |
+
+### Amendment, 2026-07-27: INZBC has set a zero-cost constraint, so Cloud Run is deferred
+
+INZBC has since asked for **no recurring infrastructure cost at all** — model API usage excepted,
+which is accepted as the one genuine running cost. Cloud Run cannot meet that: it requires a billing
+account with a payment method even where usage falls inside the free allowance, and the section
+below records honestly that $0 was expected but never confirmed.
+
+**The next deployment therefore runs on free tiers with no payment method:**
+
+| Component | Now (staging / UAT) | Deferred target |
+|---|---|---|
+| API (FastAPI) | Render free tier | Cloud Run, Sydney |
+| Public FTA UI | Cloudflare Pages | unchanged |
+| Database | Free-tier managed Postgres — **confirm an Australian region is available on the free plan before Phase 2 commits to it** | Neon, Sydney |
+| Scheduled runs | GitHub Actions cron | unchanged |
+| Identity | GitHub OAuth, INZBC-org owned | unchanged |
+| Backups | Scheduled `pg_dump` to an INZBC-controlled location | provider-managed |
+
+**This defers the decision below rather than reversing it.** The reason for Sydney is NZ Privacy Act
+2020 residency for *member data*, and no member data is stored yet. When Phase 2 stores it, the
+residency requirement returns and the paid path is revisited with INZBC — at which point the cost
+conversation is about a system they have already used, not a hypothetical.
+
+What the free tiers cost instead of money: Render sleeps after roughly 15 minutes with a cold start
+near a minute, which is adequate for a demo when warmed beforehand and **poor for an unattended
+client acceptance session**. Free-tier limits and regions also change without notice, so this is
+recorded as an interim position, not a durable one.
 
 ### Correction, 2026-07-27: Fly.io was chosen on a false premise
 

@@ -20,7 +20,8 @@ Highlights include the annual INZBC Summit.
 ## Upcoming events
 Dynamic cards (from CMS): title, date, venue, short description, register link.
 Registration: via Zoho or Member Jungle — do not duplicate registration logic on the site itself.
-[[Confirm which platform (Zoho vs Member Jungle) per event type.]]
+Member Jungle is the normal registration platform; Zoho only where a major event needs functions
+Member Jungle cannot provide. `[[proposed — pending INZBC confirmation]]`
 
 ## FTA events and briefings
 Sector briefings and FTA-focused sessions link out to the NZ India FTA Hub. [[FTA Events and
@@ -30,7 +31,7 @@ Briefings page — not yet published; see migration checklist, FTA Hub pages cur
 Calendar view of upcoming events.
 
 ## Past events
-Archive cards + event reports. [[Confirm which past-event reports (2017-2021) carry over.]]
+Archive cards + event reports. All five annual reports (2017-2021) carry over into this archive rather than the About page. `[[proposed — pending INZBC confirmation]]`
 Older/superseded event listings (e.g. past Boardroom to Border dates) move here rather than staying
 in the active events list.
 

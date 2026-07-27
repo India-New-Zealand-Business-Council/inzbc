@@ -38,7 +38,8 @@ the migration guide's "why join" template.]]
 out; membership records are not duplicated here.
 
 ## Member directory
-[[Directory listing - source of truth is Member Jungle; opt-in fields only. Confirm embed vs link.]]
+Link out to the Member Jungle directory rather than embedding a second copy: Member Jungle is the
+membership system of record and the register must not exist in two places. Opt-in fields only. `[[proposed — pending INZBC confirmation]]`
 
 ## Member spotlight
 Feature a member business and how INZBC membership — advocacy, intelligence, networks or events —
