@@ -1,8 +1,23 @@
 # Description
 
-Summary of the change and the related issue(s).
+Summary of the change.
 
-- Resolves # (issue)
+## Linked issue (required)
+
+Closes #
+
+<!--
+Use `Closes #NN` when this PR fully delivers the issue, or `Refs #NN` when it is partial work that
+should stay open (for example something implemented locally but not yet deployed).
+
+For an issue in the other repo, use the full form: `Closes owner/repo#NN`.
+
+This is not paperwork. GitHub builds the issue link, and the project board's "Linked pull requests"
+column, only from a keyword present in this body BEFORE the PR merges. It cannot be added
+afterwards, so a PR merged without it leaves the board unable to show what delivered the work.
+The `linked-issue` CI job checks for it.
+-->
+
 
 ## Type of change
 
