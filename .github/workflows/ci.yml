@@ -29,7 +29,10 @@ jobs:
           BODY: ${{ github.event.pull_request.body }}
           TITLE: ${{ github.event.pull_request.title }}
         run: |
-          if echo "$TITLE $BODY" | grep -qiE '(close[sd]?|fix(e[sd])?|resolve[sd]?|refs?) #[0-9]+'; then
+          # Accepts every form GitHub itself links from: `Closes #12`, `Closes: #12`,
+          # cross-repo `Closes owner/repo#12`, and the full issue URL. The leading \b stops
+          # words like "encloses #5" satisfying the check.
+          if echo "$TITLE $BODY" | grep -qiE '\b(close[sd]?|fix(e[sd])?|resolve[sd]?|refs?):?[[:space:]]+(([[:alnum:]._-]+/[[:alnum:]._-]+)?#[0-9]+|https?://github\.com/[^[:space:]]+/issues/[0-9]+)'; then
             echo "Linked issue found."
           else
             echo "::error::No linked issue. Add 'Closes #NN' to the PR body, or 'Refs #NN' if this does not fully close it."
