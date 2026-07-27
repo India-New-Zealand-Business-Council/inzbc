@@ -43,8 +43,9 @@ The shared API + auth for anything that reads/writes data. Roshan's FTA service 
          until this test exists, that behaviour is **not** guarded by CI.
 - [ ] Comms Assistant review UI: draft view with diff-against-previous and the named-reviewer
       approval gate (nothing publishable without a recorded human approval).
-- [ ] Build the public site in Wix from `apps/site/content/` (account access granted at team
-      level — can start in the Wix editor now; programmatic build additionally needs the Wix MCP
+- [ ] Build the remaining public site pages in Wix from `apps/site/content/` (about, events,
+      members, connect — homepage done, see Done below). Account access granted at team level —
+      can continue in the Wix editor now; programmatic build additionally needs the Wix MCP
       connected; still blocked on the brand kit either way. See `docs/discovery.md` OI-1).
 - [ ] CMS collection schemas mapped to page-specs now (news, events, sector reports, board,
       sponsors), ready to create as dynamic pages now that Wix account access is in place.
@@ -61,6 +62,11 @@ The shared API + auth for anything that reads/writes data. Roshan's FTA service 
 ## Done
 - Drafted public-page content in `apps/site/content/` (home, about, events, members, connect) from
   page-specs, executive tone, placeholders for INZBC facts. Ready to drop into Wix.
+- Homepage rebuilt in Wix editor (28 Jul 2026): hero text updated, new FTA Feature Band section
+  added after the hero (NZ India FTA Hub heading, Understand the FTA button), HOME 8 reframed as
+  "Latest Insights" with FTA/trade-focused copy, HOME 4 "Why choose us?" updated with FTA-focused
+  content, HOME 5 "TRADE BAZAAR" renamed to "TRADE WITH INDIA". Saved in the editor, not
+  published — pending Sunil's review. Full detail in `docs/wix-changes-log.md`.
 
 ## SHARED-OK — work taken in this lane by Bhanu
 
