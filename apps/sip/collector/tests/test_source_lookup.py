@@ -28,6 +28,22 @@ def test_build_source_lookups_omits_null_code_from_id_lookup() -> None:
     assert id_lookup.get("Some Ad-Hoc Blog") is None
 
 
+def test_build_source_lookups_omits_a_name_shared_by_two_records() -> None:
+    # Real case: data/sip185_sources_v1.0.csv has "Ministry of Defence" once for NZ and once for
+    # India. A single-pass dict would let the second record silently overwrite the first, turning
+    # an ambiguous name into a wrong-jurisdiction resolution instead of an unset one.
+    records = [
+        {"id": "nz-uuid", "sip185_code": "NZ-OFF-014", "name": "Ministry of Defence"},
+        {"id": "in-uuid", "sip185_code": "IN-OFF-021", "name": "Ministry of Defence"},
+    ]
+    name_lookup, id_lookup = build_source_lookups(records)
+
+    assert name_lookup.get("Ministry of Defence") is None
+    # The id lookup is unaffected - sip185_code is unique per record even when name collides.
+    assert id_lookup.get("NZ-OFF-014") == "nz-uuid"
+    assert id_lookup.get("IN-OFF-021") == "in-uuid"
+
+
 def test_build_source_lookups_handles_empty_response() -> None:
     name_lookup, id_lookup = build_source_lookups([])
     assert name_lookup.get("anything") is None
