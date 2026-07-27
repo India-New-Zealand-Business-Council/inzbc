@@ -160,6 +160,10 @@ the practice PDR (Week 5) and final PDR.
 land one focused PR per day against the open issues (#52 done; #31, #54, #56 next), so the git
 history itself is 3.1/1.2 evidence instead of a liability.
 
+**Weekly hours target: 22-24h**, not just the assignment's 20h floor — the buffer absorbs a thin
+day (blocked review, a meeting running long) without dropping under the pass threshold. Tracked in
+`Studio5-Timesheet-RoshanAryal.xlsx`, one tab per week.
+
 ## Definition of done
 A run opens, sources are recorded with outcomes, candidates captured and verified, and written to
 the DB through the API. FTA answers cite Tier-1 sources with effective dates. No control-plane writes.
