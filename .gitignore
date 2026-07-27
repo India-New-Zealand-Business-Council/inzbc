@@ -53,3 +53,8 @@ docs/sip/sunil-update.md
 # Render/preview artifacts
 *.png
 .playwright-mcp/
+
+# Board snapshots are working state, not a record. A stale one committed here would be
+# restored over good data by someone trusting it. Regenerate with scripts/board.py snapshot.
+board-snapshot.json
+board-before-*.json
