@@ -10,9 +10,9 @@ depends on one person's phone. This mirrors the rule in
 
 | Meeting | When | Format | Who |
 |---|---|---|---|
-| Team stand-up | Daily, 17:00 NZT | Online | Bhanu, Roshan, Paras |
+| Team stand-up | Weekdays, 17:00–17:30 NZT | Online | Bhanu, Roshan, Paras |
 | Sprint review and retrospective | Fortnightly | Online | Bhanu, Roshan, Paras |
-| Client meeting | As needed, when a decision or blocker requires the client | Online | Sunil Kaushal (CEO), plus whoever owns the item |
+| Client meeting | Wednesdays, 13:30–15:30 NZT | In person, INZBC office, Auckland | Sunil Kaushal (CEO), Bhanu, Roshan, Paras |
 
 Each minute records its own format, because an individual meeting may differ from the usual pattern.
 
