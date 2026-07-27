@@ -4,16 +4,17 @@ Status: in progress (Discovery, placement Wk 1–2)
 Delivery: AIC / Otago Polytechnic internship — Bhanu Gupta, Roshan Aryal, Paras
 Client: India New Zealand Business Council (INZBC), NZ India-trade body since 1988
 
-This is a **new, separate site build** (confirmed by client), not an edit of the live
-Wix site at https://www.inzbc.org/. The live site is not to be touched without separate
-explicit sign-off.
+This is a **new, separate site build** (confirmed by client), not an edit of the live Wix site at
+https://www.inzbc.org/. The build happens on a **duplicate** of the live site, created by Sunil as
+account owner (OI-9). The live site is not to be touched without separate explicit sign-off.
 
 ---
 
 ## Confirmed scope — four modules
 
 1. Website & Content Refresh — **full new/separate site build** (upgraded from the
-   proposal's lighter "refresh key pages" — see Open Item OI-3).
+   proposal's lighter "refresh key pages" — see Open Item OI-3), built on a duplicate of the
+   live site (OI-9).
 2. FTA Opportunity Explainer — guided, sourced assistant on how the NZ–India FTA affects
    a member's sector (tariffs, market access, next steps).
 3. AI Communications Assistant — Claude-powered drafting (newsletters, event
@@ -98,11 +99,12 @@ the AI service layer (embed / iframe / API).
 
 | ID   | Item | Owner | Status |
 |------|------|-------|--------|
-| OI-1 | **Wix build tooling not connected.** Sunil granted the *team* access to the INZBC Wix account, but the Wix MCP is still not connected in this build environment (confirmed: no Wix tools available). The team can create/build the new site in the Wix editor now; for programmatic build, connect the Wix MCP server in the build environment. | Team | Blocking programmatic build |
-| OI-2 | **Domain: RESOLVED.** Sunil confirmed the site keeps the **inzbc.org** address. Plan: build a new, separate Wix site in the existing account, then point inzbc.org at it at go-live (cutover). No new domain or DNS purchase needed. | Client | Resolved |
+| OI-1 | **Wix build tooling not connected.** Sunil granted the *team* access to the INZBC Wix account, but the Wix MCP is still not connected in this build environment (confirmed: no Wix tools available). The team can build in the Wix editor as soon as the duplicate site exists (OI-9); for programmatic build, connect the Wix MCP server in the build environment. | Team | Blocking programmatic build only |
+| OI-2 | **Domain: RESOLVED.** Sunil confirmed the site keeps the **inzbc.org** address. Plan: build on a duplicate of the live site in the existing account (OI-9), then point inzbc.org at it at go-live (cutover). No new domain or DNS purchase needed. Note the duplicate is free and unpublished; pointing the domain at it at cutover needs the premium plan moved or bought for that site. | Client | Resolved |
 | OI-3 | **Scope/vision outreach started** — message 1 sent to Sunil asking his vision for the new site. Full written scope confirmation pending his reply. | Team | In progress |
 | OI-4 | Page-by-page audit done except `/events` (404 on that slug — confirm real Events/Calendar URLs). | Team | Mostly done |
 | OI-5 | Named human reviewer for AI-drafted content to be designated. | Client/Team | Open |
 | OI-6 | Executive Council names/bios must be sourced from live site or INZBC directly at build time — never from crawler/LLM output (guardrail: never invent board names). | Team | Open |
 | OI-7 | Confirm what stays external vs on-site: Member Jungle (membership/directory), Mailchimp/eocampaign (newsletters). Affects integration scope. | Client/Team | Open |
-| OI-8 | **Go-live cutover touches the live site.** Same-domain means the new site replaces the current inzbc.org at launch. Before cutover: take a full backup/snapshot of the current site's content, and get explicit written go-live sign-off (guardrail: do not modify live inzbc.org without sign-off). Building the new site separately is fine; the domain switch is the sensitive moment. | Team/Client | Open (go-live) |
+| OI-8 | **Go-live cutover touches the live site.** Same-domain means the duplicate replaces the current inzbc.org at launch. Before cutover: record the live site's Site History version and export CMS collections where applicable (Wix supports no complete external backup, so "take a full backup" is not an instruction anyone can follow), and get explicit written go-live sign-off. Building on the duplicate is fine; the domain switch is the sensitive moment. | Team/Client | Open (go-live) |
+| OI-9 | **Duplicate site requested; live-site editing stops.** Sunil verbally approved editing the live site unpublished (28 Jul 2026), then the safer option was taken instead: ask Sunil to **duplicate** the site and add the team as collaborators on the duplicate. A duplicate cannot publish to inzbc.org at all, which removes the risk rather than policing it, and it gives a shareable wixsite.com preview URL for client meetings. **Outstanding, all on Sunil (only the owner can do these):** (a) duplicate the site; (b) add Bhanu, Paras, Roshan as collaborators on the duplicate; (c) on the live site, remove the team or issue a role without `Publish Site`; (d) confirm in writing. **Also outstanding on us:** the live site's editor currently holds Paras's unpublished homepage changes (#143) — once the duplicate exists, restore the live editor to its last published version via Site History so a future publish cannot ship them. Confirm whether the duplicate copies editor state or published state; if published, the homepage work is redone on the duplicate from the log in `docs/wix-changes-log.md`. | Client/Team | Open — blocked on Sunil |
