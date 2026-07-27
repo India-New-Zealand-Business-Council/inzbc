@@ -13,10 +13,24 @@ Repo-specific rules. General workflow is in [CONTRIBUTING.md](./CONTRIBUTING.md)
 
 ## The live site
 
-- **Do not edit or publish `inzbc.org`.** Build the separate site; cut over at go-live only,
-  after a backup and explicit sign-off.
-- Wix MCP writes hit **live data instantly** (no draft). Do not point write calls at the live
-  site. A publish guard hook (`wix-no-publish.sh`) blocks MCP publishes.
+- **Do not edit or publish `inzbc.org`.** Build on the duplicate site; cut over at go-live only,
+  after Sunil signs off in writing. Publish rights stay with Sunil as account owner.
+- Build work happens on the **duplicate** of the live site (`docs/discovery.md` OI-9). Only the
+  account owner can duplicate a site. Duplication does not copy everything — app data, contacts
+  and some settings do not come across — so never assume CMS or member data followed.
+- **Not everything waits for publish.** Content Manager (CMS) collections and some app data take
+  effect independently of the editor's save/publish split. Wix MCP writes hit **live data
+  instantly** — no draft. Do not point write calls at the live site.
+- "Take a full backup" is not a thing on Wix; there is no complete external site backup. Before
+  cutover: record the Site History version and export CMS collections where applicable.
+- Site History restores saved page versions, so page edits are recoverable. It is not a general
+  safety net: apps, some components and CMS data may not restore cleanly.
+- Log every Wix editor session in `docs/wix-changes-log.md`, on the duplicate as well as the live
+  site — before and after text for each change, not just the section name. Site History records
+  *that* something changed; the log records what it said and where the facts came from.
+- A publish guard hook (`wix-no-publish.sh`) was previously cited here as blocking MCP publishes.
+  It is **not implemented**. A hook could only ever stop MCP-driven publishes; a person clicking
+  Publish is stopped by Wix roles, not by anything in this repo.
 
 ## Membership and data
 - Membership runs on **Member Jungle** (provisional system of record). Do **not** rebuild

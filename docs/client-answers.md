@@ -127,7 +127,7 @@ These are ours to propose; Sunil approves.
 | # | Answer | Status |
 |---|---|---|
 | E1 | Foundation decisions: membership platform — retain and integrate Member Jungle; internal platform — free-tier hosting now, paid hosting revisited only when Phase 2 stores member data ([ADR-0004](decisions/0004-platform-graduation.md)); identity — INZBC-controlled GitHub OAuth, separate staging and UAT apps; budget and ownership — INZBC owns all accounts and data, and the build carries no recurring infrastructure cost. | `PROPOSED` |
-| E2 | The new site retains `inzbc.org`. Before cutover: full backup of the current site, UAT complete, all account and integration details recorded, and written cutover approval from Sunil. | `PROPOSED` |
+| E2 | The new site retains `inzbc.org`. Before cutover: record the live site's Site History version and export CMS collections where applicable (Wix offers no complete external site backup, so "full backup" is not an instruction anyone can carry out), UAT complete, all account and integration details recorded, and written cutover approval from Sunil. | `PROPOSED` |
 | E3 | Client acceptance session as recorded in the plan. Sunil attends, with the named reviewer; the team participates where backup roles are tested. | `PROPOSED` |
 | E4 | Provider addresses are fine for development, staging and assessment. Production: `inzbc.org` public, and a subdomain for the internal SIP platform. | `PROPOSED` |
 
