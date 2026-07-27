@@ -1,0 +1,18 @@
+# Free-tier staging host for the FTA slice (ADR-0004, zero-cost amendment).
+#
+# Chosen because it needs no payment method. The cost is a cold start: the free plan sleeps after
+# roughly 15 minutes idle and takes about a minute to wake. Fine for a demo when warmed first,
+# poor for an unattended client acceptance session. Warm it before showing it to anyone.
+#
+# This service needs no secrets. The FTA read path makes no model call and touches no database,
+# so there is nothing here to leak and nothing to configure.
+
+services:
+  - type: web
+    name: inzbc-fta
+    runtime: docker
+    plan: free
+    region: singapore          # closest free region to NZ; Sydney is paid-only
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    autoDeploy: false          # promote deliberately, not on every merge to main

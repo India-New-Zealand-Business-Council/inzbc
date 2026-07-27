@@ -39,6 +39,34 @@ jobs:
             exit 1
           fi
 
+  docker:
+    # The deployable image is only as good as its last successful build. Building it here means a
+    # change that breaks packaging fails on the PR rather than at deploy time, and the image is
+    # smoke-tested rather than assumed to start.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build the image
+        run: docker build -t inzbc-fta:ci .
+      - name: Start it and check the endpoints it must serve
+        run: |
+          docker run -d --name fta -p 8000:8000 inzbc-fta:ci
+          for i in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:8000/health >/dev/null 2>&1 && break
+            sleep 2
+          done
+          echo "--- /health"
+          curl -fsS http://127.0.0.1:8000/health | tee /dev/stderr | grep -q '"status":"ok"'
+          echo "--- /api/fta/query returns a sourced answer"
+          curl -fsS "http://127.0.0.1:8000/api/fta/query?q=wool" | grep -q '"status":"matched"'
+          echo "--- an unmatched query escalates rather than returning an empty list"
+          curl -fsS "http://127.0.0.1:8000/api/fta/query?q=zzzznotathing" | grep -q '"status":"no_match"'
+          echo "--- the UI is served from the same origin"
+          curl -fsS http://127.0.0.1:8000/ | grep -qi "<div id=\"root\""
+      - name: Container logs on failure
+        if: failure()
+        run: docker logs fta || true
+
   python:
     runs-on: ubuntu-latest
     steps:
