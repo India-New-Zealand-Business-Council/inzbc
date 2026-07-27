@@ -23,6 +23,25 @@ has already been drawn once.
 what you are testing with no commit here. `--extra dev` is what brings in `pytest`, `pytest-cov` and
 `ruff`; `uv run --frozen` alone installs the runtime dependencies only and leaves you without them.
 
+## Running shell commands on Windows
+
+The team develops on Windows, where the shell is **PowerShell 5.1**. Two things bite, both verified
+here rather than assumed:
+
+- **`&&` and `||` are parser errors**, not just unsupported. `echo a && echo b` fails on the token
+  itself. Use `A; if ($?) { B }`, or run the commands separately.
+- **Quote any path built from an environment variable.** `Set-Content $env:TEMP\x.py` silently
+  writes somewhere other than where you then read from; `Set-Content -Path "$env:TEMP\x.py"` works.
+
+Here-strings **do** work, provided the outer quoting is right:
+`-Command "@'` ... `'@ | python -"` with double quotes outside and single inside.
+
+Installing PowerShell 7 does not help, and makes things worse for sandboxed tooling. `winget` ships
+it as MSIX, whose only entry point is a Store execution alias under `WindowsApps`. Sandboxed
+processes cannot spawn that path (`CreateProcessAsUserW failed: 5, Access is denied`), so the shell
+stops working entirely. This was tried and reverted. An MSI build installing to
+`C:\Program Files\PowerShell\7` would be fine, but that is not what `winget` provides.
+
 ## What CI runs
 
 `.github/workflows/ci.yml` is the authority. In short: ruff, pytest with a 90% coverage gate,
