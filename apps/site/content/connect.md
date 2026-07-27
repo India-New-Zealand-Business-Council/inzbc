@@ -15,12 +15,20 @@ existing placeholders (address, email, socials) are carried over unconfirmed; no
 person on the team will follow up.
 **Enquiry form fields:** first name, last name, email, subject (e.g. Membership, Partnership,
 Media, General), message.
-**Email:** [[preferred public contact email — confirm]].
-**Phone:** [[office phone number, confirm]].
-**Post:** [[PO Box 20092, Glen Eden, Auckland 0641 — confirm current]].
+**Email:** sunil@inzbc.org
+**Phone:** none published — INZBC states a preference for email contact.
+**Post:** PO Box 20092, Glen Eden, Auckland 0641, New Zealand
+
+`[[proposed — read from inzbc.org 27 Jul 2026; pending INZBC confirmation]]`
 
 ## Follow
-[[Social links: X @inzbc, LinkedIn, Facebook, YouTube, Flickr — confirm current handles.]]
+- X: `twitter.com/inzbc`
+- LinkedIn: `linkedin.com/company/india-new-zealand-business-council`
+- Facebook: `facebook.com/inzbc`
+- YouTube: `youtube.com/channel/UC9MQW-VliLqOdT4GUktKfZQ`
+- Flickr: `flickr.com/photos/inzbc` — still linked on the live site; confirm whether it carries over.
+
+`[[proposed — read from inzbc.org 27 Jul 2026; pending INZBC confirmation]]`
 
 ## Partners
 Sponsor and partner tiers, benefits and the "Become a partner" enquiry pathway now live on the

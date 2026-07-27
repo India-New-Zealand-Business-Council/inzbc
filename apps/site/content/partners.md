@@ -22,15 +22,20 @@ which page should actually own it before publish, so it isn't drafted in two pla
 through INZBC's membership, events and media channels.
 
 ## Partner tiers
-- **Strategic Partners** (incl. gold tier) — [[current Strategic Partner list and gold-tier
-  benefits to confirm]].
+- **Strategic Partners** — BNZ; High Commission of India, Wellington; University of Auckland.
+  **Gold:** Duco Consultancy. Gold-tier benefits `[[to confirm]]`.
 - **Industry partners** — [[current list to confirm]].
 - **Government partners** — [[current list to confirm]].
 [[Partner logos, short descriptions and links per tier — to confirm with the Membership team.]]
 
 ## Our Patron
-[[Patron name, bio and photo — to confirm. See note above on About vs. Partners ownership of this
-section.]]
+Per ADR on section ownership, the Patron profile lives in **About**; this section links to it.
+
+Patron: **Bhav Dhillon** — Managing Director of Cemix and Dunlop Drymix, former Honorary Consul of
+India in Auckland.
+
+`[[proposed — read from inzbc.org 27 Jul 2026; pending INZBC confirmation]]`
+Appointment date is not stated on the INZBC page and is `[[to confirm]]`.
 
 ## Why partner with INZBC
 - Visibility with a membership base engaged in NZ–India trade, investment and the FTA opportunity.
