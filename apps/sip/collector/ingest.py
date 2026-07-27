@@ -14,6 +14,7 @@ from pydantic import ValidationError
 from apps.sip.pipeline.client import SipApiError, SipPipelineClient
 
 from .mapping import map_article
+from .source_lookup import SourceNameLookup
 
 
 class MalformedArticleError(TypeError):
@@ -39,7 +40,7 @@ def ingest_articles(
     client: SipPipelineClient,
     run_id: str,
     articles: list[dict],
-    source_name_lookup: dict[str, str] | None = None,
+    source_name_lookup: SourceNameLookup | None = None,
 ) -> IngestResult:
     """POSTs each of `articles` (daily-india-nz-news-agent's `clean_articles()` output) to
     `/api/candidates` for `run_id`. Continues past individual mapping *or* write failures instead

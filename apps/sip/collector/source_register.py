@@ -7,9 +7,10 @@ rows in code. That spreadsheet is the controlling reference.
 
 Sources are keyed by their SIP-185 source id (e.g. `NZ-OFF-001`), not by name: v1.0 has
 non-unique names across jurisdictions (NZ and India both have a "Ministry of Defence" and a
-"Ministry of Education"), so name is not a safe key for a Critical-stop coverage gate. Resolving
-a source id to a `source_library` db uuid needs `source_library` to carry the SIP-185 code;
-until it does, callers supply `source_id_lookup` (see docs/workstreams/roshan.md).
+"Ministry of Education"), so name is not a safe key for a Critical-stop coverage gate.
+`source_library` now carries the SIP-185 code (`schemas/api-contract.md`); callers build a
+`source_lookup.SourceIdLookup` from `SipPipelineClient.get_source_library()` and pass it to
+`record_source_outcome`.
 """
 
 from __future__ import annotations
@@ -19,6 +20,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from apps.sip.pipeline.models import SourceCheck, SourceOutcome
+
+from .source_lookup import SourceIdLookup
 
 FALLBACK_SEQUENCE: tuple[str, ...] = (
     "Direct access",
@@ -100,7 +103,7 @@ def record_source_outcome(
     run_id: str,
     source_id: str,
     outcome: SourceOutcome,
-    source_id_lookup: dict[str, str],
+    source_id_lookup: SourceIdLookup,
     fallback_attempts: list[str] | None = None,
     access_error: str | None = None,
     notes: str | None = None,
@@ -108,21 +111,35 @@ def record_source_outcome(
     """Builds a SourceCheck for one source's outcome this run.
 
     `source_id` is the SIP-185 register id (e.g. `NZ-OFF-001`). `source_id_lookup` maps that id to
-    its `source_library` db uuid - a `GET /api/source-library` endpoint exists (PR #25) to build
-    the map once `source_library` carries the SIP-185 code; wiring it into this module's callers
-    is tracked in docs/workstreams/roshan.md, not done by this function itself.
+    its `source_library` db uuid — build it from `apps.sip.pipeline.client.SipPipelineClient
+    .get_source_library()` via `source_lookup.build_source_lookups()`.
+
+    `source_id_lookup` must be a `SourceIdLookup` (keyed by SIP-185 code) — checked positively,
+    not by excluding `SourceNameLookup` specifically: `source_library.name` is not unique across
+    jurisdictions (`schemas/api-contract.md`), so a name-keyed lookup (or a plain dict built the
+    same way) would silently resolve most sources wrong rather than raising loudly. Naming only
+    the one wrong type we know about would let anything else - a bare dict included - sail
+    through and do the exact damage this guard exists to prevent.
 
     `fallback_attempts` is the ordered trail of steps actually tried (a subsequence of
     FALLBACK_SEQUENCE) when direct access did not suffice - SIP-185 requires retaining every
     fallback attempt and the reason, so the trail is folded into `notes` rather than dropped
     (the source_checks table has no separate attempts column to put it in).
     """
+    if not isinstance(source_id_lookup, SourceIdLookup):
+        raise TypeError(
+            f"record_source_outcome requires a SourceIdLookup (SIP-185 code -> db id), got "
+            f"{type(source_id_lookup).__name__} - source_library.name is not unique across "
+            "jurisdictions, so anything other than a SourceIdLookup risks silently resolving a "
+            "source check to the wrong id instead of failing loudly"
+        )
+
     db_id = source_id_lookup.get(source_id)
     if not db_id:
         raise SourceIdUnresolved(
             f"no source_library id for {source_id!r}; source_checks.source_id is required "
-            "(database/schema.sql) and source_id_lookup did not resolve it - see "
-            "docs/workstreams/roshan.md for wiring GET /api/source-library into the caller"
+            "(database/schema.sql) and source_id_lookup did not resolve it - the source may not "
+            "be seeded in source_library yet, or its sip185_code doesn't match the v1.0 register"
         )
 
     # A fallback happened if the final method actually tried isn't the first step in the

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from apps.sip.collector.mapping import map_article, map_articles, parse_published_at
+from apps.sip.collector.source_lookup import SourceNameLookup
 
 RUN_ID = "11111111-1111-1111-1111-111111111111"
 
@@ -74,13 +75,13 @@ def test_map_article_leaves_source_id_unset_without_lookup() -> None:
 
 
 def test_map_article_resolves_source_id_from_lookup() -> None:
-    lookup = {"RNZ Business": "22222222-2222-2222-2222-222222222222"}
+    lookup = SourceNameLookup({"RNZ Business": "22222222-2222-2222-2222-222222222222"})
     mapped = map_article(_article(), RUN_ID, source_name_lookup=lookup)
     assert mapped.candidate.source_id == "22222222-2222-2222-2222-222222222222"
 
 
 def test_map_article_leaves_unmatched_source_unresolved() -> None:
-    lookup = {"Some Other Source": "22222222-2222-2222-2222-222222222222"}
+    lookup = SourceNameLookup({"Some Other Source": "22222222-2222-2222-2222-222222222222"})
     mapped = map_article(_article(), RUN_ID, source_name_lookup=lookup)
     assert mapped.candidate.source_id is None
 

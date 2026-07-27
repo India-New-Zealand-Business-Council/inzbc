@@ -22,13 +22,6 @@ own PR flow; this lane is the integration that pulls its output into SIP.
 DB schema, API contract, auth. Build against them; don't write to control-plane tables.
 
 ## Next up
-- [ ] Wire the now-live `GET /api/source-library` (PR #25) into the two lookups so candidate and
-  source-check writes resolve real ids instead of degrading to `source_id=None`/raising
-  `SourceIdUnresolved`. Note the split keyspaces (PR #27): `mapping`/`ingest` take
-  `source_name_lookup` (article source **name** → db id), `record_source_outcome` takes
-  `source_id_lookup` (SIP-185 **source id** e.g. `NZ-OFF-001` → db id). Build them separately -
-  passing a name-keyed dict to the id-keyed gate silently misses mandatory sources. Flagged in
-  Bhanu's PR #23 review, not done in that PR.
 - SHARED-OK: SIP-050 relevance/signal/confidence scoring moved to Bhanu's worklog — it runs
   through the model gateway he owns. `assessment.py` stays the validation/carry layer here.
 - [ ] Comms Assistant service side (`apps/comms`): draft-generation flow with the named-reviewer
@@ -42,11 +35,33 @@ DB schema, API contract, auth. Build against them; don't write to control-plane 
 - [ ] Pipeline integration test suite wired into CI: verification gate, dedupe, mandatory-source
   stops, malformed-article handling — the fail-closed behaviour currently has no automated tests.
 - [ ] Collection-engine improvements in `daily-india-nz-news-agent` (via its own PR flow).
+- [ ] Ruff 0.16.0 findings in collector/FTA — fix and bump the CI pin (#31). Currently pinned at
+  0.15.22 (`pyproject.toml`), which is clean; this is prep for the version bump, not a live gate
+  failure yet.
 
 See Blocked / decisions needed for what's still open before any of this runs live (secrets,
 INZBC sector/disclaimer sign-off).
 
 ## Done
+- [x] Client + lookup layer for `GET /api/source-library`, implemented locally ahead of the
+  endpoint (refs #52 — not closed; the endpoint itself isn't deployed yet, see below). New
+  `apps/sip/collector/source_lookup.py`: `build_source_lookups()` splits one
+  `SipPipelineClient.get_source_library()` response into `SourceNameLookup` (display name → db id,
+  for `mapping`/`ingest`) and `SourceIdLookup` (SIP-185 code → db id, for
+  `record_source_outcome`) — two distinct dataclasses, not interchangeable dicts, so a caller
+  can't pass a name-keyed lookup (or any non-`SourceIdLookup`, including a plain dict) where the
+  id-keyed coverage gate expects one; `record_source_outcome` checks positively for
+  `SourceIdLookup` and raises `TypeError` on anything else. A name shared by more than one record
+  (two exist in the v1.0 register — "Ministry of Defence", "Ministry of Education", once per
+  jurisdiction) is dropped from the name lookup rather than resolving to whichever record was
+  seen last (caught in Bhanu's PR #131 review — the initial version let the second record
+  silently overwrite the first). Added `SipPipelineClient.get_source_library()`. Candidate capture
+  still degrades to `source_id=None` on an unmatched name (nullable column); source-check
+  recording still raises `SourceIdUnresolved` on a miss (NOT NULL column) — unchanged from before.
+  **Not done here:** the `/api/source-library` endpoint itself — `services/api` only serves
+  `/api/fta/query` and `/health` today, so `get_source_library()` returns 404 until that server
+  work lands (separate PR, per ADR-0004's sequencing). Nothing in this PR is reachable end-to-end
+  yet; it's the client/lookup layer landing ahead of the server, the established pattern here.
 - [x] Wire the collection-engine output into SIP candidate capture via the API (run to
   candidates). `apps/sip/collector/mapping.py` + `ingest.py`, mapped against the real
   `daily-india-nz-news-agent` `clean_articles()` output. Raw capture only (SIP-184 step 5); no
@@ -131,6 +146,29 @@ come back.
 - Collection-engine secrets in the org repo (needs the values) — blocks running the collector
   end-to-end even though the mapping is written. (Bhanu owns org-repo secrets setup + rotation —
   on his worklog.)
+
+## Studio 5 PDR — what I need for a pass (competency-based, all 6 objectives required)
+
+Per `IA728001 Studio 5 Performance and Development Review` (final PDR meeting, Week 9). Not
+project scope — my own pass-tracking. Update as evidence accumulates; bring this + screenshots to
+the practice PDR (Week 5) and final PDR.
+
+| Obj | Requirement | Status | Evidence I have | Still need |
+|---|---|---|---|---|
+| 1.1 | Capture requirements via a methodology/tool | 🟢 | ADR-0001, SIP-050/184/185 specs, GitHub issues #52-56 | — |
+| 1.2 | Contribute meaningfully — **steady and regular**, not just volume | 🔴 | 25 commits, 5 merged PRs (#14,#15,#17,#19,#23) — but **all dated 22 Jul**, one day | Commits spread across *multiple distinct days* this block. One heavy day reads as a cram, not sustained contribution — this is the single biggest pass risk. |
+| 2.1 | Independent research, justified decisions | 🟢 | MFAT source verification (PR #14/#15), FTA corpus confirmed/unconfirmed flags, ADR-0001 rationale | Keep citing sources in PR descriptions as I go |
+| 3.1 | Team communication | 🟡 | none gathered yet | Screenshot/log standup (17:00 daily) and Wednesday client meeting attendance; keep PR review comment threads as evidence |
+| 3.2 | Industry-standard PM tools, used professionally | 🟡 | GitHub issues + org project board exist | Actually reference the board/issues in commits and PRs (e.g. "closes #52"), not just have them exist |
+| 3.3 | Documentation (technical + reflective) | 🟢 | Module docstrings, this worklog, PR evidence blocks, `apps/sip/collector/README.md` | Add a reflective report before the PDR — the marking criteria explicitly ask for one, separate from technical docs |
+
+**Action for this week:** don't batch commits into one sitting even when the code is ready sooner —
+land one focused PR per day against the open issues (#52 done; #31, #54, #56 next), so the git
+history itself is 3.1/1.2 evidence instead of a liability.
+
+**Weekly hours target: 22-24h**, not just the assignment's 20h floor — the buffer absorbs a thin
+day (blocked review, a meeting running long) without dropping under the pass threshold. Tracked in
+`Studio5-Timesheet-RoshanAryal.xlsx`, one tab per week.
 
 ## Definition of done
 A run opens, sources are recorded with outcomes, candidates captured and verified, and written to
