@@ -25,7 +25,7 @@ and "the browser must never contain model/DB/source keys." Wix (site builder) ca
 - Immutable approval, version, and audit history. Approved records are never edited in place.
 - Redaction layer before any external model call (member/Board/confidential data out).
 
-Security-heavy (MFA, auth, audit, secrets, external LLM). Build gets `/codex:adversarial-review`
+Security-heavy (MFA, auth, audit, secrets, external LLM). Build gets an adversarial security review
 before any staff use — same gate already required for the AI Comms Assistant.
 
 ## Control boundary (current SIP approval state — do not promote drafts)
