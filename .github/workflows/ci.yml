@@ -16,6 +16,26 @@ jobs:
       - name: Validate JSON
         run: python -c "import json,glob;[json.load(open(f,encoding='utf-8')) for f in glob.glob('**/*.json',recursive=True)];print('JSON valid')"
 
+  linked-issue:
+    # Every PR must name the issue it delivers, so the board's "Linked pull requests" column
+    # populates and the work is traceable. GitHub forms that link only from a keyword present in
+    # the PR body BEFORE merge; it cannot be added afterwards. Use `Refs #NN` for partial work
+    # that should not close the issue yet.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require a linked issue
+        env:
+          BODY: ${{ github.event.pull_request.body }}
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          if echo "$TITLE $BODY" | grep -qiE '(close[sd]?|fix(e[sd])?|resolve[sd]?|refs?) #[0-9]+'; then
+            echo "Linked issue found."
+          else
+            echo "::error::No linked issue. Add 'Closes #NN' to the PR body, or 'Refs #NN' if this does not fully close it."
+            exit 1
+          fi
+
   python:
     runs-on: ubuntu-latest
     steps:
