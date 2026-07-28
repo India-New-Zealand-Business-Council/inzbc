@@ -63,6 +63,19 @@ INZBC sector/disclaimer sign-off).
   `/api/fta/query` and `/health` today, so `get_source_library()` returns 404 until that server
   work lands (separate PR, per ADR-0004's sequencing). Nothing in this PR is reachable end-to-end
   yet; it's the client/lookup layer landing ahead of the server, the established pattern here.
+  **Second review round** (deeper pass, five more findings — two fixed as required, three fixed
+  as cheap hardening rather than deferred): (1) name dedup compared raw names while
+  `mapping.map_article` looks up a stripped one, so a whitespace-only variant defeated the
+  round-one fix — `SourceNameLookup` now strips both stored keys and lookup arguments; (2) the
+  `isinstance(x, SourceIdLookup)` guard let a subclass overriding `get()` walk straight through —
+  switched to an exact `type(x) is SourceIdLookup` check, the same fix already applied once to the
+  orchestrator's human-decision gate; (3) a duplicate `sip185_code` now raises
+  `DuplicateSip185Code` instead of silently keeping the last row (the schema declares it unique,
+  so a duplicate means malformed data, not something to paper over); (4) both lookup dataclasses
+  now copy their input dict in `__post_init__`, since `frozen=True` only stops the field being
+  rebound, not its contents being mutated through a caller's reference; (5) the null-code test now
+  asserts `id_lookup.get(None) is None` directly instead of a proxy assertion that wouldn't have
+  caught its own regression.
 - [x] Wire the collection-engine output into SIP candidate capture via the API (run to
   candidates). `apps/sip/collector/mapping.py` + `ingest.py`, mapped against the real
   `daily-india-nz-news-agent` `clean_articles()` output. Raw capture only (SIP-184 step 5); no
