@@ -18,7 +18,7 @@
     "Freshness", "Relevance", "Confidence"
   ],
   "source_outcome_extras": [
-    "No Material New Signal", "Duplicate", "Not Applicable",
+    "Duplicate", "Not Applicable",
     "Verification Failed", "Outside Coverage Window"
   ],
   "signal_levels": ["Low", "Medium", "High", "Critical"],

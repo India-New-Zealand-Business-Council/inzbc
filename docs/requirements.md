@@ -153,7 +153,28 @@ Acceptance criteria:
 > As the **Analyst**, I need the pipeline to run end to end against the SIP-184 SOP, so the controls
 > are proven against real material rather than fixtures.
 
-*Priority: Must. Status: Blocked — requires the platform backend and run configuration.*
+*Source: SIP-184 §1-7 (the intelligence-pipeline steps; §8-14 are the control-plane/QA lane, out
+of scope here). Priority: Must. Status: Blocked — requires the platform backend (#117, #120, #121)
+and org-repo collection-engine secrets before this can run against anything but fakes.*
+
+Acceptance criteria:
+- [ ] A run opens against a real (not stub) `/api/runs` with an authorised version and a locked
+      24h Pacific/Auckland coverage window, previous day 07:00 to current day 07:00 (SIP-184 §1-2)
+- [ ] Every applicable mandatory source from the SIP-185 worklist has a recorded outcome before
+      the run is treated as complete; a blank mandatory-source outcome blocks it (SIP-184 §3-4) —
+      unit- and integration-tested against the real 112-source register already; this criterion
+      is "against a live run", not fixtures
+- [ ] `in_coverage_window` is computed against the run's actual locked window, not the collection
+      agent's rolling filter — closes the known simplification documented in `mapping.map_article`
+- [ ] Every candidate the collection engine returns is captured with full fields; one malformed
+      item does not abort the batch (SIP-184 §5) — same, against a live run rather than fixtures
+- [ ] Relevance/signal/confidence are computed against SIP-050 before any candidate reaches
+      verification (SIP-184 §6-7) — depends on Bhanu's model gateway serving scoring (SHARED-OK,
+      tracked on his worklog)
+- [ ] The verification gate blocks any unverified High/Critical assessment during the live run,
+      not only in tests against a fake client
+- [ ] Written state is queryable afterward through the real API (`source_checks`, `candidates`),
+      not only written and never read back — proves persistence, not just a successful POST
 
 ### 3.3 FTA Opportunity Explainer
 
