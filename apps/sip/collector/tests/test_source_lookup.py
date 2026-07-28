@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import pytest
+
 from apps.sip.collector.source_lookup import (
+    DuplicateSip185Code,
     SourceIdLookup,
     SourceNameLookup,
     build_source_lookups,
@@ -25,7 +28,10 @@ def test_build_source_lookups_splits_one_response_into_both_lookups() -> None:
 
 def test_build_source_lookups_omits_null_code_from_id_lookup() -> None:
     _name_lookup, id_lookup = build_source_lookups(_RECORDS)
-    assert id_lookup.get("Some Ad-Hoc Blog") is None
+    # Asserting on the record's own name/id would still pass if the bug reappeared as a literal
+    # `None` key (`id_lookup.get(None)` wrongly returning something) - assert on the thing the
+    # nullable-code case actually means: looking up `None` itself must never resolve.
+    assert id_lookup.get(None) is None
 
 
 def test_build_source_lookups_omits_a_name_shared_by_two_records() -> None:
@@ -42,6 +48,50 @@ def test_build_source_lookups_omits_a_name_shared_by_two_records() -> None:
     # The id lookup is unaffected - sip185_code is unique per record even when name collides.
     assert id_lookup.get("NZ-OFF-014") == "nz-uuid"
     assert id_lookup.get("IN-OFF-021") == "in-uuid"
+
+
+def test_build_source_lookups_treats_whitespace_variants_as_the_same_name() -> None:
+    # mapping.map_article strips the article's source name before looking it up. Deduping on the
+    # raw name would let "Ministry of Defence" and "Ministry of Defence " both look unique and
+    # survive, then a stripped query would silently resolve to whichever raw key matched.
+    records = [
+        {"id": "nz-uuid", "sip185_code": "NZ-OFF-014", "name": "Ministry of Defence"},
+        {"id": "in-uuid", "sip185_code": "IN-OFF-021", "name": "Ministry of Defence "},
+    ]
+    name_lookup, _id_lookup = build_source_lookups(records)
+
+    assert name_lookup.get("Ministry of Defence") is None
+    assert name_lookup.get("Ministry of Defence ") is None
+
+
+def test_source_name_lookup_strips_its_own_argument() -> None:
+    # Keys are stored stripped; a caller passing an unstripped query must still match, since
+    # mapping.map_article always strips before calling .get().
+    lookup = SourceNameLookup({"RNZ Business": "db-1"})
+    assert lookup.get("RNZ Business ") == "db-1"
+    assert lookup.get(" RNZ Business") == "db-1"
+
+
+def test_build_source_lookups_raises_on_a_duplicate_sip185_code() -> None:
+    # sip185_code is declared unique in database/schema.sql - two records sharing one can only
+    # mean malformed endpoint data, and this lookup resolves a NOT NULL column, so this must fail
+    # loudly rather than silently keep whichever record came last.
+    records = [
+        {"id": "2222", "sip185_code": "NZ-OFF-001", "name": "NZ Parliament"},
+        {"id": "3333", "sip185_code": "NZ-OFF-001", "name": "Wrong duplicate"},
+    ]
+    with pytest.raises(DuplicateSip185Code):
+        build_source_lookups(records)
+
+
+def test_source_id_lookup_is_not_mutable_through_the_constructor_argument() -> None:
+    # frozen=True only stops _by_code being rebound, not the dict it points at being mutated in
+    # place - __post_init__ must copy so a caller's later mutation of the dict they passed in
+    # cannot silently change an already-built lookup.
+    data = {"NZ-OFF-001": "2222"}
+    lookup = SourceIdLookup(data)
+    data["NZ-OFF-001"] = "3333"
+    assert lookup.get("NZ-OFF-001") == "2222"
 
 
 def test_build_source_lookups_handles_empty_response() -> None:
