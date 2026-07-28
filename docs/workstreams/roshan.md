@@ -33,8 +33,6 @@ DB schema, API contract, auth. Build against them; don't write to control-plane 
   low-confidence matches stays.
 - [ ] End-to-end pipeline run once org-repo secrets land (Bhanu's item): collector → capture →
   assessment live against the SIP-184 SOP; fix what breaks; record the run.
-- [ ] Pipeline integration test suite wired into CI: verification gate, dedupe, mandatory-source
-  stops, malformed-article handling — the fail-closed behaviour currently has no automated tests.
 - [ ] Collection-engine improvements in `daily-india-nz-news-agent` (via its own PR flow).
 
 See Blocked / decisions needed for what's still open before any of this runs live (secrets,
@@ -56,6 +54,21 @@ INZBC sector/disclaimer sign-off).
   through Bhanu. Bumping the pin now would break CI tree-wide on code I don't own; pin stays at
   `0.15.22` until those are fixed too. Raising at standup rather than guessing at someone else's
   code.
+- [x] Pipeline integration test suite (#56). New
+  `apps/sip/collector/tests/test_pipeline_integration.py`: `FakeSipApi`, an in-memory stand-in
+  that actually stores candidates/source-checks across calls (unlike the per-module unit tests'
+  stubs, which only record what they were asked to do) — the point is to catch a regression at
+  the seam between modules, not just within one. Covers capture → cross-run dedupe (by url),
+  malformed-article resilience, the verification gate end-to-end through
+  `apply_candidate_assessment` (blocks unverified High, allows verified High, blocks a
+  verification downgrade on an already-Critical candidate), and the mandatory-source Critical
+  stop against the real 112-source v1.0 register (not a handful of fixture sources — a suite that
+  only exercises 2-3 sources wouldn't catch a gate that only works for small inputs), both the
+  gap-reporting and full-coverage paths. Verified the suite actually catches a regression before
+  committing: temporarily disabled the verification-gate call in `assessment.py`, confirmed the
+  gate test failed, restored it. "Wired into CI" needed no workflow change — `pyproject.toml`'s
+  `testpaths` already runs everything under `apps`/`services`, so this suite runs on every PR
+  Bhanu's existing `ci.yml` `python` job already gates on.
 - [x] Client + lookup layer for `GET /api/source-library`, implemented locally ahead of the
   endpoint (refs #52 — not closed; the endpoint itself isn't deployed yet, see below). New
   `apps/sip/collector/source_lookup.py`: `build_source_lookups()` splits one
