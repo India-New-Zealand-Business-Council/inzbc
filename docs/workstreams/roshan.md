@@ -22,7 +22,37 @@ own PR flow; this lane is the integration that pulls its output into SIP.
 ## Depends on (Bhanu's contracts)
 DB schema, API contract, auth. Build against them; don't write to control-plane tables.
 
+**Lane note, 28 Jul 2026:** #117/#118/#120/#121/#122/#130 (persistence adapter, audit service,
+run + candidate endpoints, REQ-I-05 acceptance criteria, restart/rehydration test) were assigned
+to me even though `/services/api`+`/database` are normally Bhanu-only per this file's own rule.
+Confirmed explicitly rather than assumed — treating these as genuinely mine going forward, not a
+mis-tag. Still coordinate schema/contract-shape decisions with Bhanu since other lanes build
+against the same contract; this note is so a later reader doesn't "fix" the assignment back.
+
 ## Next up
+- [ ] Config nit from PR #17 (Bhanu flagged it 22 Jul, still open): move `No Material New Signal`
+  out of `source_outcome_extras` in `docs/sip/SIP_Reference_Config.json` — SIP-185 line 59 is
+  explicit that it's the day-level run conclusion (SIP-184 §9), not a per-source outcome code, so
+  the config still disagrees with the doc it's supposed to mirror. Quick, do first.
+- [ ] REQ-I-05 acceptance criteria (#122): the only requirement in `docs/requirements.md` with
+  none, so there's currently no definition of done for the end-to-end pipeline run (#55). Quick,
+  docs-only — do before the endpoint work below so there's a target to build against.
+- [ ] Persistence adapter with concurrency control (#117): optimistic concurrency or row locking;
+  acceptance is a test proving two concurrent transitions cannot both commit. Foundational — the
+  endpoints below write through this.
+- [ ] Transactional audit service (#118): `old_value`/`new_value`/`reason`/`approval_ref` written
+  inside the mutation's own transaction, an INSERT/SELECT-only DB role, a trigger blocking
+  UPDATE/DELETE — immutable at the database level, not by application convention. Also
+  foundational; the command endpoints below should write through this from the start rather than
+  bolting audit on after.
+- [ ] Run endpoints (#120): `/api/runs` + start/pause/resume/complete, against ADR-0005's
+  reconciled contract.
+- [ ] Candidate command endpoints (#121): explicit commands (capture, record verification, score,
+  submit assessment, supersede assessment), not a blanket PATCH — a PATCH can't produce a
+  meaningful audit record since the server never learns which action was intended.
+- [ ] Backend restart/rehydration integration test (#130): restart the app + DB fixture
+  deliberately, prove replay produces identical state. Server-side counterpart to the Playwright
+  persistence test — do last, once the above exists to actually restart and rehydrate.
 - SHARED-OK: SIP-050 relevance/signal/confidence scoring moved to Bhanu's worklog — it runs
   through the model gateway he owns. `assessment.py` stays the validation/carry layer here.
 - [ ] Comms Assistant service side (`apps/comms`): draft-generation flow with the named-reviewer
