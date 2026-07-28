@@ -36,14 +36,26 @@ DB schema, API contract, auth. Build against them; don't write to control-plane 
 - [ ] Pipeline integration test suite wired into CI: verification gate, dedupe, mandatory-source
   stops, malformed-article handling — the fail-closed behaviour currently has no automated tests.
 - [ ] Collection-engine improvements in `daily-india-nz-news-agent` (via its own PR flow).
-- [ ] Ruff 0.16.0 findings in collector/FTA — fix and bump the CI pin (#31). Currently pinned at
-  0.15.22 (`pyproject.toml`), which is clean; this is prep for the version bump, not a live gate
-  failure yet.
 
 See Blocked / decisions needed for what's still open before any of this runs live (secrets,
 INZBC sector/disclaimer sign-off).
 
 ## Done
+- [x] Ruff 0.16.0 findings in my lane fixed (#31): `apps/fta` and `apps/sip/collector` are clean
+  under 0.16.0. Auto-fixed the mechanical ones (`UP035` typing.Iterable → collections.abc,
+  `UP017` datetime.UTC alias, `I001` import sort, `FLY002` f-string). The one real finding,
+  `DTZ007` on `mapping.py`'s GDELT `strptime` fallback, got an actual decision rather than a lint
+  appeasement: on Python 3.11+ `fromisoformat` already parses the `...Z`-suffixed GDELT format
+  directly (aware, UTC), so only the no-separator compact format ever reaches the `strptime`
+  loop in practice; GDELT's API docs state every `seendate` is UTC, so that fallback now attaches
+  `UTC` explicitly instead of returning an ambiguous naive datetime. Updated the one test whose
+  expected output changed as a result. **Not done: bumping the CI pin.** The issue assumed only
+  3 findings existed tree-wide; `apps/sip/core`, `scripts/board.py` and `services/api` now have 7
+  more (subclass slots ordering, `datetime.UTC` alias, blind `except Exception`, `subprocess.run`
+  without `check`) — all outside my lane per the CLAUDE.md rule that `/services/api` changes go
+  through Bhanu. Bumping the pin now would break CI tree-wide on code I don't own; pin stays at
+  `0.15.22` until those are fixed too. Raising at standup rather than guessing at someone else's
+  code.
 - [x] Client + lookup layer for `GET /api/source-library`, implemented locally ahead of the
   endpoint (refs #52 — not closed; the endpoint itself isn't deployed yet, see below). New
   `apps/sip/collector/source_lookup.py`: `build_source_lookups()` splits one

@@ -8,9 +8,9 @@ SIP-185. Last mirrored against the doc as checked there on 22 Jul 2026.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date
-from typing import Iterable
 
 FTA_STATUS_LINE = (
     "NZ-India FTA signed 27 April 2026 (negotiations concluded 22 Dec 2025). Not yet in force - "

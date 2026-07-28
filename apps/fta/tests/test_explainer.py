@@ -120,7 +120,7 @@ def test_no_match_carries_status_line_and_approved_disclaimer() -> None:
 def test_no_match_never_asserts_a_tariff_outcome() -> None:
     # Guards against someone later writing reassuring copy that reads like a finding.
     result = no_match("semiconductor export controls")
-    prose = " ".join([result.message, result.next_step, result.escalation_path]).lower()
+    prose = f"{result.message} {result.next_step} {result.escalation_path}".lower()
     for claim in ("tariff eliminated", "duty-free", "duty free", "%", "no tariff"):
         assert claim not in prose, f"no-match copy must not assert an outcome: found {claim!r}"
 
