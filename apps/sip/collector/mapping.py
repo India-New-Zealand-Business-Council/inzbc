@@ -15,7 +15,7 @@ rubric, so forcing them into those fields would misrepresent unscored candidates
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from pydantic import BaseModel
 
@@ -25,7 +25,11 @@ from .source_lookup import SourceNameLookup
 
 # GDELT's DOC 2.0 API `seendate` field; RSS entries are parsed by parse_published_at's
 # fromisoformat branches instead (agent.py stores str(datetime) there, e.g. from
-# email.utils.parsedate_to_datetime).
+# email.utils.parsedate_to_datetime). On Python 3.11+, fromisoformat already parses the
+# "...Z"-suffixed form directly (as UTC), so in practice only the no-separator compact form below
+# ever reaches the strptime loop - the "...Z" entry is kept as a defensive fallback in case that
+# changes. GDELT's API documentation states every seendate is UTC, so both formats are parsed as
+# UTC explicitly (DTZ007) rather than left as an ambiguous naive datetime.
 _GDELT_DATE_FORMATS = ("%Y%m%dT%H%M%SZ", "%Y%m%d%H%M%S")
 
 
@@ -53,7 +57,7 @@ def parse_published_at(raw: object) -> str | None:
 
     for fmt in _GDELT_DATE_FORMATS:
         try:
-            return datetime.strptime(value, fmt).isoformat()
+            return datetime.strptime(value, fmt).replace(tzinfo=UTC).isoformat()
         except ValueError:
             continue
 
