@@ -1,7 +1,9 @@
+import { useId, useState } from 'react'
 import type { DailyBriefReport } from '../domain'
 
 interface Props {
   report: DailyBriefReport
+  onChange: (report: DailyBriefReport) => void
 }
 
 /**
@@ -12,7 +14,21 @@ interface Props {
  * identity — the check itself (reviewer !== analyst) is real and matches the server-side rule in
  * schemas/api-contract.md; only the identity source is a stand-in.
  */
-export function QaReviewScreen({ report }: Props) {
+export function QaReviewScreen({ report, onChange }: Props) {
+  // Which section, if any, is in edit mode — one at a time, so a reviewer can't lose track of an
+  // unsaved edit in a section they've scrolled away from.
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const editFieldId = useId()
+
+  function updateSectionContent(sectionId: string, content: string) {
+    onChange({
+      ...report,
+      sections: report.sections.map((section) =>
+        section.id === sectionId ? { ...section, content } : section,
+      ),
+    })
+  }
+
   if (report.state !== 'QA In Progress' && report.state !== 'QA Failed') {
     return (
       <section>
@@ -59,10 +75,33 @@ export function QaReviewScreen({ report }: Props) {
         <h3 className="text-sm font-semibold text-inzbc-navy">Digest content for review</h3>
         {report.sections.map((section) => (
           <div key={section.id} className="rounded-md border border-slate-200 bg-white p-3">
-            <h4 className="text-sm font-medium text-inzbc-navy">{section.title}</h4>
-            <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700">
-              {section.content || <span className="italic text-slate-400">No content recorded.</span>}
-            </p>
+            <div className="flex items-center justify-between gap-2">
+              <h4 className="text-sm font-medium text-inzbc-navy">{section.title}</h4>
+              <button
+                type="button"
+                onClick={() => setEditingId(editingId === section.id ? null : section.id)}
+                className="text-xs font-medium text-inzbc-blue underline"
+              >
+                {editingId === section.id ? 'Done' : 'Edit'}
+              </button>
+            </div>
+            {editingId === section.id ? (
+              <>
+                <label htmlFor={`${editFieldId}-${section.id}`} className="sr-only">
+                  Edit content for {section.title}
+                </label>
+                <textarea
+                  id={`${editFieldId}-${section.id}`}
+                  className="mt-1 min-h-20 w-full rounded-md border border-slate-300 p-2 text-sm text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
+                  value={section.content}
+                  onChange={(event) => updateSectionContent(section.id, event.target.value)}
+                />
+              </>
+            ) : (
+              <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700">
+                {section.content || <span className="italic text-slate-400">No content recorded.</span>}
+              </p>
+            )}
           </div>
         ))}
       </div>
