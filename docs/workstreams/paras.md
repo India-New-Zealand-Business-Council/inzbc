@@ -42,8 +42,10 @@ The shared API + auth for anything that reads/writes data. Roshan's FTA service 
          assert the input, submit button, answer cards and citation text all stay visible and
          usable. The CSS fix landed in #91 and was verified by a one-off Chromium measurement;
          until this test exists, that behaviour is **not** guarded by CI.
-- [ ] Comms Assistant review UI: draft view with diff-against-previous and the named-reviewer
-      approval gate (nothing publishable without a recorded human approval).
+- [ ] Comms Assistant review UI (#60): draft view with diff-against-previous and the
+      named-reviewer approval gate (nothing publishable without a recorded human approval).
+      Blocked on the service side (#53). **Not the same screen as the drafting UI below** —
+      #60's scope is reviewing/approving a draft already produced, not producing one.
 - [ ] Build the public site in Wix from `apps/site/content/` (account access granted at team
       level — can start in the Wix editor now; programmatic build additionally needs the Wix MCP
       connected; still blocked on the brand kit either way. See `docs/discovery.md` OI-1).
@@ -60,6 +62,14 @@ The shared API + auth for anything that reads/writes data. Roshan's FTA service 
       this is the end-to-end verification pass).
 
 ## Done
+- Comms Assistant drafting UI (`apps/comms/ui`): content-type selector, brief input,
+  generate/loading/error states, output display, copy-to-clipboard, clear/reset. Taken out of
+  backlog order — not the top **Next up** item (SIP review/approval UI) — because it was the
+  task at hand; no open issue tracked this exact scope, so the PR refs #60 (the closest existing
+  Comms Assistant UI issue) as preliminary work, not a claim of closing it. `POST
+  /api/comms/draft` is a proposed contract only: `services/api` has no Comms endpoint yet (issue
+  #65 unbuilt), so this UI has nothing live to call against. Drafts-only messaging and no
+  send/publish action, per `docs/modules/comms-assistant.md`.
 - Drafted public-page content in `apps/site/content/` (home, about, events, members, connect) from
   page-specs, executive tone, placeholders for INZBC facts. Ready to drop into Wix.
 
