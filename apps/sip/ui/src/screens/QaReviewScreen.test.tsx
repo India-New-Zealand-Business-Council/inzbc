@@ -1,10 +1,19 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import * as reportsStore from '../api/reportsStore'
 import type { DailyBriefReport } from '../domain'
 import { generatedDigestContent, newDraftReportFixture } from '../lib/fixtures'
 import { QaReviewScreen } from './QaReviewScreen'
+
+afterEach(() => vi.restoreAllMocks())
+
+async function answerEveryItem(outcome: 'Pass' | 'N/A' = 'Pass') {
+  for (const group of screen.getAllByRole('group')) {
+    await userEvent.click(within(group).getByRole('button', { name: outcome }))
+  }
+}
 
 function reportInQa() {
   return { ...newDraftReportFixture(), ...generatedDigestContent(), state: 'QA In Progress' as const }
@@ -133,5 +142,65 @@ describe('QaReviewScreen', () => {
     await userEvent.click(flag)
     expect(flag).toHaveAttribute('aria-pressed', 'true')
     expect(approve).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('shows a running checklist pass rate as items are answered', async () => {
+    render(<ControlledQaReview initial={reportInQa()} />)
+    expect(screen.getByText(/checklist pass rate/i)).toHaveTextContent('0%')
+
+    await userEvent.click(within(screen.getAllByRole('group')[0]!).getByRole('button', { name: 'Pass' }))
+    expect(screen.getByText(/checklist pass rate/i)).toHaveTextContent('100%')
+  })
+
+  it('disables Record QA result until every checklist item is answered', () => {
+    render(<QaReviewScreen report={reportInQa()} onChange={vi.fn()} />)
+    expect(screen.getByRole('button', { name: /record qa result/i })).toBeDisabled()
+    expect(screen.getByText(/still need pass\/fail\/n\/a/i)).toBeInTheDocument()
+  })
+
+  it('records a clean pass and advances the report past this screen toward the CEO decision screen', async () => {
+    render(<ControlledQaReview initial={reportInQa()} />)
+    await answerEveryItem('Pass')
+
+    await userEvent.click(screen.getByRole('button', { name: /record qa result/i }))
+    expect(await screen.findByRole('status')).toHaveTextContent(/awaiting ceo decision/i)
+  })
+
+  it('a Critical failure blocks the clean-pass path and surfaces Send back for correction', async () => {
+    render(<ControlledQaReview initial={reportInQa()} />)
+    await answerEveryItem('Pass')
+    const criticalGroup = screen.getByRole('group', { name: /approved version set present/i })
+    await userEvent.click(within(criticalGroup).getByRole('button', { name: 'Fail' }))
+
+    await userEvent.click(screen.getByRole('button', { name: /record qa result/i }))
+
+    expect(await screen.findByRole('button', { name: /send back for correction/i })).toBeInTheDocument()
+    expect(screen.getByText(/last recorded result:/i)).toHaveTextContent('Fail')
+    // The spec is explicit there is no override for a Critical fail — confirm the pass action is
+    // simply gone, not just relabelled.
+    expect(screen.queryByRole('button', { name: /record qa result/i })).not.toBeInTheDocument()
+  })
+
+  it('sending back for correction returns the run to Report Drafted, out of this screen\'s reach', async () => {
+    const failed: DailyBriefReport = {
+      ...reportInQa(),
+      state: 'QA Failed',
+      qa: { reviewer: 'Paras', timestamp: '2026-07-30T00:00:00Z', result: 'Fail', criticalFailuresFound: 'x', correctionsRequired: 'y' },
+    }
+    render(<ControlledQaReview initial={failed} />)
+
+    await userEvent.click(screen.getByRole('button', { name: /send back for correction/i }))
+    expect(await screen.findByRole('status')).toHaveTextContent(/report drafted/i)
+  })
+
+  it('surfaces a record-result failure without transitioning the report', async () => {
+    vi.spyOn(reportsStore, 'submitQaResult').mockRejectedValue(new Error('network down'))
+    render(<ControlledQaReview initial={reportInQa()} />)
+    await answerEveryItem('Pass')
+
+    await userEvent.click(screen.getByRole('button', { name: /record qa result/i }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/something went wrong/i)
+    expect(screen.getByRole('button', { name: /record qa result/i })).toBeInTheDocument()
   })
 })
