@@ -1,8 +1,16 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
+import type { DailyBriefReport } from '../domain'
 import { newDraftReportFixture } from '../lib/fixtures'
 import { BriefBuilderScreen } from './BriefBuilderScreen'
+
+/** A controlled wrapper so interaction tests exercise real state updates, not a static prop. */
+function ControlledBriefBuilder({ initial }: { initial: DailyBriefReport }) {
+  const [report, setReport] = useState(initial)
+  return <BriefBuilderScreen report={report} onChange={setReport} />
+}
 
 describe('BriefBuilderScreen', () => {
   it('renders the run header as read-only data, not editable inputs', () => {
@@ -43,5 +51,27 @@ describe('BriefBuilderScreen', () => {
     const report = newDraftReportFixture()
     render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)
     expect(screen.getByText(/not a sip-186 field/i)).toBeInTheDocument()
+  })
+
+  it('blocks on blank mandatory source outcomes and no candidate selected, by default', () => {
+    const report = newDraftReportFixture()
+    render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)
+
+    const alert = screen.getByRole('alert')
+    expect(alert).toHaveTextContent(/at least one scored candidate must be selected/i)
+    expect(alert).toHaveTextContent(/mandatory source with no recorded outcome/i)
+    expect(screen.queryByText(/ready to submit for qa/i)).not.toBeInTheDocument()
+  })
+
+  it('clears once a candidate is selected and every mandatory source has an outcome', async () => {
+    render(<ControlledBriefBuilder initial={newDraftReportFixture()} />)
+
+    await userEvent.click(screen.getAllByRole('checkbox')[0]!)
+    for (const select of screen.getAllByRole('combobox')) {
+      fireEvent.change(select, { target: { value: 'Included' } })
+    }
+
+    expect(screen.getByText(/ready to submit for qa/i)).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 })

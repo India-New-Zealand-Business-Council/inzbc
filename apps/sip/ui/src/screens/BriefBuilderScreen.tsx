@@ -1,6 +1,17 @@
-import { useId, useState } from 'react'
-import type { Candidate, DailyBriefReport } from '../domain'
+import { useId, useMemo, useState } from 'react'
+import type { Candidate, DailyBriefReport, SourceOutcome } from '../domain'
 import { candidatesFixture } from '../lib/fixtures'
+import { FOCUS_NOTE_MAX_LENGTH, validateBrief } from '../lib/validation'
+
+const OUTCOME_OPTIONS: SourceOutcome[] = [
+  '',
+  'Included',
+  'Context',
+  'Suppressed',
+  'Inaccessible',
+  'Excluded',
+  'No Qualifying Item',
+]
 
 interface Props {
   report: DailyBriefReport
@@ -29,12 +40,35 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
   const coverageEndId = useId()
   const focusNoteId = useId()
 
+  const errors = useMemo(
+    () => validateBrief(report, selectedCandidateIds.size),
+    [report, selectedCandidateIds],
+  )
+
   function toggleCandidate(id: string) {
     setSelectedCandidateIds((previous) => {
       const next = new Set(previous)
       if (next.has(id)) next.delete(id)
       else next.add(id)
       return next
+    })
+  }
+
+  function setSourceOutcome(sourceId: string, outcome: SourceOutcome) {
+    onChange({
+      ...report,
+      sourceCoverage: report.sourceCoverage.map((row) =>
+        row.sourceId === sourceId ? { ...row, outcome } : row,
+      ),
+    })
+  }
+
+  function setSourceFallback(sourceId: string, fallbackAttempt: string) {
+    onChange({
+      ...report,
+      sourceCoverage: report.sourceCoverage.map((row) =>
+        row.sourceId === sourceId ? { ...row, fallbackAttempt } : row,
+      ),
     })
   }
 
@@ -106,9 +140,18 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
       </div>
 
       <div>
-        <label htmlFor={focusNoteId} className="mb-1 block text-sm font-semibold text-inzbc-navy">
-          Focus note <span className="font-normal text-slate-500">(optional — not a SIP-186 field)</span>
-        </label>
+        <div className="mb-1 flex items-baseline justify-between gap-3">
+          <label htmlFor={focusNoteId} className="block text-sm font-semibold text-inzbc-navy">
+            Focus note <span className="font-normal text-slate-500">(optional — not a SIP-186 field)</span>
+          </label>
+          <span
+            className={`text-xs ${
+              report.focusNote.length > FOCUS_NOTE_MAX_LENGTH ? 'font-semibold text-inzbc-crimson' : 'text-slate-500'
+            }`}
+          >
+            {report.focusNote.length} / {FOCUS_NOTE_MAX_LENGTH}
+          </span>
+        </div>
         <input
           id={focusNoteId}
           type="text"
@@ -118,6 +161,85 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
           className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
         />
       </div>
+
+      <div>
+        <h3 className="mb-2 text-sm font-semibold text-inzbc-navy">
+          12. Source coverage and exceptions — mandatory sources
+        </h3>
+        <div className="overflow-x-auto rounded-md border border-slate-200 bg-white">
+          <table className="w-full min-w-[36rem] text-left text-sm">
+            <thead className="border-b border-slate-200 text-xs uppercase text-slate-500">
+              <tr>
+                <th scope="col" className="px-3 py-2">
+                  Source
+                </th>
+                <th scope="col" className="px-3 py-2">
+                  Outcome
+                </th>
+                <th scope="col" className="px-3 py-2">
+                  Fallback attempt (if inaccessible/excluded)
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {report.sourceCoverage.map((row) => {
+                return (
+                  <tr key={row.sourceId} className="border-b border-slate-100 last:border-0">
+                    <td className="px-3 py-2 align-top">
+                      <span className="block font-medium text-inzbc-navy">{row.sourceName}</span>
+                      <span className="block text-xs text-slate-500">{row.sip185Code}</span>
+                    </td>
+                    <td className="px-3 py-2 align-top">
+                      <label className="sr-only" htmlFor={`outcome-${row.sourceId}`}>
+                        Outcome for {row.sourceName}
+                      </label>
+                      <select
+                        id={`outcome-${row.sourceId}`}
+                        value={row.outcome}
+                        onChange={(event) => setSourceOutcome(row.sourceId, event.target.value as SourceOutcome)}
+                        className={`rounded-md border px-2 py-1 text-sm ${
+                          row.mandatory && row.outcome === '' ? 'border-inzbc-crimson' : 'border-slate-300'
+                        }`}
+                      >
+                        {OUTCOME_OPTIONS.map((option) => (
+                          <option key={option || 'blank'} value={option}>
+                            {option || '— not recorded —'}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-3 py-2 align-top">
+                      <label className="sr-only" htmlFor={`fallback-${row.sourceId}`}>
+                        Fallback attempt for {row.sourceName}
+                      </label>
+                      <input
+                        id={`fallback-${row.sourceId}`}
+                        type="text"
+                        value={row.fallbackAttempt}
+                        onChange={(event) => setSourceFallback(row.sourceId, event.target.value)}
+                        className="w-full rounded-md border border-slate-300 px-2 py-1 text-sm"
+                      />
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {errors.length > 0 ? (
+        <div role="alert" className="rounded-md border border-inzbc-crimson bg-inzbc-crimson/10 p-3 text-sm text-inzbc-crimson">
+          <p className="font-semibold">Before this brief can be submitted for QA:</p>
+          <ul className="mt-1 list-inside list-disc">
+            {errors.map((error) => (
+              <li key={error}>{error}</li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <p className="text-sm font-medium text-inzbc-forest">Ready to submit for QA.</p>
+      )}
 
       <div>
         <h3 className="mb-2 text-sm font-semibold text-inzbc-navy">
