@@ -107,6 +107,33 @@ describe('CommsAssistant', () => {
     expect(await screen.findByRole('button', { name: /copy failed/i })).toBeInTheDocument()
   })
 
+  it('shows a toast notification when the copy succeeds', async () => {
+    mockFetch({ draft: 'Copy me' })
+    stubClipboard(vi.fn().mockResolvedValue(undefined))
+
+    render(<CommsAssistant />)
+    await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
+    await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
+    await screen.findByText('Copy me')
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: /copy to clipboard/i }))
+    expect(await screen.findByRole('status')).toHaveTextContent(/copied to clipboard/i)
+  })
+
+  it('shows a toast notification when the copy fails', async () => {
+    mockFetch({ draft: 'Copy me' })
+    stubClipboard(vi.fn().mockRejectedValue(new Error('denied')))
+
+    render(<CommsAssistant />)
+    await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
+    await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
+    await screen.findByText('Copy me')
+    await userEvent.click(screen.getByRole('button', { name: /copy to clipboard/i }))
+
+    expect(await screen.findByRole('status')).toHaveTextContent(/couldn.t copy to clipboard/i)
+  })
+
   it('clears the brief, content type, and any rendered draft on reset', async () => {
     mockFetch({ draft: 'Copy me' })
     render(<CommsAssistant />)

@@ -258,6 +258,17 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
           </ul>
         </div>
       ) : null}
+
+      {copyStatus !== 'idle' ? (
+        <div
+          role="status"
+          className={`fixed bottom-4 right-4 z-50 rounded-md px-4 py-2 text-sm font-medium text-white shadow-lg ${
+            copyStatus === 'copied' ? 'bg-inzbc-forest' : 'bg-inzbc-crimson'
+          }`}
+        >
+          {copyStatus === 'copied' ? 'Copied to clipboard' : "Couldn't copy to clipboard"}
+        </div>
+      ) : null}
     </section>
   )
 }
