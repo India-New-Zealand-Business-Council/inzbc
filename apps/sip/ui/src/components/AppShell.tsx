@@ -54,7 +54,7 @@ export function AppShell() {
         {screen === 'brief-builder' ? <BriefBuilderScreen report={report} onChange={setReport} /> : null}
         {screen === 'qa-review' ? <QaReviewScreen report={report} onChange={setReport} /> : null}
         {screen === 'ceo-decision' ? <CeoDecisionScreen report={report} onChange={setReport} /> : null}
-        {screen === 'distribution-status' ? <DistributionStatusScreen /> : null}
+        {screen === 'distribution-status' ? <DistributionStatusScreen report={report} /> : null}
       </main>
     </div>
   )

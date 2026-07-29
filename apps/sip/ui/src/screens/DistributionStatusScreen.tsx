@@ -1,11 +1,105 @@
-// Placeholder — replaced with the real distribution status screen in a later commit.
-export function DistributionStatusScreen() {
+import type { DailyBriefReport } from '../domain'
+
+interface Props {
+  report: DailyBriefReport
+}
+
+/**
+ * docs/sip-ui-spec.md Screen 4: a read-only status surface, not a workflow screen — "no write
+ * controls of any kind ... If a field is empty (e.g. no send recorded yet), it shows as pending,
+ * not as an error." Unlike the QA/CEO screens this has no entry-state gate: asking "did today's
+ * brief go out" is meaningful at any point in a run's life, and the honest answer earlier on is
+ * simply "pending," not "not reachable."
+ *
+ * `report.distribution.recipient` is the SIP-186 field as sourced (a single authorised recipient/
+ * list reference, e2 in the QA checklist) — there is no "recipient count" in the source template,
+ * so this renders that field as-is rather than inventing a numeric count it doesn't have.
+ */
+export function DistributionStatusScreen({ report }: Props) {
   return (
-    <section>
-      <h2 className="text-lg font-semibold text-inzbc-navy">Distribution Status</h2>
-      <p className="mt-1 text-sm text-slate-600">
-        Read-only status: QA result, CEO decision, distribution and close-out — no write controls.
-      </p>
+    <section className="space-y-6">
+      <div>
+        <h2 className="text-lg font-semibold text-inzbc-navy">Distribution Status</h2>
+        <p className="mt-1 text-sm text-slate-600">
+          Read-only status for run {report.runId} — no write controls on this screen.
+        </p>
+      </div>
+
+      <dl className="grid gap-3 rounded-md border border-slate-200 bg-white p-3 sm:grid-cols-2">
+        <div>
+          <dt className="text-xs text-slate-500">Current state</dt>
+          <dd className="text-sm font-semibold text-inzbc-navy">{report.state}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-slate-500">Report / brief date</dt>
+          <dd className="text-sm font-semibold text-inzbc-navy">{report.reportDate || 'Pending'}</dd>
+        </div>
+      </dl>
+
+      <div className="rounded-md border border-slate-200 bg-white p-3">
+        <h3 className="text-sm font-semibold text-inzbc-navy">QA result</h3>
+        {report.qa ? (
+          <dl className="mt-2 space-y-1 text-sm text-slate-700">
+            <div>
+              Result: <strong>{report.qa.result}</strong>
+            </div>
+            <div>Reviewer: {report.qa.reviewer}</div>
+            <div>Timestamp: {report.qa.timestamp}</div>
+            {report.qa.criticalFailuresFound ? <div>Critical failures: {report.qa.criticalFailuresFound}</div> : null}
+          </dl>
+        ) : (
+          <p className="mt-2 text-sm text-slate-500">Pending — QA has not been recorded yet.</p>
+        )}
+      </div>
+
+      <div className="rounded-md border border-slate-200 bg-white p-3">
+        <h3 className="text-sm font-semibold text-inzbc-navy">CEO decision</h3>
+        {report.decision ? (
+          <dl className="mt-2 space-y-1 text-sm text-slate-700">
+            <div>
+              Decision: <strong>{report.decision.decision}</strong>
+            </div>
+            <div>Reason: {report.decision.reason}</div>
+            <div>Recorded: {report.decision.decidedAt}</div>
+            <div>Against version: {report.decision.reportVersion}</div>
+            <div>
+              Distribution authorised:{' '}
+              <strong>
+                {report.decision.distributionDecidedAt
+                  ? report.decision.distributionAuthorised
+                    ? 'Yes'
+                    : 'No'
+                  : 'Pending'}
+              </strong>
+            </div>
+          </dl>
+        ) : (
+          <p className="mt-2 text-sm text-slate-500">Pending — no CEO decision recorded yet.</p>
+        )}
+      </div>
+
+      <div className="rounded-md border border-slate-200 bg-white p-3">
+        <h3 className="text-sm font-semibold text-inzbc-navy">Distribution record</h3>
+        {report.distribution ? (
+          <dl className="mt-2 space-y-1 text-sm text-slate-700">
+            <div>
+              Sent: <strong>{report.distribution.sent ? 'Yes' : 'No'}</strong>
+            </div>
+            <div>Sender: {report.distribution.sender}</div>
+            <div>Recipient: {report.distribution.recipient}</div>
+            <div>Send time: {report.distribution.sendTime}</div>
+            <div>Channel: {report.distribution.channel}</div>
+            <div>Delivery result: {report.distribution.deliveryResult}</div>
+            <div>Close-out status: {report.distribution.closeOutStatus}</div>
+          </dl>
+        ) : (
+          <p className="mt-2 text-sm text-slate-500">
+            Pending — no send recorded yet. Manual send happens outside this application
+            (docs/sip/operator-guide.md Step 13); this screen only reflects what has already been
+            recorded.
+          </p>
+        )}
+      </div>
     </section>
   )
 }
