@@ -149,4 +149,12 @@ describe('CommsAssistant', () => {
     render(<CommsAssistant />)
     expect(screen.getByText(/drafts only/i)).toBeInTheDocument()
   })
+
+  it('shows a live character count against the brief limit', async () => {
+    render(<CommsAssistant />)
+    expect(screen.getByText('0 / 4000')).toBeInTheDocument()
+
+    await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
+    expect(screen.getByText('10 / 4000')).toBeInTheDocument()
+  })
 })

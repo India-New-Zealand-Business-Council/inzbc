@@ -8,6 +8,8 @@ const CONTENT_TYPES: { value: ContentType; label: string }[] = [
   { value: 'member_spotlight', label: 'Member Spotlight' },
 ]
 
+const BRIEF_MAX_LENGTH = 4000
+
 type State =
   | { kind: 'idle' }
   | { kind: 'loading' }
@@ -109,14 +111,21 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
         </div>
 
         <div>
-          <label htmlFor={briefId} className="mb-1 block font-semibold text-inzbc-navy">
-            Brief
-          </label>
+          <div className="mb-1 flex items-baseline justify-between gap-3">
+            <label htmlFor={briefId} className="block font-semibold text-inzbc-navy">
+              Brief
+            </label>
+            <span
+              className={`text-xs ${brief.length >= BRIEF_MAX_LENGTH ? 'font-semibold text-inzbc-crimson' : 'text-slate-500'}`}
+            >
+              {brief.length} / {BRIEF_MAX_LENGTH}
+            </span>
+          </div>
           <textarea
             id={briefId}
             className="min-h-32 w-full rounded-md border border-slate-300 px-3 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
             value={brief}
-            maxLength={4000}
+            maxLength={BRIEF_MAX_LENGTH}
             placeholder="Describe what you want drafted — audience, key points, tone…"
             onChange={(event) => setBrief(event.target.value)}
           />
