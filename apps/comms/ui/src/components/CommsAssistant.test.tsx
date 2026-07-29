@@ -157,4 +157,58 @@ describe('CommsAssistant', () => {
     await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
     expect(screen.getByText('10 / 4000')).toBeInTheDocument()
   })
+
+  it('moves a superseded draft into recent-drafts history, keeping its content type', async () => {
+    const spy = vi.fn()
+    vi.stubGlobal(
+      'fetch',
+      spy.mockImplementation(async (_url: string, init: RequestInit) => {
+        const { content_type: contentType } = JSON.parse(init.body as string) as { content_type: string }
+        return { ok: true, status: 200, json: async () => ({ draft: `${contentType} draft` }) }
+      }),
+    )
+    render(<CommsAssistant />)
+
+    expect(screen.queryByText(/recent drafts/i)).not.toBeInTheDocument()
+
+    await userEvent.type(screen.getByLabelText(/brief/i), 'First brief')
+    await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
+    await screen.findByText('newsletter draft')
+    expect(screen.queryByText(/recent drafts/i)).not.toBeInTheDocument()
+
+    await userEvent.selectOptions(screen.getByLabelText(/content type/i), 'LinkedIn Post')
+    await userEvent.clear(screen.getByLabelText(/brief/i))
+    await userEvent.type(screen.getByLabelText(/brief/i), 'Second brief')
+    await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
+    await screen.findByText('linkedin_post draft')
+
+    expect(await screen.findByRole('heading', { name: /recent drafts/i })).toBeInTheDocument()
+    expect(screen.getByText('Newsletter')).toBeInTheDocument()
+    expect(screen.getByText('newsletter draft')).toBeInTheDocument()
+  })
+
+  it('keeps history capped at the 3 most recent superseded drafts', async () => {
+    let counter = 0
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation(async () => {
+        counter += 1
+        return { ok: true, status: 200, json: async () => ({ draft: `draft ${counter}` }) }
+      }),
+    )
+    render(<CommsAssistant />)
+
+    for (let i = 0; i < 5; i += 1) {
+      await userEvent.clear(screen.getByLabelText(/brief/i))
+      await userEvent.type(screen.getByLabelText(/brief/i), `brief ${i}`)
+      await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
+      await screen.findByText(`draft ${i + 1}`)
+    }
+
+    // 5 generations supersede 4 drafts (draft 1..4); only the 3 most recent survive in history.
+    expect(screen.queryByText('draft 1')).not.toBeInTheDocument()
+    expect(screen.getByText('draft 2')).toBeInTheDocument()
+    expect(screen.getByText('draft 3')).toBeInTheDocument()
+    expect(screen.getByText('draft 4')).toBeInTheDocument()
+  })
 })

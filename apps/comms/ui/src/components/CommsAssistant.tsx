@@ -9,17 +9,29 @@ const CONTENT_TYPES: { value: ContentType; label: string }[] = [
 ]
 
 const BRIEF_MAX_LENGTH = 4000
+const HISTORY_LIMIT = 3
+
+const CONTENT_TYPE_LABELS = Object.fromEntries(
+  CONTENT_TYPES.map((option) => [option.value, option.label]),
+) as Record<ContentType, string>
 
 type State =
   | { kind: 'idle' }
   | { kind: 'loading' }
-  | { kind: 'result'; draft: string }
+  | { kind: 'result'; draft: string; contentType: ContentType }
   | { kind: 'error'; message: string }
+
+interface HistoryEntry {
+  id: string
+  contentType: ContentType
+  draft: string
+}
 
 export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
   const [contentType, setContentType] = useState<ContentType>('newsletter')
   const [brief, setBrief] = useState('')
   const [state, setState] = useState<State>({ kind: 'idle' })
+  const [history, setHistory] = useState<HistoryEntry[]>([])
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'failed'>('idle')
   const inFlight = useRef<AbortController | null>(null)
   const copyResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -30,6 +42,10 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
     event.preventDefault()
     const trimmed = brief.trim()
     if (!trimmed) return
+
+    // Captured before the state overwrite below, so history keeps the content type that was
+    // actually selected when this draft was generated — not whatever the dropdown reads later.
+    const outgoing = state.kind === 'result' ? state : null
 
     inFlight.current?.abort()
     const controller = new AbortController()
@@ -45,7 +61,15 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
       // Mirrors apps/fta/ui's FtaQuery: abort cannot retract an in-flight response, so only the
       // request that is still current may write state.
       if (inFlight.current !== controller) return
-      setState({ kind: 'result', draft: result.draft })
+      if (outgoing) {
+        setHistory((prev) =>
+          [{ id: crypto.randomUUID(), contentType: outgoing.contentType, draft: outgoing.draft }, ...prev].slice(
+            0,
+            HISTORY_LIMIT,
+          ),
+        )
+      }
+      setState({ kind: 'result', draft: result.draft, contentType })
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return
       if (inFlight.current !== controller) return
@@ -177,6 +201,24 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
           </div>
         ) : null}
       </div>
+
+      {history.length > 0 ? (
+        <div className="space-y-2">
+          <h2 className="font-semibold text-inzbc-navy">Recent drafts</h2>
+          <ul className="space-y-2">
+            {history.map((entry) => (
+              <li key={entry.id} className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  {CONTENT_TYPE_LABELS[entry.contentType]}
+                </p>
+                <p className="max-h-24 overflow-y-auto whitespace-pre-wrap text-sm text-slate-700">
+                  {entry.draft}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </section>
   )
 }
