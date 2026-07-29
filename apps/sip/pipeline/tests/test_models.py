@@ -24,8 +24,9 @@ REPO_ROOT = Path(__file__).resolve().parents[4]
 SCHEMA_PATH = REPO_ROOT / "database" / "schema.sql"
 
 # Maps each Postgres enum type (schema.sql) to the Python Enum that mirrors it (models.py).
-# Only the enums the pipeline module actually uses are checked here — approval_state and
-# distribution_state belong to Paras's control-side module, not this one.
+# Only the enums the pipeline module actually uses are checked here. approval_state belongs to
+# Paras's control-side module, and the decision enums are covered by
+# services/api/tests/test_schema_decisions.py.
 ENUM_MIRRORS = {
     "signal_strength": SignalStrength,
     "source_confidence": SourceConfidence,
