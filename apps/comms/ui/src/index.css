@@ -19,3 +19,20 @@
   --font-heading: "Big Shoulders", system-ui, sans-serif;
   --font-body: "Merriweather", Georgia, serif;
 }
+
+/* Scopes "Export as PDF" (window.print) to just the draft text — see src/lib/exportDraft.ts. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-draft,
+  .print-draft * {
+    visibility: visible;
+  }
+  .print-draft {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+}

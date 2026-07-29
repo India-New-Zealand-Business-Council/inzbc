@@ -1,5 +1,6 @@
 import { useId, useRef, useState } from 'react'
 import { CommsDraftError, requestCommsDraft, type ContentType } from '../api/client'
+import { downloadAsWord, exportAsPdf } from '../lib/exportDraft'
 
 const CONTENT_TYPES: { value: ContentType; label: string }[] = [
   { value: 'newsletter', label: 'Newsletter' },
@@ -183,21 +184,37 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
 
         {state.kind === 'result' ? (
           <div className="space-y-2 rounded-md border border-slate-300 bg-white p-4">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="font-semibold text-inzbc-navy">Draft</h2>
-              <button
-                type="button"
-                onClick={onCopy}
-                className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-inzbc-navy"
-              >
-                {copyStatus === 'copied'
-                  ? 'Copied'
-                  : copyStatus === 'failed'
-                    ? 'Copy failed'
-                    : 'Copy to clipboard'}
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={onCopy}
+                  className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-inzbc-navy"
+                >
+                  {copyStatus === 'copied'
+                    ? 'Copied'
+                    : copyStatus === 'failed'
+                      ? 'Copy failed'
+                      : 'Copy to clipboard'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => downloadAsWord(state.draft, `${state.contentType}-draft`)}
+                  className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-inzbc-navy"
+                >
+                  Export as Word
+                </button>
+                <button
+                  type="button"
+                  onClick={exportAsPdf}
+                  className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-inzbc-navy"
+                >
+                  Export as PDF
+                </button>
+              </div>
             </div>
-            <pre className="whitespace-pre-wrap font-sans text-slate-800">{state.draft}</pre>
+            <pre className="print-draft whitespace-pre-wrap font-sans text-slate-800">{state.draft}</pre>
           </div>
         ) : null}
       </div>

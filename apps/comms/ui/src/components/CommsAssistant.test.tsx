@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import * as exportDraft from '../lib/exportDraft'
 import { CommsAssistant } from './CommsAssistant'
 
 function mockFetch(body: unknown, init: { ok?: boolean; status?: number } = {}) {
@@ -210,5 +211,32 @@ describe('CommsAssistant', () => {
     expect(screen.getByText('draft 2')).toBeInTheDocument()
     expect(screen.getByText('draft 3')).toBeInTheDocument()
     expect(screen.getByText('draft 4')).toBeInTheDocument()
+  })
+
+  it('exports the current draft to Word with its content type in the filename', async () => {
+    mockFetch({ draft: 'Export me' })
+    const downloadSpy = vi.spyOn(exportDraft, 'downloadAsWord').mockImplementation(() => {})
+
+    render(<CommsAssistant />)
+    await userEvent.selectOptions(screen.getByLabelText(/content type/i), 'LinkedIn Post')
+    await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
+    await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
+    await screen.findByText('Export me')
+
+    await userEvent.click(screen.getByRole('button', { name: /export as word/i }))
+    expect(downloadSpy).toHaveBeenCalledWith('Export me', 'linkedin_post-draft')
+  })
+
+  it('exports the current draft to PDF via the print dialog', async () => {
+    mockFetch({ draft: 'Export me' })
+    const pdfSpy = vi.spyOn(exportDraft, 'exportAsPdf').mockImplementation(() => {})
+
+    render(<CommsAssistant />)
+    await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
+    await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
+    await screen.findByText('Export me')
+
+    await userEvent.click(screen.getByRole('button', { name: /export as pdf/i }))
+    expect(pdfSpy).toHaveBeenCalledTimes(1)
   })
 })
