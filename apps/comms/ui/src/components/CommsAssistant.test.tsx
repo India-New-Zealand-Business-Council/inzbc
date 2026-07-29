@@ -68,6 +68,26 @@ describe('CommsAssistant', () => {
     expect(await screen.findByText('done')).toBeInTheDocument()
   })
 
+  it('shows a loading skeleton while generating, gone once the draft renders', async () => {
+    let resolveFetch: (value: unknown) => void = () => {}
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockReturnValue(
+        new Promise((resolve) => {
+          resolveFetch = resolve
+        }),
+      ),
+    )
+    const { container } = render(<CommsAssistant />)
+    await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
+    await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
+
+    expect(container.querySelector('[aria-hidden="true"] .animate-pulse')).toBeTruthy()
+    resolveFetch({ ok: true, status: 200, json: async () => ({ draft: 'done' }) })
+    await screen.findByText('done')
+    expect(container.querySelector('[aria-hidden="true"] .animate-pulse')).toBeFalsy()
+  })
+
   it('surfaces a service failure without inventing a draft', async () => {
     mockFetch({}, { ok: false, status: 503 })
     render(<CommsAssistant />)

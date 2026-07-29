@@ -203,6 +203,20 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
           </p>
         ) : null}
 
+        {/* Purely visual — aria-busy above already tells assistive tech generation is under way,
+            so this skeleton is hidden from the accessibility tree rather than announced twice. */}
+        {isLoading ? (
+          <div aria-hidden="true" className="space-y-3 rounded-md border border-slate-300 bg-white p-4">
+            <div className="h-4 w-1/3 animate-pulse rounded bg-slate-200" />
+            <div className="space-y-2">
+              <div className="h-3 w-full animate-pulse rounded bg-slate-200" />
+              <div className="h-3 w-full animate-pulse rounded bg-slate-200" />
+              <div className="h-3 w-5/6 animate-pulse rounded bg-slate-200" />
+              <div className="h-3 w-2/3 animate-pulse rounded bg-slate-200" />
+            </div>
+          </div>
+        ) : null}
+
         {state.kind === 'result' ? (
           <div className="space-y-2 rounded-md border border-slate-300 bg-white p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
