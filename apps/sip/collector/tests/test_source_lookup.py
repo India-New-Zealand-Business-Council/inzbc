@@ -4,6 +4,7 @@ import pytest
 
 from apps.sip.collector.source_lookup import (
     DuplicateSip185Code,
+    DuplicateSourceId,
     SourceIdLookup,
     SourceNameLookup,
     build_source_lookups,
@@ -64,12 +65,29 @@ def test_build_source_lookups_treats_whitespace_variants_as_the_same_name() -> N
     assert name_lookup.get("Ministry of Defence ") is None
 
 
-def test_source_name_lookup_strips_its_own_argument() -> None:
-    # Keys are stored stripped; a caller passing an unstripped query must still match, since
-    # mapping.map_article always strips before calling .get().
-    lookup = SourceNameLookup({"RNZ Business": "db-1"})
-    assert lookup.get("RNZ Business ") == "db-1"
-    assert lookup.get(" RNZ Business") == "db-1"
+def test_build_source_lookups_never_keys_on_an_empty_stripped_name() -> None:
+    # Real regression, not hypothetical: "   " is truthy, so `if name:` alone lets it through: it
+    # then strips to "" and is stored as a live key. mapping.map_article computes
+    # str(article.get("source", "")).strip(), which is also "" for any article with a missing or
+    # blank source - so a single malformed source_library row would silently attribute every
+    # sourceless article to it, writing a real id into candidates.source_id.
+    records = [{"id": "blank-id", "sip185_code": "X-1", "name": "   "}]
+
+    name_lookup, _id_lookup = build_source_lookups(records)
+
+    assert name_lookup.get("") is None
+    assert name_lookup.get("   ") is None
+
+
+def test_source_name_lookup_strips_both_the_stored_key_and_the_query() -> None:
+    # Two separate claims: a query is stripped before lookup, AND a key given directly to the
+    # constructor is stripped when stored - not just keys that happen to arrive already-stripped
+    # via build_source_lookups. An unstripped constructor key must remain reachable by its
+    # stripped form, since map_article always queries with a stripped string.
+    lookup = SourceNameLookup({" RNZ Business ": "db-1"})
+
+    assert lookup.get("RNZ Business") == "db-1"
+    assert lookup.get(" RNZ Business ") == "db-1"
 
 
 def test_build_source_lookups_raises_on_a_duplicate_sip185_code() -> None:
@@ -81,6 +99,18 @@ def test_build_source_lookups_raises_on_a_duplicate_sip185_code() -> None:
         {"id": "3333", "sip185_code": "NZ-OFF-001", "name": "Wrong duplicate"},
     ]
     with pytest.raises(DuplicateSip185Code):
+        build_source_lookups(records)
+
+
+def test_build_source_lookups_raises_on_a_duplicate_source_id() -> None:
+    # source_library.id is the primary key. Two records claiming it under *different* sip185_code
+    # values would pass the DuplicateSip185Code guard untouched (the codes differ) while still
+    # being malformed data - the same fail-loud treatment applies to id itself.
+    records = [
+        {"id": "same-id", "sip185_code": "NZ-1", "name": "A"},
+        {"id": "same-id", "sip185_code": "IN-1", "name": "B"},
+    ]
+    with pytest.raises(DuplicateSourceId):
         build_source_lookups(records)
 
 
