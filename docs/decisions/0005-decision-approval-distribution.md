@@ -1,7 +1,7 @@
 # ADR-0005: One authoritative record stream per decision, approval and distribution
 
-- Status: **Proposed** — Bhanu to accept or amend
-- Date: 2026-07-28, amended 2026-07-30
+- Status: Accepted
+- Date: 2026-07-30
 - Deciders: Bhanu (tech lead). Affects Roshan's run and persistence work and Paras's decision screen
 - Addresses issue #114. Does **not** unblock #120 or #121 — see Required follow-up
 - Does **not** resolve the run-state topology — see Open questions
