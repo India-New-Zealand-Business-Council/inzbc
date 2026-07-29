@@ -1,7 +1,10 @@
-import { useId, useMemo, useState } from 'react'
+import { useId, useMemo, useRef, useState } from 'react'
+import { ReportsApiError, submitReportForQa } from '../api/reportsStore'
 import type { Candidate, DailyBriefReport, SourceOutcome } from '../domain'
 import { candidatesFixture } from '../lib/fixtures'
 import { FOCUS_NOTE_MAX_LENGTH, validateBrief } from '../lib/validation'
+
+type SubmitState = { kind: 'idle' } | { kind: 'loading' } | { kind: 'error'; message: string }
 
 const OUTCOME_OPTIONS: SourceOutcome[] = [
   '',
@@ -35,6 +38,8 @@ interface Props {
 export function BriefBuilderScreen({ report, onChange }: Props) {
   const [candidates] = useState<Candidate[]>(() => candidatesFixture())
   const [selectedCandidateIds, setSelectedCandidateIds] = useState<Set<string>>(new Set())
+  const [submitState, setSubmitState] = useState<SubmitState>({ kind: 'idle' })
+  const inFlight = useRef<AbortController | null>(null)
   const reportDateId = useId()
   const coverageStartId = useId()
   const coverageEndId = useId()
@@ -44,6 +49,29 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
     () => validateBrief(report, selectedCandidateIds.size),
     [report, selectedCandidateIds],
   )
+  const isDraft = report.state === 'Report Drafted'
+
+  async function onSubmitForQa() {
+    if (errors.length > 0 || !isDraft) return
+    inFlight.current?.abort()
+    const controller = new AbortController()
+    inFlight.current = controller
+    setSubmitState({ kind: 'loading' })
+
+    try {
+      const updated = await submitReportForQa(report, selectedCandidateIds.size, { signal: controller.signal })
+      if (inFlight.current !== controller) return
+      setSubmitState({ kind: 'idle' })
+      onChange(updated)
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return
+      if (inFlight.current !== controller) return
+      setSubmitState({
+        kind: 'error',
+        message: error instanceof ReportsApiError ? error.message : 'Something went wrong. Please try again.',
+      })
+    }
+  }
 
   function toggleCandidate(id: string) {
     setSelectedCandidateIds((previous) => {
@@ -80,6 +108,13 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
           Assemble the SIP-186 daily brief from scored candidates (Analyst).
         </p>
       </div>
+
+      {!isDraft ? (
+        <p role="status" className="rounded-md border border-inzbc-forest bg-inzbc-forest/10 p-3 text-sm text-inzbc-forest">
+          Submitted for QA — this run is now <strong>{report.state}</strong>. Further edits happen
+          on the QA Review screen, not here.
+        </p>
+      ) : null}
 
       <dl className="grid grid-cols-2 gap-x-4 gap-y-2 rounded-md border border-slate-200 bg-white p-4 text-sm sm:grid-cols-4">
         <div>
@@ -228,7 +263,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
         </div>
       </div>
 
-      {errors.length > 0 ? (
+      {isDraft && errors.length > 0 ? (
         <div role="alert" className="rounded-md border border-inzbc-crimson bg-inzbc-crimson/10 p-3 text-sm text-inzbc-crimson">
           <p className="font-semibold">Before this brief can be submitted for QA:</p>
           <ul className="mt-1 list-inside list-disc">
@@ -237,9 +272,29 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
             ))}
           </ul>
         </div>
-      ) : (
+      ) : null}
+
+      {isDraft && errors.length === 0 ? (
         <p className="text-sm font-medium text-inzbc-forest">Ready to submit for QA.</p>
-      )}
+      ) : null}
+
+      {isDraft ? (
+        <div>
+          <button
+            type="button"
+            onClick={() => void onSubmitForQa()}
+            disabled={errors.length > 0 || submitState.kind === 'loading'}
+            className="rounded-md bg-inzbc-tangerine px-4 py-2 font-semibold text-white disabled:cursor-progress disabled:opacity-60"
+          >
+            {submitState.kind === 'loading' ? 'Submitting…' : 'Submit for QA'}
+          </button>
+          {submitState.kind === 'error' ? (
+            <p role="alert" className="mt-2 text-sm text-inzbc-crimson">
+              {submitState.message}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       <div>
         <h3 className="mb-2 text-sm font-semibold text-inzbc-navy">
