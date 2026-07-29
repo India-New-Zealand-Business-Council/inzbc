@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand palette — INZBC Brand Guidelines 2026 v1.0 (docs/design-decisions.md). Usage ratio per
+     the guide: 50% Navy, 30% Blue/Purple, 5% each accent. */
+  --color-inzbc-navy: #160933;
+  --color-inzbc-blue: #261866;
+  --color-inzbc-purple: #61145f;
+  --color-inzbc-crimson: #7e0030;
+  --color-inzbc-tangerine: #f05b29;
+  --color-inzbc-forest: #1b4640;
+  --color-inzbc-lavender: #c1acfb;
+  --color-inzbc-lime: #b8f07c;
+
+  /* Brand fonts per the guide are Big Shoulders (headings) and Merriweather (body), but no font
+     files are sourced in this repo yet (docs/design-decisions.md Open items #5/#6 — same gap as
+     the logo/photography assets). Naming the tokens now, falling back to system fonts until
+     INZBC supplies the actual files, rather than pulling an unreviewed external font source. */
+  --font-heading: "Big Shoulders", system-ui, sans-serif;
+  --font-body: "Merriweather", Georgia, serif;
+}
