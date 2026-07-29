@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { QaChecklistGroup } from '../domain'
 import { newDraftReportFixture, qaChecklistFixture } from '../lib/fixtures'
 import {
+  authoriseDistribution,
   recordCeoDecision,
   returnForCorrection,
   ReportsApiError,
@@ -101,13 +102,11 @@ describe('recordCeoDecision', () => {
       evidenceReference: '',
       nextReviewDate: '2026-08-01',
       decidedAt: new Date().toISOString(),
-      distributionAuthorised: null,
-      distributionDecidedAt: null,
       ...overrides,
     }
   }
 
-  it('maps stop -> Stopped regardless of distribution authorisation', async () => {
+  it('maps stop -> Stopped', async () => {
     const result = await recordCeoDecision(awaitingDecisionReport(), baseDecision({ decision: 'stop' }))
     expect(result.state).toBe('Stopped')
   })
@@ -117,24 +116,84 @@ describe('recordCeoDecision', () => {
     expect(result.state).toBe('Paused')
   })
 
-  it('maps continue + distribution authorised -> Approved for Manual Distribution', async () => {
-    const result = await recordCeoDecision(
-      awaitingDecisionReport(),
-      baseDecision({ decision: 'continue', distributionAuthorised: true }),
-    )
-    expect(result.state).toBe('Approved for Manual Distribution')
-  })
-
-  it('maps continue + distribution NOT authorised -> Continue, not an error state', async () => {
-    const result = await recordCeoDecision(
-      awaitingDecisionReport(),
-      baseDecision({ decision: 'continue', distributionAuthorised: false }),
-    )
+  it('maps continue -> Continue, leaving distribution undecided (a separate action)', async () => {
+    const result = await recordCeoDecision(awaitingDecisionReport(), baseDecision({ decision: 'continue' }))
     expect(result.state).toBe('Continue')
+    expect(result.decision?.distributionAuthorised).toBeNull()
+    expect(result.decision?.distributionDecidedAt).toBeNull()
   })
 
   it('rejects recording a decision outside Awaiting CEO Decision', async () => {
     const report = { ...submittableReport(), state: 'QA In Progress' as const }
     await expect(recordCeoDecision(report, baseDecision())).rejects.toBeInstanceOf(ReportsApiError)
+  })
+
+  it('rejects a null decision type', async () => {
+    await expect(
+      recordCeoDecision(awaitingDecisionReport(), baseDecision({ decision: null })),
+    ).rejects.toThrow(/report decision.*is required/i)
+  })
+})
+
+describe('authoriseDistribution', () => {
+  async function reportWithDecision(decision: 'continue' | 'continue_with_correction' = 'continue') {
+    const report = { ...submittableReport(), state: 'Awaiting CEO Decision' as const }
+    return recordCeoDecision(report, {
+      reportVersion: 'v0.9 Review Draft',
+      decision,
+      reason: 'On track',
+      conditions: '',
+      owner: 'Sunil',
+      evidenceReference: '',
+      nextReviewDate: '2026-08-01',
+      decidedAt: new Date().toISOString(),
+    })
+  }
+
+  it('authorised -> Approved for Manual Distribution', async () => {
+    const decided = await reportWithDecision('continue')
+    const result = await authoriseDistribution(decided, true)
+    expect(result.state).toBe('Approved for Manual Distribution')
+    expect(result.decision?.distributionAuthorised).toBe(true)
+  })
+
+  it('not authorised -> stays Continue, a complete outcome rather than an error', async () => {
+    const decided = await reportWithDecision('continue')
+    const result = await authoriseDistribution(decided, false)
+    expect(result.state).toBe('Continue')
+    expect(result.decision?.distributionAuthorised).toBe(false)
+    expect(result.decision?.distributionDecidedAt).not.toBeNull()
+  })
+
+  it('works from Continue With Correction too', async () => {
+    const decided = await reportWithDecision('continue_with_correction')
+    const result = await authoriseDistribution(decided, true)
+    expect(result.state).toBe('Approved for Manual Distribution')
+  })
+
+  it('rejects before a report decision has been recorded', async () => {
+    const report = { ...submittableReport(), state: 'Awaiting CEO Decision' as const }
+    await expect(authoriseDistribution(report, true)).rejects.toThrow(/before a report decision/i)
+  })
+
+  it('rejects deciding distribution twice', async () => {
+    const decided = await reportWithDecision('continue')
+    const once = await authoriseDistribution(decided, false)
+    await expect(authoriseDistribution(once, true)).rejects.toThrow(/already been decided/i)
+  })
+
+  it('rejects from Paused — a paused/stopped run never reaches a distribution question', async () => {
+    const report = { ...submittableReport(), state: 'Awaiting CEO Decision' as const }
+    const paused = await recordCeoDecision(report, {
+      reportVersion: 'v0.9 Review Draft',
+      decision: 'pause',
+      reason: 'Waiting on confirmation',
+      conditions: '',
+      owner: 'Sunil',
+      evidenceReference: '',
+      nextReviewDate: '2026-08-01',
+      decidedAt: new Date().toISOString(),
+    })
+    await expect(authoriseDistribution(paused, true)).rejects.toThrow(/cannot authorise distribution/i)
   })
 })

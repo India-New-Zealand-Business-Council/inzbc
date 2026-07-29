@@ -116,24 +116,78 @@ export async function returnForCorrection(
   return { ...report, state: 'Report Drafted' }
 }
 
-/** POST /api/reports/:id/decision — two independent decisions, never combined into one submit. */
+/**
+ * POST /api/reports/:id/decision (decision 1 of 2) — the report decision only.
+ *
+ * docs/sip-ui-spec.md Screen 3: "Two separate, sequential decisions — never presented as one
+ * combined control ... The UI must not let the CEO set [distribution authorisation] in the same
+ * submit as decision 1." An earlier version of this function accepted a full `CeoDecisionRecord`
+ * including `distributionAuthorised` in the same call, which made that illegal combination
+ * possible to construct even if the UI never rendered it that way — the parameter type now
+ * excludes those fields outright so the two decisions can't be recombined by a future caller
+ * either. `authoriseDistribution` below is the separate, second action.
+ */
 export async function recordCeoDecision(
   report: DailyBriefReport,
-  decision: CeoDecisionRecord,
+  decision: Omit<CeoDecisionRecord, 'distributionAuthorised' | 'distributionDecidedAt'>,
   options: { signal?: AbortSignal } = {},
 ): Promise<DailyBriefReport> {
   if (report.state !== 'Awaiting CEO Decision') {
     throw new ReportsApiError(`Cannot record a CEO decision from state "${report.state}".`)
   }
+  if (!decision.decision) {
+    throw new ReportsApiError(
+      'A report decision (Continue / Continue With Correction / Pause / Stop) is required.',
+    )
+  }
   await delay(SIMULATED_LATENCY_MS, options.signal)
-  return { ...report, decision, state: resolveStateAfterDecision(decision) }
+  return {
+    ...report,
+    decision: { ...decision, distributionAuthorised: null, distributionDecidedAt: null },
+    state: resolveStateAfterDecision(decision.decision),
+  }
 }
 
-function resolveStateAfterDecision(decision: CeoDecisionRecord): DailyBriefReport['state'] {
-  if (decision.decision === 'stop') return 'Stopped'
-  if (decision.decision === 'pause') return 'Paused'
-  if (decision.distributionAuthorised) return 'Approved for Manual Distribution'
-  return decision.decision === 'continue_with_correction' ? 'Continue With Correction' : 'Continue'
+function resolveStateAfterDecision(decision: ReportDecisionType): DailyBriefReport['state'] {
+  if (decision === 'stop') return 'Stopped'
+  if (decision === 'pause') return 'Paused'
+  return decision === 'continue_with_correction' ? 'Continue With Correction' : 'Continue'
+}
+
+/**
+ * POST /api/reports/:id/decision (decision 2 of 2) — distribution authorisation.
+ *
+ * Only reachable once a report decision is already recorded, and only from the two states a
+ * distribution question is meaningful for (`Continue` / `Continue With Correction`) — a Paused or
+ * Stopped run doesn't reach this question. `authorised: false` is a complete, valid outcome
+ * (docs/sip-ui-spec.md: "not an error or incomplete state") — the run simply stays in its current
+ * state, proceeding to close-out with distribution skipped, rather than needing a further
+ * transition.
+ */
+export async function authoriseDistribution(
+  report: DailyBriefReport,
+  authorised: boolean,
+  options: { signal?: AbortSignal } = {},
+): Promise<DailyBriefReport> {
+  if (!report.decision) {
+    throw new ReportsApiError('Cannot authorise distribution before a report decision is recorded.')
+  }
+  if (report.decision.distributionDecidedAt) {
+    throw new ReportsApiError('Distribution has already been decided for this run.')
+  }
+  if (report.state !== 'Continue' && report.state !== 'Continue With Correction') {
+    throw new ReportsApiError(`Cannot authorise distribution from state "${report.state}".`)
+  }
+  await delay(SIMULATED_LATENCY_MS, options.signal)
+  return {
+    ...report,
+    decision: {
+      ...report.decision,
+      distributionAuthorised: authorised,
+      distributionDecidedAt: new Date().toISOString(),
+    },
+    state: authorised ? 'Approved for Manual Distribution' : report.state,
+  }
 }
 
 export type { ReportDecisionType }
