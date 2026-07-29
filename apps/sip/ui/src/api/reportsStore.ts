@@ -1,4 +1,5 @@
 import type { CeoDecisionRecord, DailyBriefReport, QaChecklistGroup, ReportDecisionType } from '../domain'
+import { generatedDigestContent } from '../lib/fixtures'
 import { validateBrief } from '../lib/validation'
 
 export class ReportsApiError extends Error {}
@@ -50,7 +51,14 @@ export async function submitReportForQa(
     throw new ReportsApiError(`Cannot submit for QA from state "${report.state}".`)
   }
   await delay(SIMULATED_LATENCY_MS, options.signal)
-  return { ...report, state: 'QA In Progress', generatedAt: report.generatedAt || new Date().toISOString() }
+  // Stands in for the pipeline generating the digest content from the selected candidates —
+  // see lib/fixtures.ts's generatedDigestContent() docstring for why this is fixture data.
+  return {
+    ...report,
+    ...generatedDigestContent(),
+    state: 'QA In Progress',
+    generatedAt: report.generatedAt || new Date().toISOString(),
+  }
 }
 
 /** POST /api/reports/:id/qa — records the SIP-188 result; Critical fail routes to QA Failed. */

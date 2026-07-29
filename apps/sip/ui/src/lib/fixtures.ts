@@ -220,6 +220,124 @@ export function qaChecklistFixture(): QaChecklistGroup[] {
   ]
 }
 
+/**
+ * Stand-in for what the real pipeline (Roshan's side) would generate from the selected
+ * candidates once a brief is submitted. Every value is invented placeholder text for UI
+ * development — `[FIXTURE]`-prefixed so it can never be mistaken for a real digest — used so the
+ * QA review screen has representative content to render, edit and score against.
+ */
+export function generatedDigestContent(): Pick<
+  DailyBriefReport,
+  'sections' | 'criticalHighSignals' | 'ceoActionList' | 'sourceConfidenceSummary' | 'sourceMix'
+> {
+  return {
+    sourceConfidenceSummary: '[FIXTURE] Mixed official and media confidence across today\'s selection.',
+    sourceMix: '[FIXTURE] Official 2 · Institutional 0 · Sector 0 · Media 2',
+    sections: [
+      {
+        id: 'sec-1',
+        title: '1. Executive judgement',
+        content:
+          '[FIXTURE] Placeholder executive judgement for UI development — not a real INZBC assessment.',
+        reviewStatus: 'pending',
+        flagReason: '',
+      },
+      {
+        id: 'sec-2',
+        title: '2. Executive summary',
+        content:
+          '[FIXTURE] - Placeholder bullet one.\n[FIXTURE] - Placeholder bullet two.\n[FIXTURE] - Placeholder bullet three.',
+        reviewStatus: 'pending',
+        flagReason: '',
+      },
+      {
+        id: 'sec-4',
+        title: '4. Key bilateral developments',
+        content: '[FIXTURE] Placeholder bilateral development text.',
+        reviewStatus: 'pending',
+        flagReason: '',
+      },
+      {
+        id: 'sec-5',
+        title: '5. Opportunities',
+        content: '[FIXTURE] Placeholder opportunity text.',
+        reviewStatus: 'pending',
+        flagReason: '',
+      },
+      {
+        id: 'sec-6',
+        title: '6. Threats and risks',
+        content: '[FIXTURE] Placeholder threat/risk text.',
+        reviewStatus: 'pending',
+        flagReason: '',
+      },
+      {
+        id: 'sec-8',
+        title: '8. Member actions',
+        content: '[FIXTURE] Placeholder member action text.',
+        reviewStatus: 'pending',
+        flagReason: '',
+      },
+      {
+        id: 'sec-9',
+        title: '9. Watch-list updates',
+        content: '[FIXTURE] ACT-009: no change. WL-006: no verified NZ-specific trigger.',
+        reviewStatus: 'pending',
+        flagReason: '',
+      },
+      {
+        id: 'sec-10',
+        title: '10. Active Carry-Forward',
+        content: '[FIXTURE] No items carried forward in this placeholder run.',
+        reviewStatus: 'pending',
+        flagReason: '',
+      },
+    ],
+    criticalHighSignals: [
+      {
+        id: 'signal-1',
+        headline: '[FIXTURE] Ministerial statement on bilateral trade talks',
+        whatHappened: '[FIXTURE] Placeholder description of what happened.',
+        whyItMatters: '[FIXTURE] Placeholder reasoning for NZ relevance.',
+        memberImpact: '[FIXTURE] Placeholder member impact assessment.',
+        signalStrength: 'Critical',
+        sourceConfidence: 'Official',
+        verificationStatus: 'Verified',
+        recommendedCeoAction: '[FIXTURE] Placeholder recommended CEO action.',
+        recommendedMemberAction: '[FIXTURE] Placeholder recommended member action.',
+        primarySourceUrl: 'https://example.test/fixture-source-1',
+        registerRouting: 'Action Register',
+        nextTriggerDate: '2026-08-06',
+      },
+      {
+        id: 'signal-2',
+        headline: '[FIXTURE] Tariff schedule update noted for dairy exports',
+        whatHappened: '[FIXTURE] Placeholder description of what happened.',
+        whyItMatters: '[FIXTURE] Placeholder reasoning for NZ relevance.',
+        memberImpact: '[FIXTURE] Placeholder member impact assessment.',
+        signalStrength: 'High',
+        sourceConfidence: 'Official',
+        verificationStatus: 'Verified',
+        recommendedCeoAction: '[FIXTURE] Placeholder recommended CEO action.',
+        recommendedMemberAction: '[FIXTURE] Placeholder recommended member action.',
+        primarySourceUrl: 'https://example.test/fixture-source-2',
+        registerRouting: 'Watch Register',
+        nextTriggerDate: '2026-08-13',
+      },
+    ],
+    ceoActionList: [
+      {
+        id: 'action-1',
+        action: '[FIXTURE] Placeholder CEO action item.',
+        owner: '[FIXTURE] Owner TBD',
+        priority: 'High',
+        dueDate: '2026-08-06',
+        evidenceRequirement: '[FIXTURE] Placeholder evidence requirement.',
+      },
+    ],
+  }
+}
+
 export function newDraftReportFixture(): DailyBriefReport {
   return {
     id: 'report-fixture-1',
