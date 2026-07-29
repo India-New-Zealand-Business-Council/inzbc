@@ -138,7 +138,11 @@ describe('CommsAssistant', () => {
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: /copy to clipboard/i }))
-    expect(await screen.findByRole('status')).toHaveTextContent(/copied to clipboard/i)
+    const toast = await screen.findByRole('status')
+    expect(toast).toHaveTextContent(/copied to clipboard/i)
+    // inset-x-4 keeps the toast within a 320px viewport instead of overflowing off a fixed
+    // right-anchored position (WCAG 2.2 §1.4.10 reflow).
+    expect(toast.className).toContain('inset-x-4')
   })
 
   it('shows a toast notification when the copy fails', async () => {

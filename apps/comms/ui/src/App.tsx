@@ -4,8 +4,8 @@ import './index.css'
 export function App() {
   return (
     <main className="min-h-screen bg-slate-50">
-      <div className="mx-auto max-w-2xl px-4 py-8">
-        <h1 className="font-[family-name:var(--font-heading)] text-2xl font-bold uppercase text-inzbc-navy">
+      <div className="mx-auto max-w-2xl px-4 py-6 sm:py-8">
+        <h1 className="font-[family-name:var(--font-heading)] text-xl font-bold uppercase text-inzbc-navy sm:text-2xl">
           INZBC Comms Assistant
         </h1>
         <p className="mt-2 font-[family-name:var(--font-body)] text-slate-700">
