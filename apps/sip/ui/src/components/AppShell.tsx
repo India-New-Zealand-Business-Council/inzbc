@@ -53,7 +53,7 @@ export function AppShell() {
       <main className="mx-auto max-w-4xl px-4 py-6">
         {screen === 'brief-builder' ? <BriefBuilderScreen report={report} onChange={setReport} /> : null}
         {screen === 'qa-review' ? <QaReviewScreen report={report} onChange={setReport} /> : null}
-        {screen === 'ceo-decision' ? <CeoDecisionScreen /> : null}
+        {screen === 'ceo-decision' ? <CeoDecisionScreen report={report} onChange={setReport} /> : null}
         {screen === 'distribution-status' ? <DistributionStatusScreen /> : null}
       </main>
     </div>
