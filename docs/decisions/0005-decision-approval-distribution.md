@@ -121,6 +121,11 @@ Further invariants:
 - Missing authority and explicit `Not Authorised` both block sending, and remain distinguishable.
 - A superseding ruling or approval that invalidates existing authority must supersede that
   authority in the same transaction.
+- **The recipient is revalidated at send time, not only at authorisation.** Condition 4 is checked
+  again when the delivery commits. If the configured recipient has changed since the authority was
+  granted, that authority is stale: the send is refused and a fresh distribution decision is
+  required. Delivery never sends to a recipient the current configuration does not name, and never
+  to one the authority record did not name. Both must agree.
 
 The CEO ruling and the distribution authority are **separate commands**, not one endpoint writing
 two fields. REQ-U-02 requires distribution to be captured as a separate action; one submission
