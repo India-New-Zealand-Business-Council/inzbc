@@ -69,6 +69,26 @@ jobs:
 
   python:
     runs-on: ubuntu-latest
+    # #117's persistence tests need a real Postgres, not a mock - a mock would prove this repo
+    # calls psycopg correctly, not that the optimistic-concurrency contract holds against real
+    # transaction semantics. A service container needs no Docker Compose/self-hosting; GitHub
+    # runs and tears it down for the job automatically.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: inzbc
+          POSTGRES_PASSWORD: inzbc
+          POSTGRES_DB: inzbc_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://inzbc:inzbc@localhost:5432/inzbc_ci
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -85,6 +105,8 @@ jobs:
           # here. Bump deliberately, same rule as the ruff pin.
           pip install "uv==0.8.17"
           uv sync --locked --extra dev
+      - name: Apply database schema
+        run: psql "$DATABASE_URL" -f database/schema.sql
       - name: Lint (ruff)
         # `uv run` so every step uses the locked environment, not whatever pip left on PATH.
         run: uv run ruff check apps services scripts
