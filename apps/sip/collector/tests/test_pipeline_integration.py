@@ -26,7 +26,7 @@ from apps.sip.collector.assessment import (
 )
 from apps.sip.collector.dedupe import find_duplicate_of
 from apps.sip.collector.ingest import ingest_articles
-from apps.sip.collector.source_lookup import SourceIdLookup
+from apps.sip.collector.source_lookup import SourceIdLookup, SourceNameLookup
 from apps.sip.collector.source_register import (
     MANDATORY_SOURCES,
     SourceIdUnresolved,
@@ -120,6 +120,32 @@ def test_full_run_captures_then_flags_a_cross_run_duplicate_by_url() -> None:
     assert api.candidates[new_candidate["id"]]["duplicate_of"] == existing["id"]
 
 
+def test_capture_resolves_source_id_via_a_real_source_name_lookup() -> None:
+    # Every other test in this file calls ingest_articles with no source_name_lookup, so every
+    # candidate captures with source_id=None - the source-attribution seam (exactly where #150
+    # found a real bug in SourceNameLookup) was never exercised end to end. This test builds a
+    # real lookup and asserts the resolved id actually lands on the persisted candidate.
+    api = FakeSipApi()
+    name_lookup = SourceNameLookup({"RNZ Business": "source-library-db-id-42"})
+
+    result = ingest_articles(api, RUN_ID, [_article(source="RNZ Business")], name_lookup)
+
+    assert result.failed == []
+    [candidate] = api.list_candidates(RUN_ID)
+    assert candidate["source_id"] == "source-library-db-id-42"
+
+
+def test_capture_leaves_source_id_unset_for_a_name_the_lookup_does_not_resolve() -> None:
+    api = FakeSipApi()
+    name_lookup = SourceNameLookup({"Some Other Source": "db-id"})
+
+    result = ingest_articles(api, RUN_ID, [_article(source="RNZ Business")], name_lookup)
+
+    assert result.failed == []
+    [candidate] = api.list_candidates(RUN_ID)
+    assert "source_id" not in candidate  # exclude_none=True on capture - unset, not null
+
+
 def test_a_malformed_article_does_not_block_capture_or_dedupe_of_the_rest() -> None:
     api = FakeSipApi()
     malformed = _article()
@@ -197,15 +223,29 @@ def test_verification_downgrade_on_an_already_high_candidate_is_blocked_end_to_e
 # ---------- mandatory-source Critical stop, against the real v1.0 register ----------
 
 
-def _fake_id_lookup() -> SourceIdLookup:
-    return SourceIdLookup({s.source_id: f"db-{s.source_id}" for s in MANDATORY_SOURCES})
+def _fake_id_lookup() -> tuple[SourceIdLookup, dict[str, str]]:
+    """Returns the lookup plus its own inverse (db id -> SIP-185 code), so a test can check what
+    the gate would see by reading back `api.source_checks` - which only stores the db id - rather
+    than rebuilding the expected set from `MANDATORY_SOURCES` and asserting against itself.
+    """
+    by_code = {s.source_id: f"db-{s.source_id}" for s in MANDATORY_SOURCES}
+    by_db_id = {db_id: code for code, db_id in by_code.items()}
+    return SourceIdLookup(by_code), by_db_id
+
+
+def _persisted_source_ids(api: FakeSipApi, db_id_to_code: dict[str, str]) -> set[str]:
+    """The SIP-185 codes the gate would actually see, derived from what was persisted - proof
+    against Bhanu's mutation finding on PR #151: prefixing every stored id with `wrong-` must
+    make these tests fail, since it changes what this function returns, not just a count.
+    """
+    return {db_id_to_code[check["source_id"]] for check in api.source_checks}
 
 
 def test_mandatory_source_coverage_gate_reports_the_real_gap() -> None:
     # Record every mandatory source except one, against the real 112-source v1.0 register - a
     # suite that only ever exercises a handful of fixture sources would not catch a gate that
     # only works for small inputs.
-    id_lookup = _fake_id_lookup()
+    id_lookup, db_id_to_code = _fake_id_lookup()
     api = FakeSipApi()
     skip = MANDATORY_SOURCES[-1]
 
@@ -215,24 +255,25 @@ def test_mandatory_source_coverage_gate_reports_the_real_gap() -> None:
         check = record_source_outcome(RUN_ID, source.source_id, SourceOutcome.INCLUDED, id_lookup)
         api.record_source_check(RUN_ID, check)
 
-    recorded_ids = {c["source_id"] for c in api.source_checks}
-    # The gate itself is keyed on SIP-185 source id, not the db uuid that ended up on the check.
-    recorded_source_ids = {s.source_id for s in MANDATORY_SOURCES if s is not skip}
+    # Derived from what was actually persisted (api.source_checks), not rebuilt from the
+    # register - a bug that stored the wrong db id would leave this set wrong even though the
+    # right *number* of checks exist, and this assertion would then catch it.
+    recorded_source_ids = _persisted_source_ids(api, db_id_to_code)
     missing = missing_mandatory_outcomes(recorded_source_ids)
 
     assert missing == [skip.source_id]
-    assert len(recorded_ids) == len(MANDATORY_SOURCES) - 1
+    assert len(api.source_checks) == len(MANDATORY_SOURCES) - 1
 
 
 def test_mandatory_source_coverage_gate_clears_when_every_source_is_recorded() -> None:
-    id_lookup = _fake_id_lookup()
+    id_lookup, db_id_to_code = _fake_id_lookup()
     api = FakeSipApi()
 
     for source in MANDATORY_SOURCES:
         check = record_source_outcome(RUN_ID, source.source_id, SourceOutcome.INCLUDED, id_lookup)
         api.record_source_check(RUN_ID, check)
 
-    recorded_source_ids = {s.source_id for s in MANDATORY_SOURCES}
+    recorded_source_ids = _persisted_source_ids(api, db_id_to_code)
     assert missing_mandatory_outcomes(recorded_source_ids) == []
     assert len(api.source_checks) == len(MANDATORY_SOURCES)
 
