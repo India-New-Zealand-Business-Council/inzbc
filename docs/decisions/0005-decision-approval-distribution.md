@@ -194,10 +194,21 @@ These block a valid implementation. They are work items, not open decisions.
 3. **Durable QA evidence.** The release predicate needs "no open Critical QA failure" to be a
    queryable fact. `runs.qa_status` is free text and no QA record table exists; SIP-188 requires
    Pass/Fail, critical failures, corrections, reviewer signature and timestamp.
-4. **Separation-of-duties staffing conflict.** `schemas/api-contract.md:7-8` says nobody approves
-   their own output, but `docs/sip/launch/launch-config.md:12-24` assigns CEO/SIP Owner **and**
-   Primary Analyst to the same person. `database/schema.sql:55` enforces analyst-vs-reviewer only.
-   Decide which decision kinds require different principals, and how, before the endpoint is built.
+4. **Separation of duties binds to roles, not to people.** `schemas/api-contract.md:7-8` says nobody
+   approves their own output, but `docs/sip/launch/launch-config.md:12-24` assigns CEO/SIP Owner
+   **and** Primary Analyst to the same person, and `database/schema.sql:55` enforces
+   analyst-vs-reviewer only. The rule is therefore expressed per decision kind against the **role
+   held at the time of the act**, with the required-distinct pairs held in configuration rather than
+   hardcoded. Where one principal necessarily holds both roles, the decision still commits, but only
+   with a recorded exception naming the approver, the reason and a review date. Silent bypass is not
+   a permitted outcome; an unrecorded self-approval is refused.
+
+   This is deliberately not a staffing fix. The current three-engineer split is a 16-week placement,
+   so the steady state after it ends is one person holding every role, or a delegation to someone not
+   yet named. Single-principal operation must stay valid with no schema change and no code change:
+   only the configured role pairs and the exception record change. The audit trail then shows who
+   acted in which capacity and under what exception, which is what `SIP-050 §26` asks for and what a
+   handover needs.
 5. **Concurrency, idempotency and grants.** One-current-record-per-stream enforcement, an
    idempotency key, and `INSERT`-only grants scoped to decision records — not to the whole
    application role, which needs `UPDATE` on `runs`.
