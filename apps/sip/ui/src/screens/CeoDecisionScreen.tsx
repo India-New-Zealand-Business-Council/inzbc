@@ -1,6 +1,51 @@
 import { useId, useRef, useState } from 'react'
-import { recordCeoDecision, ReportsApiError } from '../api/reportsStore'
+import { authoriseDistribution, recordCeoDecision, ReportsApiError } from '../api/reportsStore'
 import { GOVERNANCE_LINE, type DailyBriefReport, type ReportDecisionType } from '../domain'
+
+/**
+ * docs/sip-ui-spec.md Screen 3: "Nothing in this screen, or anywhere in this UI, offers a 'send'
+ * action." The modal exists to make authorising distribution a deliberate, confirmed act — not to
+ * imply it triggers a send. "No" doesn't get the same ceremony: the spec is explicit that
+ * declining is "a valid, complete outcome," and gating the safe default behind a confirmation
+ * step would misrepresent it as risky.
+ */
+function AuthoriseDistributionModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="authorise-distribution-title"
+        className="w-full max-w-md rounded-md bg-white p-4 shadow-lg"
+      >
+        <h3 id="authorise-distribution-title" className="text-sm font-semibold text-inzbc-navy">
+          Authorise distribution?
+        </h3>
+        <p className="mt-2 text-sm text-slate-600">
+          This records distribution authorisation against the current report version. It does not
+          send anything — manual send happens outside this application
+          (docs/sip/operator-guide.md Step 13).
+        </p>
+        <div className="mt-4 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-inzbc-navy"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="rounded-md bg-inzbc-forest px-3 py-2 text-sm font-semibold text-white"
+          >
+            Confirm authorisation
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 interface Props {
   report: DailyBriefReport
@@ -46,7 +91,10 @@ export function CeoDecisionScreen({ report, onChange }: Props) {
   const [evidenceReference, setEvidenceReference] = useState('')
   const [nextReviewDate, setNextReviewDate] = useState('')
   const [submitState, setSubmitState] = useState<SubmitState>({ kind: 'idle' })
+  const [distributionState, setDistributionState] = useState<SubmitState>({ kind: 'idle' })
+  const [confirmingDistribution, setConfirmingDistribution] = useState(false)
   const inFlight = useRef<AbortController | null>(null)
+  const distributionInFlight = useRef<AbortController | null>(null)
   const reasonId = useId()
   const conditionsId = useId()
   const ownerId = useId()
@@ -90,6 +138,28 @@ export function CeoDecisionScreen({ report, onChange }: Props) {
       if (error instanceof DOMException && error.name === 'AbortError') return
       if (inFlight.current !== controller) return
       setSubmitState({
+        kind: 'error',
+        message: error instanceof ReportsApiError ? error.message : 'Something went wrong. Please try again.',
+      })
+    }
+  }
+
+  async function onAuthoriseDistribution(authorised: boolean) {
+    distributionInFlight.current?.abort()
+    const controller = new AbortController()
+    distributionInFlight.current = controller
+    setDistributionState({ kind: 'loading' })
+    try {
+      const updated = await authoriseDistribution(report, authorised, { signal: controller.signal })
+      if (distributionInFlight.current !== controller) return
+      setDistributionState({ kind: 'idle' })
+      setConfirmingDistribution(false)
+      onChange(updated)
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return
+      if (distributionInFlight.current !== controller) return
+      setConfirmingDistribution(false)
+      setDistributionState({
         kind: 'error',
         message: error instanceof ReportsApiError ? error.message : 'Something went wrong. Please try again.',
       })
@@ -261,10 +331,63 @@ export function CeoDecisionScreen({ report, onChange }: Props) {
           ) : null}
         </div>
       ) : (
-        <p role="status" className="text-sm text-slate-600">
-          Report decision already recorded: <strong>{report.decision?.decision ?? report.state}</strong>.
-        </p>
+        <div className="space-y-3">
+          <p role="status" className="text-sm text-slate-600">
+            Report decision already recorded: <strong>{report.decision?.decision ?? report.state}</strong>.
+          </p>
+
+          {/* docs/sip-ui-spec.md: distribution authorisation is reachable only from Continue /
+              Continue With Correction — a Paused or Stopped run never reaches this question, and
+              once decided it isn't offered again (distributionDecidedAt is set). */}
+          {(report.state === 'Continue' || report.state === 'Continue With Correction') &&
+          report.decision &&
+          !report.decision.distributionDecidedAt ? (
+            <div className="space-y-2 rounded-md border border-slate-200 bg-white p-3">
+              <h3 className="text-sm font-semibold text-inzbc-navy">Authorise distribution</h3>
+              <p className="text-xs text-slate-500">
+                A second, independent decision — approving the report is not permission to send.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setConfirmingDistribution(true)}
+                  disabled={distributionState.kind === 'loading'}
+                  className="rounded-md bg-inzbc-forest px-3 py-2 text-sm font-semibold text-white disabled:cursor-progress disabled:opacity-60"
+                >
+                  Yes, authorise
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void onAuthoriseDistribution(false)}
+                  disabled={distributionState.kind === 'loading'}
+                  className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-inzbc-navy disabled:cursor-progress disabled:opacity-60"
+                >
+                  No
+                </button>
+              </div>
+              {distributionState.kind === 'error' ? (
+                <p role="alert" className="text-sm text-inzbc-crimson">
+                  {distributionState.message}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
+          {report.decision?.distributionDecidedAt ? (
+            <p className="text-sm text-slate-600">
+              Distribution authorised:{' '}
+              <strong>{report.decision.distributionAuthorised ? 'Yes' : 'No'}</strong>.
+            </p>
+          ) : null}
+        </div>
       )}
+
+      {confirmingDistribution ? (
+        <AuthoriseDistributionModal
+          onConfirm={() => void onAuthoriseDistribution(true)}
+          onCancel={() => setConfirmingDistribution(false)}
+        />
+      ) : null}
     </section>
   )
 }

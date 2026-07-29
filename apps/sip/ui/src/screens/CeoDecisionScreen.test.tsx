@@ -136,4 +136,83 @@ describe('CeoDecisionScreen', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(/something went wrong/i)
     expect(screen.getByRole('button', { name: /record decision/i })).toBeInTheDocument()
   })
+
+  function reportDecided(state: 'Continue' | 'Continue With Correction' | 'Paused' | 'Stopped'): DailyBriefReport {
+    return {
+      ...reportAwaitingDecision(),
+      state,
+      decision: {
+        reportVersion: 'v0.9 Review Draft',
+        decision: 'continue' as const,
+        reason: 'On track',
+        conditions: '',
+        owner: 'Sunil',
+        evidenceReference: 'Doc ref',
+        nextReviewDate: '2026-08-06',
+        decidedAt: '2026-07-30T00:00:00Z',
+        distributionAuthorised: null,
+        distributionDecidedAt: null,
+      },
+    }
+  }
+
+  it('offers distribution authorisation once a decision reaches Continue', () => {
+    render(<CeoDecisionScreen report={reportDecided('Continue')} onChange={vi.fn()} />)
+    expect(screen.getByRole('heading', { name: /authorise distribution/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /yes, authorise/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'No' })).toBeInTheDocument()
+  })
+
+  it('does not offer distribution authorisation for a Paused or Stopped run', () => {
+    render(<CeoDecisionScreen report={reportDecided('Paused')} onChange={vi.fn()} />)
+    expect(screen.queryByRole('heading', { name: /authorise distribution/i })).not.toBeInTheDocument()
+  })
+
+  it('does not re-offer distribution authorisation once it has already been decided', () => {
+    const report = reportDecided('Continue')
+    if (!report.decision) throw new Error('expected reportDecided to set a decision')
+    report.decision = { ...report.decision, distributionAuthorised: true, distributionDecidedAt: '2026-07-30T01:00:00Z' }
+    render(<CeoDecisionScreen report={report} onChange={vi.fn()} />)
+    expect(screen.queryByRole('heading', { name: /authorise distribution/i })).not.toBeInTheDocument()
+    expect(screen.getByText(/distribution authorised:/i)).toHaveTextContent('Yes')
+  })
+
+  it('gates "Yes" behind a confirmation modal that does not fire until confirmed', async () => {
+    render(<ControlledCeoDecision initial={reportDecided('Continue')} />)
+    await userEvent.click(screen.getByRole('button', { name: /yes, authorise/i }))
+
+    const dialog = screen.getByRole('dialog', { name: /authorise distribution/i })
+    expect(dialog).toBeInTheDocument()
+    expect(screen.queryByText(/distribution authorised: yes/i)).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: /cancel/i }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.queryByText(/distribution authorised:/i)).not.toBeInTheDocument()
+  })
+
+  it('confirming the modal authorises distribution and advances to Approved for Manual Distribution', async () => {
+    render(<ControlledCeoDecision initial={reportDecided('Continue')} />)
+    await userEvent.click(screen.getByRole('button', { name: /yes, authorise/i }))
+    await userEvent.click(screen.getByRole('button', { name: /confirm authorisation/i }))
+
+    expect(await screen.findByText(/distribution authorised:/i)).toHaveTextContent('Yes')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('"No" does not open a modal and records a valid, complete decline', async () => {
+    render(<ControlledCeoDecision initial={reportDecided('Continue')} />)
+    await userEvent.click(screen.getByRole('button', { name: 'No' }))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(await screen.findByText(/distribution authorised:/i)).toHaveTextContent('No')
+  })
+
+  it('surfaces a distribution-authorisation failure without transitioning the report', async () => {
+    vi.spyOn(reportsStore, 'authoriseDistribution').mockRejectedValue(new Error('network down'))
+    render(<ControlledCeoDecision initial={reportDecided('Continue')} />)
+    await userEvent.click(screen.getByRole('button', { name: 'No' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/something went wrong/i)
+    expect(screen.queryByText(/distribution authorised:/i)).not.toBeInTheDocument()
+  })
 })
