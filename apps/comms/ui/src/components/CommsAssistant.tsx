@@ -39,8 +39,7 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
   const typeId = useId()
   const briefId = useId()
 
-  async function onSubmit(event: React.FormEvent) {
-    event.preventDefault()
+  async function generateDraft() {
     const trimmed = brief.trim()
     if (!trimmed) return
 
@@ -79,6 +78,20 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
         message:
           error instanceof CommsDraftError ? error.message : 'Something went wrong. Please try again.',
       })
+    }
+  }
+
+  function onSubmit(event: React.FormEvent) {
+    event.preventDefault()
+    void generateDraft()
+  }
+
+  function onBriefKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    // Ctrl+Enter (Cmd+Enter on macOS) submits without leaving the keyboard — plain Enter stays a
+    // newline, since a brief is often more than one line.
+    if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+      event.preventDefault()
+      void generateDraft()
     }
   }
 
@@ -153,7 +166,9 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
             maxLength={BRIEF_MAX_LENGTH}
             placeholder="Describe what you want drafted — audience, key points, tone…"
             onChange={(event) => setBrief(event.target.value)}
+            onKeyDown={onBriefKeyDown}
           />
+          <p className="mt-1 text-xs text-slate-500">Ctrl+Enter (⌘+Enter on Mac) to generate.</p>
         </div>
 
         <div className="flex gap-3">

@@ -227,6 +227,26 @@ describe('CommsAssistant', () => {
     expect(downloadSpy).toHaveBeenCalledWith('Export me', 'linkedin_post-draft')
   })
 
+  it('submits the brief on Ctrl+Enter', async () => {
+    const spy = mockFetch({ draft: 'From shortcut' })
+    render(<CommsAssistant />)
+
+    await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this{Control>}{Enter}{/Control}')
+
+    expect(await screen.findByText('From shortcut')).toBeInTheDocument()
+    expect(spy).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not submit on plain Enter, so a brief can still span multiple lines', async () => {
+    const spy = mockFetch({ draft: 'x' })
+    render(<CommsAssistant />)
+
+    await userEvent.type(screen.getByLabelText(/brief/i), 'Line one{Enter}Line two')
+
+    expect(spy).not.toHaveBeenCalled()
+    expect(screen.getByLabelText(/brief/i)).toHaveValue('Line one\nLine two')
+  })
+
   it('exports the current draft to PDF via the print dialog', async () => {
     mockFetch({ draft: 'Export me' })
     const pdfSpy = vi.spyOn(exportDraft, 'exportAsPdf').mockImplementation(() => {})
