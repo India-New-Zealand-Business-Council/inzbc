@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import type { DailyBriefReport } from '../domain'
+import { newDraftReportFixture } from '../lib/fixtures'
 import { BriefBuilderScreen } from '../screens/BriefBuilderScreen'
 import { CeoDecisionScreen } from '../screens/CeoDecisionScreen'
 import { DistributionStatusScreen } from '../screens/DistributionStatusScreen'
@@ -6,9 +8,13 @@ import { QaReviewScreen } from '../screens/QaReviewScreen'
 import { SCREENS, type ScreenId } from '../types'
 
 // A 4-screen internal tool with no deep-linking requirement in docs/sip-ui-spec.md — plain state
-// avoids a router dependency for something this small.
+// avoids a router dependency for something this small. `report` is the one run moving through
+// the four screens in this session; it is lifted here (rather than fetched independently by each
+// screen) because later screens' availability depends on this same report's state
+// (schemas/state-machine.md — e.g. the CEO decision screen isn't reachable until QA has passed).
 export function AppShell() {
   const [screen, setScreen] = useState<ScreenId>('brief-builder')
+  const [report, setReport] = useState<DailyBriefReport>(() => newDraftReportFixture())
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -45,7 +51,7 @@ export function AppShell() {
       </header>
 
       <main className="mx-auto max-w-4xl px-4 py-6">
-        {screen === 'brief-builder' ? <BriefBuilderScreen /> : null}
+        {screen === 'brief-builder' ? <BriefBuilderScreen report={report} onChange={setReport} /> : null}
         {screen === 'qa-review' ? <QaReviewScreen /> : null}
         {screen === 'ceo-decision' ? <CeoDecisionScreen /> : null}
         {screen === 'distribution-status' ? <DistributionStatusScreen /> : null}
