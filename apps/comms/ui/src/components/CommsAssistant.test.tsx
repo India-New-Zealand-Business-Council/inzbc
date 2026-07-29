@@ -178,6 +178,11 @@ describe('CommsAssistant', () => {
     expect(screen.getByText(/drafts only/i)).toBeInTheDocument()
   })
 
+  it('carries the required human-review disclaimer', () => {
+    render(<CommsAssistant />)
+    expect(screen.getByText(/ai drafts require human review before publishing/i)).toBeInTheDocument()
+  })
+
   it('shows a live character count against the brief limit', async () => {
     render(<CommsAssistant />)
     expect(screen.getByText('0 / 4000')).toBeInTheDocument()

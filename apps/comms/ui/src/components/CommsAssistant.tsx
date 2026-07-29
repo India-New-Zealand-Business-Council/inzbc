@@ -130,7 +130,8 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
           send/publish blocked by default". Stated on the surface so no one mistakes this for a
           send tool — there is deliberately no send/publish action anywhere in this component. */}
       <p className="rounded-md border border-inzbc-lavender bg-inzbc-lavender/10 p-3 text-sm text-inzbc-navy">
-        Drafts only. Nothing here is sent or published automatically — a named human reviewer
+        <strong className="font-semibold">AI drafts require human review before publishing.</strong>{' '}
+        Drafts only — nothing here is sent or published automatically; a named human reviewer
         must approve every draft first.
       </p>
 
