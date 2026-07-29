@@ -265,6 +265,45 @@ describe('CommsAssistant', () => {
     expect(screen.getByText('draft 4')).toBeInTheDocument()
   })
 
+  it('toggles thumbs-up/thumbs-down feedback on the draft', async () => {
+    mockFetch({ draft: 'Rate me' })
+    render(<CommsAssistant />)
+    await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
+    await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
+    await screen.findByText('Rate me')
+
+    const up = screen.getByRole('button', { name: 'Helpful' })
+    const down = screen.getByRole('button', { name: 'Not helpful' })
+    expect(up).toHaveAttribute('aria-pressed', 'false')
+    expect(down).toHaveAttribute('aria-pressed', 'false')
+
+    await userEvent.click(up)
+    expect(up).toHaveAttribute('aria-pressed', 'true')
+    expect(down).toHaveAttribute('aria-pressed', 'false')
+
+    // Clicking the same choice again clears it, rather than being a one-way ratchet.
+    await userEvent.click(up)
+    expect(up).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('resets feedback when a new draft is generated', async () => {
+    mockFetch({ draft: 'First' })
+    render(<CommsAssistant />)
+    await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
+    await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
+    await screen.findByText('First')
+    await userEvent.click(screen.getByRole('button', { name: 'Helpful' }))
+    expect(screen.getByRole('button', { name: 'Helpful' })).toHaveAttribute('aria-pressed', 'true')
+
+    mockFetch({ draft: 'Second' })
+    await userEvent.clear(screen.getByLabelText(/brief/i))
+    await userEvent.type(screen.getByLabelText(/brief/i), 'Another brief')
+    await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
+    await screen.findByText('Second')
+
+    expect(screen.getByRole('button', { name: 'Helpful' })).toHaveAttribute('aria-pressed', 'false')
+  })
+
   it('exports the current draft to Word with its content type in the filename', async () => {
     mockFetch({ draft: 'Export me' })
     const downloadSpy = vi.spyOn(exportDraft, 'downloadAsWord').mockImplementation(() => {})

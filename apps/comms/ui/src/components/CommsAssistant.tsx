@@ -39,6 +39,7 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
   const [state, setState] = useState<State>({ kind: 'idle' })
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'failed'>('idle')
+  const [feedback, setFeedback] = useState<'up' | 'down' | null>(null)
   const inFlight = useRef<AbortController | null>(null)
   const copyResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const typeId = useId()
@@ -74,6 +75,7 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
           ),
         )
       }
+      setFeedback(null)
       setState({ kind: 'result', draft: result.draft, contentType })
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return
@@ -107,7 +109,12 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
     setBrief('')
     setContentType('newsletter')
     setCopyStatus('idle')
+    setFeedback(null)
     setState({ kind: 'idle' })
+  }
+
+  function onFeedback(value: 'up' | 'down') {
+    setFeedback((previous) => (previous === value ? null : value))
   }
 
   async function onCopy() {
@@ -252,6 +259,41 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
               </div>
             </div>
             <pre className="print-draft whitespace-pre-wrap font-sans text-slate-800">{state.draft}</pre>
+
+            {/* Local UI state only — no feedback endpoint exists or is specified anywhere
+                (docs/api-integration-spec.md documents no such contract), so this isn't wired to
+                a network call. Wiring it up is future work once a feedback mechanism is decided,
+                not something to invent a proposed contract for here. */}
+            <div className="flex flex-wrap items-center gap-2 border-t border-slate-200 pt-2 text-sm text-slate-600">
+              <span>Was this draft helpful?</span>
+              <button
+                type="button"
+                aria-pressed={feedback === 'up'}
+                aria-label="Helpful"
+                onClick={() => onFeedback('up')}
+                className={`rounded-md border px-2 py-1 ${
+                  feedback === 'up'
+                    ? 'border-inzbc-forest bg-inzbc-forest/10 text-inzbc-forest'
+                    : 'border-slate-300 text-inzbc-navy'
+                }`}
+              >
+                <span aria-hidden="true">👍</span>
+              </button>
+              <button
+                type="button"
+                aria-pressed={feedback === 'down'}
+                aria-label="Not helpful"
+                onClick={() => onFeedback('down')}
+                className={`rounded-md border px-2 py-1 ${
+                  feedback === 'down'
+                    ? 'border-inzbc-crimson bg-inzbc-crimson/10 text-inzbc-crimson'
+                    : 'border-slate-300 text-inzbc-navy'
+                }`}
+              >
+                <span aria-hidden="true">👎</span>
+              </button>
+              {feedback ? <span className="text-xs text-slate-500">Thanks — noted for this session only.</span> : null}
+            </div>
           </div>
         ) : null}
       </div>
