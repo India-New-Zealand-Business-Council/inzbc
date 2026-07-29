@@ -187,8 +187,11 @@ clarification. None of those hold.
 
 These block a valid implementation. They are work items, not open decisions.
 
-1. **Report-version identity.** A decision must bind to an immutable version. Free text
-   (`database/schema.sql:171`) cannot: `v1`, `1` and `v1 final` may all mean one artefact.
+1. **Item membership.** `report_versions` gives a version an identity, but nothing yet says which
+   items a version contains. `daily_intelligence` is per-item and carries its own `approval`
+   column (`database/schema.sql:112-127`), so "the items in this approved version" is still not a
+   question the database can answer, and report approval cannot be related to item approval.
+   Approving a version is only meaningful once it is.
 2. **Decision metadata.** Reason, conditions, owner, evidence reference and next review do not
    exist in the schema. REQ-U-02 cannot be satisfied without them.
 3. **Durable QA evidence.** The release predicate needs "no open Critical QA failure" to be a
@@ -202,6 +205,10 @@ These block a valid implementation. They are work items, not open decisions.
    hardcoded. Where one principal necessarily holds both roles, the decision still commits, but only
    with a recorded exception naming the approver, the reason and a review date. Silent bypass is not
    a permitted outcome; an unrecorded self-approval is refused.
+
+   This replaces the single `users.role_id` column with a `user_roles` table, superseding the
+   one-column mapping described in [ADR-0004](0004-platform-graduation.md) at its role-mapping note.
+   That decision's intent, that role mapping is data rather than code, is unchanged.
 
    This is deliberately not a staffing fix. The current three-engineer split is a 16-week placement,
    so the steady state after it ends is one person holding every role, or a delegation to someone not
