@@ -24,22 +24,23 @@ DB schema, API contract, auth. Build against them; don't write to control-plane 
 
 **Lane note, 28 Jul 2026:** #117/#118/#120/#121/#122/#130 (persistence adapter, audit service,
 run + candidate endpoints, REQ-I-05 acceptance criteria, restart/rehydration test) were assigned
-to me even though `/services/api`+`/database` are normally Bhanu-only per this file's own rule.
-Confirmed explicitly rather than assumed — treating these as genuinely mine going forward, not a
-mis-tag. Still coordinate schema/contract-shape decisions with Bhanu since other lanes build
-against the same contract; this note is so a later reader doesn't "fix" the assignment back.
+to me as a **one-off delegation to balance Bhanu's workload, not a lane transfer** — confirmed
+with him directly. `/services/api`, `/database` and `/schemas` stay his lane; the delegation
+reverts once these six are done, and nothing else under those paths gets picked up without asking
+him first. Recording this so a later reader doesn't mistake the one-off for a standing change.
+
+Of the six, #122 is done (closed via PR #154, moved to Done below) — the remaining five
+(#117/#118/#120/#121/#130) sit inside a cluster that's otherwise his: #117/#118 are foundational and his
+#124/#125/#126 write through this persistence adapter and audit service; #119 (separation of
+duties, his) constrains #120/#121 here. The conventions set in #117/#118 are the ones he then has
+to build on — keep them boring and close to what the schema and ADR-0005 already imply, and flag
+anything that's inventing a contract shape rather than following one already decided, instead of
+deciding it here.
 
 ## Next up
-- [ ] Config nit from PR #17 (Bhanu flagged it 22 Jul, still open): move `No Material New Signal`
-  out of `source_outcome_extras` in `docs/sip/SIP_Reference_Config.json` — SIP-185 line 59 is
-  explicit that it's the day-level run conclusion (SIP-184 §9), not a per-source outcome code, so
-  the config still disagrees with the doc it's supposed to mirror. Quick, do first.
-- [ ] REQ-I-05 acceptance criteria (#122): the only requirement in `docs/requirements.md` with
-  none, so there's currently no definition of done for the end-to-end pipeline run (#55). Quick,
-  docs-only — do before the endpoint work below so there's a target to build against.
 - [ ] Persistence adapter with concurrency control (#117): optimistic concurrency or row locking;
   acceptance is a test proving two concurrent transitions cannot both commit. Foundational — the
-  endpoints below write through this.
+  endpoints below write through this. PR #163 open, in review.
 - [ ] Transactional audit service (#118): `old_value`/`new_value`/`reason`/`approval_ref` written
   inside the mutation's own transaction, an INSERT/SELECT-only DB role, a trigger blocking
   UPDATE/DELETE — immutable at the database level, not by application convention. Also
@@ -68,6 +69,12 @@ against the same contract; this note is so a later reader doesn't "fix" the assi
 - [ ] End-to-end pipeline run once org-repo secrets land (Bhanu's item): collector → capture →
   assessment live against the SIP-184 SOP; fix what breaks; record the run.
 - [ ] Collection-engine improvements in `daily-india-nz-news-agent` (via its own PR flow).
+- [ ] Pipeline integration test suite wired into CI (#56): PR #151 open — Bhanu's review found the
+  coverage-gate tests verified a count, not what was actually persisted (proved by mutation);
+  fixed and pushed, awaiting re-review.
+- [ ] Bump the CI ruff pin to 0.16.0 (#31): the collector/FTA findings are fixed and merged (PR
+  #152), but the pin itself is still 0.15.22 pending `apps/sip/core`, `scripts/board.py` and
+  `services/api` (Bhanu's lane) going clean under 0.16.0 too.
 
 See Blocked / decisions needed for what's still open before any of this runs live (secrets,
 INZBC sector/disclaimer sign-off).
@@ -103,6 +110,14 @@ INZBC sector/disclaimer sign-off).
   gate test failed, restored it. "Wired into CI" needed no workflow change — `pyproject.toml`'s
   `testpaths` already runs everything under `apps`/`services`, so this suite runs on every PR
   Bhanu's existing `ci.yml` `python` job already gates on.
+- [x] Config nit from PR #17: moved `No Material New Signal` out of `source_outcome_extras` in
+  `docs/sip/SIP_Reference_Config.json` — SIP-185 line 59 is explicit it's the day-level run
+  conclusion (SIP-184 §9), not a per-source outcome code, so the config disagreed with the doc it
+  mirrors. No code referenced the removed value.
+- [x] REQ-I-05 acceptance criteria (#122, closed): the only requirement in `docs/requirements.md`
+  with none, so there was no definition of done for the end-to-end pipeline run (#55). Scoped to
+  SIP-184 §1-7; each criterion distinguishes "tested against fakes" from "proven against a live
+  run" to match the requirement's own Blocked status. Merged via PR #154.
 - [x] Client + lookup layer for `GET /api/source-library`, implemented locally ahead of the
   endpoint (refs #52 — not closed; the endpoint itself isn't deployed yet, see below). New
   `apps/sip/collector/source_lookup.py`: `build_source_lookups()` splits one
