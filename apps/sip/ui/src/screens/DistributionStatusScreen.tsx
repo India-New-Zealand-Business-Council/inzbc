@@ -1,4 +1,5 @@
 import type { DailyBriefReport } from '../domain'
+import { archiveFixture } from '../lib/fixtures'
 
 interface Props {
   report: DailyBriefReport
@@ -99,6 +100,54 @@ export function DistributionStatusScreen({ report }: Props) {
             recorded.
           </p>
         )}
+      </div>
+
+      <div>
+        <h3 className="text-sm font-semibold text-inzbc-navy">Run archive</h3>
+        <p className="mt-1 text-xs text-slate-500">
+          Past runs — for local development only, standing in for a not-yet-built history list
+          (no `GET /api/reports` list endpoint exists yet).
+        </p>
+        <div className="mt-2 overflow-x-auto rounded-md border border-slate-200 bg-white">
+          <table className="min-w-full divide-y divide-slate-200 text-sm">
+            <thead>
+              <tr className="text-left text-xs font-semibold text-slate-500">
+                <th scope="col" className="px-3 py-2">
+                  Run
+                </th>
+                <th scope="col" className="px-3 py-2">
+                  Date
+                </th>
+                <th scope="col" className="px-3 py-2">
+                  State
+                </th>
+                <th scope="col" className="px-3 py-2">
+                  QA
+                </th>
+                <th scope="col" className="px-3 py-2">
+                  Decision
+                </th>
+                <th scope="col" className="px-3 py-2">
+                  Distribution
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {archiveFixture().map((run) => (
+                <tr key={run.runId}>
+                  <td className="whitespace-nowrap px-3 py-2 text-slate-700">{run.runId}</td>
+                  <td className="whitespace-nowrap px-3 py-2 text-slate-700">{run.reportDate}</td>
+                  <td className="whitespace-nowrap px-3 py-2 text-slate-700">{run.state}</td>
+                  <td className="whitespace-nowrap px-3 py-2 text-slate-700">{run.qaResult ?? 'Pending'}</td>
+                  <td className="whitespace-nowrap px-3 py-2 text-slate-700">{run.decision ?? 'Pending'}</td>
+                  <td className="whitespace-nowrap px-3 py-2 text-slate-700">
+                    {run.distributionAuthorised === null ? 'Pending' : run.distributionAuthorised ? 'Yes' : 'No'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
   )

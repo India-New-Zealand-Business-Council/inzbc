@@ -1,7 +1,7 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import type { DailyBriefReport } from '../domain'
-import { newDraftReportFixture } from '../lib/fixtures'
+import { archiveFixture, newDraftReportFixture } from '../lib/fixtures'
 import { DistributionStatusScreen } from './DistributionStatusScreen'
 
 describe('DistributionStatusScreen', () => {
@@ -95,5 +95,25 @@ describe('DistributionStatusScreen', () => {
     render(<DistributionStatusScreen report={report} />)
     expect(screen.getByText('INZBC member distribution list')).toBeInTheDocument()
     expect(screen.getByText('Delivered')).toBeInTheDocument()
+  })
+
+  it('renders the run archive as a read-only table, one row per past run', () => {
+    render(<DistributionStatusScreen report={newDraftReportFixture()} />)
+    const table = screen.getByRole('table')
+    const rows = within(table).getAllByRole('row')
+    // Header row + one row per fixture run.
+    expect(rows).toHaveLength(archiveFixture().length + 1)
+
+    const firstRun = archiveFixture()[0]!
+    expect(within(table).getByText(firstRun.runId)).toBeInTheDocument()
+    expect(within(table).getByText(firstRun.reportDate)).toBeInTheDocument()
+  })
+
+  it('shows Pending in the archive for a run with no QA/decision/distribution recorded yet', () => {
+    render(<DistributionStatusScreen report={newDraftReportFixture()} />)
+    const undecidedRun = archiveFixture().find((run) => run.decision === null)!
+    const row = screen.getByText(undecidedRun.runId).closest('tr')
+    expect(row).not.toBeNull()
+    expect(within(row!).getAllByText('Pending').length).toBeGreaterThan(0)
   })
 })

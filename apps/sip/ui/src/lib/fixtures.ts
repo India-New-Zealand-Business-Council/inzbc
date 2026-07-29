@@ -385,3 +385,49 @@ export function newDraftReportFixture(): DailyBriefReport {
     distribution: null,
   }
 }
+
+export interface ArchivedRunSummary {
+  runId: string
+  reportDate: string
+  state: string
+  qaResult: 'Pass' | 'Fail' | null
+  decision: string | null
+  distributionAuthorised: boolean | null
+}
+
+/**
+ * Stand-in for a past-runs list — docs/sip-ui-spec.md doesn't specify Screen 4's archive in
+ * detail beyond "the executive dashboard the distribution-status view draws on"
+ * (`docs/modules/dashboards.md`), and there is no `GET /api/reports` list endpoint built to pull
+ * real history from (same "not built yet" gap as every other fixture in this file). Every run
+ * below is invented placeholder data for UI development, `[FIXTURE]`-prefixed on the run id so it
+ * can never be mistaken for a real historical record.
+ */
+export function archiveFixture(): ArchivedRunSummary[] {
+  return [
+    {
+      runId: '[FIXTURE] RUN-20260729-01',
+      reportDate: '2026-07-29',
+      state: 'Distributed',
+      qaResult: 'Pass',
+      decision: 'continue',
+      distributionAuthorised: true,
+    },
+    {
+      runId: '[FIXTURE] RUN-20260728-01',
+      reportDate: '2026-07-28',
+      state: 'Continue',
+      qaResult: 'Pass',
+      decision: 'continue',
+      distributionAuthorised: false,
+    },
+    {
+      runId: '[FIXTURE] RUN-20260727-01',
+      reportDate: '2026-07-27',
+      state: 'Report Drafted',
+      qaResult: 'Fail',
+      decision: null,
+      distributionAuthorised: null,
+    },
+  ]
+}
