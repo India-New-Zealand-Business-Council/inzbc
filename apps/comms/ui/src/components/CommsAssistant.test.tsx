@@ -227,6 +227,15 @@ describe('CommsAssistant', () => {
     expect(downloadSpy).toHaveBeenCalledWith('Export me', 'linkedin_post-draft')
   })
 
+  it('shows the word count of the generated draft', async () => {
+    mockFetch({ draft: 'Four little words here' })
+    render(<CommsAssistant />)
+    await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
+    await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
+
+    expect(await screen.findByText(/4 words/i)).toBeInTheDocument()
+  })
+
   it('submits the brief on Ctrl+Enter', async () => {
     const spy = mockFetch({ draft: 'From shortcut' })
     render(<CommsAssistant />)

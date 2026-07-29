@@ -16,6 +16,11 @@ const CONTENT_TYPE_LABELS = Object.fromEntries(
   CONTENT_TYPES.map((option) => [option.value, option.label]),
 ) as Record<ContentType, string>
 
+function countWords(text: string): number {
+  const trimmed = text.trim()
+  return trimmed === '' ? 0 : trimmed.split(/\s+/).length
+}
+
 type State =
   | { kind: 'idle' }
   | { kind: 'loading' }
@@ -200,7 +205,9 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
         {state.kind === 'result' ? (
           <div className="space-y-2 rounded-md border border-slate-300 bg-white p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="font-semibold text-inzbc-navy">Draft</h2>
+              <h2 className="font-semibold text-inzbc-navy">
+                Draft <span className="font-normal text-slate-500">· {countWords(state.draft)} words</span>
+              </h2>
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
