@@ -26,8 +26,12 @@ DB schema, API contract, auth. Build against them; don't write to control-plane 
 - SHARED-OK: SIP-050 relevance/signal/confidence scoring moved to Bhanu's worklog — it runs
   through the model gateway he owns. `assessment.py` stays the validation/carry layer here.
 - [ ] Comms Assistant service side (`apps/comms`): draft-generation flow with the named-reviewer
-  gate, per [docs/modules/comms-assistant.md](../modules/comms-assistant.md); model calls route
-  through Bhanu's gateway once it lands.
+  gate, per [docs/modules/comms-assistant.md](../modules/comms-assistant.md). Corrected 30 Jul
+  (PR #161): the model gateway itself is already built and reusable
+  (`services/api/model_gateway.py`) — the actual blocker is the **redaction layer**, currently
+  unowned. Non-negotiable per `comms-assistant.md`'s "drafts only, adversarially tested" promise —
+  no request may reach the model gateway from this flow until redaction has an owner and an
+  implementation. Not starting this until that's resolved.
 - [ ] FTA Explainer retrieval upgrade: replace `explainer.py`'s keyword matching with ranked
   retrieval over the corpus — still no answer without a Tier-1 citation; `[]`/escalate on
   low-confidence matches stays.
