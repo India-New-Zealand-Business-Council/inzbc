@@ -94,4 +94,44 @@ describe('QaReviewScreen', () => {
     expect(onChange).toHaveBeenCalled()
     expect(initial.sections[0]!.content).toBe(generatedDigestContent().sections[0]!.content)
   })
+
+  it('approves a section, then clears back to pending on a second click', async () => {
+    render(<ControlledQaReview initial={reportInQa()} />)
+    const approve = screen.getAllByRole('button', { name: 'Approve' })[0]!
+
+    await userEvent.click(approve)
+    expect(approve).toHaveAttribute('aria-pressed', 'true')
+
+    await userEvent.click(approve)
+    expect(approve).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('flagging a section reveals a required reason field, and approving clears any flag', async () => {
+    render(<ControlledQaReview initial={reportInQa()} />)
+    const flag = screen.getAllByRole('button', { name: 'Flag' })[0]!
+    const approve = screen.getAllByRole('button', { name: 'Approve' })[0]!
+
+    await userEvent.click(flag)
+    expect(flag).toHaveAttribute('aria-pressed', 'true')
+    const reasonField = screen.getByLabelText(/reason for flagging/i)
+    await userEvent.type(reasonField, 'Numbers need a source check')
+    expect(reasonField).toHaveValue('Numbers need a source check')
+
+    await userEvent.click(approve)
+    expect(flag).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.queryByLabelText(/reason for flagging/i)).not.toBeInTheDocument()
+  })
+
+  it('flagging and approving are mutually exclusive on the same section', async () => {
+    render(<ControlledQaReview initial={reportInQa()} />)
+    const approve = screen.getAllByRole('button', { name: 'Approve' })[0]!
+    const flag = screen.getAllByRole('button', { name: 'Flag' })[0]!
+
+    await userEvent.click(approve)
+    expect(approve).toHaveAttribute('aria-pressed', 'true')
+
+    await userEvent.click(flag)
+    expect(flag).toHaveAttribute('aria-pressed', 'true')
+    expect(approve).toHaveAttribute('aria-pressed', 'false')
+  })
 })
