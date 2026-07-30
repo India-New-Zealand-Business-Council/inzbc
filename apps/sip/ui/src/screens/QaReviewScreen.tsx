@@ -216,10 +216,13 @@ export function QaReviewScreen({ report, onChange }: Props) {
                 >
                   Flag
                 </button>
+                {/* min-h-11 (44px): unlike the padded Approve/Flag buttons beside it, this was a
+                    bare underlined text link with no padding — its hit area was just the glyph
+                    width of "Edit"/"Done" at text-xs, well under a usable mobile touch target. */}
                 <button
                   type="button"
                   onClick={() => setEditingId(editingId === section.id ? null : section.id)}
-                  className="text-xs font-medium text-inzbc-blue underline"
+                  className="min-h-11 px-2 text-xs font-medium text-inzbc-blue underline"
                 >
                   {editingId === section.id ? 'Done' : 'Edit'}
                 </button>
@@ -298,7 +301,10 @@ export function QaReviewScreen({ report, onChange }: Props) {
         ) : (
           report.criticalHighSignals.map((signal) => (
             <div key={signal.id} className="rounded-md border border-slate-200 bg-white p-3">
-              <div className="flex items-center justify-between gap-2">
+              {/* flex-wrap: missing here, unlike every other card header in this screen — a long
+                  headline next to the strength badge would force this row wider than its
+                  container at narrow viewports (WCAG 2.2 §1.4.10) instead of just wrapping. */}
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <h4 className="text-sm font-medium text-inzbc-navy">{signal.headline}</h4>
                 <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
                   {signal.signalStrength}

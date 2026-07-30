@@ -203,4 +203,16 @@ describe('QaReviewScreen', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(/something went wrong/i)
     expect(screen.getByRole('button', { name: /record qa result/i })).toBeInTheDocument()
   })
+
+  it('gives the Edit/Done toggle a real touch target, not a bare underlined glyph', () => {
+    render(<QaReviewScreen report={reportInQa()} onChange={vi.fn()} />)
+    const editButton = screen.getAllByRole('button', { name: 'Edit' })[0]!
+    expect(editButton.className).toMatch(/min-h-11/)
+  })
+
+  it('wraps the Critical/High signal header instead of forcing a long headline to overflow', () => {
+    render(<QaReviewScreen report={reportInQa()} onChange={vi.fn()} />)
+    const heading = screen.getByText(/ministerial statement on bilateral trade talks/i)
+    expect(heading.parentElement?.className).toMatch(/flex-wrap/)
+  })
 })
