@@ -75,7 +75,7 @@ jobs:
     # runs and tears it down for the job automatically.
     services:
       postgres:
-        image: postgres:16
+        image: postgres:16.2
         env:
           POSTGRES_USER: inzbc
           POSTGRES_PASSWORD: inzbc
@@ -106,7 +106,11 @@ jobs:
           pip install "uv==0.8.17"
           uv sync --locked --extra dev
       - name: Apply database schema
-        run: psql "$DATABASE_URL" -f database/schema.sql
+        # ON_ERROR_STOP: bare psql continues past a failed statement and still exits 0, so a
+        # broken schema (e.g. a later table failing to create) would leave the job green with
+        # only part of schema.sql actually applied. --single-transaction: all-or-nothing, so a
+        # partial apply can't leave some tables present and others missing.
+        run: psql -v ON_ERROR_STOP=1 --single-transaction "$DATABASE_URL" -f database/schema.sql
       - name: Lint (ruff)
         # `uv run` so every step uses the locked environment, not whatever pip left on PATH.
         run: uv run ruff check apps services scripts
