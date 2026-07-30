@@ -10,12 +10,14 @@ real database's transaction semantics, which is the entire point of `apply_trans
 from __future__ import annotations
 
 import os
+import threading
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 
 import psycopg
 import pytest
 
+from apps.sip.core.orchestrator import IllegalTransition
 from apps.sip.pipeline.models import RunState
 from services.api.persistence import ConcurrentModificationError, RunRepository
 
@@ -129,12 +131,12 @@ def test_apply_transition_raises_when_version_is_stale(
     assert current.version == 1
 
 
-def test_two_concurrent_transitions_cannot_both_commit(
+def test_apply_transition_rejects_an_illegal_state_jump(
     repo: RunRepository, initiated_by: str
 ) -> None:
-    """The acceptance criterion from #117, proven against a real Postgres with two real OS
-    threads racing the same UPDATE, not a sequential simulation of a race.
-    """
+    # Draft's only legal next state is Run Authorised (schemas/state-machine.md). Nothing must
+    # let a caller commit straight to Closed - that would skip the CEO decision, approval, QA and
+    # distribution record ADR-0005 requires, with no state in between showing any of it happened.
     run = repo.create_run(
         run_number=_run_number(),
         prompt_version="SIP-050 v1.1",
@@ -143,18 +145,62 @@ def test_two_concurrent_transitions_cannot_both_commit(
         initiated_by=initiated_by,
     )
 
-    def try_advance(target: RunState) -> object:
+    with pytest.raises(IllegalTransition):
+        repo.apply_transition(run.id, expected_version=0, new_state=RunState.CLOSED)
+
+    # The refused write must not have landed.
+    current = repo.get_run(run.id)
+    assert current.state == RunState.DRAFT
+    assert current.version == 0
+
+
+def test_apply_transition_raises_key_error_for_an_unknown_run_not_stale_version(
+    repo: RunRepository,
+) -> None:
+    # A missing row and a stale version both used to surface as ConcurrentModificationError from
+    # the same 0-row UPDATE result, so a caller couldn't tell 404 from 409. The legality check now
+    # reads the row first, so a genuinely missing run raises KeyError instead.
+    with pytest.raises(KeyError):
+        repo.apply_transition(str(uuid.uuid4()), expected_version=0, new_state=RunState.CLOSED)
+
+
+def test_two_concurrent_transitions_cannot_both_commit(
+    repo: RunRepository, initiated_by: str
+) -> None:
+    """The acceptance criterion from #117, proven against a real Postgres with two real OS
+    threads racing the same UPDATE, not a sequential simulation of a race.
+
+    Both threads target the *same* legal transition (Draft -> Run Authorised) rather than one
+    legal and one illegal target - racing a legal move against an illegal one always "succeeds"
+    for the legal side regardless of timing, which is what let a fake implementation with no
+    version check at all pass this test. A `threading.Barrier` also forces both threads to reach
+    `apply_transition` at the same instant; without it, one thread can simply finish before the
+    other starts, and the test would pass by luck rather than by proving anything about the CAS.
+    """
+    run = repo.create_run(
+        run_number=_run_number(),
+        prompt_version="SIP-050 v1.1",
+        coverage_start_utc="2026-07-27T07:00:00+12:00",
+        coverage_end_utc="2026-07-28T07:00:00+12:00",
+        initiated_by=initiated_by,
+    )
+    start = threading.Barrier(2)
+
+    def try_advance() -> object:
         # A fresh RunRepository per thread: psycopg connections are not meant to be shared
         # across threads, and the adapter's contract is that it needs none held between calls.
         thread_repo = RunRepository(DATABASE_URL)
+        start.wait()  # both threads release together, forcing a genuine race, not a fluke.
         try:
-            return thread_repo.apply_transition(run.id, expected_version=0, new_state=target)
+            return thread_repo.apply_transition(
+                run.id, expected_version=0, new_state=RunState.RUN_AUTHORISED
+            )
         except ConcurrentModificationError as error:
             return error
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        future_a = pool.submit(try_advance, RunState.RUN_AUTHORISED)
-        future_b = pool.submit(try_advance, RunState.STOPPED)
+        future_a = pool.submit(try_advance)
+        future_b = pool.submit(try_advance)
         results = [future_a.result(), future_b.result()]
 
     succeeded = [r for r in results if not isinstance(r, Exception)]
@@ -165,4 +211,4 @@ def test_two_concurrent_transitions_cannot_both_commit(
 
     final = repo.get_run(run.id)
     assert final.version == 1, "version must advance by exactly one commit, not two"
-    assert final.state == succeeded[0].state, "the final state must be the winner's, not a mix"
+    assert final.state == RunState.RUN_AUTHORISED
