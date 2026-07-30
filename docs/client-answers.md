@@ -55,7 +55,7 @@ These are ours to propose; Sunil approves.
 | # | Answer | Status |
 |---|---|---|
 | C1 | **Retain and integrate Member Jungle** as the membership system of record. No second membership register on the website. | `PROPOSED` |
-| C2 | Use the INZBC Brand Guidelines 2026 — logos, palette, gradients, photography rules, typography. Fonts noted as Big Shoulders and Merriweather. | `PROPOSED` — brand kit not yet received |
+| C2 | Use the INZBC Brand Guidelines 2026 — logos, palette, gradients, photography rules, typography. Fonts noted as Big Shoulders and Merriweather. | `PROPOSED` — kit received 30 Jul 2026 (`INZBC Brand Guidelines 2026.pdf`, Drive `Brand/Brand Guidelines`); tokens transcribed in `docs/design-decisions.md`. Font files not sourced. |
 | C3 | External: member records, renewals, directory and event registration (Member Jungle); newsletter distribution (Mailchimp). Internal: public site content, FTA Explainer, SIP workflow and records, approval and audit. | `PROPOSED` |
 | C4 | **Mailchimp** for newsletters, delivery kept outside the website. Confirm it holds the current newsletter contact list and engagement history before migration. | `PROPOSED` |
 | C5 | **Link** to the Member Jungle directory. Do not copy or embed a separate directory database. | `PROPOSED` |
