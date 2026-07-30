@@ -1,9 +1,12 @@
 """Postgres persistence adapter for SIP runs, with optimistic concurrency (#117).
 
-`apps.sip.core.orchestrator.Orchestrator` is the in-memory transition engine — the single place
-that decides whether a transition is *legal* (state machine rules, human gates). This module is
-the separate concern of making an accepted transition *durable*, and doing so safely when two
-reviewers might act on the same run at the same time.
+`apps.sip.core.orchestrator.Orchestrator` is the in-memory transition engine and owns the human
+gates (`HumanDecision`, `is_human_gated`) — this module does not re-implement those. It does,
+however, refuse an illegal state jump (`orchestrator.is_legal_transition`) before writing: a
+persistence layer that trusts every caller to have already checked legality is a second way to
+reach a state the orchestrator would refuse, not a durability concern. This module is the separate
+concern of making an accepted transition *durable*, and doing so safely when two reviewers might
+act on the same run at the same time.
 
 Optimistic concurrency (not row locking): `runs.version` (`database/schema.sql`) increments on
 every committed transition. `apply_transition` writes with `WHERE version = expected_version`; a
@@ -26,6 +29,7 @@ from dataclasses import dataclass
 import psycopg
 from psycopg.rows import dict_row
 
+from apps.sip.core.orchestrator import IllegalTransition, is_legal_transition
 from apps.sip.pipeline.models import RunState
 
 
@@ -112,14 +116,43 @@ class RunRepository:
     def apply_transition(
         self, run_id: str, expected_version: int, new_state: RunState
     ) -> RunRecord:
-        """Commits `new_state` iff the row is still at `expected_version` (compare-and-swap).
+        """Commits `new_state` iff the row is still at `expected_version` (compare-and-swap) AND
+        `new_state` is reachable from the row's current state per the state machine
+        (`orchestrator.is_legal_transition`, the same table `Orchestrator.advance` enforces).
 
-        Raises `ConcurrentModificationError` on a 0-row result. Does not itself check whether
-        `new_state` is a *legal* transition from the run's current state - that is
-        `Orchestrator.advance`'s job; this method only guarantees the write it's given is applied
-        against the version it was told to expect, or not applied at all.
+        The legality check reads the current state, then the CAS write still guards against a
+        race: if another transition lands between the read and the write, `version` will have
+        moved and the write affects zero rows regardless of what the legality check saw - it
+        cannot commit a state built on a stale read. `version` only ever increases, so there is no
+        ABA hazard from reusing an old value.
+
+        This exists because `apply_transition` used to trust every caller to have already checked
+        legality (`Orchestrator.advance`'s job, per this method's original docstring) - but nothing
+        stopped a direct caller from committing an illegal jump like `Draft -> Closed` with no
+        state in between, skipping every human gate. Layering the checks does not mean only the
+        top layer has to hold; a write path this close to the database still has to refuse what it
+        knows is illegal.
+
+        Raises:
+            `KeyError` if `run_id` doesn't exist - distinct from `ConcurrentModificationError`
+            (a stale version on a row that does exist), so a caller can tell 404 from 409.
+            `IllegalTransition` if `new_state` isn't reachable from the current state.
+            `ConcurrentModificationError` on a 0-row CAS result after the legality check passes.
         """
         with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
+            current = conn.execute(
+                f"select {_SELECT_COLUMNS} from runs where id = %s", (run_id,)
+            ).fetchone()
+            if current is None:
+                raise KeyError(f"no run {run_id!r}")
+
+            current_state = RunState(current["state"])
+            if not is_legal_transition(current_state, new_state):
+                raise IllegalTransition(
+                    f"{current_state.value!r} -> {new_state.value!r} is not a legal transition "
+                    "per schemas/state-machine.md"
+                )
+
             row = conn.execute(
                 f"update runs set state = %s, version = version + 1 "
                 f"where id = %s and version = %s "
