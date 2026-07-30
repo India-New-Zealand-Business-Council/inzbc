@@ -22,10 +22,6 @@ SIP review/approval UI + Comms Assistant UI + FTA Explainer embed.
 The shared API + auth for anything that reads/writes data. Roshan's FTA service for the Explainer UI.
 
 ## Next up
-- [ ] SIP review/approval UI against contract fixtures (startable now, no live backend): brief
-      builder (SIP-186), QA checklist (SIP-188), CEO decision + registers — and enforce the run
-      state machine client-side (illegal transitions disabled in the UI, mirroring
-      `schemas/state-machine.md`, with the server still the authority).
 - [ ] Design system from `DESIGN.local.md` (not yet created): token-driven component library on
       the real brand tokens documented in `docs/design-decisions.md` (#155) (colours, typography,
       logo rules from the INZBC Brand Guidelines 2026 — no placeholder swap needed, kit already
@@ -73,6 +69,32 @@ The shared API + auth for anything that reads/writes data. Roshan's FTA service 
       this is the end-to-end verification pass).
 
 ## Done
+- SIP review/approval UI (`apps/sip/ui`), built against contract fixtures — no live backend
+  exists yet (`services/api` has no `/api/reports/*` routes, blocked on migrations, issue #44).
+  Four screens per `docs/sip-ui-spec.md`: brief builder (run header, coverage window, candidate
+  selection, SIP-186 §12 source-coverage table, required-field validation, submit-for-QA); QA
+  review (inline section editing, approve/flag with colour coding, the actual SIP-188 tri-state
+  checklist with Critical-fail-blocks-submit and no override path, send-back-for-correction);
+  CEO decision (digest preview, the four report-decision types with required
+  reason/conditions/owner/evidence/next-review-date fields, and — kept genuinely separate per the
+  spec's explicit rule — a second, independent distribution-authorisation action behind its own
+  confirmation modal); distribution status (read-only QA/decision/distribution summary, plus a
+  fixture-backed run archive table). Client-side state-machine enforcement throughout
+  (`schemas/state-machine.md`) — the server remains the authority, this is a usability layer.
+  Fixed a real bug in `reportsStore.ts` along the way: an earlier draft of
+  `recordCeoDecision` accepted distribution authorisation in the same call as the report
+  decision, which the spec explicitly forbids ("never presented as one combined control") —
+  split into `recordCeoDecision` and a separate `authoriseDistribution`.
+  **Reconciled against the actual spec, not just the task description that kicked this off**:
+  the task's shorthand ("approve/flag buttons," "quality score," "approve and reject buttons")
+  doesn't fully match `docs/sip-ui-spec.md`'s real design (a formal SIP-188 checklist, four
+  distinct decision types, two sequential CEO decisions) — built the real mechanism and layered
+  the requested UI on top rather than one or the other. Worth a second pair of eyes on: (1) the
+  "quality score" is a section approve/flag rollup shown alongside, not merged into, the
+  checklist pass rate — confirm that split reads clearly rather than as two competing scores;
+  (2) `GOVERNANCE_LINE` is rendered on the CEO decision screen but not yet retrofitted onto the
+  QA review / brief builder screens, though the spec says it belongs "on every view of the
+  brief, always."
 - Drafted and rewrote all seven public-page content specs in `apps/site/content/` (home, about,
   events, members, trade, partners, connect) against `INZBC_Website_Migration_Checklist.xlsx` and
   `INZBC_Website_Stocktake_Migration_and_Wix_Guide.docx`, executive tone, `[[placeholders]]` for
@@ -107,8 +129,10 @@ come back.
   `box-sizing` reset for 320px reflow, stale-request identity check, deeper response validation.
 - **Two member-facing strings still need a named reviewer**: the `<h1>` and intro paragraph in
   `apps/fta/ui/src/App.tsx`. Everything else on screen comes from the API.
-- **Still yours:** the design system and brand tokens, the SIP review/approval UI (REQ-U-01/U-02),
-  the Comms review UI, the Wix site build, and the accessibility audit.
+- **Still yours:** the design system and brand tokens, the Comms review UI, the Wix site build,
+  and the accessibility audit. (The SIP review/approval UI itself is now Done, above — against
+  contract fixtures; still needs the live `/api/reports/*` endpoints and REQ-U-01/U-02 sign-off
+  once real data is behind it.)
 
 ## Blocked / decisions needed
 - Wix MCP connection, for programmatic build (`docs/discovery.md` OI-1) — **and** manual editor
