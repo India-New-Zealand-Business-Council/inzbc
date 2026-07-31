@@ -21,11 +21,14 @@ function countWords(text: string): number {
   return trimmed === '' ? 0 : trimmed.split(/\s+/).length
 }
 
-type State =
-  | { kind: 'idle' }
-  | { kind: 'loading' }
-  | { kind: 'result'; draft: string; contentType: ContentType }
-  | { kind: 'error'; message: string }
+// Displayed draft and in-flight/error status are deliberately separate pieces of state (they used
+// to be one tagged union collapsed onto 'loading' the instant a regenerate started). Generate A,
+// ask for a revision, hit a 503: with one combined state, the loading transition had already
+// overwritten A before the request failed, so the error replaced a draft that still existed
+// server-side — there was no way back to it. Keeping `draftState` untouched by a failed
+// `generateDraft` call means the previous draft simply stays on screen while `submitError` reports
+// what went wrong alongside it.
+type DraftState = { kind: 'idle' } | { kind: 'result'; draft: string; contentType: ContentType }
 
 interface HistoryEntry {
   id: string
@@ -36,7 +39,9 @@ interface HistoryEntry {
 export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
   const [contentType, setContentType] = useState<ContentType>('newsletter')
   const [brief, setBrief] = useState('')
-  const [state, setState] = useState<State>({ kind: 'idle' })
+  const [draftState, setDraftState] = useState<DraftState>({ kind: 'idle' })
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'failed'>('idle')
   const [feedback, setFeedback] = useState<'up' | 'down' | null>(null)
@@ -59,15 +64,16 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
     const trimmed = brief.trim()
     if (!trimmed) return
 
-    // Captured before the state overwrite below, so history keeps the content type that was
-    // actually selected when this draft was generated — not whatever the dropdown reads later.
-    const outgoing = state.kind === 'result' ? state : null
+    // Captured before the request starts, so history keeps the content type that was actually
+    // selected when this draft was generated — not whatever the dropdown reads later.
+    const outgoing = draftState.kind === 'result' ? draftState : null
 
     inFlight.current?.abort()
     const controller = new AbortController()
     inFlight.current = controller
     setCopyStatus('idle')
-    setState({ kind: 'loading' })
+    setSubmitError(null)
+    setIsGenerating(true)
 
     try {
       const result = await requestCommsDraft(
@@ -86,15 +92,16 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
         )
       }
       setFeedback(null)
-      setState({ kind: 'result', draft: result.draft, contentType })
+      setDraftState({ kind: 'result', draft: result.draft, contentType })
+      setIsGenerating(false)
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return
       if (inFlight.current !== controller) return
-      setState({
-        kind: 'error',
-        message:
-          error instanceof CommsDraftError ? error.message : 'Something went wrong. Please try again.',
-      })
+      setIsGenerating(false)
+      // draftState is deliberately untouched here — see the type's comment above.
+      setSubmitError(
+        error instanceof CommsDraftError ? error.message : 'Something went wrong. Please try again.',
+      )
     }
   }
 
@@ -120,11 +127,12 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
     setContentType('newsletter')
     setCopyStatus('idle')
     setFeedback(null)
+    setSubmitError(null)
     // History goes too. Leaving prior drafts on screen after Clear is the wrong default for a
     // surface that will carry member and commercial material once /api/comms/draft exists, and
     // it is not what the control appears to promise.
     setHistory([])
-    setState({ kind: 'idle' })
+    setDraftState({ kind: 'idle' })
   }
 
   function onFeedback(value: 'up' | 'down') {
@@ -132,9 +140,9 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
   }
 
   async function onCopy() {
-    if (state.kind !== 'result') return
+    if (draftState.kind !== 'result') return
     try {
-      await navigator.clipboard.writeText(state.draft)
+      await navigator.clipboard.writeText(draftState.draft)
       setCopyStatus('copied')
     } catch {
       setCopyStatus('failed')
@@ -143,7 +151,7 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
     copyResetTimer.current = setTimeout(() => setCopyStatus('idle'), 2000)
   }
 
-  const isLoading = state.kind === 'loading'
+  const isLoading = isGenerating
 
   return (
     <section className="mt-6 space-y-6">
@@ -218,15 +226,19 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
 
       {/* Announced rather than silently swapped in, same reasoning as apps/fta/ui's FtaQuery. */}
       <div aria-live="polite" aria-busy={isLoading}>
-        {state.kind === 'error' ? (
+        {submitError ? (
           <p role="alert" className="text-inzbc-crimson">
-            {state.message}
+            {submitError}
           </p>
         ) : null}
 
         {/* Purely visual — aria-busy above already tells assistive tech generation is under way,
-            so this skeleton is hidden from the accessibility tree rather than announced twice. */}
-        {isLoading ? (
+            so this skeleton is hidden from the accessibility tree rather than announced twice.
+            Only shown for a first-ever draft: a regeneration (draftState already holds a result)
+            keeps that result on screen instead — see the inline "Generating…" note below rather
+            than replacing it with a skeleton, which is what used to make a failed regeneration
+            look like the previous draft had been destroyed. */}
+        {isLoading && draftState.kind === 'idle' ? (
           <div aria-hidden="true" className="space-y-3 rounded-md border border-slate-300 bg-white p-5 shadow-sm">
             <div className="h-4 w-1/3 animate-pulse rounded bg-slate-200" />
             <div className="space-y-2">
@@ -238,7 +250,7 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
           </div>
         ) : null}
 
-        {state.kind === 'result' ? (
+        {draftState.kind === 'result' ? (
           <div className="space-y-2 rounded-md border border-slate-300 bg-white p-5 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-2">
               {/* family/weight/uppercase from index.css's @layer base h2 rule; the word count is
@@ -246,7 +258,8 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
               <h2 className="text-base text-inzbc-navy sm:text-lg">
                 Draft{' '}
                 <span className="font-[family-name:var(--font-body)] text-sm font-normal normal-case text-slate-500">
-                  · {countWords(state.draft)} words
+                  · {countWords(draftState.draft)} words
+                  {isLoading ? ' · Generating a new draft…' : ''}
                 </span>
               </h2>
               <div className="flex flex-wrap gap-2">
@@ -263,7 +276,7 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
                 </button>
                 <button
                   type="button"
-                  onClick={() => downloadAsWord(state.draft, `${state.contentType}-draft`)}
+                  onClick={() => downloadAsWord(draftState.draft, `${draftState.contentType}-draft`)}
                   className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-inzbc-navy transition-colors hover:border-inzbc-navy hover:bg-inzbc-navy/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue"
                 >
                   Export as Word
@@ -277,7 +290,7 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
                 </button>
               </div>
             </div>
-            <pre className="print-draft whitespace-pre-wrap font-sans text-slate-800">{state.draft}</pre>
+            <pre className="print-draft whitespace-pre-wrap font-sans text-slate-800">{draftState.draft}</pre>
 
             {/* Local UI state only — no feedback endpoint exists or is specified anywhere
                 (docs/api-integration-spec.md documents no such contract), so this isn't wired to

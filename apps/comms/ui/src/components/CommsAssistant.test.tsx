@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as exportDraft from '../lib/exportDraft'
@@ -21,16 +21,26 @@ function stubClipboard(writeText: ReturnType<typeof vi.fn>) {
 afterEach(() => vi.unstubAllGlobals())
 
 describe('CommsAssistant', () => {
-  it('disables submit until a brief is entered, and never submits whitespace only', async () => {
-    const spy = mockFetch({ draft: 'x' })
+  it('disables submit until a brief is entered', async () => {
     render(<CommsAssistant />)
     expect(screen.getByRole('button', { name: /generate draft/i })).toBeDisabled()
 
     await userEvent.type(screen.getByLabelText(/brief/i), '   ')
     expect(screen.getByRole('button', { name: /generate draft/i })).toBeDisabled()
 
-    await userEvent.type(screen.getByLabelText(/brief/i), 'Announce the trade mission');
+    await userEvent.type(screen.getByLabelText(/brief/i), 'Announce the trade mission')
     expect(screen.getByRole('button', { name: /generate draft/i })).toBeEnabled()
+  })
+
+  it('never submits whitespace only, even via the Ctrl+Enter shortcut that bypasses the disabled button', async () => {
+    // The button-disabled test above never attempts a submission, so it can't catch a broken
+    // whitespace guard inside generateDraft() itself — only Ctrl+Enter (onBriefKeyDown) calls
+    // generateDraft() directly, independent of the button's disabled attribute.
+    const spy = mockFetch({ draft: 'x' })
+    render(<CommsAssistant />)
+
+    await userEvent.type(screen.getByLabelText(/brief/i), '   {Control>}{Enter}{/Control}')
+
     expect(spy).not.toHaveBeenCalled()
   })
 
@@ -46,7 +56,10 @@ describe('CommsAssistant', () => {
     const call = spy.mock.calls[0]
     if (!call) throw new Error('fetch was not called')
     const [, init] = call as [string, RequestInit]
-    expect(JSON.parse(init.body as string)).toMatchObject({ content_type: 'linkedin_post' })
+    expect(JSON.parse(init.body as string)).toMatchObject({
+      content_type: 'linkedin_post',
+      brief: 'Celebrate the FTA anniversary',
+    })
   })
 
   it('shows a loading state while waiting for the response', async () => {
@@ -97,6 +110,26 @@ describe('CommsAssistant', () => {
     const alert = await screen.findByRole('alert')
     expect(alert).toHaveTextContent(/503/)
     expect(screen.queryByRole('heading', { name: /draft/i })).not.toBeInTheDocument()
+  })
+
+  it('keeps the previous draft visible when a regeneration fails', async () => {
+    // A failed *second* generateDraft() call used to wipe the already-rendered draft along with
+    // it: generate A, ask for a revision, hit a 503, A is gone with no recovery. draftState must
+    // stay untouched on a failed regeneration; only submitError should change.
+    mockFetch({ draft: 'First draft' })
+    render(<CommsAssistant />)
+    await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
+    await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
+    await screen.findByText('First draft')
+
+    mockFetch({}, { ok: false, status: 503 })
+    await userEvent.clear(screen.getByLabelText(/brief/i))
+    await userEvent.type(screen.getByLabelText(/brief/i), 'Revise this')
+    await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
+
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent(/503/)
+    expect(screen.getByText('First draft')).toBeInTheDocument()
   })
 
   it('copies the rendered draft to the clipboard', async () => {
@@ -186,12 +219,16 @@ describe('CommsAssistant', () => {
       }),
     )
     render(<CommsAssistant />)
-    await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
-    // Same accessible-name trick as apps/fta/ui's FtaQuery test: "Generat" matches both the
-    // enabled "Generate draft" label and the disabled "Generating…" label, so this fires two
-    // submits back to back regardless of exactly when the disabled state commits.
-    await userEvent.click(screen.getByRole('button', { name: /generat/i }))
-    await userEvent.click(screen.getByRole('button', { name: /generat/i }))
+    const textarea = screen.getByLabelText(/brief/i)
+    await userEvent.type(textarea, 'Draft this')
+    // Two Ctrl+Enter keydowns fired without an await between them, not two button clicks: the
+    // button disables after the first submit starts, so userEvent.click's second call may or may
+    // not register a click depending on exactly when React commits that disabled state — a race,
+    // not a guarantee. fireEvent.keyDown calls onBriefKeyDown (and so generateDraft()) directly
+    // and synchronously, independent of the button's disabled attribute, so both requests are
+    // guaranteed to start before either resolves.
+    fireEvent.keyDown(textarea, { key: 'Enter', ctrlKey: true })
+    fireEvent.keyDown(textarea, { key: 'Enter', ctrlKey: true })
 
     await waitFor(() => expect(aborts.length).toBeGreaterThan(1))
     expect(aborts[0]?.aborted).toBe(true)
