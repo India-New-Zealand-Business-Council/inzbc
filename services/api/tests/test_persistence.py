@@ -167,6 +167,13 @@ def test_a_stale_caller_is_told_it_is_stale_not_that_its_transition_is_illegal(
     with pytest.raises(IllegalTransition):
         repo.apply_transition(run.id, expected_version=1, new_state=RunState.CLOSED)
 
+    # The same self-loop as above, but at the current version, must still be IllegalTransition.
+    # Without this an implementation that simply treats every self-loop as a conflict would pass:
+    # the two assertions above only ever ask for a self-loop while stale, so they cannot tell
+    # "checked staleness first" from "special-cased self-loops".
+    with pytest.raises(IllegalTransition):
+        repo.apply_transition(run.id, expected_version=1, new_state=RunState.RUN_AUTHORISED)
+
 
 def test_apply_transition_rejects_an_illegal_state_jump(
     repo: RunRepository, initiated_by: str

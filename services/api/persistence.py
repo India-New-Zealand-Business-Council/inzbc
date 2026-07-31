@@ -136,8 +136,13 @@ class RunRepository:
         Raises:
             `KeyError` if `run_id` doesn't exist - distinct from `ConcurrentModificationError`
             (a stale version on a row that does exist), so a caller can tell 404 from 409.
-            `IllegalTransition` if `new_state` isn't reachable from the current state.
-            `ConcurrentModificationError` on a 0-row CAS result after the legality check passes.
+            `ConcurrentModificationError` when the row has moved past `expected_version`, checked
+            before legality: a stale caller holds an old state too, so judging its move against the
+            row's current state answers a question it never asked. Also raised on a 0-row CAS
+            result, which is the same conflict seen a moment later - both callers read the same
+            version, then Postgres re-evaluates `version = %s` after the winner commits.
+            `IllegalTransition` if `new_state` isn't reachable from the current state, checked
+            once the caller is known to be current.
         """
         with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
             current = conn.execute(
