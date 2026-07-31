@@ -19,12 +19,19 @@ export function Header() {
       <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
         <a
           href="/"
-          className="font-[family-name:var(--font-heading)] text-lg font-bold uppercase tracking-wide text-white"
+          className="rounded-sm font-[family-name:var(--font-heading)] text-lg font-bold uppercase tracking-wide text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-lavender"
         >
           INZBC
         </a>
         <nav aria-label="Primary">
-          <span aria-current="page" className="text-sm font-medium text-white">
+          {/* Lavender, not Blue, for the current-page accent: the guide pairs Lavender with Navy
+              (p.18, "Lavender > Blue > Navy Blue" is its featured gradient) precisely because
+              Blue #261866 on Navy #160933 is two dark colours with ~1.5:1 contrast — unreadable
+              against this background, unlike on the light body where Blue is used for links. */}
+          <span
+            aria-current="page"
+            className="border-b-2 border-inzbc-lavender text-sm font-medium text-white"
+          >
             Comms Assistant
           </span>
         </nav>

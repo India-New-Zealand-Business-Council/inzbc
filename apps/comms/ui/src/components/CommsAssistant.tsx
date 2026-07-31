@@ -188,14 +188,14 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
           <button
             type="submit"
             disabled={isLoading || brief.trim().length === 0}
-            className="rounded-md bg-inzbc-tangerine px-4 py-2 font-semibold text-white disabled:cursor-progress disabled:opacity-60"
+            className="rounded-md bg-inzbc-tangerine px-4 py-2 font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue disabled:cursor-progress disabled:opacity-60"
           >
             {isLoading ? 'Generating…' : 'Generate draft'}
           </button>
           <button
             type="button"
             onClick={onClear}
-            className="rounded-md border border-slate-300 px-4 py-2 font-semibold text-inzbc-navy"
+            className="rounded-md border border-slate-300 px-4 py-2 font-semibold text-inzbc-navy focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue"
           >
             Clear
           </button>
@@ -239,7 +239,7 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
                 <button
                   type="button"
                   onClick={onCopy}
-                  className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-inzbc-navy"
+                  className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-inzbc-navy focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue"
                 >
                   {copyStatus === 'copied'
                     ? 'Copied'
@@ -250,14 +250,14 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
                 <button
                   type="button"
                   onClick={() => downloadAsWord(state.draft, `${state.contentType}-draft`)}
-                  className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-inzbc-navy"
+                  className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-inzbc-navy focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue"
                 >
                   Export as Word
                 </button>
                 <button
                   type="button"
                   onClick={exportAsPdf}
-                  className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-inzbc-navy"
+                  className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-inzbc-navy focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue"
                 >
                   Export as PDF
                 </button>
@@ -279,7 +279,7 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
                 aria-pressed={feedback === 'up'}
                 aria-label="Helpful"
                 onClick={() => onFeedback('up')}
-                className={`flex min-h-11 min-w-11 items-center justify-center rounded-md border text-lg ${
+                className={`flex min-h-11 min-w-11 items-center justify-center rounded-md border text-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue ${
                   feedback === 'up'
                     ? 'border-inzbc-forest bg-inzbc-forest/10 text-inzbc-forest'
                     : 'border-slate-300 text-inzbc-navy'
@@ -292,7 +292,7 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
                 aria-pressed={feedback === 'down'}
                 aria-label="Not helpful"
                 onClick={() => onFeedback('down')}
-                className={`flex min-h-11 min-w-11 items-center justify-center rounded-md border text-lg ${
+                className={`flex min-h-11 min-w-11 items-center justify-center rounded-md border text-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue ${
                   feedback === 'down'
                     ? 'border-inzbc-crimson bg-inzbc-crimson/10 text-inzbc-crimson'
                     : 'border-slate-300 text-inzbc-navy'
