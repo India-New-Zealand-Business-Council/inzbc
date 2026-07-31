@@ -32,7 +32,8 @@ collections where applicable. Publishing still needs explicit written sign-off f
 what the text said before and after. `CLAUDE.md` asks for the wording on both sides, because Site
 History records *that* something changed while this log is the only record of *what it said*. That
 matters concretely here: these seven changes are sitting unpublished in the live editor, and
-`docs/discovery.md` OI-9 has them being rolled back once the duplicate exists. Rolling back text
+`docs/discovery.md` OI-9 has them being rolled back. The duplicate `INZBC Staging` now exists and
+OI-9 is closed, so the rollback is actionable rather than waiting on anything. Rolling back text
 nobody wrote down loses it.
 
 Paras to fill both rows from the editor before this merges. Not reconstructed here, because guessing
