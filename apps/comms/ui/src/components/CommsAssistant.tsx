@@ -227,8 +227,13 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
         {state.kind === 'result' ? (
           <div className="space-y-2 rounded-md border border-slate-300 bg-white p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="font-semibold text-inzbc-navy">
-                Draft <span className="font-normal text-slate-500">· {countWords(state.draft)} words</span>
+              {/* family/weight/uppercase from index.css's @layer base h2 rule; the word count is
+                  reset back to normal-case body copy since it's fine print, not a heading. */}
+              <h2 className="text-base text-inzbc-navy sm:text-lg">
+                Draft{' '}
+                <span className="font-[family-name:var(--font-body)] text-sm font-normal normal-case text-slate-500">
+                  · {countWords(state.draft)} words
+                </span>
               </h2>
               <div className="flex flex-wrap gap-2">
                 <button
@@ -303,7 +308,7 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
 
       {history.length > 0 ? (
         <div className="space-y-2">
-          <h2 className="font-semibold text-inzbc-navy">Recent drafts</h2>
+          <h2 className="text-base text-inzbc-navy sm:text-lg">Recent drafts</h2>
           <ul className="space-y-2">
             {history.map((entry) => (
               <li key={entry.id} className="rounded-md border border-slate-200 bg-slate-50 p-3">

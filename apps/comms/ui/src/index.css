@@ -1,5 +1,22 @@
 @import "tailwindcss";
 
+/* Big Shoulders Display and Merriweather are the two brand fonts (Typography Breakdown, p.20 of
+   INZBC Brand Guidelines 2026 v1.0) — unlike the logo, these are open Google Fonts, not a
+   proprietary INZBC asset, so self-hosting them via @fontsource (offline, no external request at
+   runtime) doesn't need to wait on INZBC to supply anything. Weights loaded match the guide's own
+   language: headings "Bold weight as default, Medium/Extrabold when requiring different
+   emphasis"; body "Light weight for regular paragraph styles, Regular/Medium to emphasise". */
+/* latin-only subset (not the default multi-subset file) — index.html is lang="en-NZ" and every
+   page-specs source is English-only, so cyrillic/greek/vietnamese glyphs would just be dead
+   weight in the bundle. */
+@import "@fontsource/big-shoulders-display/latin-500";
+@import "@fontsource/big-shoulders-display/latin-700";
+@import "@fontsource/big-shoulders-display/latin-800";
+@import "@fontsource/merriweather/latin-300";
+@import "@fontsource/merriweather/latin-400";
+@import "@fontsource/merriweather/latin-500";
+@import "@fontsource/merriweather/latin-700";
+
 @theme {
   /* Brand palette — INZBC Brand Guidelines 2026 v1.0 (docs/design-decisions.md). Usage ratio per
      the guide: 50% Navy, 30% Blue/Purple, 5% each accent. */
@@ -12,12 +29,28 @@
   --color-inzbc-lavender: #c1acfb;
   --color-inzbc-lime: #b8f07c;
 
-  /* Brand fonts per the guide are Big Shoulders (headings) and Merriweather (body), but no font
-     files are sourced in this repo yet (docs/design-decisions.md Open items #5/#6 — same gap as
-     the logo/photography assets). Naming the tokens now, falling back to system fonts until
-     INZBC supplies the actual files, rather than pulling an unreviewed external font source. */
-  --font-heading: "Big Shoulders", system-ui, sans-serif;
+  --font-heading: "Big Shoulders Display", system-ui, sans-serif;
   --font-body: "Merriweather", Georgia, serif;
+}
+
+@layer base {
+  /* Guide, p.20: Merriweather "should be used for all other copy" — set as the body default so
+     every element inherits it (including form controls, which Tailwind's preflight already sets
+     to `font: inherit`), then headings below opt back into the display face explicitly. */
+  body {
+    font-family: var(--font-body);
+    font-weight: 300;
+  }
+
+  /* Guide, p.20: "Use in UPPERCASE in the Bold weight" — the one rule from the guide that isn't
+     just a font-family swap, so it's centralised here rather than repeated per heading. */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    text-transform: uppercase;
+  }
 }
 
 /* Scopes "Export as PDF" (window.print) to just the draft text — see src/lib/exportDraft.ts. */

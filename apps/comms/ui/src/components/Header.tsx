@@ -19,7 +19,7 @@ export function Header() {
       <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
         <a
           href="/"
-          className="font-[family-name:var(--font-heading)] text-lg font-extrabold uppercase tracking-wide text-white"
+          className="font-[family-name:var(--font-heading)] text-lg font-bold uppercase tracking-wide text-white"
         >
           INZBC
         </a>
