@@ -262,7 +262,7 @@ export function QaReviewScreen({ report, onChange }: Props) {
               </>
             ) : (
               <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700">
-                {section.content || <span className="italic text-slate-400">No content recorded.</span>}
+                {section.content || <span className="italic text-slate-600">No content recorded.</span>}
               </p>
             )}
             {section.reviewStatus === 'flagged' ? (

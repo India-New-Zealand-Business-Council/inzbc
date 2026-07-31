@@ -219,7 +219,7 @@ export function CeoDecisionScreen({ report, onChange }: Props) {
           <div key={section.id} className="rounded-md border border-inzbc-navy/10 bg-white shadow-sm p-3">
             <h4 className="text-sm font-medium text-inzbc-navy">{section.title}</h4>
             <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700">
-              {section.content || <span className="italic text-slate-400">No content recorded.</span>}
+              {section.content || <span className="italic text-slate-600">No content recorded.</span>}
             </p>
           </div>
         ))}
