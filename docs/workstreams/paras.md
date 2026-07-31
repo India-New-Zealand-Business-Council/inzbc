@@ -30,10 +30,12 @@ The shared API + auth for anything that reads/writes data. Roshan's FTA service 
       no font files for Big Shoulders or Merriweather are sourced in the repo, so the typography
       half of the tokens cannot be applied; and the palette's contrast rule has to be enforced in
       the components, not just recorded. `docs/design-decisions.md` now states it: tangerine
-      `#f05b29` behind white body-size text is 3.37:1 against the 4.5:1 AA minimum. PR #162 has that
-      exact failure on its primary button, which is what the rule exists to prevent. Two figures in that doc still need Sunil's
-      confirmation before they're load-bearing (two-way trade $3.68b vs $3.95bn; member count
-      160+ vs 200+) — don't bake either into a token or copy without it.
+      `#f05b29` behind white body-size text is 3.37:1 against the 4.5:1 AA minimum. PR #162's
+      primary button had that exact failure, which is what the rule exists to prevent — fixed
+      there (navy-on-tangerine, 5.56:1) during review, but the library still needs the rule
+      enforced in the components generally, not fixed one button at a time. Two figures in that doc
+      still need Sunil's confirmation before they're load-bearing (two-way trade $3.68b vs $3.95bn;
+      member count 160+ vs 200+) — don't bake either into a token or copy without it.
 - [ ] FTA Explorer embed UI against Roshan's service contract: query → sourced answer rendering
       (citation, effective date, next step, escalation path when the service returns no match).
       Local implementation landed in #85–#87/#89/#91; what remains is the deployed website
@@ -47,8 +49,10 @@ The shared API + auth for anything that reads/writes data. Roshan's FTA service 
          assert the input, submit button, answer cards and citation text all stay visible and
          usable. The CSS fix landed in #91 and was verified by a one-off Chromium measurement;
          until this test exists, that behaviour is **not** guarded by CI.
-- [ ] Comms Assistant review UI: draft view with diff-against-previous and the named-reviewer
-      approval gate (nothing publishable without a recorded human approval).
+- [ ] Comms Assistant review UI (#60): draft view with diff-against-previous and the
+      named-reviewer approval gate (nothing publishable without a recorded human approval).
+      Blocked on the service side (#53). **Not the same screen as the drafting UI below** —
+      #60's scope is reviewing/approving a draft already produced, not producing one.
 - [ ] Build the public site in Wix from `apps/site/content/` — content for all seven pages
       (home, about, events, members, trade, partners, connect) is drafted and merged; homepage
       changes are additionally already made in the Wix editor (see `docs/wix-changes-log.md`).
@@ -115,6 +119,14 @@ The shared API + auth for anything that reads/writes data. Roshan's FTA service 
   stand-in with nothing behind it); the confirmation modal has no focus trap, initial focus,
   Escape handling or focus restoration; the report-decision `role="radio"` buttons have no
   arrow-key/roving-tabindex behaviour. All accessibility gaps, not data-integrity ones.
+- Comms Assistant drafting UI (`apps/comms/ui`): content-type selector, brief input,
+  generate/loading/error states, output display, copy-to-clipboard, clear/reset. Taken out of
+  backlog order — not the top **Next up** item (SIP review/approval UI) — because it was the
+  task at hand; no open issue tracked this exact scope, so the PR refs #60 (the closest existing
+  Comms Assistant UI issue) as preliminary work, not a claim of closing it. `POST
+  /api/comms/draft` is a proposed contract only: `services/api` has no Comms endpoint yet (issue
+  #65 unbuilt), so this UI has nothing live to call against. Drafts-only messaging and no
+  send/publish action, per `docs/modules/comms-assistant.md`.
 - Drafted and rewrote all seven public-page content specs in `apps/site/content/` (home, about,
   events, members, trade, partners, connect) against `INZBC_Website_Migration_Checklist.xlsx` and
   `INZBC_Website_Stocktake_Migration_and_Wix_Guide.docx`, executive tone, `[[placeholders]]` for
