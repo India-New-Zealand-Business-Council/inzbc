@@ -202,7 +202,10 @@ create table exceptions (
 -- an approver, decision, timestamp, conditions and audience recorded per decision. What follows
 -- replaces it.
 
--- Which role may record which decision. No row means nobody may: fail closed until configured.
+-- Which role may record which decision. With no row for a (kind, role) pair, decision_records' FK
+-- has nothing to point at and the insert is refused, so an unconfigured role genuinely cannot
+-- decide. Note the FK matches on (kind, actor_role_id) only: `enabled = false` does NOT currently
+-- block anything, and the writing command must check it.
 create table decision_role_permissions (
   kind          decision_kind not null,
   actor_role_id smallint not null references roles(id),
@@ -213,6 +216,12 @@ create table decision_role_permissions (
 -- "For this decision kind, whoever acts in actor_role_id must be a different person from whoever
 -- acted in other_role_id." Configuration, not code, so the staffing change at the end of the
 -- placement is a data change.
+-- NOT enforced by this schema. Nothing references this table; the only CHECK below says the two
+-- role ids differ, which says nothing about whether one person performed both acts. Comparing
+-- actors across two decision records is cross-row, so CHECK cannot do it. Until the writing
+-- command consults this table, sod_exception_id stays nullable in practice and an unrecorded
+-- self-approval is NOT refused, contrary to ADR-0005 Required follow-up 4. Enforcement is
+-- follow-up 4's job, not this table's.
 create table decision_sod_role_pairs (
   kind          decision_kind not null,
   actor_role_id smallint not null,
@@ -223,8 +232,13 @@ create table decision_sod_role_pairs (
   check (actor_role_id <> other_role_id)
 );
 
--- Deliberately unseeded. client-answers B8 is still PROPOSED, and an absent row makes any
--- Authorised decision fail closed rather than send somewhere nobody approved.
+-- Deliberately unseeded: client-answers B8 is still PROPOSED.
+-- NOT enforced by this schema. Nothing references this table, so an empty row set does NOT by
+-- itself stop an Authorised decision being recorded. The release predicate in ADR-0005 Decision 2
+-- (current approval Approved, current ruling Continue, no open Critical QA failure, recipient
+-- matching this row) spans rows and tables, which CHECK cannot see. It has to be enforced by the
+-- single application command that writes a decision, inside the same transaction that advances
+-- the stream head. Until that command exists, treat this table as configuration, not a gate.
 create table distribution_configuration (
   singleton         boolean primary key default true check (singleton),
   recipient_address text not null check (btrim(recipient_address) <> ''),
@@ -345,8 +359,13 @@ create table decision_records (
   )
 );
 
--- Added after both tables exist. Proves the head belongs to this stream and that its revision is
--- the stream's revision, so a stale writer cannot install a record as current.
+-- Added after both tables exist. Proves only that the referenced (stream, record, revision) tuple
+-- exists and belongs to this stream. It does NOT prove the record is the newest, nor that the head
+-- moved forward: this constraint alone still permits moving a head backwards to an earlier
+-- revision, or pointing it at any historical record of the same stream. Ordering is the writing
+-- command's job — it must compare-and-swap on the existing head, requiring
+-- new_revision = old_head_revision + 1 and supersedes_id = old_current_record_id, and abort the
+-- whole decision on a zero-row result.
 alter table decision_streams
   add constraint decision_streams_current_record_fk
   foreign key (id, current_record_id, head_revision)
