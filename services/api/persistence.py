@@ -136,8 +136,13 @@ class RunRepository:
         Raises:
             `KeyError` if `run_id` doesn't exist - distinct from `ConcurrentModificationError`
             (a stale version on a row that does exist), so a caller can tell 404 from 409.
-            `IllegalTransition` if `new_state` isn't reachable from the current state.
-            `ConcurrentModificationError` on a 0-row CAS result after the legality check passes.
+            `ConcurrentModificationError` when the row has moved past `expected_version`, checked
+            before legality: a stale caller holds an old state too, so judging its move against the
+            row's current state answers a question it never asked. Also raised on a 0-row CAS
+            result, which is the same conflict seen a moment later - both callers read the same
+            version, then Postgres re-evaluates `version = %s` after the winner commits.
+            `IllegalTransition` if `new_state` isn't reachable from the current state, checked
+            once the caller is known to be current.
         """
         with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
             current = conn.execute(
@@ -145,6 +150,21 @@ class RunRepository:
             ).fetchone()
             if current is None:
                 raise KeyError(f"no run {run_id!r}")
+
+            # Staleness is checked before legality, and the order matters. A caller that lost a
+            # race is holding an old state as well as an old version, so judging its transition
+            # against the row's *current* state answers a question it never asked. Two threads
+            # racing the same legal move is the clearest case: the loser reads the winner's
+            # committed state and gets told 'Run Authorised' -> 'Run Authorised' is illegal, when
+            # what actually happened is that its version went stale and it should re-read and
+            # retry. Checking legality first also made that a timing-dependent test failure,
+            # because the answer depended on whether the loser's read landed before or after the
+            # winner's commit.
+            if current["version"] != expected_version:
+                raise ConcurrentModificationError(
+                    f"run {run_id!r} was not at version {expected_version} - another transition "
+                    "committed first; re-read the run before retrying"
+                )
 
             current_state = RunState(current["state"])
             if not is_legal_transition(current_state, new_state):

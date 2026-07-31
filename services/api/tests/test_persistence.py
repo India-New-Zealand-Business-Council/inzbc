@@ -136,6 +136,45 @@ def test_apply_transition_raises_when_version_is_stale(
     assert current.version == 1
 
 
+def test_a_stale_caller_is_told_it_is_stale_not_that_its_transition_is_illegal(
+    repo: RunRepository, initiated_by: str
+) -> None:
+    """Error precedence: staleness outranks legality.
+
+    A caller that lost a race holds an old version *and* an old state, so the transition it asks
+    for is usually illegal from the row's current state as well. Reporting that is misleading:
+    the caller did nothing wrong and needs to re-read and retry, which is what
+    `ConcurrentModificationError` tells it. This is the deterministic form of the race in
+    `test_two_concurrent_transitions_cannot_both_commit`, which failed intermittently while
+    legality was checked first.
+    """
+    run = repo.create_run(
+        run_number=_run_number(),
+        prompt_version="SIP-050 v1.1",
+        coverage_start_utc="2026-07-27T07:00:00+12:00",
+        coverage_end_utc="2026-07-28T07:00:00+12:00",
+        initiated_by=initiated_by,
+    )
+    repo.apply_transition(run.id, expected_version=0, new_state=RunState.RUN_AUTHORISED)
+
+    # Repeating the winner's own transition: illegal from the new state (Run Authorised has no
+    # self-loop), and stale. The caller must hear about the staleness.
+    with pytest.raises(ConcurrentModificationError):
+        repo.apply_transition(run.id, expected_version=0, new_state=RunState.RUN_AUTHORISED)
+
+    # A genuinely illegal transition at the *current* version still raises IllegalTransition, so
+    # this precedence does not swallow the legality check.
+    with pytest.raises(IllegalTransition):
+        repo.apply_transition(run.id, expected_version=1, new_state=RunState.CLOSED)
+
+    # The same self-loop as above, but at the current version, must still be IllegalTransition.
+    # Without this an implementation that simply treats every self-loop as a conflict would pass:
+    # the two assertions above only ever ask for a self-loop while stale, so they cannot tell
+    # "checked staleness first" from "special-cased self-loops".
+    with pytest.raises(IllegalTransition):
+        repo.apply_transition(run.id, expected_version=1, new_state=RunState.RUN_AUTHORISED)
+
+
 def test_apply_transition_rejects_an_illegal_state_jump(
     repo: RunRepository, initiated_by: str
 ) -> None:
