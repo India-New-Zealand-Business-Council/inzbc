@@ -56,7 +56,20 @@ From the guide §5, with the current URL verified against the sitemap.
 | `/news/categories/news` | `/media/news` | 301 | yes |
 | `/trade-shows` | `/trade-missions` | 301 | **404 today; keep the 301 to rescue old links** |
 
-## Undecided — live pages with no plan
+## Decided
+
+All eleven are resolved in [`wix-rebuild-decisions.md`](wix-rebuild-decisions.md) section 1, with
+the reasoning and sources. Two corrections to what this file previously proposed:
+
+- `/connect`, `/executive-council`, `/our-patron` and `/news` are **kept**, not redirected. A short
+  descriptive URL gains nothing from being redirected purely to express hierarchy in its path.
+- The two Boardroom to Border pages get **their own URLs**, not a shared `/events/past`. They are
+  distinct events, and Google treats many old URLs pointed at one generic destination as soft 404s
+  when that destination does not carry their content.
+
+The table below is kept for the live-page inventory and the note on each page.
+
+## Live page inventory
 
 Each needs a target or an explicit "keep as-is". `[[decision]]` marks what INZBC owes.
 
