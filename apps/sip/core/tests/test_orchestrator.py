@@ -15,6 +15,7 @@ from apps.sip.core.orchestrator import (
     Orchestrator,
     RunTerminated,
     is_human_gated,
+    is_legal_transition,
 )
 from apps.sip.pipeline.models import RunState
 
@@ -130,6 +131,24 @@ def test_is_human_gated_reports_gates() -> None:
     assert is_human_gated(RunState.APPROVED_FOR_MANUAL_DISTRIBUTION, RunState.DISTRIBUTED)
     assert is_human_gated(RunState.QA_FAILED, RunState.REPORT_DRAFTED)
     assert not is_human_gated(RunState.COVERAGE_LOCKED, RunState.SCANNING)
+
+
+def test_is_legal_transition_reports_the_state_machine_table() -> None:
+    assert is_legal_transition(RunState.DRAFT, RunState.RUN_AUTHORISED)
+    assert is_legal_transition(RunState.QA_IN_PROGRESS, RunState.AWAITING_CEO_DECISION)
+    assert is_legal_transition(RunState.QA_IN_PROGRESS, RunState.QA_FAILED)
+    # The exact case a caller writing runs.state directly (services/api/persistence.py) must
+    # refuse: skipping straight to Closed with no CEO decision, approval, QA or distribution
+    # record in between.
+    assert not is_legal_transition(RunState.DRAFT, RunState.CLOSED)
+    assert not is_legal_transition(RunState.STOPPED, RunState.RUN_AUTHORISED)  # terminal state
+
+
+def test_is_legal_transition_returns_false_for_a_terminal_states_empty_set() -> None:
+    # RunState.CLOSED's entry in _LEGAL is an explicit empty frozenset() (a terminal state, no
+    # outbound transitions in this slice) - confirms the empty-set case reports False rather than
+    # raising, distinct from a state missing from the table entirely (which .get() also handles).
+    assert not is_legal_transition(RunState.CLOSED, RunState.CORRECTED)
 
 
 @pytest.mark.parametrize("approver,decision", [("", "d"), ("   ", "d"), ("CEO", ""), ("CEO", "  ")])

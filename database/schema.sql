@@ -73,6 +73,11 @@ create table runs (
   started_at            timestamptz,
   completed_at          timestamptz,
   qa_status             text,
+  -- Optimistic concurrency (#117): every state transition does
+  -- `UPDATE ... SET version = version + 1 WHERE id = ? AND version = ?`. Zero rows affected means
+  -- someone else's transition landed first - the caller must re-read and retry, not silently
+  -- overwrite. Two reviewers acting on the same run at once must not both be able to commit.
+  version               integer not null default 0,
   created_at            timestamptz not null default now(),
   check (coverage_end_utc > coverage_start_utc),
   check (analyst_id is null or reviewer_id is null or analyst_id <> reviewer_id)

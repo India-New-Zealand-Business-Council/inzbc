@@ -37,11 +37,16 @@ Owner: Roshan. Maps the `daily-india-nz-news-agent` repo's output onto
   (`SipPipelineClient.get_source_library()`) into `SourceNameLookup` (display name → id, for
   candidate capture) and `SourceIdLookup` (SIP-185 code → id, for source-check recording). A name
   shared by more than one record (two exist in the v1.0 register) is dropped from the name lookup
-  rather than resolving to whichever record was seen last. The two are distinct types, not
-  interchangeable dicts, on purpose — `source_library.name` is not unique across jurisdictions, so
-  `record_source_outcome` checks positively for `SourceIdLookup` and raises `TypeError` on
-  anything else (a `SourceNameLookup`, or a plain dict), rather than excluding only the one wrong
-  type it knows about.
+  rather than resolving to whichever record was seen last; names are compared stripped, matching
+  `mapping.map_article`'s stripped lookup, so a whitespace-only variant can't defeat the dedup. A
+  duplicate `sip185_code` raises `DuplicateSip185Code` instead of keeping the last row —
+  `sip185_code` is declared unique in the schema, so a duplicate can only mean malformed endpoint
+  data. Both lookup dataclasses copy their input dict in `__post_init__`, so a caller mutating the
+  dict they passed in afterwards can't change an already-built lookup. The two lookup types are
+  distinct, not interchangeable dicts, on purpose — `source_library.name` is not unique across
+  jurisdictions, so `record_source_outcome` checks `type(x) is SourceIdLookup` exactly (not
+  `isinstance`, which a subclass overriding `get()` could walk straight through) and raises
+  `TypeError` on anything else.
 - `tests/` — local checks against fixture article dicts and a fake client; no live agent or API
   needed.
 
