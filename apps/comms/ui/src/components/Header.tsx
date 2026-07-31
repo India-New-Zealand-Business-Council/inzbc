@@ -16,10 +16,10 @@ export function Header() {
       >
         Skip to main content
       </a>
-      <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
+      <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-4">
         <a
           href="/"
-          className="rounded-sm font-[family-name:var(--font-heading)] text-lg font-bold uppercase tracking-wide text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-lavender"
+          className="rounded-sm font-[family-name:var(--font-heading)] text-lg font-bold uppercase tracking-wide text-white transition-colors hover:text-inzbc-lavender focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-lavender"
         >
           INZBC
         </a>

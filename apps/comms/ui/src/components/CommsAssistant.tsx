@@ -149,7 +149,7 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
           </label>
           <select
             id={typeId}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
+            className="w-full rounded-md border border-inzbc-navy/20 px-3 py-2 transition-colors hover:border-inzbc-navy/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
             value={contentType}
             onChange={(event) => setContentType(event.target.value as ContentType)}
           >
@@ -174,7 +174,7 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
           </div>
           <textarea
             id={briefId}
-            className="min-h-32 w-full rounded-md border border-slate-300 px-3 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
+            className="min-h-32 w-full rounded-md border border-inzbc-navy/20 px-3 py-2 transition-colors hover:border-inzbc-navy/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
             value={brief}
             maxLength={BRIEF_MAX_LENGTH}
             placeholder="Describe what you want drafted — audience, key points, tone…"
@@ -188,14 +188,14 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
           <button
             type="submit"
             disabled={isLoading || brief.trim().length === 0}
-            className="rounded-md bg-inzbc-tangerine px-4 py-2 font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue disabled:cursor-progress disabled:opacity-60"
+            className="rounded-md bg-inzbc-tangerine px-4 py-2 font-semibold text-white transition-colors hover:enabled:bg-inzbc-tangerine/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue disabled:cursor-progress disabled:opacity-60"
           >
             {isLoading ? 'Generating…' : 'Generate draft'}
           </button>
           <button
             type="button"
             onClick={onClear}
-            className="rounded-md border border-slate-300 px-4 py-2 font-semibold text-inzbc-navy focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue"
+            className="rounded-md border border-slate-300 px-4 py-2 font-semibold text-inzbc-navy transition-colors hover:border-inzbc-navy hover:bg-inzbc-navy/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue"
           >
             Clear
           </button>
@@ -213,7 +213,7 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
         {/* Purely visual — aria-busy above already tells assistive tech generation is under way,
             so this skeleton is hidden from the accessibility tree rather than announced twice. */}
         {isLoading ? (
-          <div aria-hidden="true" className="space-y-3 rounded-md border border-slate-300 bg-white p-4">
+          <div aria-hidden="true" className="space-y-3 rounded-md border border-slate-300 bg-white p-5 shadow-sm">
             <div className="h-4 w-1/3 animate-pulse rounded bg-slate-200" />
             <div className="space-y-2">
               <div className="h-3 w-full animate-pulse rounded bg-slate-200" />
@@ -225,7 +225,7 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
         ) : null}
 
         {state.kind === 'result' ? (
-          <div className="space-y-2 rounded-md border border-slate-300 bg-white p-4">
+          <div className="space-y-2 rounded-md border border-slate-300 bg-white p-5 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-2">
               {/* family/weight/uppercase from index.css's @layer base h2 rule; the word count is
                   reset back to normal-case body copy since it's fine print, not a heading. */}
@@ -239,7 +239,7 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
                 <button
                   type="button"
                   onClick={onCopy}
-                  className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-inzbc-navy focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue"
+                  className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-inzbc-navy transition-colors hover:border-inzbc-navy hover:bg-inzbc-navy/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue"
                 >
                   {copyStatus === 'copied'
                     ? 'Copied'
@@ -250,14 +250,14 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
                 <button
                   type="button"
                   onClick={() => downloadAsWord(state.draft, `${state.contentType}-draft`)}
-                  className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-inzbc-navy focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue"
+                  className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-inzbc-navy transition-colors hover:border-inzbc-navy hover:bg-inzbc-navy/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue"
                 >
                   Export as Word
                 </button>
                 <button
                   type="button"
                   onClick={exportAsPdf}
-                  className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-inzbc-navy focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue"
+                  className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-inzbc-navy transition-colors hover:border-inzbc-navy hover:bg-inzbc-navy/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue"
                 >
                   Export as PDF
                 </button>
@@ -279,10 +279,10 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
                 aria-pressed={feedback === 'up'}
                 aria-label="Helpful"
                 onClick={() => onFeedback('up')}
-                className={`flex min-h-11 min-w-11 items-center justify-center rounded-md border text-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue ${
+                className={`flex min-h-11 min-w-11 items-center justify-center rounded-md border text-lg transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue ${
                   feedback === 'up'
                     ? 'border-inzbc-forest bg-inzbc-forest/10 text-inzbc-forest'
-                    : 'border-slate-300 text-inzbc-navy'
+                    : 'border-slate-300 text-inzbc-navy hover:border-inzbc-forest hover:bg-inzbc-forest/5'
                 }`}
               >
                 <span aria-hidden="true">👍</span>
@@ -292,10 +292,10 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
                 aria-pressed={feedback === 'down'}
                 aria-label="Not helpful"
                 onClick={() => onFeedback('down')}
-                className={`flex min-h-11 min-w-11 items-center justify-center rounded-md border text-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue ${
+                className={`flex min-h-11 min-w-11 items-center justify-center rounded-md border text-lg transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue ${
                   feedback === 'down'
                     ? 'border-inzbc-crimson bg-inzbc-crimson/10 text-inzbc-crimson'
-                    : 'border-slate-300 text-inzbc-navy'
+                    : 'border-slate-300 text-inzbc-navy hover:border-inzbc-crimson hover:bg-inzbc-crimson/5'
                 }`}
               >
                 <span aria-hidden="true">👎</span>
@@ -311,7 +311,7 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
           <h2 className="text-base text-inzbc-navy sm:text-lg">Recent drafts</h2>
           <ul className="space-y-2">
             {history.map((entry) => (
-              <li key={entry.id} className="rounded-md border border-slate-200 bg-slate-50 p-3">
+              <li key={entry.id} className="rounded-md border border-slate-200 bg-slate-50 p-4 shadow-sm">
                 <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
                   {CONTENT_TYPE_LABELS[entry.contentType]}
                 </p>
