@@ -1,8 +1,22 @@
 name: CI
 
 on:
+  # `edited` matters for the linked-issue job below. Without it the default types are opened,
+  # synchronize and reopened, so a PR that forgets `Closes #NN` cannot be fixed the way that job's
+  # own error message tells you to: editing the body fires no event, and the job reads the body
+  # from the event payload, so a re-run just replays the old one. The author had to push a commit
+  # or reopen the PR. PR #143 sat red for four days on exactly this.
   pull_request:
+    types: [opened, synchronize, reopened, edited]
   workflow_dispatch:
+
+# One run per PR at a time. `edited` fires on title and body changes as well, so without this a
+# few quick corrections queue up several full nine-job runs, Docker build and Postgres included,
+# all racing to report on the same commit. Superseded runs are cancelled rather than finished.
+# `github.ref` keys per PR, so branches never cancel each other.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   validate:
@@ -69,6 +83,26 @@ jobs:
 
   python:
     runs-on: ubuntu-latest
+    # #117's persistence tests need a real Postgres, not a mock - a mock would prove this repo
+    # calls psycopg correctly, not that the optimistic-concurrency contract holds against real
+    # transaction semantics. A service container needs no Docker Compose/self-hosting; GitHub
+    # runs and tears it down for the job automatically.
+    services:
+      postgres:
+        image: postgres:16.2
+        env:
+          POSTGRES_USER: inzbc
+          POSTGRES_PASSWORD: inzbc
+          POSTGRES_DB: inzbc_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://inzbc:inzbc@localhost:5432/inzbc_ci
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -85,6 +119,12 @@ jobs:
           # here. Bump deliberately, same rule as the ruff pin.
           pip install "uv==0.8.17"
           uv sync --locked --extra dev
+      - name: Apply database schema
+        # ON_ERROR_STOP: bare psql continues past a failed statement and still exits 0, so a
+        # broken schema (e.g. a later table failing to create) would leave the job green with
+        # only part of schema.sql actually applied. --single-transaction: all-or-nothing, so a
+        # partial apply can't leave some tables present and others missing.
+        run: psql -v ON_ERROR_STOP=1 --single-transaction "$DATABASE_URL" -f database/schema.sql
       - name: Lint (ruff)
         # `uv run` so every step uses the locked environment, not whatever pip left on PATH.
         run: uv run ruff check apps services scripts
@@ -135,7 +175,11 @@ jobs:
       - name: Typecheck
         run: pnpm -r --if-present typecheck
       - name: Test + coverage
-        run: pnpm --filter @inzbc/fta-ui run coverage
+        # Recursive, not filtered to one package. Lint, typecheck and build already run with -r,
+        # so a second UI app was linted and built but never tested: apps/comms/ui (#162) and
+        # apps/sip/ui (#166) both ship failing suites while showing every check green, because
+        # this step only ever ran @inzbc/fta-ui. A gate that cannot fail is not a gate.
+        run: pnpm -r --if-present coverage
       - name: Build
         run: pnpm -r --if-present build
       # Compile check only: proves the stories and Storybook config build. It does NOT run the

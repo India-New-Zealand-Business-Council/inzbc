@@ -56,10 +56,10 @@ The shared API + auth for anything that reads/writes data. Roshan's FTA service 
 - [ ] Build the public site in Wix from `apps/site/content/` — content for all seven pages
       (home, about, events, members, trade, partners, connect) is drafted and merged; homepage
       changes are additionally already made in the Wix editor (see `docs/wix-changes-log.md`).
-      **Blocked, not startable right now:** per `docs/discovery.md` OI-9, live-site editing has
-      stopped — the duplicate `INZBC Staging` now exists and OI-9 is closed, so this is
-      unblocked. Do not edit `inzbc.org` directly in the meantime. Programmatic build
-      additionally needs the Wix MCP connected (OI-1).
+      **Unblocked as of 31 Jul 2026:** OI-9 is closed, the duplicate `INZBC Staging` exists and the
+      team have access, so the build can start there. Still do not edit `inzbc.org` directly; the
+      duplicate is the only build target until the OI-8 cutover. Programmatic build additionally
+      needs the Wix MCP connected (OI-1).
 - [ ] CMS collection schemas mapped to page-specs now (news, events, sector reports, board,
       sponsors), ready to create as dynamic pages now that Wix account access is in place.
 - [ ] Member portal shell (Members Area); link out to Member Jungle for membership
@@ -84,9 +84,10 @@ The shared API + auth for anything that reads/writes data. Roshan's FTA service 
   "Latest Insights" with FTA/trade-focused copy, HOME 4 "Why choose us?" updated with FTA-focused
   content, HOME 5 "TRADE BAZAAR" renamed to "TRADE WITH INDIA". Saved in the editor, not
   published — pending Sunil's review. Full detail in `docs/wix-changes-log.md` (PR #143). **Note:**
-  per `docs/discovery.md` OI-9, this work is currently sitting unpublished in the live site's
-  editor; it may need redoing on Sunil's duplicate once that exists, from the log above.
-- Documented homepage/About design decisions in `docs/design-decisions.md` (PR pending), sourced
+  per `docs/discovery.md` OI-9, this work is sitting unpublished in the live site's editor. The
+  duplicate now exists, so it needs redoing there from the log above, and the live editor rolled
+  back via Site History.
+- Documented homepage/About design decisions in `docs/design-decisions.md`, sourced
   from the full INZBC Brand Guidelines 2026 (colours, typography, logo rules), the migration
   checklist and the Wix guide — including two unresolved figure conflicts flagged for Sunil, not
   silently picked.
