@@ -21,9 +21,11 @@ input that system should be built from.
 
 ## Brand tokens (from Brand Guidelines v1.0 2025)
 
-**Colour palette** — base is navy blue and purple/blue tones (~80% of use combined); red,
-orange, green and lime are accents (~5% each per the guide's usage ratio: 50% Navy Blue,
-30% Purple/Blue, 5% each of Crimson, Tangerine, Forest, Lime/Lavender).
+**Colour palette** — base is navy blue and purple/blue tones (~80% of use combined); crimson,
+tangerine, forest and lime/lavender are accents. The guide's ratio reads 50% Navy Blue, 30%
+Purple/Blue, then 5% each for Crimson, Tangerine, Forest and Lime/Lavender, where Lime and Lavender
+share one 5% allocation rather than taking 5% each. Listing them separately at 5% apiece totals
+105%, so the per-colour figures below are indicative until the PDF wording is confirmed.
 
 | Name | Hex | RGB | Role |
 |------|-----|-----|------|
@@ -31,10 +33,10 @@ orange, green and lime are accents (~5% each per the guide's usage ratio: 50% Na
 | Blue | `#261866` | 38, 24, 102 | Secondary base, ~30% with Purple |
 | Purple | `#61145f` | 97, 20, 95 | Secondary base |
 | Crimson | `#7e0030` | 126, 0, 48 | Accent, ~5% |
-| Tangerine | `#f05b29` | 240, 91, 41 | Accent — CTA/action colour, ~5% |
+| Tangerine | `#f05b29` | 240, 91, 41 | Accent, CTA/action colour, ~5%. **Never behind white body-size text**: 3.37:1, below the 4.5:1 AA minimum. Navy `#160933` on tangerine is 5.56:1 and passes. |
 | Forest | `#1b4640` | 27, 70, 64 | Accent, ~5% |
-| Lavender | `#c1acfb` | 193, 172, 251 | Accent, ~5% |
-| Lime | `#b8f07c` | 184, 240, 124 | Accent, ~5% |
+| Lavender | `#c1acfb` | 193, 172, 251 | Accent, shares ~5% with Lime |
+| Lime | `#b8f07c` | 184, 240, 124 | Accent, shares ~5% with Lavender |
 
 Preferred gradient: Lavender → Blue → Navy Blue (guide calls this combination out as
 particularly successful). Red/orange/green gradients should stay sparing, matching the
@@ -63,9 +65,12 @@ photography assets sourced yet.
 
 - **Section order** — hero → FTA feature band → trade-opportunity stats → pathway cards →
   upcoming events → latest insights → membership value → member spotlight → partners →
-  final CTA. Taken directly from the migration guide's homepage wireframe (section 6); no
-  deviation. Matches both `apps/site/content/home.md` and the Wix editor build (see
-  `docs/wix-changes-log.md`).
+  final CTA. Taken from the migration guide's homepage wireframe (section 6). **Not identical to
+  `apps/site/content/home.md`**, which also carries a credibility strip between the statistics and
+  the pathway cards, and a Trade Resources entry between the Digest and membership sections. Those
+  two are unresolved, not omitted deliberately. The Wix editor build is recorded in
+  `docs/wix-changes-log.md`, which lands in PR #143 and is not on `main` yet, so treat that as a
+  stacked dependency rather than an available source.
 - **Hero headline — reconciled.** The migration guide's wireframe specifies the headline
   verbatim: "New Zealand's Gateway to India." The Wix editor build now uses that exact
   wording (`docs/wix-changes-log.md`, 28 Jul 2026 entry). `apps/site/content/home.md`
@@ -96,6 +101,11 @@ photography assets sourced yet.
   FTA-corpus figure's stronger, recently-verified provenance, the working assumption should
   be that it's correct and the migration guide's $3.68b is the stale one — but that's a
   judgement call, not a substitute for Sunil's confirmation.
+- **The $3.95bn wording still needs correcting wherever it appears.** `apps/fta/corpus.py:292`
+  states it as "approximately NZ$3.95bn in the year ended December 2025" and its own note says to
+  publish the period with the figure, because an undated "annually" goes stale silently. Both
+  `apps/site/content/home.md` and `trade.md` currently say "NZ$3.95bn annually" without the period.
+  That is a separate fix from the $3.68b conflict above and does not wait on Sunil.
 - **Credibility strip member count** — "more than 200 members" in `home.md` is marked
   `[[proposed — pending INZBC confirmation]]`; the live About page audit in
   `docs/discovery.md` says "160+ members." Two different unconfirmed counts exist in the
