@@ -27,10 +27,15 @@ The shared API + auth for anything that reads/writes data. Roshan's FTA service 
       state machine client-side (illegal transitions disabled in the UI, mirroring
       `schemas/state-machine.md`, with the server still the authority).
 - [ ] Design system from `DESIGN.local.md` (not yet created): token-driven component library on
-      the real brand tokens now documented in `docs/design-decisions.md` (colours, typography,
+      the real brand tokens now documented in `docs/design-decisions.md` (PR #155, not on `main`
+      yet, so this file depends on that landing first) (colours, typography,
       logo rules from the INZBC Brand Guidelines 2026 — no placeholder swap needed, kit already
       arrived), WCAG 2.2 AA behaviour — focus order, contrast, keyboard paths — built into each
-      component rather than audited at the end. Two figures in that doc still need Sunil's
+      component rather than audited at the end. Two gaps before the library is buildable:
+      no font files for Big Shoulders or Merriweather are sourced in the repo, so the typography
+      half of the tokens cannot be applied; and the palette needs a usage rule before components
+      are built on it, because tangerine `#f05b29` behind white body-size text is 3.37:1 against
+      the 4.5:1 AA minimum. PR #162 already shipped that exact failure on its primary button. Two figures in that doc still need Sunil's
       confirmation before they're load-bearing (two-way trade $3.68b vs $3.95bn; member count
       160+ vs 200+) — don't bake either into a token or copy without it.
 - [ ] FTA Explorer embed UI against Roshan's service contract: query → sourced answer rendering
