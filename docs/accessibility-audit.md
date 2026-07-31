@@ -50,8 +50,15 @@ SC 1.3.1 (G141), not a requirement. SC 1.3.1 asks whether structure conveyed vis
 available programmatically, which needs a rendered comparison this method cannot make. The counts
 below stand as evidence for the rendered pass to confirm.
 
-Filename-as-alt-text is different, and is recorded as **Fail**: W3C documents using a filename as
-the text alternative as a failure of SC 1.1.1, and that is visible in the served markup.
+Filename-as-alt-text is recorded as **Fail** where the filename is plainly not an equivalent
+alternative, for example `alt="Screen Shot 2022-04-13 at 1.01.19 PM.png"`. That is F30, a documented
+failure of SC 1.1.1, and it is visible in served markup. It is the filename failing to describe the
+image that fails, not the fact that the string looks like a filename: `alt="HCI"` is short, derived
+from a file, and a genuine pass.
+
+Scope note on the headings above: a static fetch can sometimes establish a 1.3.1 problem. What it
+cannot do is establish one from a missing `h1` or a skipped rank alone, which is all the evidence
+recorded here.
 
 ### Home (`/`)
 | Criterion | Verdict | Evidence |
@@ -85,7 +92,7 @@ the text alternative as a failure of SC 1.1.1, and that is visible in the served
 | 3.1.1 / 2.4.2 | Pass | Both pages: `lang="en"`; titled `Event Calendar \| …` and `Past Events \| …` |
 | 1.3.1 (headings) | Not verified | `/upcoming-events`: 1×h2 then 7×h4 — skips h3, no h1. `/past-events`: 5×h2 only, no h1. |
 | 1.1.1 Non-text Content | Fail (mixed) | `/upcoming-events`: 17 images, mostly event-flyer filenames as alt text (`alt="Invite-Chch-Diwali-V2.jpg"`, `alt="Covid-series_invite-part3-low.jpg"`) — same social-icon pass pattern. `/past-events`: 18 images, same pattern. |
-| Note | — | `/upcoming-events` returned HTTP 200 on this fetch (29 Jul 2026). `docs/discovery.md`'s earlier audit recorded this slug as 404 — that appears resolved or was transient; not re-verified against the earlier crawl conditions. |
+| Note | — | `/upcoming-events` returned HTTP 200 on this fetch (29 Jul 2026). No conflict with the earlier audit: `docs/discovery.md:40` recorded **`/events`** as the 404, not this slug, and noted that the nav label maps to a different URL. Both readings are correct. |
 | Contrast / reflow / non-text contrast / keyboard / focus / target size | Not verified | — |
 
 ### Trade (`/trade-news` "Trade Shows", `/trade-bazaar`)
@@ -100,7 +107,7 @@ the text alternative as a failure of SC 1.1.1, and that is visible in the served
 | Criterion | Verdict | Evidence |
 |---|---|---|
 | 3.1.1 / 2.4.2 | Pass | Both: `lang="en"`; titled `Join INZBC \| …` and `Member Directory \| …` |
-| 1.3.1 (headings) | Partial pass | `/join-inzbc` is the **only page in this audit with an `<h1>`** (one h1, one h2) — real structural improvement over the rest of the site, though the h1 is styled at `font-size:20px`, visually smaller than a main heading would typically read. `/member-directory` has no h1, only 1×h2. |
+| 1.3.1 (headings) | Not verified | `/join-inzbc` is the **only page in this audit with an `<h1>`** (one h1, one h2) — real structural improvement over the rest of the site, though the h1 is styled at `font-size:20px`, visually smaller than a main heading would typically read. `/member-directory` has no h1, only 1×h2. |
 | 1.1.1 Non-text Content | Fail (mixed) | Both pages: only 2 real content images each (the rest are the shared header/footer/social icons), and both use the generic `alt="Untitled-1.jpg"` for the non-icon image, appearing twice on each page. |
 | Contrast / reflow / non-text contrast / keyboard / focus / target size | Not verified | — |
 
