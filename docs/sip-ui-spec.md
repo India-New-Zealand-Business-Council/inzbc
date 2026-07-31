@@ -30,10 +30,25 @@ report review, QA, CEO decision, and status display.
 | CEO / SIP Owner | Sunil | CEO decision screen |
 
 The reviewer must not be the run's analyst. This isn't just a UI convention — the platform schema
-carries a matching `analyst_id <> reviewer_id` constraint (`operator-guide.md`), and the API layer
+carries a matching `analyst_id <> reviewer_id` constraint (`database/schema.sql`), and the API layer
 enforces it server-side (`api-contract.md`: "a run's analyst cannot be its reviewer; nobody
 approves their own output"). **The UI's job is to make the illegal path impossible to reach, not
 to be the only thing preventing it.**
+
+> **The table above and the rule below it do not compose, and this needs resolving before build.**
+> Sunil is listed as both Analyst and CEO / SIP Owner. Taken literally with "nobody approves their
+> own output", a UI that makes the illegal path unreachable would lock the only available person out
+> of his own decision screen.
+>
+> ADR-0005 settles the shape but not the staffing. Separation of duties binds to the **role held at
+> the time of the act**, not to a person; the required-distinct pairs live in configuration, so the
+> rule survives the end of the placement when one person holds every role. Where one principal must
+> hold both sides, the decision still commits, but only against a **recorded exception** naming the
+> approver, the reason and a review date. An unrecorded self-approval is refused.
+>
+> So this UI needs a third state per control, not just enabled or disabled: **acting under a recorded
+> exception**, shown as such. Sunil still has to approve that exception before the controlled launch
+> runs; it is a governance call, not something the interface can decide.
 
 ## State machine this UI drives
 
@@ -49,6 +64,21 @@ Per `REQ-U-01`'s acceptance criteria: **illegal transitions are disabled in the 
 mirroring this state machine — the server remains the authority.** Every screen below disables
 (not just hides) controls that would attempt an illegal transition, and every write still goes
 through server-side validation regardless of what the UI allowed the user to click.
+
+> **This chain is incomplete, and the gap matters more than it looks.** It has only one route to
+> close-out, through `Distributed`. ADR-0005 (accepted) requires that a run approved with
+> distribution `Not Authorised` reaches close-out **without** passing through `Distributed`, because
+> `operator-guide.md:183-185` says an explicit "No" does not stop the run: step 13 is skipped and the
+> run closes as approved but not distributed. Read together with the disable rule above, a UI built
+> to this chain would actively block the one outcome the whole ADR exists to make expressible.
+>
+> Do not encode a replacement here. The topology is ADR-0005 open question 1 and is Bhanu's to
+> decide. Treat this section as provisional until it lands.
+>
+> Two further consequences of ADR-0005 for these screens. The CEO ruling and the distribution
+> authority are **separate commands**, not one form writing two fields, because REQ-U-02 wants
+> distribution captured as a separate action. And there is a **third decision stream, report
+> approval**, that this spec does not model at all.
 
 ---
 
@@ -106,7 +136,7 @@ refuses to load and shows why, rather than letting the reviewer start and fail s
 
 **API:** `GET /api/reports/:id` (load the brief) · `POST /api/reports/:id/qa` (record result).
 
-**Checklist — SIP-188 items, presented one at a time or grouped by the same four sections as the
+**Checklist — SIP-188 items, presented one at a time or grouped by the same five sections as the
 source document (do not renumber or reword them):**
 
 1. **Authority and versions** — run authority active + date in window + operator authorised;
