@@ -26,6 +26,33 @@ def test_answer_query_matches_a_sector_with_multiple_entries() -> None:
     assert "Dairy - albumins" in topics
 
 
+def test_answer_query_ranks_a_multi_term_match_above_a_sector_only_match() -> None:
+    # "peptones dairy" shares two keywords with "Dairy - peptones" (topic + sector) but only one
+    # ("dairy", the sector) with the other three Dairy entries. This specific query is chosen
+    # because "Dairy - peptones" is *not* first in CORPUS's own definition order (milk/cheese/
+    # butter is) - a test that only ever checks the one case where ranked and insertion order
+    # happen to coincide would not catch ranking being silently disabled, which is exactly what
+    # happened here first: this test originally used "dairy milk", whose correct order matches
+    # CORPUS's insertion order regardless of whether ranking runs at all.
+    answers = answer_query("peptones dairy")
+    assert answers[0].topic == "Dairy - peptones"
+    assert {a.topic for a in answers} == {
+        "Dairy - milk, cheese, butter",
+        "Dairy - bulk infant formula and other dairy-based food preparations",
+        "Dairy - peptones",
+        "Dairy - albumins",
+    }
+
+
+def test_answer_query_gives_entries_with_equal_relevance_a_stable_order() -> None:
+    # Plain "dairy" scores all four Dairy entries equally (sector-only match, same weight) - the
+    # tiebreak must be deterministic (entry id), not whatever order a dict/set iteration happens
+    # to produce, so the same query always returns the same order.
+    first = [a.topic for a in answer_query("dairy")]
+    second = [a.topic for a in answer_query("dairy")]
+    assert first == second
+
+
 def test_answer_query_distinguishes_milk_from_infant_formula() -> None:
     answers = answer_query("infant formula")
     topics = {a.topic for a in answers}

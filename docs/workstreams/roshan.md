@@ -32,9 +32,6 @@ DB schema, API contract, auth. Build against them; don't write to control-plane 
   unowned. Non-negotiable per `comms-assistant.md`'s "drafts only, adversarially tested" promise —
   no request may reach the model gateway from this flow until redaction has an owner and an
   implementation. Not starting this until that's resolved.
-- [ ] FTA Explainer retrieval upgrade: replace `explainer.py`'s keyword matching with ranked
-  retrieval over the corpus — still no answer without a Tier-1 citation; `[]`/escalate on
-  low-confidence matches stays.
 - [ ] End-to-end pipeline run once org-repo secrets land (Bhanu's item): collector → capture →
   assessment live against the SIP-184 SOP; fix what breaks; record the run.
 - [ ] Collection-engine improvements in `daily-india-nz-news-agent` (via its own PR flow).
@@ -43,6 +40,20 @@ See Blocked / decisions needed for what's still open before any of this runs liv
 INZBC sector/disclaimer sign-off).
 
 ## Done
+- [x] FTA Explainer retrieval upgrade (#54): `answer_query` now ranks confirmed matches by
+  weighted keyword relevance instead of returning an unordered keyword-overlap set. Self-contained
+  TF-IDF-style scorer (`_relevance_score`) — no vector service, no new dependency: topic-keyword
+  matches score higher than sector-keyword matches, and both are weighted by inverse document
+  frequency across confirmed entries, so a common sector word like "agriculture" contributes less
+  than a term unique to one or two entries. Ties (e.g. plain "dairy" scoring all four Dairy
+  entries equally) break on entry id for a deterministic, repeatable order. Match set is
+  unchanged — ranking only orders, an entry with zero shared keywords still scores 0 and is
+  excluded, so every existing guarantee (no answer without Tier-1 citation, unconfirmed entries
+  suppressed, `[]`/escalate on no match) holds exactly as before. Caught my own test-design bug
+  before committing: the first version of the ranking-order test used a query whose correct order
+  happened to match `CORPUS`'s insertion order regardless of whether ranking ran at all, so
+  disabling ranking entirely still passed it. Replaced with a query ("peptones dairy") where
+  ranked and insertion order genuinely differ, confirmed disabling ranking now fails it, restored.
 - [x] Ruff 0.16.0 findings in my lane fixed (#31): `apps/fta` and `apps/sip/collector` are clean
   under 0.16.0. Auto-fixed the mechanical ones (`UP035` typing.Iterable → collections.abc,
   `UP017` datetime.UTC alias, `I001` import sort, `FLY002` f-string). The one real finding,
