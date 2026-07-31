@@ -10,6 +10,14 @@ on:
     types: [opened, synchronize, reopened, edited]
   workflow_dispatch:
 
+# One run per PR at a time. `edited` fires on title and body changes as well, so without this a
+# few quick corrections queue up several full nine-job runs, Docker build and Postgres included,
+# all racing to report on the same commit. Superseded runs are cancelled rather than finished.
+# `github.ref` keys per PR, so branches never cancel each other.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validate:
     runs-on: ubuntu-latest
