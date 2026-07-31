@@ -69,8 +69,7 @@ photography assets sourced yet.
   `apps/site/content/home.md`**, which also carries a credibility strip between the statistics and
   the pathway cards, and a Trade Resources entry between the Digest and membership sections. Those
   two are unresolved, not omitted deliberately. The Wix editor build is recorded in
-  `docs/wix-changes-log.md`, which lands in PR #143 and is not on `main` yet, so treat that as a
-  stacked dependency rather than an available source.
+  `docs/wix-changes-log.md` (#143), which is the source for what the editor actually holds.
 - **Hero headline — reconciled.** The migration guide's wireframe specifies the headline
   verbatim: "New Zealand's Gateway to India." The Wix editor build now uses that exact
   wording (`docs/wix-changes-log.md`, 28 Jul 2026 entry). `apps/site/content/home.md`
