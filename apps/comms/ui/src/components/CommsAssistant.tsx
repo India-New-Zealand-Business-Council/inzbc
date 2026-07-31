@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { CommsDraftError, requestCommsDraft, type ContentType } from '../api/client'
 import { downloadAsWord, exportAsPdf } from '../lib/exportDraft'
 
@@ -42,6 +42,16 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
   const [feedback, setFeedback] = useState<'up' | 'down' | null>(null)
   const inFlight = useRef<AbortController | null>(null)
   const copyResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Unmounting mid-request otherwise leaves the fetch running and the copy-status timer armed,
+  // both of which would call setState on a component that no longer exists.
+  useEffect(
+    () => () => {
+      inFlight.current?.abort()
+      if (copyResetTimer.current) clearTimeout(copyResetTimer.current)
+    },
+    [],
+  )
   const typeId = useId()
   const briefId = useId()
 
@@ -110,6 +120,10 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
     setContentType('newsletter')
     setCopyStatus('idle')
     setFeedback(null)
+    // History goes too. Leaving prior drafts on screen after Clear is the wrong default for a
+    // surface that will carry member and commercial material once /api/comms/draft exists, and
+    // it is not what the control appears to promise.
+    setHistory([])
     setState({ kind: 'idle' })
   }
 
@@ -188,7 +202,7 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
           <button
             type="submit"
             disabled={isLoading || brief.trim().length === 0}
-            className="rounded-md bg-inzbc-tangerine px-4 py-2 font-semibold text-white transition-colors hover:enabled:bg-inzbc-tangerine/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue disabled:cursor-progress disabled:opacity-60"
+            className="rounded-md bg-inzbc-tangerine px-4 py-2 font-semibold text-inzbc-navy transition-colors hover:enabled:bg-inzbc-tangerine/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue disabled:cursor-progress disabled:opacity-60"
           >
             {isLoading ? 'Generating…' : 'Generate draft'}
           </button>

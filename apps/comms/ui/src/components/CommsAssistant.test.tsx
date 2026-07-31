@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as exportDraft from '../lib/exportDraft'
@@ -239,9 +239,40 @@ describe('CommsAssistant', () => {
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
     await screen.findByText('linkedin_post draft')
 
+    const heading = await screen.findByRole('heading', { name: /recent drafts/i })
+    // Scoped to the history region: bare getByText('Newsletter') also matches the still-present
+    // <option> in the content-type select, so it found two nodes and threw.
+    const historyRegion = within(heading.parentElement as HTMLElement)
+    expect(historyRegion.getByText('Newsletter')).toBeInTheDocument()
+    expect(historyRegion.getByText('newsletter draft')).toBeInTheDocument()
+  })
+
+  it('clears history when the draft is cleared', async () => {
+    // Clear used to leave prior drafts on screen. Once /api/comms/draft exists these carry real
+    // briefs, so Clear has to mean cleared.
+    let counter = 0
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation(async () => {
+        counter += 1
+        return { ok: true, status: 200, json: async () => ({ draft: `draft ${counter}` }) }
+      }),
+    )
+    render(<CommsAssistant />)
+
+    for (let i = 0; i < 2; i += 1) {
+      await userEvent.clear(screen.getByLabelText(/brief/i))
+      await userEvent.type(screen.getByLabelText(/brief/i), `brief ${i}`)
+      await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
+      await screen.findByText(`draft ${i + 1}`)
+    }
     expect(await screen.findByRole('heading', { name: /recent drafts/i })).toBeInTheDocument()
-    expect(screen.getByText('Newsletter')).toBeInTheDocument()
-    expect(screen.getByText('newsletter draft')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: /^clear$/i }))
+
+    expect(screen.queryByRole('heading', { name: /recent drafts/i })).not.toBeInTheDocument()
+    expect(screen.queryByText('draft 1')).not.toBeInTheDocument()
+    expect(screen.queryByText('draft 2')).not.toBeInTheDocument()
   })
 
   it('keeps history capped at the 3 most recent superseded drafts', async () => {
