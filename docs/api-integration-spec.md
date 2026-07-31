@@ -6,7 +6,7 @@ distinguishes what's **built and live today**, what's **specified but not yet bu
 **proposed** — those are three different confidence levels and this doc doesn't blur them.
 
 ## Sources
-- `services/api/main.py` — the actual FastAPI app, today (one live endpoint).
+- `services/api/main.py` — the actual FastAPI app, today (one business endpoint plus `GET /health`).
 - `services/api/model_gateway.py` — the actual model-call gateway, today.
 - `schemas/api-contract.md` — SIP pipeline/control endpoint shapes, v0.1 draft.
 - [ADR-0004](decisions/0004-platform-graduation.md) — hosting, identity, session/auth design.
@@ -22,7 +22,7 @@ on which frontend is asking:
 
 | Surface | Auth | Origin | Status |
 |---|---|---|---|
-| Public FTA Explainer (`GET /api/fta/query`) | None — unauthenticated | CORS-enabled (only endpoint that is) | **Live today** (`services/api/main.py`) |
+| Public FTA Explainer (`GET /api/fta/query`) | None — unauthenticated | Same-origin; **no CORS configured** | **Live today** (`services/api/main.py`) |
 | Staff SIP control UI | GitHub OAuth + session | Same-origin (API serves the static UI) | Specified (`api-contract.md`), not yet backed by a live DB |
 | Staff Comms Assistant UI | GitHub OAuth + session | Same-origin | Architecture decided, endpoint not built (issue #65) |
 
@@ -80,6 +80,15 @@ Full endpoint list from `schemas/api-contract.md` (v0.1 draft — shapes may sti
 
 **Cross-cutting:** `GET /api/audit` (append-only, read), `GET /api/config` (server-side flags,
 read).
+
+> **Superseded, 31 July 2026.** The control list above is the v0.1 contract and ADR-0005 has since
+> been accepted. A single `POST /api/reports/:id/decision` no longer holds: the CEO ruling and the
+> distribution authority are separate commands with their own actor and timestamp, there is a third
+> stream for report approval that this list does not model, distribution delivery is recorded
+> separately from the authority that permitted it, and `users.role_id` has been replaced by
+> `user_roles` so authorisation binds to the role held at the time of an act. Do not build against
+> this list. Bhanu updates `schemas/api-contract.md` first; this section then follows it rather than
+> inventing a replacement shape here.
 
 These endpoints map directly onto the four screens in `docs/sip-ui-spec.md` (brief builder → QA
 → CEO decision → distribution status) — that doc has the screen-by-screen call sequence; this
@@ -161,12 +170,16 @@ use before that review passes, same gate as SIP.
   `model_gateway.py` server-side (NFR-01, shipped, tested — `test_model_gateway.py`).
 - **Fail-closed on Critical conditions** (NFR-02) — across SIP gates today; the same principle
   should extend to the Comms redaction gate once it's built, per the flag above.
-- **Same-origin for authenticated surfaces** — deliberate per ADR-0004: "session cookies never
-  cross an origin boundary and CORS is not part of the staff auth path." CORS is enabled *only*
-  on the public, unauthenticated FTA endpoint.
+- **Same-origin throughout** — deliberate per ADR-0004: "session cookies never cross an origin
+  boundary and CORS is not part of the staff auth path." Note this applies to the public FTA
+  endpoint too: `services/api` installs no CORS middleware at all, and the Docker image serves the
+  FTA UI and the API from one origin. Targeted CORS is future work if the public UI ever moves to
+  its own origin, not something in place today.
 - **`production_enabled` stays false** everywhere until a formal launch-approval record exists
-  (`docs/sip/README.md`) — this gates SIP distribution today and should gate any future Comms
-  send/publish handoff the same way.
+  (`docs/sip/README.md`). To be exact about what that means today: the API has no SIP write
+  endpoints, no auth, no RBAC, no audit middleware and no distribution path, so there is nothing
+  for the flag to gate yet. It is a required future control, and the same gate should cover any
+  Comms send or publish handoff.
 
 ## Open items
 1. Migrations (issue #44) are the real blocker for every SIP endpoint above going live — build UI
