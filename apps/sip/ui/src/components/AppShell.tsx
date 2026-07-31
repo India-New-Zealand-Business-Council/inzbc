@@ -18,12 +18,29 @@ export function AppShell() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
+      {/* Navy background + white text per INZBC Brand Guidelines 2026 v1.0 (Colour Palette,
+          p.16) — same treatment as apps/comms/ui's Header, so the two staff tools share one
+          visual language. No logo asset exists in the repo yet (docs/design-decisions.md Open
+          item #5), so "INZBC" renders as the guide's own acronym-logo concept (p.8) rather than
+          a fabricated image. */}
+      <header className="bg-inzbc-navy text-white">
+        <a
+          href="#main-content"
+          className="sr-only focus-visible:not-sr-only focus-visible:absolute focus-visible:left-4 focus-visible:top-4 focus-visible:z-50 focus-visible:rounded-md focus-visible:bg-white focus-visible:px-3 focus-visible:py-2 focus-visible:text-inzbc-navy"
+        >
+          Skip to main content
+        </a>
         <div className="mx-auto max-w-4xl px-4 py-4 sm:py-6">
-          <h1 className="font-[family-name:var(--font-heading)] text-xl font-bold uppercase text-inzbc-navy sm:text-2xl">
-            INZBC SIP Review
-          </h1>
-          <p className="mt-1 font-[family-name:var(--font-body)] text-sm text-slate-600">
+          <div className="flex items-baseline gap-2">
+            <span className="font-[family-name:var(--font-heading)] text-sm font-bold uppercase tracking-wide text-white/70">
+              INZBC
+            </span>
+            <span aria-hidden="true" className="h-4 w-px translate-y-0.5 bg-white/30" />
+            <h1 className="font-[family-name:var(--font-heading)] text-xl font-bold uppercase text-white sm:text-2xl">
+              SIP Review
+            </h1>
+          </div>
+          <p className="mt-1 font-[family-name:var(--font-body)] text-sm text-white/80">
             Staff review and approval for the Trade Intelligence Platform's daily brief — brief
             builder, QA, CEO decision, distribution status (docs/sip-ui-spec.md).
           </p>
@@ -38,8 +55,8 @@ export function AppShell() {
                   onClick={() => setScreen(option.id)}
                   className={`whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium ${
                     screen === option.id
-                      ? 'border-inzbc-tangerine text-inzbc-navy'
-                      : 'border-transparent text-slate-500 hover:text-inzbc-navy'
+                      ? 'border-inzbc-tangerine text-white'
+                      : 'border-transparent text-white/70 hover:text-white'
                   }`}
                 >
                   {option.label}
@@ -50,7 +67,7 @@ export function AppShell() {
         </nav>
       </header>
 
-      <main className="mx-auto max-w-4xl px-4 py-6">
+      <main id="main-content" className="mx-auto max-w-4xl px-4 py-6">
         {screen === 'brief-builder' ? <BriefBuilderScreen report={report} onChange={setReport} /> : null}
         {screen === 'qa-review' ? <QaReviewScreen report={report} onChange={setReport} /> : null}
         {screen === 'ceo-decision' ? <CeoDecisionScreen report={report} onChange={setReport} /> : null}
