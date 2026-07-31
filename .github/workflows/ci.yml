@@ -134,8 +134,11 @@ jobs:
         run: pnpm -r --if-present lint
       - name: Typecheck
         run: pnpm -r --if-present typecheck
+      # -r --if-present, matching the lint/typecheck/build steps above: a `--filter @inzbc/fta-ui`
+      # here silently excluded every other app's tests from CI, including this app's 500+ lines of
+      # new tests.
       - name: Test + coverage
-        run: pnpm --filter @inzbc/fta-ui run coverage
+        run: pnpm -r --if-present coverage
       - name: Build
         run: pnpm -r --if-present build
       # Compile check only: proves the stories and Storybook config build. It does NOT run the
