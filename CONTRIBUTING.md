@@ -33,4 +33,6 @@
 - Handle member/personal data per the NZ Privacy Act 2020.
 
 ## The live site
-Do not edit `inzbc.org` directly. Build in the separate site; go-live needs backup and sign-off.
+Do not edit or publish `inzbc.org`. Build on the duplicate site (`docs/discovery.md` OI-9);
+go-live needs Sunil's written sign-off and is his to press. Log every Wix editor session in
+`docs/wix-changes-log.md`. Full rules in [CLAUDE.md](./CLAUDE.md).

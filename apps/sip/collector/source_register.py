@@ -114,24 +114,25 @@ def record_source_outcome(
     its `source_library` db uuid — build it from `apps.sip.pipeline.client.SipPipelineClient
     .get_source_library()` via `source_lookup.build_source_lookups()`.
 
-    `source_id_lookup` must be a `SourceIdLookup` (keyed by SIP-185 code) — checked positively,
-    not by excluding `SourceNameLookup` specifically: `source_library.name` is not unique across
-    jurisdictions (`schemas/api-contract.md`), so a name-keyed lookup (or a plain dict built the
-    same way) would silently resolve most sources wrong rather than raising loudly. Naming only
-    the one wrong type we know about would let anything else - a bare dict included - sail
-    through and do the exact damage this guard exists to prevent.
+    `source_id_lookup` must be exactly `SourceIdLookup` (keyed by SIP-185 code) — an exact
+    `type() is` check, not `isinstance`: `isinstance` accepts subclasses by design, so a subclass
+    overriding `get()` would walk straight through an `isinstance` guard and could resolve to any
+    id it likes. `source_checks.source_id` is NOT NULL and jurisdiction-sensitive, which is the
+    reason this guard exists at all - accepting only the exact type closes that off, the same fix
+    already applied to the orchestrator's human-decision gate after the same vector was found
+    there.
 
     `fallback_attempts` is the ordered trail of steps actually tried (a subsequence of
     FALLBACK_SEQUENCE) when direct access did not suffice - SIP-185 requires retaining every
     fallback attempt and the reason, so the trail is folded into `notes` rather than dropped
     (the source_checks table has no separate attempts column to put it in).
     """
-    if not isinstance(source_id_lookup, SourceIdLookup):
+    if type(source_id_lookup) is not SourceIdLookup:
         raise TypeError(
-            f"record_source_outcome requires a SourceIdLookup (SIP-185 code -> db id), got "
-            f"{type(source_id_lookup).__name__} - source_library.name is not unique across "
-            "jurisdictions, so anything other than a SourceIdLookup risks silently resolving a "
-            "source check to the wrong id instead of failing loudly"
+            f"record_source_outcome requires exactly a SourceIdLookup (SIP-185 code -> db id), "
+            f"got {type(source_id_lookup).__name__} - source_library.name is not unique across "
+            "jurisdictions, so anything other than the exact required type risks silently "
+            "resolving a source check to the wrong id instead of failing loudly"
         )
 
     db_id = source_id_lookup.get(source_id)

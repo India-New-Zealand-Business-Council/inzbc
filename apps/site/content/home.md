@@ -24,8 +24,9 @@ Explainer workstream; do not restate tariff detail here without sign-off from Ro
 
 ## Trade opportunity, in numbers
 - NZ–India two-way trade: **NZ$3.95bn** annually
-- **95%** of NZ's current exports to India will receive tariff elimination or reduction once the
-  FTA enters into force
+- **95%** of NZ's current exports to India get tariff elimination or reduction **over time**:
+  57% duty-free from day one, rising to 82% once fully implemented, with the remaining 13%
+  subject to sharp cuts
 - [[NZ Indian diaspora population — source and confirm before publish; not in the FTA source
   corpus, do not estimate.]]
 - India's growing middle class — a long-term demand story for NZ exporters

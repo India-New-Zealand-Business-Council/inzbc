@@ -9,7 +9,8 @@ Each engineer keeps a worklog at `docs/workstreams/<name>.md` — an ordered bac
 current blockers, and a definition of done.
 
 1. Fetch `main`. If your worklog's recorded base commit is behind `main`, rebase first.
-2. Take the top item in **Next up**.
+2. Take the top item in **Next up**, or a lower one if client priorities have moved. Note why in
+   the worklog when you skip.
 3. Branch `feat/<name>/<slug>` off fresh `main`.
 4. Build it to the quality standard below.
 5. Open a PR with the evidence block, and move the item to **Done**.

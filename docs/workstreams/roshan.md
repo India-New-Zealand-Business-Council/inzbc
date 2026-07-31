@@ -1,7 +1,8 @@
 # Worklog — Roshan
 
 Role: intelligence, sources, data, FTA. Writes data into the system through the shared API. No UI.
-Ordered backlog; take the top **Next up** item. Move finished items to **Done**.
+Ordered backlog; take the top **Next up** item unless client priorities say otherwise, and note
+why if you skip one. Move finished items to **Done**.
 
 ## Lanes (my paths)
 ```
@@ -21,28 +22,102 @@ own PR flow; this lane is the integration that pulls its output into SIP.
 ## Depends on (Bhanu's contracts)
 DB schema, API contract, auth. Build against them; don't write to control-plane tables.
 
+**Lane note, 28 Jul 2026:** #117/#118/#120/#121/#122/#130 (persistence adapter, audit service,
+run + candidate endpoints, REQ-I-05 acceptance criteria, restart/rehydration test) were assigned
+to me as a **one-off delegation to balance Bhanu's workload, not a lane transfer** — confirmed
+with him directly. `/services/api`, `/database` and `/schemas` stay his lane; the delegation
+reverts once these six are done, and nothing else under those paths gets picked up without asking
+him first. Recording this so a later reader doesn't mistake the one-off for a standing change.
+
+Of the six, #122 is done (closed via PR #154, moved to Done below) — the remaining five
+(#117/#118/#120/#121/#130) sit inside a cluster that's otherwise his: #117/#118 are foundational and his
+#124/#125/#126 write through this persistence adapter and audit service; #119 (separation of
+duties, his) constrains #120/#121 here. The conventions set in #117/#118 are the ones he then has
+to build on — keep them boring and close to what the schema and ADR-0005 already imply, and flag
+anything that's inventing a contract shape rather than following one already decided, instead of
+deciding it here.
+
 ## Next up
+- [ ] Persistence adapter with concurrency control (#117): optimistic concurrency or row locking;
+  acceptance is a test proving two concurrent transitions cannot both commit. Foundational — the
+  endpoints below write through this. PR #163 open, in review.
+- [ ] Transactional audit service (#118): `old_value`/`new_value`/`reason`/`approval_ref` written
+  inside the mutation's own transaction, an INSERT/SELECT-only DB role, a trigger blocking
+  UPDATE/DELETE — immutable at the database level, not by application convention. Also
+  foundational; the command endpoints below should write through this from the start rather than
+  bolting audit on after.
+- [ ] Run endpoints (#120): `/api/runs` + start/pause/resume/complete, against ADR-0005's
+  reconciled contract.
+- [ ] Candidate command endpoints (#121): explicit commands (capture, record verification, score,
+  submit assessment, supersede assessment), not a blanket PATCH — a PATCH can't produce a
+  meaningful audit record since the server never learns which action was intended.
+- [ ] Backend restart/rehydration integration test (#130): restart the app + DB fixture
+  deliberately, prove replay produces identical state. Server-side counterpart to the Playwright
+  persistence test — do last, once the above exists to actually restart and rehydrate.
 - SHARED-OK: SIP-050 relevance/signal/confidence scoring moved to Bhanu's worklog — it runs
   through the model gateway he owns. `assessment.py` stays the validation/carry layer here.
 - [ ] Comms Assistant service side (`apps/comms`): draft-generation flow with the named-reviewer
-  gate, per [docs/modules/comms-assistant.md](../modules/comms-assistant.md); model calls route
-  through Bhanu's gateway once it lands.
+  gate, per [docs/modules/comms-assistant.md](../modules/comms-assistant.md). Corrected 30 Jul
+  (PR #161): the model gateway itself is already built and reusable
+  (`services/api/model_gateway.py`) — the actual blocker is the **redaction layer**, currently
+  unowned. Non-negotiable per `comms-assistant.md`'s "drafts only, adversarially tested" promise —
+  no request may reach the model gateway from this flow until redaction has an owner and an
+  implementation. Not starting this until that's resolved.
 - [ ] FTA Explainer retrieval upgrade: replace `explainer.py`'s keyword matching with ranked
   retrieval over the corpus — still no answer without a Tier-1 citation; `[]`/escalate on
   low-confidence matches stays.
 - [ ] End-to-end pipeline run once org-repo secrets land (Bhanu's item): collector → capture →
   assessment live against the SIP-184 SOP; fix what breaks; record the run.
-- [ ] Pipeline integration test suite wired into CI: verification gate, dedupe, mandatory-source
-  stops, malformed-article handling — the fail-closed behaviour currently has no automated tests.
 - [ ] Collection-engine improvements in `daily-india-nz-news-agent` (via its own PR flow).
-- [ ] Ruff 0.16.0 findings in collector/FTA — fix and bump the CI pin (#31). Currently pinned at
-  0.15.22 (`pyproject.toml`), which is clean; this is prep for the version bump, not a live gate
-  failure yet.
+- [ ] Pipeline integration test suite wired into CI (#56): PR #151 open — Bhanu's review found the
+  coverage-gate tests verified a count, not what was actually persisted (proved by mutation);
+  fixed and pushed, awaiting re-review.
+- [ ] Bump the CI ruff pin to 0.16.0 (#31): the collector/FTA findings are fixed and merged (PR
+  #152), but the pin itself is still 0.15.22 pending `apps/sip/core`, `scripts/board.py` and
+  `services/api` (Bhanu's lane) going clean under 0.16.0 too.
 
 See Blocked / decisions needed for what's still open before any of this runs live (secrets,
 INZBC sector/disclaimer sign-off).
 
 ## Done
+- [x] Ruff 0.16.0 findings in my lane fixed (#31): `apps/fta` and `apps/sip/collector` are clean
+  under 0.16.0. Auto-fixed the mechanical ones (`UP035` typing.Iterable → collections.abc,
+  `UP017` datetime.UTC alias, `I001` import sort, `FLY002` f-string). The one real finding,
+  `DTZ007` on `mapping.py`'s GDELT `strptime` fallback, got an actual decision rather than a lint
+  appeasement: on Python 3.11+ `fromisoformat` already parses the `...Z`-suffixed GDELT format
+  directly (aware, UTC), so only the no-separator compact format ever reaches the `strptime`
+  loop in practice; GDELT's API docs state every `seendate` is UTC, so that fallback now attaches
+  `UTC` explicitly instead of returning an ambiguous naive datetime. Updated the one test whose
+  expected output changed as a result. **Not done: bumping the CI pin.** The issue assumed only
+  3 findings existed tree-wide; `apps/sip/core`, `scripts/board.py` and `services/api` now have 7
+  more (subclass slots ordering, `datetime.UTC` alias, blind `except Exception`, `subprocess.run`
+  without `check`) — all outside my lane per the CLAUDE.md rule that `/services/api` changes go
+  through Bhanu. Bumping the pin now would break CI tree-wide on code I don't own; pin stays at
+  `0.15.22` until those are fixed too. Raising at standup rather than guessing at someone else's
+  code.
+- [x] Pipeline integration test suite (#56). New
+  `apps/sip/collector/tests/test_pipeline_integration.py`: `FakeSipApi`, an in-memory stand-in
+  that actually stores candidates/source-checks across calls (unlike the per-module unit tests'
+  stubs, which only record what they were asked to do) — the point is to catch a regression at
+  the seam between modules, not just within one. Covers capture → cross-run dedupe (by url),
+  malformed-article resilience, the verification gate end-to-end through
+  `apply_candidate_assessment` (blocks unverified High, allows verified High, blocks a
+  verification downgrade on an already-Critical candidate), and the mandatory-source Critical
+  stop against the real 112-source v1.0 register (not a handful of fixture sources — a suite that
+  only exercises 2-3 sources wouldn't catch a gate that only works for small inputs), both the
+  gap-reporting and full-coverage paths. Verified the suite actually catches a regression before
+  committing: temporarily disabled the verification-gate call in `assessment.py`, confirmed the
+  gate test failed, restored it. "Wired into CI" needed no workflow change — `pyproject.toml`'s
+  `testpaths` already runs everything under `apps`/`services`, so this suite runs on every PR
+  Bhanu's existing `ci.yml` `python` job already gates on.
+- [x] Config nit from PR #17: moved `No Material New Signal` out of `source_outcome_extras` in
+  `docs/sip/SIP_Reference_Config.json` — SIP-185 line 59 is explicit it's the day-level run
+  conclusion (SIP-184 §9), not a per-source outcome code, so the config disagreed with the doc it
+  mirrors. No code referenced the removed value.
+- [x] REQ-I-05 acceptance criteria (#122, closed): the only requirement in `docs/requirements.md`
+  with none, so there was no definition of done for the end-to-end pipeline run (#55). Scoped to
+  SIP-184 §1-7; each criterion distinguishes "tested against fakes" from "proven against a live
+  run" to match the requirement's own Blocked status. Merged via PR #154.
 - [x] Client + lookup layer for `GET /api/source-library`, implemented locally ahead of the
   endpoint (refs #52 — not closed; the endpoint itself isn't deployed yet, see below). New
   `apps/sip/collector/source_lookup.py`: `build_source_lookups()` splits one
@@ -62,6 +137,19 @@ INZBC sector/disclaimer sign-off).
   `/api/fta/query` and `/health` today, so `get_source_library()` returns 404 until that server
   work lands (separate PR, per ADR-0004's sequencing). Nothing in this PR is reachable end-to-end
   yet; it's the client/lookup layer landing ahead of the server, the established pattern here.
+  **Second review round** (deeper pass, five more findings — two fixed as required, three fixed
+  as cheap hardening rather than deferred): (1) name dedup compared raw names while
+  `mapping.map_article` looks up a stripped one, so a whitespace-only variant defeated the
+  round-one fix — `SourceNameLookup` now strips both stored keys and lookup arguments; (2) the
+  `isinstance(x, SourceIdLookup)` guard let a subclass overriding `get()` walk straight through —
+  switched to an exact `type(x) is SourceIdLookup` check, the same fix already applied once to the
+  orchestrator's human-decision gate; (3) a duplicate `sip185_code` now raises
+  `DuplicateSip185Code` instead of silently keeping the last row (the schema declares it unique,
+  so a duplicate means malformed data, not something to paper over); (4) both lookup dataclasses
+  now copy their input dict in `__post_init__`, since `frozen=True` only stops the field being
+  rebound, not its contents being mutated through a caller's reference; (5) the null-code test now
+  asserts `id_lookup.get(None) is None` directly instead of a proxy assertion that wouldn't have
+  caught its own regression.
 - [x] Wire the collection-engine output into SIP candidate capture via the API (run to
   candidates). `apps/sip/collector/mapping.py` + `ingest.py`, mapped against the real
   `daily-india-nz-news-agent` `clean_articles()` output. Raw capture only (SIP-184 step 5); no

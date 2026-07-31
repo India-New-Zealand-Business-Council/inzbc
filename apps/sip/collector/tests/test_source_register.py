@@ -95,6 +95,18 @@ def test_record_source_outcome_rejects_a_name_keyed_lookup() -> None:
         record_source_outcome(RUN_ID, PARLIAMENT_ID, SourceOutcome.INCLUDED, name_lookup)
 
 
+def test_record_source_outcome_rejects_a_source_id_lookup_subclass() -> None:
+    # isinstance() accepts subclasses by design - a subclass overriding get() could resolve to
+    # any id it likes and walk straight through an isinstance guard. The exact type() check must
+    # reject it, same vector already fixed once on the orchestrator's human-decision gate.
+    class WrongIdLookup(SourceIdLookup):
+        def get(self, sip185_code: str) -> str | None:
+            return "attacker-controlled-uuid"
+
+    with pytest.raises(TypeError):
+        record_source_outcome(RUN_ID, PARLIAMENT_ID, SourceOutcome.INCLUDED, WrongIdLookup())
+
+
 def test_record_source_outcome_rejects_a_plain_dict() -> None:
     # The guard checks positively for SourceIdLookup rather than excluding just
     # SourceNameLookup - a bare dict has the same .get() shape and would otherwise sail through

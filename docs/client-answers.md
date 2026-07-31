@@ -55,7 +55,7 @@ These are ours to propose; Sunil approves.
 | # | Answer | Status |
 |---|---|---|
 | C1 | **Retain and integrate Member Jungle** as the membership system of record. No second membership register on the website. | `PROPOSED` |
-| C2 | Use the INZBC Brand Guidelines 2026 — logos, palette, gradients, photography rules, typography. Fonts noted as Big Shoulders and Merriweather. | `PROPOSED` — brand kit not yet received |
+| C2 | Use the INZBC Brand Guidelines 2026 — logos, palette, gradients, photography rules, typography. Fonts noted as Big Shoulders and Merriweather. | `PROPOSED` — kit received 30 Jul 2026 (`INZBC Brand Guidelines 2026.pdf`, Drive `Brand/Brand Guidelines`); tokens transcribed in `docs/design-decisions.md`. Font files not sourced. |
 | C3 | External: member records, renewals, directory and event registration (Member Jungle); newsletter distribution (Mailchimp). Internal: public site content, FTA Explainer, SIP workflow and records, approval and audit. | `PROPOSED` |
 | C4 | **Mailchimp** for newsletters, delivery kept outside the website. Confirm it holds the current newsletter contact list and engagement history before migration. | `PROPOSED` |
 | C5 | **Link** to the Member Jungle directory. Do not copy or embed a separate directory database. | `PROPOSED` |
@@ -127,7 +127,7 @@ These are ours to propose; Sunil approves.
 | # | Answer | Status |
 |---|---|---|
 | E1 | Foundation decisions: membership platform — retain and integrate Member Jungle; internal platform — free-tier hosting now, paid hosting revisited only when Phase 2 stores member data ([ADR-0004](decisions/0004-platform-graduation.md)); identity — INZBC-controlled GitHub OAuth, separate staging and UAT apps; budget and ownership — INZBC owns all accounts and data, and the build carries no recurring infrastructure cost. | `PROPOSED` |
-| E2 | The new site retains `inzbc.org`. Before cutover: full backup of the current site, UAT complete, all account and integration details recorded, and written cutover approval from Sunil. | `PROPOSED` |
+| E2 | The new site retains `inzbc.org`. Before cutover: record the live site's Site History version and export CMS collections where applicable (Wix offers no complete external site backup, so "full backup" is not an instruction anyone can carry out), UAT complete, all account and integration details recorded, and written cutover approval from Sunil. | `PROPOSED` |
 | E3 | Client acceptance session as recorded in the plan. Sunil attends, with the named reviewer; the team participates where backup roles are tested. | `PROPOSED` |
 | E4 | Provider addresses are fine for development, staging and assessment. Production: `inzbc.org` public, and a subdomain for the internal SIP platform. | `PROPOSED` |
 

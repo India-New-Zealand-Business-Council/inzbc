@@ -1,0 +1,19 @@
+# Normalise line endings on commit, check out LF everywhere.
+#
+# Without this, a worktree copied from or edited on Windows commits CRLF, and every line of the file
+# reads as changed. That hides the real diff and makes an unrelated one-line edit look like a
+# rewrite. core.autocrlf is a per-machine setting and cannot be relied on across three developers,
+# so the rule lives in the repo instead.
+* text=auto eol=lf
+
+# Binary files git should never touch.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.xlsx binary
+*.docx binary

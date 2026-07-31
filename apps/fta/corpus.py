@@ -8,9 +8,9 @@ SIP-185. Last mirrored against the doc as checked there on 22 Jul 2026.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date
-from typing import Iterable
 
 FTA_STATUS_LINE = (
     "NZ-India FTA signed 27 April 2026 (negotiations concluded 22 Dec 2025). Not yet in force - "
@@ -55,9 +55,9 @@ TIER_1_SOURCES: tuple[SourceDocument, ...] = (
         "https://www.mfat.govt.nz/en/trade/free-trade-agreements/free-trade-agreements-concluded-but-not-in-force/new-zealand-india-free-trade-agreement/text-of-the-agreement",
         tier=1,
         note=(
-            "Consolidated text + 20 chapters. Annex 2A-1 is India's tariff schedule, Annex "
-            "2A-2 is New Zealand's; Annex 2B covers economic cooperation/TRQs; 6 side letters "
-            "including one on dairy."
+            "Consolidated text + 20 chapters. Appendix 2A-1 to Annex 2A is India's schedule of "
+            "tariff commitments, Appendix 2A-2 is New Zealand's; Annex 2B covers economic "
+            "cooperation/TRQs; 6 side letters, one of them 'Dairy Consultations'."
         ),
     ),
     SourceDocument(
@@ -243,12 +243,18 @@ CORPUS: tuple[TariffOutcome, ...] = (
         topic="Dairy - milk, cheese, butter",
         sector="Dairy",
         treatment=(
-            "Excluded from the agreement - NZ's first FTA to exclude major dairy products. "
-            "This is not a blanket dairy exclusion: see the separate bulk infant formula, "
-            "peptones and albumins entries."
+            "Excluded from India's tariff concessions - milk, cheese and butter get no tariff "
+            "elimination or reduction. This is not a blanket dairy exclusion: see the separate "
+            "bulk infant formula, peptones and albumins entries."
         ),
         confirmed=True,
-        citation="MFAT National Interest Analysis + corroborating reporting",
+        citation="MFAT National Interest Analysis",
+        notes=(
+            "Reporting also calls this NZ's first FTA to exclude major dairy products. That "
+            "comparison is Tier 2, is not a tariff fact, and no Tier 1 source establishes it, "
+            "so it is deliberately not asserted here. The agreement carries a 'Dairy "
+            "Consultations' side letter, so the exclusion is not necessarily permanent."
+        ),
         verified_at=date(2026, 7, 22),
     ),
     TariffOutcome(
@@ -282,10 +288,14 @@ CORPUS: tuple[TariffOutcome, ...] = (
         id="FTA-017",
         topic="Two-way trade value",
         sector="Cross-sector",
-        treatment="Two-way trade is approximately NZ$3.95bn annually.",
+        treatment=(
+            "Two-way goods and services trade totalled approximately NZ$3.95bn in the year "
+            "ended December 2025."
+        ),
         confirmed=True,
-        citation="MFAT NZ-India FTA hub page",
-        verified_at=date(2026, 7, 22),
+        citation="MFAT key facts on NZ-India trade",
+        notes="Publish the period with the figure; an undated 'annually' goes stale silently.",
+        verified_at=date(2026, 7, 28),
     ),
     TariffOutcome(
         id="FTA-018",

@@ -33,7 +33,9 @@ def test_parse_published_at_handles_gdelt_seendate() -> None:
 
 
 def test_parse_published_at_handles_gdelt_compact_no_z() -> None:
-    assert parse_published_at("20260721193200") == "2026-07-21T19:32:00"
+    # GDELT documents every seendate as UTC even without an explicit offset in this compact form,
+    # so this must resolve to an aware UTC datetime, not an ambiguous naive one (DTZ007).
+    assert parse_published_at("20260721193200") == "2026-07-21T19:32:00+00:00"
 
 
 def test_parse_published_at_returns_none_for_empty() -> None:

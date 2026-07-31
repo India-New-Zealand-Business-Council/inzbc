@@ -15,7 +15,7 @@ class _FakeClient:
         self.fail_headlines = fail_headlines or set()
         self.created_payloads: list[dict] = []
 
-    def create_candidate(self, candidate) -> dict:  # noqa: ANN001 - duck-typed test double
+    def create_candidate(self, candidate) -> dict:
         if candidate.headline in self.fail_headlines:
             raise SipApiError(500, "server error")
         payload = candidate.model_dump(mode="json", exclude_none=True)
