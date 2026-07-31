@@ -13,6 +13,7 @@ import {
 function submittableReport() {
   const report = newDraftReportFixture()
   report.sourceCoverage = report.sourceCoverage.map((row) => ({ ...row, outcome: 'Included' }))
+  report.selectedCandidateIds = ['cand-1']
   return report
 }
 
@@ -25,24 +26,37 @@ function allPassingChecklist(): QaChecklistGroup[] {
 
 describe('submitReportForQa', () => {
   it('transitions Report Drafted -> QA In Progress once the brief is valid', async () => {
-    const result = await submitReportForQa(submittableReport(), 1)
+    const result = await submitReportForQa(submittableReport())
     expect(result.state).toBe('QA In Progress')
   })
 
   it('rejects when the brief still fails validation, without transitioning', async () => {
-    await expect(submitReportForQa(newDraftReportFixture(), 0)).rejects.toBeInstanceOf(ReportsApiError)
+    await expect(submitReportForQa(newDraftReportFixture())).rejects.toBeInstanceOf(ReportsApiError)
   })
 
   it('rejects submitting from a state other than Report Drafted', async () => {
     const report = { ...submittableReport(), state: 'QA In Progress' as const }
-    await expect(submitReportForQa(report, 1)).rejects.toThrow(/cannot submit for qa/i)
+    await expect(submitReportForQa(report)).rejects.toThrow(/cannot submit for qa/i)
   })
 
   it('propagates an abort rather than a service error', async () => {
     const controller = new AbortController()
-    const promise = submitReportForQa(submittableReport(), 1, { signal: controller.signal })
+    const promise = submitReportForQa(submittableReport(), { signal: controller.signal })
     controller.abort()
     await expect(promise).rejects.toMatchObject({ name: 'AbortError' })
+  })
+
+  it('only carries signals for the candidates actually selected, not a fixed pair', async () => {
+    const report = { ...submittableReport(), selectedCandidateIds: ['cand-3'] } // Medium, non-Critical/High
+    const result = await submitReportForQa(report)
+    expect(result.criticalHighSignals).toEqual([])
+  })
+
+  it('carries a signal for a selected Critical candidate', async () => {
+    const report = { ...submittableReport(), selectedCandidateIds: ['cand-2'] } // Critical ministerial statement
+    const result = await submitReportForQa(report)
+    expect(result.criticalHighSignals).toHaveLength(1)
+    expect(result.criticalHighSignals[0]!.headline).toMatch(/ministerial statement/i)
   })
 })
 
@@ -67,6 +81,30 @@ describe('submitQaResult', () => {
   it('rejects when the reviewer is the run\'s own analyst', async () => {
     const report = { ...submittableReport(), state: 'QA In Progress' as const, analyst: 'Sunil' }
     await expect(submitQaResult(report, allPassingChecklist(), 'Sunil')).rejects.toThrow(/cannot be this run/i)
+  })
+
+  it('rejects a blank reviewer rather than silently skipping the analyst check', async () => {
+    const report = { ...submittableReport(), state: 'QA In Progress' as const }
+    await expect(submitQaResult(report, allPassingChecklist(), '')).rejects.toThrow(/reviewer is required/i)
+    await expect(submitQaResult(report, allPassingChecklist(), '   ')).rejects.toThrow(/reviewer is required/i)
+  })
+
+  it('rejects an empty checklist rather than treating it as fully passed', async () => {
+    const report = { ...submittableReport(), state: 'QA In Progress' as const }
+    await expect(submitQaResult(report, [], 'Paras')).rejects.toThrow(/checklist is empty/i)
+    await expect(submitQaResult(report, [{ id: 'g', title: 'g', items: [] }], 'Paras')).rejects.toThrow(
+      /checklist is empty/i,
+    )
+  })
+
+  it('treats N/A on a Critical item as a failure, not a pass', async () => {
+    const report = { ...submittableReport(), state: 'QA In Progress' as const }
+    const checklist = allPassingChecklist()
+    checklist[0]!.items[1] = { ...checklist[0]!.items[1]!, answer: 'na' } // a2, critical: true
+    const result = await submitQaResult(report, checklist, 'Paras')
+    expect(result.state).toBe('QA Failed')
+    expect(result.qa?.result).toBe('Fail')
+    expect(result.qa?.criticalFailuresFound).not.toBe('')
   })
 
   it('rejects recording a QA result outside QA In Progress', async () => {

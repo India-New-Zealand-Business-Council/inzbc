@@ -37,7 +37,6 @@ interface Props {
  */
 export function BriefBuilderScreen({ report, onChange }: Props) {
   const [candidates] = useState<Candidate[]>(() => candidatesFixture())
-  const [selectedCandidateIds, setSelectedCandidateIds] = useState<Set<string>>(new Set())
   const [submitState, setSubmitState] = useState<SubmitState>({ kind: 'idle' })
   const inFlight = useRef<AbortController | null>(null)
   const reportDateId = useId()
@@ -45,10 +44,13 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
   const coverageEndId = useId()
   const focusNoteId = useId()
 
-  const errors = useMemo(
-    () => validateBrief(report, selectedCandidateIds.size),
-    [report, selectedCandidateIds],
-  )
+  // Selection lives on `report` (lifted in AppShell), not component state — an earlier version
+  // kept it here, so switching screens and back unmounted this component and silently cleared
+  // it. It's also what actually reaches the generated digest now: reportsStore.submitReportForQa
+  // resolves these ids against candidatesFixture() rather than taking a bare count.
+  const selectedCandidateIds = useMemo(() => new Set(report.selectedCandidateIds), [report.selectedCandidateIds])
+
+  const errors = useMemo(() => validateBrief(report), [report])
   const isDraft = report.state === 'Report Drafted'
 
   async function onSubmitForQa() {
@@ -59,7 +61,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
     setSubmitState({ kind: 'loading' })
 
     try {
-      const updated = await submitReportForQa(report, selectedCandidateIds.size, { signal: controller.signal })
+      const updated = await submitReportForQa(report, { signal: controller.signal })
       if (inFlight.current !== controller) return
       setSubmitState({ kind: 'idle' })
       onChange(updated)
@@ -74,12 +76,10 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
   }
 
   function toggleCandidate(id: string) {
-    setSelectedCandidateIds((previous) => {
-      const next = new Set(previous)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
+    const next = new Set(report.selectedCandidateIds)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    onChange({ ...report, selectedCandidateIds: [...next] })
   }
 
   function setSourceOutcome(sourceId: string, outcome: SourceOutcome) {

@@ -10,7 +10,7 @@ export const FOCUS_NOTE_MAX_LENGTH = 300
  *
  * Returns human-readable error messages; an empty array means the brief may be submitted for QA.
  */
-export function validateBrief(report: DailyBriefReport, selectedCandidateCount: number): string[] {
+export function validateBrief(report: DailyBriefReport): string[] {
   const errors: string[] = []
 
   if (!report.reportDate) errors.push('Report / brief date is required.')
@@ -19,7 +19,7 @@ export function validateBrief(report: DailyBriefReport, selectedCandidateCount: 
   if (report.coverageStart && report.coverageEnd && report.coverageStart > report.coverageEnd) {
     errors.push('Coverage window start must not be after the end.')
   }
-  if (selectedCandidateCount === 0) {
+  if (report.selectedCandidateIds.length === 0) {
     errors.push('At least one scored candidate must be selected to build the brief.')
   }
   if (report.focusNote.length > FOCUS_NOTE_MAX_LENGTH) {

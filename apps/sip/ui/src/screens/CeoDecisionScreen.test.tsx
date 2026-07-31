@@ -4,13 +4,20 @@ import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as reportsStore from '../api/reportsStore'
 import type { DailyBriefReport } from '../domain'
-import { generatedDigestContent, newDraftReportFixture } from '../lib/fixtures'
+import { candidatesFixture, generatedDigestContent, newDraftReportFixture } from '../lib/fixtures'
 import { CeoDecisionScreen } from './CeoDecisionScreen'
 
 afterEach(() => vi.restoreAllMocks())
 
+// All fixture candidates "selected" — this report is already past brief-building in these tests,
+// so the exact selection doesn't matter here, only that generatedDigestContent gets a non-empty
+// one (see its docstring: signals now come from the selection, not a hardcoded pair).
 function reportAwaitingDecision() {
-  return { ...newDraftReportFixture(), ...generatedDigestContent(), state: 'Awaiting CEO Decision' as const }
+  return {
+    ...newDraftReportFixture(),
+    ...generatedDigestContent(candidatesFixture()),
+    state: 'Awaiting CEO Decision' as const,
+  }
 }
 
 /** A controlled wrapper so submit tests exercise real state updates, not a static prop. */
@@ -41,7 +48,7 @@ describe('CeoDecisionScreen', () => {
     expect(
       screen.getByText(/human-reviewed\. not authorised for member, external, website or social publication\./i),
     ).toBeInTheDocument()
-    for (const section of generatedDigestContent().sections) {
+    for (const section of generatedDigestContent(candidatesFixture()).sections) {
       expect(screen.getByText(section.title)).toBeInTheDocument()
     }
   })

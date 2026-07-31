@@ -185,6 +185,13 @@ export interface DailyBriefReport {
   sourceMix: string
   state: RunState
   focusNote: string
+  // Ids into candidatesFixture(), not the candidates themselves — mirrors how a real API would
+  // take selected ids and resolve them server-side, and means selection survives navigating
+  // between screens (this is part of the lifted `report` state in AppShell, not component state
+  // that unmounts). An earlier version kept this as local state in BriefBuilderScreen and passed
+  // only a *count* to submitReportForQa, so the actual selected candidates never reached the
+  // generated digest — see generatedDigestContent's docstring in lib/fixtures.ts.
+  selectedCandidateIds: string[]
   sections: BriefSection[]
   criticalHighSignals: CriticalHighSignal[]
   ceoActionList: CeoActionItem[]

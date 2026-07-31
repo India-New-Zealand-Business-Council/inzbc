@@ -18,6 +18,11 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
+    // BriefBuilderScreen renders one row per SIP-185 mandatory source (112, not the 8-row
+    // placeholder this fixture used to carry — see lib/fixtures.ts) — comfortably fast in
+    // isolation, but the full workspace suite runs every screen's tests concurrently, and CPU
+    // contention across those worker threads can push a 112-row render past the 5s default.
+    testTimeout: 20000,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],

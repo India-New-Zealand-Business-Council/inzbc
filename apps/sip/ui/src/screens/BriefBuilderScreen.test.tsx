@@ -15,6 +15,18 @@ function ControlledBriefBuilder({ initial }: { initial: DailyBriefReport }) {
   return <BriefBuilderScreen report={report} onChange={setReport} />
 }
 
+// All 112 mandatory sources already covered, and a candidate pre-selected — used by tests that
+// only care about what happens once the brief is otherwise valid. Setting this directly rather
+// than clicking through all 112 outcome selects: they share identical wiring (one spot-check in
+// 'records a source-outcome change via onChange' below covers that), so re-driving every row
+// through fireEvent per test only multiplies render cost without covering anything new.
+function reportReadyForQa(): DailyBriefReport {
+  const report = newDraftReportFixture()
+  report.sourceCoverage = report.sourceCoverage.map((row) => ({ ...row, outcome: 'Included' }))
+  report.selectedCandidateIds = ['cand-1']
+  return report
+}
+
 describe('BriefBuilderScreen', () => {
   it('renders the run header as read-only data, not editable inputs', () => {
     const report = newDraftReportFixture()
@@ -40,14 +52,29 @@ describe('BriefBuilderScreen', () => {
   })
 
   it('lists fixture candidates for source selection and tracks the count selected', async () => {
-    const report = newDraftReportFixture()
-    render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)
+    // Controlled: selection now lives on `report` (lifted state), not inside this component, so
+    // seeing the count actually update needs a caller that re-renders with the new report on
+    // onChange — a static prop + no-op onChange can't observe it.
+    render(<ControlledBriefBuilder initial={newDraftReportFixture()} />)
 
     expect(screen.getByText('0 candidate(s) selected')).toBeInTheDocument()
     const checkboxes = screen.getAllByRole('checkbox')
     await userEvent.click(checkboxes[0]!)
 
     expect(screen.getByText('1 candidate(s) selected')).toBeInTheDocument()
+  })
+
+  it('candidate selection reports via onChange onto the report, not local state that navigation would wipe', async () => {
+    const report = newDraftReportFixture()
+    const onChange = vi.fn()
+    render(<BriefBuilderScreen report={report} onChange={onChange} />)
+
+    await userEvent.click(screen.getAllByRole('checkbox')[0]!)
+
+    const latestCall = onChange.mock.calls.at(-1)
+    if (!latestCall) throw new Error('onChange was not called')
+    expect(latestCall[0].selectedCandidateIds).toEqual(['cand-1'])
+    expect(report.selectedCandidateIds).toEqual([])
   })
 
   it('labels the focus note as non-canonical rather than presenting it as a SIP-186 field', () => {
@@ -66,13 +93,20 @@ describe('BriefBuilderScreen', () => {
     expect(screen.queryByText(/ready to submit for qa/i)).not.toBeInTheDocument()
   })
 
-  it('clears once a candidate is selected and every mandatory source has an outcome', async () => {
-    render(<ControlledBriefBuilder initial={newDraftReportFixture()} />)
+  it('records a source-outcome change via onChange', async () => {
+    const report = newDraftReportFixture()
+    const onChange = vi.fn()
+    render(<BriefBuilderScreen report={report} onChange={onChange} />)
 
-    await userEvent.click(screen.getAllByRole('checkbox')[0]!)
-    for (const select of screen.getAllByRole('combobox')) {
-      fireEvent.change(select, { target: { value: 'Included' } })
-    }
+    fireEvent.change(screen.getAllByRole('combobox')[0]!, { target: { value: 'Included' } })
+
+    const latestCall = onChange.mock.calls.at(-1)
+    if (!latestCall) throw new Error('onChange was not called')
+    expect(latestCall[0].sourceCoverage[0].outcome).toBe('Included')
+  })
+
+  it('clears once a candidate is selected and every mandatory source has an outcome', () => {
+    render(<ControlledBriefBuilder initial={reportReadyForQa()} />)
 
     expect(screen.getByText(/ready to submit for qa/i)).toBeInTheDocument()
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
@@ -84,16 +118,8 @@ describe('BriefBuilderScreen', () => {
     expect(screen.getByRole('button', { name: /submit for qa/i })).toBeDisabled()
   })
 
-  async function fillValidBrief() {
-    render(<ControlledBriefBuilder initial={newDraftReportFixture()} />)
-    await userEvent.click(screen.getAllByRole('checkbox')[0]!)
-    for (const select of screen.getAllByRole('combobox')) {
-      fireEvent.change(select, { target: { value: 'Included' } })
-    }
-  }
-
   it('shows a loading state, then a submitted banner, on a successful submit', async () => {
-    await fillValidBrief()
+    render(<ControlledBriefBuilder initial={reportReadyForQa()} />)
 
     const submit = screen.getByRole('button', { name: /submit for qa/i })
     expect(submit).toBeEnabled()
@@ -105,7 +131,7 @@ describe('BriefBuilderScreen', () => {
 
   it('surfaces a submit failure without transitioning the report', async () => {
     vi.spyOn(reportsStore, 'submitReportForQa').mockRejectedValue(new Error('network down'))
-    await fillValidBrief()
+    render(<ControlledBriefBuilder initial={reportReadyForQa()} />)
 
     await userEvent.click(screen.getByRole('button', { name: /submit for qa/i }))
 

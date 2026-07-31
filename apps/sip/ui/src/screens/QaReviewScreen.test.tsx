@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as reportsStore from '../api/reportsStore'
 import type { DailyBriefReport } from '../domain'
-import { generatedDigestContent, newDraftReportFixture } from '../lib/fixtures'
+import { candidatesFixture, generatedDigestContent, newDraftReportFixture } from '../lib/fixtures'
 import { QaReviewScreen } from './QaReviewScreen'
 
 afterEach(() => vi.restoreAllMocks())
@@ -15,8 +15,15 @@ async function answerEveryItem(outcome: 'Pass' | 'N/A' = 'Pass') {
   }
 }
 
+// All fixture candidates "selected" — this report is already past brief-building in these tests;
+// generatedDigestContent derives its Critical/High signals from whatever's passed in (see its
+// docstring), so a non-empty selection here keeps "ministerial statement" / "Critical" etc. real.
 function reportInQa() {
-  return { ...newDraftReportFixture(), ...generatedDigestContent(), state: 'QA In Progress' as const }
+  return {
+    ...newDraftReportFixture(),
+    ...generatedDigestContent(candidatesFixture()),
+    state: 'QA In Progress' as const,
+  }
 }
 
 /** A controlled wrapper so edit tests exercise real state updates, not a static prop. */
@@ -40,7 +47,7 @@ describe('QaReviewScreen', () => {
 
   it('renders every brief section read-only once QA is reachable', () => {
     render(<QaReviewScreen report={reportInQa()} onChange={vi.fn()} />)
-    for (const section of generatedDigestContent().sections) {
+    for (const section of generatedDigestContent(candidatesFixture()).sections) {
       expect(screen.getByText(section.title)).toBeInTheDocument()
       // Multi-line section content (e.g. the executive summary bullets) renders as one text node
       // with embedded newlines, which getByText's default whitespace normalisation won't match
@@ -51,8 +58,12 @@ describe('QaReviewScreen', () => {
 
   it('renders Critical/High signals with their strength and verification status', () => {
     render(<QaReviewScreen report={reportInQa()} onChange={vi.fn()} />)
-    expect(screen.getByText(/ministerial statement on bilateral trade talks/i)).toBeInTheDocument()
-    expect(screen.getByText('Critical')).toBeInTheDocument()
+    const headline = screen.getByText(/ministerial statement on bilateral trade talks/i)
+    expect(headline).toBeInTheDocument()
+    // Scoped to this signal's own card: the SIP-188 checklist below has five of its own "Critical"
+    // badges (one per Critical item), so an unscoped getByText('Critical') is ambiguous.
+    const signalCard = headline.closest('div')!.parentElement!
+    expect(within(signalCard).getByText('Critical')).toBeInTheDocument()
     expect(screen.getAllByText(/verification: verified/i)).toHaveLength(2)
   })
 
@@ -101,7 +112,7 @@ describe('QaReviewScreen', () => {
     await userEvent.type(screen.getByRole('textbox'), 'x')
 
     expect(onChange).toHaveBeenCalled()
-    expect(initial.sections[0]!.content).toBe(generatedDigestContent().sections[0]!.content)
+    expect(initial.sections[0]!.content).toBe(generatedDigestContent(candidatesFixture()).sections[0]!.content)
   })
 
   it('approves a section, then clears back to pending on a second click', async () => {
@@ -166,19 +177,27 @@ describe('QaReviewScreen', () => {
     expect(await screen.findByRole('status')).toHaveTextContent(/awaiting ceo decision/i)
   })
 
-  it('a Critical failure blocks the clean-pass path and surfaces Send back for correction', async () => {
+  it('a Critical failure visibly blocks the clean-pass path before submission, not only after', async () => {
     render(<ControlledQaReview initial={reportInQa()} />)
     await answerEveryItem('Pass')
     const criticalGroup = screen.getByRole('group', { name: /approved version set present/i })
     await userEvent.click(within(criticalGroup).getByRole('button', { name: 'Fail' }))
 
-    await userEvent.click(screen.getByRole('button', { name: /record qa result/i }))
+    // docs/sip-ui-spec.md: "Any Critical failure disables 'Submit to CEO' entirely" — must be
+    // visible before the click, not just a different outcome revealed after an identical-looking
+    // button is submitted. Plain "Record QA result" is gone the moment the Critical item reads
+    // Fail, replaced by a crimson button naming the correction outcome.
+    expect(screen.queryByRole('button', { name: /^record qa result$/i })).not.toBeInTheDocument()
+    const recordButton = screen.getByRole('button', { name: /record critical fail/i })
+    expect(recordButton.className).toMatch(/bg-inzbc-crimson/)
+
+    await userEvent.click(recordButton)
 
     expect(await screen.findByRole('button', { name: /send back for correction/i })).toBeInTheDocument()
     expect(screen.getByText(/last recorded result:/i)).toHaveTextContent('Fail')
     // The spec is explicit there is no override for a Critical fail — confirm the pass action is
     // simply gone, not just relabelled.
-    expect(screen.queryByRole('button', { name: /record qa result/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /record qa result|record critical fail/i })).not.toBeInTheDocument()
   })
 
   it('sending back for correction returns the run to Report Drafted, out of this screen\'s reach', async () => {

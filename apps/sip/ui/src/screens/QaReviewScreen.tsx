@@ -53,7 +53,10 @@ export function QaReviewScreen({ report, onChange }: Props) {
   // Percentage of *answered* items that passed — an unanswered checklist reads as "0%", not
   // "100% of nothing," which would misrepresent an incomplete review as a clean one.
   const checklistScore = answeredCount === 0 ? 0 : Math.round((passCount / answeredCount) * 100)
-  const allAnswered = answeredCount === checklistItems.length
+  // checklistItems.length > 0 matters on its own: without it, an empty checklist has
+  // answeredCount (0) === length (0), satisfying "every item answered" for a checklist that was
+  // never actually reviewed.
+  const allAnswered = checklistItems.length > 0 && answeredCount === checklistItems.length
 
   function setChecklistAnswer(groupId: string, itemId: string, answer: QaAnswer) {
     onChange({
@@ -155,7 +158,19 @@ export function QaReviewScreen({ report, onChange }: Props) {
     )
   }
 
-  if (report.reviewer && report.reviewer === report.analyst) {
+  if (!report.reviewer.trim()) {
+    return (
+      <section>
+        <h2 className="text-lg font-semibold text-inzbc-navy">QA Review</h2>
+        <p role="alert" className="mt-2 text-sm text-inzbc-crimson">
+          This screen is blocked: no reviewer is recorded on this run. QA cannot proceed without an
+          identified, authenticated reviewer.
+        </p>
+      </section>
+    )
+  }
+
+  if (report.reviewer === report.analyst) {
     return (
       <section>
         <h2 className="text-lg font-semibold text-inzbc-navy">QA Review</h2>
@@ -336,7 +351,11 @@ export function QaReviewScreen({ report, onChange }: Props) {
                     ) : null}
                   </span>
                   <span role="group" aria-label={item.text} className="flex gap-1">
-                    {QA_ANSWERS.map((option) => (
+                    {/* Critical items don't offer N/A: none of SIP-188's five Critical checks
+                        (a2, b2, c3, d4, e1) describe something that can legitimately not apply to
+                        a run, and reportsStore.submitQaResult treats Critical+N/A as a failure
+                        anyway — better to not offer a choice the store rejects. */}
+                    {QA_ANSWERS.filter((option) => !item.critical || option.value !== 'na').map((option) => (
                       <button
                         key={option.value}
                         type="button"
@@ -362,10 +381,12 @@ export function QaReviewScreen({ report, onChange }: Props) {
       </div>
 
       {/* docs/sip-ui-spec.md Screen 2: "Any Critical failure disables 'Submit to CEO' entirely
-          ... The only path forward from a Critical fail is 'Send back for correction.'" Recording
-          a result computes pass/fail from the checklist itself (reportsStore.submitQaResult) and
-          transitions accordingly; a resulting Critical fail then surfaces the send-back action —
-          the UI does not offer a way to override or bypass it, matching the spec. */}
+          ... The only path forward from a Critical fail is 'Send back for correction.'" This must
+          *visibly* block, not just silently produce a different outcome after the same-looking
+          button is clicked — so as soon as any Critical item reads Fail, the primary action
+          switches to the crimson, correction-labelled button before submission, not only after
+          (reportsStore.submitQaResult still computes pass/fail from the checklist and enforces
+          this server-side too; this is the client-side half of "fail closed"). */}
       <div className="space-y-2">
         {report.state === 'QA Failed' ? (
           <button
@@ -375,6 +396,17 @@ export function QaReviewScreen({ report, onChange }: Props) {
             className="rounded-md bg-inzbc-crimson px-4 py-2 font-semibold text-white disabled:cursor-progress disabled:opacity-60"
           >
             {submitState.kind === 'loading' ? 'Sending back…' : 'Send back for correction'}
+          </button>
+        ) : criticalFailCount > 0 ? (
+          <button
+            type="button"
+            onClick={() => void onRecordResult()}
+            disabled={!allAnswered || submitState.kind === 'loading'}
+            className="rounded-md bg-inzbc-crimson px-4 py-2 font-semibold text-white disabled:cursor-progress disabled:opacity-60"
+          >
+            {submitState.kind === 'loading'
+              ? 'Recording…'
+              : 'Record Critical fail — sends this run back for correction'}
           </button>
         ) : (
           <button

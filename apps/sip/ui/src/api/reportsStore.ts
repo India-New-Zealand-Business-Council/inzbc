@@ -1,5 +1,5 @@
 import type { CeoDecisionRecord, DailyBriefReport, QaChecklistGroup, ReportDecisionType } from '../domain'
-import { generatedDigestContent } from '../lib/fixtures'
+import { candidatesFixture, generatedDigestContent } from '../lib/fixtures'
 import { validateBrief } from '../lib/validation'
 
 export class ReportsApiError extends Error {}
@@ -37,13 +37,18 @@ function delay(ms: number, signal?: AbortSignal): Promise<void> {
 
 /** POST /api/reports/:id/submit — Report Drafted -> QA In Progress. Re-validates server-side in
  * the real system; this fixture re-runs the same client-side rule so the stub can't be tricked by
- * a caller that bypasses the UI's own disabled-button gate. */
+ * a caller that bypasses the UI's own disabled-button gate.
+ *
+ * Takes only `report` — `report.selectedCandidateIds` is the boundary, not a count. An earlier
+ * version took a bare `selectedCandidateCount`, so the actual selected candidates never reached
+ * `generatedDigestContent`, which returned the same two hardcoded signals regardless of what was
+ * selected. Resolving ids to candidates here (rather than requiring the caller to pass full
+ * candidate objects) mirrors how a real endpoint would look them up server-side from an id list. */
 export async function submitReportForQa(
   report: DailyBriefReport,
-  selectedCandidateCount: number,
   options: { signal?: AbortSignal } = {},
 ): Promise<DailyBriefReport> {
-  const errors = validateBrief(report, selectedCandidateCount)
+  const errors = validateBrief(report)
   if (errors.length > 0) {
     throw new ReportsApiError(`Report is not ready for QA: ${errors[0]}`)
   }
@@ -51,17 +56,25 @@ export async function submitReportForQa(
     throw new ReportsApiError(`Cannot submit for QA from state "${report.state}".`)
   }
   await delay(SIMULATED_LATENCY_MS, options.signal)
-  // Stands in for the pipeline generating the digest content from the selected candidates —
-  // see lib/fixtures.ts's generatedDigestContent() docstring for why this is fixture data.
+  const selectedCandidates = candidatesFixture().filter((candidate) =>
+    report.selectedCandidateIds.includes(candidate.id),
+  )
   return {
     ...report,
-    ...generatedDigestContent(),
+    ...generatedDigestContent(selectedCandidates),
     state: 'QA In Progress',
     generatedAt: report.generatedAt || new Date().toISOString(),
   }
 }
 
-/** POST /api/reports/:id/qa — records the SIP-188 result; Critical fail routes to QA Failed. */
+/** POST /api/reports/:id/qa — records the SIP-188 result; Critical fail routes to QA Failed.
+ *
+ * Fails closed on three paths that previously reached `Awaiting CEO Decision` with a `Pass`:
+ * a blank reviewer (the `reviewer &&` guard below made the analyst-check a no-op for one), an
+ * empty or malformed checklist (nothing to disprove a pass), and `na` on a Critical item (not a
+ * recorded Fail, so it slipped past the Critical-fail check entirely). None of SIP-188's Critical
+ * items (a2, b2, c3, d4, e1 in lib/fixtures.ts) describe a check that can legitimately not apply
+ * to a run, so Critical + `na` is treated as a failure rather than invented as a fourth outcome. */
 export async function submitQaResult(
   report: DailyBriefReport,
   checklist: QaChecklistGroup[],
@@ -71,17 +84,24 @@ export async function submitQaResult(
   if (report.state !== 'QA In Progress') {
     throw new ReportsApiError(`Cannot record a QA result from state "${report.state}".`)
   }
+  if (!reviewer.trim()) {
+    throw new ReportsApiError('A reviewer is required to record a QA result.')
+  }
   // The UI's job is to make the illegal path (reviewer === analyst) impossible to reach, not to
   // be the only thing preventing it (docs/sip-ui-spec.md) — re-checked here too, fail-closed.
-  if (reviewer && reviewer === report.analyst) {
+  if (reviewer === report.analyst) {
     throw new ReportsApiError('The reviewer cannot be this run\'s analyst.')
+  }
+  const allItems = checklist.flatMap((group) => group.items)
+  if (allItems.length === 0) {
+    throw new ReportsApiError('The QA checklist is empty — nothing has been reviewed.')
   }
   await delay(SIMULATED_LATENCY_MS, options.signal)
 
-  const hasCriticalFail = checklist.some((group) =>
-    group.items.some((item) => item.critical && item.answer === 'fail'),
-  )
-  const anyUnanswered = checklist.some((group) => group.items.some((item) => item.answer === null))
+  const isCriticalFailure = (item: QaChecklistGroup['items'][number]) =>
+    item.critical && (item.answer === 'fail' || item.answer === 'na')
+  const hasCriticalFail = allItems.some(isCriticalFailure)
+  const anyUnanswered = allItems.some((item) => item.answer === null)
   const passed = !hasCriticalFail && !anyUnanswered
 
   return {
@@ -93,9 +113,8 @@ export async function submitQaResult(
       timestamp: new Date().toISOString(),
       result: passed ? 'Pass' : 'Fail',
       criticalFailuresFound: hasCriticalFail
-        ? checklist
-            .flatMap((group) => group.items)
-            .filter((item) => item.critical && item.answer === 'fail')
+        ? allItems
+            .filter(isCriticalFailure)
             .map((item) => item.text)
             .join('; ')
         : '',
