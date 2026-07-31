@@ -117,12 +117,26 @@ Straight from the guide's SEO checklist, and not to be reordered:
   plan, no custom domain). Do not edit or publish `inzbc.org`
   (`40ea1d0a-807a-48d2-ab93-3ccce6ed6443`, published, premium, custom domain).
 
-  **This partly contradicts `docs/discovery.md` OI-9**, which still lists duplication, collaborator
-  access and written confirmation as outstanding on Sunil. The staging site exists and Bhanu
-  confirmed on 31 July 2026 that it is the duplicate to build on. The rest of OI-9 is unverified
-  here: whether the team have collaborator access, whether the live site's publish rights were
-  removed, and whether written confirmation was given. Do not read this line as OI-9 being closed;
-  it needs updating in its own change once those are checked.
+  OI-9 was closed on 31 July 2026: the duplicate exists and the team have access.
+
+## What staging changes, and what it does not
+
+Most of the guide's §5 caution is about protecting live rankings, and none of it applies while
+building on a free, domain-less draft. Wix cannot even configure redirects there: the URL Redirect
+Manager needs a premium site with a connected domain. So on staging, skip hidden-pages-first,
+publish-only-when-redirects-are-ready, Search Console submission and the eight weeks of 404
+checking. Build freely.
+
+Three things survive, because the duplicate replaces `inzbc.org` on the same domain at cutover
+(OI-8):
+
+1. **The mapping still has to exist by then.** Every new page's slug is a redirect target, so record
+   the pairing as pages are built rather than reconstructing it from memory afterwards. That is what
+   the undecided table below is for.
+2. **Current titles and meta descriptions are still unrecoverable after cutover.** Step 2 of the
+   guide's checklist is not done. It has to happen against the live site, not staging.
+3. **Content rules do not relax on staging.** Nothing invented, nothing unconfirmed presented as
+   fact, no member register rebuilt on Wix. Staging content becomes live content.
 - Wix MCP writes hit live data instantly with no draft step. Confirm the target site id before any
   write call.
 - Log every editor session in `docs/wix-changes-log.md` with before and after text.
