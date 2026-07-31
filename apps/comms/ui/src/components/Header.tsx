@@ -1,12 +1,14 @@
+import inzbcLogoAcronymWhite from '../assets/inzbc-logo-acronym-white.svg'
+
 // Navy background + white text per INZBC Brand Guidelines 2026 v1.0 (Colour Palette, p.16):
 // Navy Blue #160933 is the brand's primary base, ~50% of colour use. Applied here via the
 // --color-inzbc-navy token (src/index.css), not a raw hex, so it stays in sync with the rest
 // of the app if the token ever changes.
 //
-// No INZBC logo asset (svg/png/jpg) exists in this repo yet — docs/design-decisions.md Open
-// item #5. Rather than fabricate one, this renders the brand's own "acronym logo" concept from
-// the guide (p.8: "best used at small scales, where 'India New Zealand Business Council' might
-// become illegible") as a text wordmark. Swap for the real logo asset once INZBC supplies it.
+// Logo: the acronym lockup, white variant — sourced from Drive (Brand/Logo Files/Export/SVG -
+// Vector/INZBC_Logo_Acronym_White.svg), not fabricated. The guide (p.8) recommends the acronym
+// logo specifically "at small scales, where 'India New Zealand Business Council' might become
+// illegible" — exactly this header's use case.
 export function Header() {
   return (
     <header className="bg-inzbc-navy text-white">
@@ -19,9 +21,11 @@ export function Header() {
       <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-4">
         <a
           href="/"
-          className="rounded-sm font-[family-name:var(--font-heading)] text-lg font-bold uppercase tracking-wide text-white transition-colors hover:text-inzbc-lavender focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-lavender"
+          className="rounded-sm transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-lavender"
         >
-          INZBC
+          {/* Guide, p.11: acronym logo minimum size is 8mm / 25px wide — h-6 (24px tall) renders
+              this ~81px wide at its native aspect ratio, comfortably above that floor. */}
+          <img src={inzbcLogoAcronymWhite} alt="INZBC" className="h-6 w-auto" />
         </a>
         <nav aria-label="Primary">
           {/* Lavender, not Blue, for the current-page accent: the guide pairs Lavender with Navy
