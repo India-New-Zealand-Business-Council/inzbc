@@ -1,5 +1,18 @@
 @import "tailwindcss";
 
+/* Big Shoulders Display and Merriweather are the two brand fonts (Typography Breakdown, p.20 of
+   INZBC Brand Guidelines 2026 v1.0) — unlike the logo, these are open Google Fonts, not a
+   proprietary INZBC asset, so self-hosting them via @fontsource (offline, no external request at
+   runtime, latin subset only — this app is English-only) doesn't need to wait on INZBC to supply
+   anything. Same package set as apps/comms/ui/src/index.css. */
+@import "@fontsource/big-shoulders-display/latin-500";
+@import "@fontsource/big-shoulders-display/latin-700";
+@import "@fontsource/big-shoulders-display/latin-800";
+@import "@fontsource/merriweather/latin-300";
+@import "@fontsource/merriweather/latin-400";
+@import "@fontsource/merriweather/latin-500";
+@import "@fontsource/merriweather/latin-700";
+
 @theme {
   /* Brand palette — INZBC Brand Guidelines 2026 v1.0 (docs/design-decisions.md), same tokens as
      apps/comms/ui/src/index.css so the two staff tools share one visual language. */
@@ -12,9 +25,28 @@
   --color-inzbc-lavender: #c1acfb;
   --color-inzbc-lime: #b8f07c;
 
-  /* Brand fonts per the guide are Big Shoulders (headings) and Merriweather (body), but no font
-     files are sourced in this repo yet (docs/design-decisions.md Open items #5/#6). Naming the
-     tokens now, falling back to system fonts until INZBC supplies the actual files. */
-  --font-heading: "Big Shoulders", system-ui, sans-serif;
+  --font-heading: "Big Shoulders Display", system-ui, sans-serif;
   --font-body: "Merriweather", Georgia, serif;
+}
+
+@layer base {
+  /* Guide, p.20: Merriweather "should be used for all other copy" — set as the body default so
+     every element inherits it (including form controls, which Tailwind's preflight already sets
+     to `font: inherit`), then h1–h3 opt back into the display face below.
+     h4 is deliberately excluded: those headings carry dynamic, often sentence-length content
+     (candidate headlines, section titles) rather than the "short, impactful statements" the
+     guide scopes Big Shoulders to (p.20) — uppercase display type on a full sentence in a dense
+     review table would hurt scanability, not brand consistency. */
+  body {
+    font-family: var(--font-body);
+    font-weight: 300;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    text-transform: uppercase;
+  }
 }

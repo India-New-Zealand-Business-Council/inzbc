@@ -36,11 +36,10 @@ export function AppShell() {
               INZBC
             </span>
             <span aria-hidden="true" className="h-4 w-px translate-y-0.5 bg-white/30" />
-            <h1 className="font-[family-name:var(--font-heading)] text-xl font-bold uppercase text-white sm:text-2xl">
-              SIP Review
-            </h1>
+            {/* font-family/weight/uppercase come from the h1 rule in index.css's @layer base. */}
+            <h1 className="text-xl text-white sm:text-2xl">SIP Review</h1>
           </div>
-          <p className="mt-1 font-[family-name:var(--font-body)] text-sm text-white/80">
+          <p className="mt-1 text-sm text-white/80">
             Staff review and approval for the Trade Intelligence Platform's daily brief — brief
             builder, QA, CEO decision, distribution status (docs/sip-ui-spec.md).
           </p>
