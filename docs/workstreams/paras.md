@@ -22,10 +22,6 @@ SIP review/approval UI + Comms Assistant UI + FTA Explainer embed.
 The shared API + auth for anything that reads/writes data. Roshan's FTA service for the Explainer UI.
 
 ## Next up
-- [ ] SIP review/approval UI against contract fixtures (startable now, no live backend): brief
-      builder (SIP-186), QA checklist (SIP-188), CEO decision + registers — and enforce the run
-      state machine client-side (illegal transitions disabled in the UI, mirroring
-      `schemas/state-machine.md`, with the server still the authority).
 - [ ] Design system from `DESIGN.local.md` (not yet created): token-driven component library on
       the real brand tokens documented in `docs/design-decisions.md` (#155) (colours, typography,
       logo rules from the INZBC Brand Guidelines 2026 — no placeholder swap needed, kit already
@@ -77,6 +73,52 @@ The shared API + auth for anything that reads/writes data. Roshan's FTA service 
       this is the end-to-end verification pass).
 
 ## Done
+- SIP review/approval UI (`apps/sip/ui`), built against contract fixtures — no live backend
+  exists yet (`services/api` has no `/api/reports/*` routes, blocked on migrations, issue #44).
+  Four screens per `docs/sip-ui-spec.md`: brief builder (run header, coverage window, candidate
+  selection, SIP-186 §12 source-coverage table, required-field validation, submit-for-QA); QA
+  review (inline section editing, approve/flag with colour coding, a SIP-188 tri-state checklist,
+  send-back-for-correction); CEO decision (digest preview, the four report-decision types with
+  required reason/conditions/owner/evidence/next-review-date fields, and — kept genuinely
+  separate per the spec's explicit rule — a second, independent distribution-authorisation action
+  behind its own confirmation modal); distribution status (read-only QA/decision/distribution
+  summary, plus a fixture-backed run archive table). Client-side state-machine enforcement
+  throughout (`schemas/state-machine.md`) — the server remains the authority, this is a usability
+  layer.
+
+  **Code review on PR #166 found three real bugs in the first pass, all confirmed by running the
+  code, since fixed:** (1) QA failed open — N/A on a Critical item didn't count as a fail, an
+  empty checklist satisfied "every item answered," and a blank reviewer skipped the
+  analyst-conflict check, all three reaching Awaiting CEO Decision with a recorded Pass; (2) the
+  mandatory-source gate checked 8 invented codes that matched nothing in the real 112-row SIP-185
+  register, so 104 real mandatory sources could never be reported missing; (3) selected candidates
+  never reached the generated digest — `submitReportForQa` took a bare count, and selection lived
+  in component state that navigating between screens silently wiped. Also fixed: a Critical fail
+  now visibly blocks the primary action before submission, not only after; resubmitting after a
+  correction starts the checklist fresh and bumps a real `reportVersion` instead of carrying the
+  previous round's answers and Fail record forward; `recordCeoDecision` now rejects blank
+  reason/owner/evidence/next-review/version server-side, not just via the UI's disabled button;
+  the distribution-authorisation modal names the recipient and confirms automated channels are
+  off; `GOVERNANCE_LINE` now renders on every screen, not just the CEO decision one; the three
+  primary buttons' white-on-tangerine text failed WCAG AA contrast (3.37:1), now navy-on-tangerine
+  (5.56:1, verified by the review); CI's frontend test step only ran `@inzbc/fta-ui`, so none of
+  this app's tests were ever gating anything — now `pnpm -r --if-present coverage`.
+
+  Fixed a real bug in `reportsStore.ts` along the way: an earlier draft of `recordCeoDecision`
+  accepted distribution authorisation in the same call as the report decision, which the spec
+  explicitly forbids ("never presented as one combined control") — split into `recordCeoDecision`
+  and a separate `authoriseDistribution`.
+  **Reconciled against the actual spec, not just the task description that kicked this off**:
+  the task's shorthand ("approve/flag buttons," "quality score," "approve and reject buttons")
+  doesn't fully match `docs/sip-ui-spec.md`'s real design (a formal SIP-188 checklist, four
+  distinct decision types, two sequential CEO decisions) — built the real mechanism and layered
+  the requested UI on top rather than one or the other.
+
+  **Still open, not mine to fix:** the CEO decision screen has no role gate at all (documented in
+  `CeoDecisionScreen.tsx` rather than faked — needs issue #42's real auth/role model, not a
+  stand-in with nothing behind it); the confirmation modal has no focus trap, initial focus,
+  Escape handling or focus restoration; the report-decision `role="radio"` buttons have no
+  arrow-key/roving-tabindex behaviour. All accessibility gaps, not data-integrity ones.
 - Comms Assistant drafting UI (`apps/comms/ui`): content-type selector, brief input,
   generate/loading/error states, output display, copy-to-clipboard, clear/reset. Taken out of
   backlog order — not the top **Next up** item (SIP review/approval UI) — because it was the
@@ -119,8 +161,10 @@ come back.
   `box-sizing` reset for 320px reflow, stale-request identity check, deeper response validation.
 - **Two member-facing strings still need a named reviewer**: the `<h1>` and intro paragraph in
   `apps/fta/ui/src/App.tsx`. Everything else on screen comes from the API.
-- **Still yours:** the design system and brand tokens, the SIP review/approval UI (REQ-U-01/U-02),
-  the Comms review UI, the Wix site build, and the accessibility audit.
+- **Still yours:** the design system and brand tokens, the Comms review UI, the Wix site build,
+  and the accessibility audit. (The SIP review/approval UI itself is now Done, above — against
+  contract fixtures; still needs the live `/api/reports/*` endpoints and REQ-U-01/U-02 sign-off
+  once real data is behind it.)
 
 ## Blocked / decisions needed
 - Wix MCP connection, for programmatic build (`docs/discovery.md` OI-1) — **and** manual editor
