@@ -299,8 +299,11 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
         <div role="alert" className="rounded-md border border-inzbc-crimson bg-inzbc-crimson/10 p-3 text-sm text-inzbc-crimson">
           <p className="font-semibold">Before this brief can be submitted for QA:</p>
           <ul className="mt-1 list-inside list-disc">
-            {errors.map((error) => (
-              <li key={error}>{error}</li>
+            {errors.map((error, index) => (
+              // Index, not the message text: two mandatory sources share a name across the NZ/
+              // India split (e.g. "Ministry of Defence"), so their blank-outcome messages are
+              // identical strings — a text key collided and React logged a duplicate-key warning.
+              <li key={index}>{error}</li>
             ))}
           </ul>
         </div>

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -32,9 +32,16 @@ describe('BriefBuilderScreen', () => {
     const report = newDraftReportFixture()
     render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)
 
-    expect(screen.getByText(report.runId)).toBeInTheDocument()
+    const runIdCell = screen.getByText(report.runId)
+    expect(runIdCell).toBeInTheDocument()
     expect(screen.getByText(report.analyst)).toBeInTheDocument()
-    expect(screen.queryByLabelText(/run id/i)).not.toBeInTheDocument()
+    // Scoped to the run-header <dl>, not screen.queryByLabelText: the full page also carries 112
+    // source-coverage rows (a <select> + <input> each, sr-only-labelled), and *ByLabelText's
+    // accessible-name computation over that many candidates took ~18s — past this suite's 20s
+    // testTimeout — for a query that only ever needed to look at 4 read-only dt/dd pairs.
+    const runHeader = runIdCell.closest('dl')
+    if (!runHeader) throw new Error('run header <dl> not found')
+    expect(within(runHeader).queryByRole('textbox')).not.toBeInTheDocument()
   })
 
   it('reports a coverage-window edit via onChange without mutating the caller-owned report', async () => {
@@ -42,7 +49,13 @@ describe('BriefBuilderScreen', () => {
     const onChange = vi.fn()
     render(<BriefBuilderScreen report={report} onChange={onChange} />)
 
-    fireEvent.change(screen.getByLabelText(/coverage window start/i), { target: { value: '2026-08-01' } })
+    // label.control (native DOM, not a Testing Library query) rather than getByLabelText: same
+    // 112-row accessible-name-computation cost as the test above — getByLabelText(/coverage
+    // window start/i) alone took ~18s here.
+    const coverageStartLabel = screen.getByText(/coverage window start/i) as HTMLLabelElement
+    const coverageStartInput = coverageStartLabel.control
+    if (!coverageStartInput) throw new Error('coverage window start input not found')
+    fireEvent.change(coverageStartInput, { target: { value: '2026-08-01' } })
 
     expect(onChange).toHaveBeenCalled()
     const latestCall = onChange.mock.calls.at(-1)
