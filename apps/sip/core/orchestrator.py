@@ -228,3 +228,14 @@ def is_human_gated(from_state: RunState, to_state: RunState) -> bool:
     tell, before proposing, whether it may act alone or must hand off to a human.
     """
     return (from_state, to_state) in _HUMAN_GATED
+
+
+def is_legal_transition(from_state: RunState, to_state: RunState) -> bool:
+    """True if `to_state` is reachable from `from_state` per the state machine
+    (`schemas/state-machine.md`). Exposed so any caller that writes `runs.state` directly - not
+    only `Orchestrator.advance` - can refuse an illegal jump against the one table this module
+    already maintains, instead of re-deriving or duplicating it (`services/api/persistence.py`'s
+    `apply_transition` is the first such caller: a persistence layer must not become a second way
+    to reach a state the orchestrator itself would refuse).
+    """
+    return to_state in _LEGAL.get(from_state, frozenset())

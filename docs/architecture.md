@@ -200,13 +200,18 @@ erDiagram
     users |o--o{ runs : "reviewer for"
     users |o--o{ action_register : "owns"
     users |o--o{ exceptions : "owns"
-    users |o--o{ approvals : "approves"
+    users |o--o{ user_roles : "holds"
+    users |o--o{ decision_records : "decides"
     users |o--o{ audit_log : "acts"
     runs ||--o{ source_checks : "records"
     runs ||--o{ candidates : "captures"
     runs ||--o{ daily_intelligence : "produces"
     runs |o--o{ exceptions : "raises"
-    runs ||--o{ approvals : "gated by"
+    runs ||--o{ report_versions : "produces"
+    report_versions ||--o{ decision_streams : "decided through"
+    decision_streams ||--o{ decision_records : "records"
+    decision_records |o--o{ decision_records : "supersedes"
+    decision_records |o--o{ distribution_deliveries : "authorises"
     source_library ||--o{ source_checks : "checked in"
     source_library |o--o{ candidates : "sourced from"
     candidates |o--o{ candidates : "duplicate_of"
@@ -242,8 +247,12 @@ erDiagram
     users {
         uuid id PK
         text email UK
-        smallint role_id FK
         boolean mfa_enabled
+    }
+    user_roles {
+        uuid user_id FK
+        smallint role_id FK
+        boolean enabled
     }
     runs {
         uuid id PK
@@ -286,12 +295,36 @@ erDiagram
         uuid candidate_id FK
         approval_state approval
     }
-    approvals {
+    report_versions {
         uuid id PK
         uuid run_id FK
-        approval_state approval
-        distribution_state distribution
-        uuid approver_id FK
+        integer version_number
+        text content_sha256
+        timestamptz submitted_at
+    }
+    decision_streams {
+        uuid id PK
+        uuid report_version_id FK
+        decision_kind kind
+        uuid current_record_id FK
+        integer head_revision
+    }
+    decision_records {
+        uuid id PK
+        uuid stream_id FK
+        decision_kind kind
+        decision_value value
+        uuid actor_id FK
+        smallint actor_role_id FK
+        timestamptz decided_at
+        uuid supersedes_id FK
+    }
+    distribution_deliveries {
+        uuid id PK
+        uuid authority_record_id FK
+        uuid sender_id FK
+        text recipient_address
+        timestamptz sent_at
     }
     audit_log {
         bigserial id PK
