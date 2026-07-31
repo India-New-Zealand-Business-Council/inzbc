@@ -49,4 +49,17 @@
     font-weight: 700;
     text-transform: uppercase;
   }
+
+  /* Blue #261866 is the brand accent used for links/interactive states on light backgrounds
+     (docs/design-decisions.md; apps/comms/ui uses the same token the same way). Set once here
+     rather than repeated across ~27 input/select/textarea/button elements in the four screens —
+     none of them had a focus-visible ring at all before this. Buttons keep whatever background
+     colour they already have; this only adds the ring on top. */
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  button:focus-visible {
+    outline: 2px solid var(--color-inzbc-blue);
+    outline-offset: 2px;
+  }
 }

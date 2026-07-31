@@ -52,7 +52,10 @@ export function AppShell() {
                   type="button"
                   aria-current={screen === option.id ? 'page' : undefined}
                   onClick={() => setScreen(option.id)}
-                  className={`whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium ${
+                  // Lavender, not the index.css base rule's default Blue: Blue #261866 on this
+                  // header's Navy #160933 is ~1.5:1 contrast, unreadable — same reasoning as
+                  // apps/comms/ui's Header nav accent.
+                  className={`whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-lavender ${
                     screen === option.id
                       ? 'border-inzbc-tangerine text-white'
                       : 'border-transparent text-white/70 hover:text-white'
