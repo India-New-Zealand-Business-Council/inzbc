@@ -116,7 +116,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
         </p>
       ) : null}
 
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 rounded-md border border-slate-200 bg-white p-4 text-sm sm:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 rounded-md border border-inzbc-navy/10 bg-white shadow-sm p-4 text-sm sm:grid-cols-4">
         <div>
           <dt className="font-semibold text-inzbc-navy">Run ID</dt>
           <dd className="text-slate-700">{report.runId}</dd>
@@ -145,7 +145,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
             type="date"
             value={report.reportDate}
             onChange={(event) => onChange({ ...report, reportDate: event.target.value })}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className="w-full rounded-md border border-inzbc-navy/20 px-3 py-2 text-sm transition-colors hover:border-inzbc-navy/40"
           />
         </div>
         <div>
@@ -157,7 +157,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
             type="date"
             value={report.coverageStart}
             onChange={(event) => onChange({ ...report, coverageStart: event.target.value })}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className="w-full rounded-md border border-inzbc-navy/20 px-3 py-2 text-sm transition-colors hover:border-inzbc-navy/40"
           />
         </div>
         <div>
@@ -169,7 +169,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
             type="date"
             value={report.coverageEnd}
             onChange={(event) => onChange({ ...report, coverageEnd: event.target.value })}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className="w-full rounded-md border border-inzbc-navy/20 px-3 py-2 text-sm transition-colors hover:border-inzbc-navy/40"
           />
         </div>
       </div>
@@ -193,7 +193,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
           value={report.focusNote}
           onChange={(event) => onChange({ ...report, focusNote: event.target.value })}
           placeholder="A short working note for this run, e.g. a theme to watch for"
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+          className="w-full rounded-md border border-inzbc-navy/20 px-3 py-2 text-sm transition-colors hover:border-inzbc-navy/40"
         />
       </div>
 
@@ -201,9 +201,9 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
         <h3 className="mb-2 text-sm font-semibold text-inzbc-navy">
           12. Source coverage and exceptions — mandatory sources
         </h3>
-        <div className="overflow-x-auto rounded-md border border-slate-200 bg-white">
+        <div className="overflow-x-auto rounded-md border border-inzbc-navy/10 bg-white shadow-sm">
           <table className="w-full min-w-[36rem] text-left text-sm">
-            <thead className="border-b border-slate-200 text-xs uppercase text-slate-500">
+            <thead className="border-b border-inzbc-navy/10 text-xs uppercase text-slate-500">
               <tr>
                 <th scope="col" className="px-3 py-2">
                   Source
@@ -233,7 +233,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
                         value={row.outcome}
                         onChange={(event) => setSourceOutcome(row.sourceId, event.target.value as SourceOutcome)}
                         className={`rounded-md border px-2 py-1 text-sm ${
-                          row.mandatory && row.outcome === '' ? 'border-inzbc-crimson' : 'border-slate-300'
+                          row.mandatory && row.outcome === '' ? 'border-inzbc-crimson' : 'border-inzbc-navy/20'
                         }`}
                       >
                         {OUTCOME_OPTIONS.map((option) => (
@@ -252,7 +252,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
                         type="text"
                         value={row.fallbackAttempt}
                         onChange={(event) => setSourceFallback(row.sourceId, event.target.value)}
-                        className="w-full rounded-md border border-slate-300 px-2 py-1 text-sm"
+                        className="w-full rounded-md border border-inzbc-navy/20 px-2 py-1 text-sm transition-colors hover:border-inzbc-navy/40"
                       />
                     </td>
                   </tr>
@@ -284,7 +284,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
             type="button"
             onClick={() => void onSubmitForQa()}
             disabled={errors.length > 0 || submitState.kind === 'loading'}
-            className="rounded-md bg-inzbc-tangerine px-4 py-2 font-semibold text-white disabled:cursor-progress disabled:opacity-60"
+            className="rounded-md bg-inzbc-tangerine px-4 py-2 font-semibold text-white transition-colors hover:enabled:bg-inzbc-tangerine/90 disabled:cursor-progress disabled:opacity-60"
           >
             {submitState.kind === 'loading' ? 'Submitting…' : 'Submit for QA'}
           </button>
@@ -302,7 +302,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
         </h3>
         <ul className="space-y-2">
           {candidates.map((candidate) => (
-            <li key={candidate.id} className="rounded-md border border-slate-200 bg-white p-3">
+            <li key={candidate.id} className="rounded-md border border-inzbc-navy/10 bg-white shadow-sm p-3">
               <label className="flex items-start gap-3">
                 <input
                   type="checkbox"

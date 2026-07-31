@@ -22,7 +22,7 @@ export function Footer() {
               href={link.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="underline decoration-white/40 underline-offset-2"
+              className="rounded-sm underline decoration-white/40 underline-offset-2 transition-colors hover:text-inzbc-lavender hover:decoration-inzbc-lavender focus-visible:outline-inzbc-lavender"
             >
               {link.label}
             </a>

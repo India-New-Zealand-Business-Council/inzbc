@@ -26,7 +26,7 @@ export function DistributionStatusScreen({ report }: Props) {
         </p>
       </div>
 
-      <dl className="grid gap-3 rounded-md border border-slate-200 bg-white p-3 sm:grid-cols-2">
+      <dl className="grid gap-3 rounded-md border border-inzbc-navy/10 bg-white shadow-sm p-3 sm:grid-cols-2">
         <div>
           <dt className="text-xs text-slate-500">Current state</dt>
           <dd className="text-sm font-semibold text-inzbc-navy">{report.state}</dd>
@@ -37,7 +37,7 @@ export function DistributionStatusScreen({ report }: Props) {
         </div>
       </dl>
 
-      <div className="rounded-md border border-slate-200 bg-white p-3">
+      <div className="rounded-md border border-inzbc-navy/10 bg-white shadow-sm p-3">
         <h3 className="text-sm font-semibold text-inzbc-navy">QA result</h3>
         {report.qa ? (
           <dl className="mt-2 space-y-1 text-sm text-slate-700">
@@ -53,7 +53,7 @@ export function DistributionStatusScreen({ report }: Props) {
         )}
       </div>
 
-      <div className="rounded-md border border-slate-200 bg-white p-3">
+      <div className="rounded-md border border-inzbc-navy/10 bg-white shadow-sm p-3">
         <h3 className="text-sm font-semibold text-inzbc-navy">CEO decision</h3>
         {report.decision ? (
           <dl className="mt-2 space-y-1 text-sm text-slate-700">
@@ -79,7 +79,7 @@ export function DistributionStatusScreen({ report }: Props) {
         )}
       </div>
 
-      <div className="rounded-md border border-slate-200 bg-white p-3">
+      <div className="rounded-md border border-inzbc-navy/10 bg-white shadow-sm p-3">
         <h3 className="text-sm font-semibold text-inzbc-navy">Distribution record</h3>
         {report.distribution ? (
           <dl className="mt-2 space-y-1 text-sm text-slate-700">
@@ -108,7 +108,7 @@ export function DistributionStatusScreen({ report }: Props) {
           Past runs — for local development only, standing in for a not-yet-built history list
           (no `GET /api/reports` list endpoint exists yet).
         </p>
-        <div className="mt-2 overflow-x-auto rounded-md border border-slate-200 bg-white">
+        <div className="mt-2 overflow-x-auto rounded-md border border-inzbc-navy/10 bg-white shadow-sm">
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead>
               <tr className="text-left text-xs font-semibold text-slate-500">

@@ -30,7 +30,7 @@ function AuthoriseDistributionModal({ onConfirm, onCancel }: { onConfirm: () => 
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-inzbc-navy"
+            className="rounded-md border border-inzbc-navy/20 px-3 py-2 text-sm font-medium text-inzbc-navy transition-colors hover:border-inzbc-navy hover:bg-inzbc-navy/5"
           >
             Cancel
           </button>
@@ -193,7 +193,7 @@ export function CeoDecisionScreen({ report, onChange }: Props) {
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-inzbc-navy">Digest preview</h3>
         {report.sections.map((section) => (
-          <div key={section.id} className="rounded-md border border-slate-200 bg-white p-3">
+          <div key={section.id} className="rounded-md border border-inzbc-navy/10 bg-white shadow-sm p-3">
             <h4 className="text-sm font-medium text-inzbc-navy">{section.title}</h4>
             <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700">
               {section.content || <span className="italic text-slate-400">No content recorded.</span>}
@@ -208,7 +208,7 @@ export function CeoDecisionScreen({ report, onChange }: Props) {
           <p className="text-sm text-slate-500">No CEO actions recorded for this run.</p>
         ) : (
           report.ceoActionList.map((action) => (
-            <div key={action.id} className="rounded-md border border-slate-200 bg-white p-3 text-sm">
+            <div key={action.id} className="rounded-md border border-inzbc-navy/10 bg-white shadow-sm p-3 text-sm">
               <p className="text-slate-700">{action.action}</p>
               <p className="mt-1 text-xs text-slate-500">
                 Owner: {action.owner} · Priority: {action.priority} · Due: {action.dueDate}
@@ -235,7 +235,7 @@ export function CeoDecisionScreen({ report, onChange }: Props) {
                       ? option.tone === 'approve'
                         ? 'border-inzbc-forest bg-inzbc-forest text-white'
                         : 'border-inzbc-crimson bg-inzbc-crimson text-white'
-                      : 'border-slate-300 text-inzbc-navy'
+                      : 'border-inzbc-navy/20 text-inzbc-navy'
                   }`}
                 >
                   {option.label}
@@ -245,14 +245,14 @@ export function CeoDecisionScreen({ report, onChange }: Props) {
           </div>
 
           {selectedDecision ? (
-            <div className="space-y-3 rounded-md border border-slate-200 bg-white p-3">
+            <div className="space-y-3 rounded-md border border-inzbc-navy/10 bg-white shadow-sm p-3">
               <div>
                 <label htmlFor={reasonId} className="block text-xs font-medium text-inzbc-navy">
                   Reason
                 </label>
                 <textarea
                   id={reasonId}
-                  className="mt-1 min-h-16 w-full rounded-md border border-slate-300 p-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
+                  className="mt-1 min-h-16 w-full rounded-md border border-inzbc-navy/20 p-2 text-sm transition-colors hover:border-inzbc-navy/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
                   value={reason}
                   onChange={(event) => setReason(event.target.value)}
                 />
@@ -263,7 +263,7 @@ export function CeoDecisionScreen({ report, onChange }: Props) {
                 </label>
                 <textarea
                   id={conditionsId}
-                  className="mt-1 min-h-12 w-full rounded-md border border-slate-300 p-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
+                  className="mt-1 min-h-12 w-full rounded-md border border-inzbc-navy/20 p-2 text-sm transition-colors hover:border-inzbc-navy/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
                   value={conditions}
                   onChange={(event) => setConditions(event.target.value)}
                 />
@@ -276,7 +276,7 @@ export function CeoDecisionScreen({ report, onChange }: Props) {
                   <input
                     id={ownerId}
                     type="text"
-                    className="mt-1 w-full rounded-md border border-slate-300 p-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
+                    className="mt-1 w-full rounded-md border border-inzbc-navy/20 p-2 text-sm transition-colors hover:border-inzbc-navy/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
                     value={owner}
                     onChange={(event) => setOwner(event.target.value)}
                   />
@@ -288,7 +288,7 @@ export function CeoDecisionScreen({ report, onChange }: Props) {
                   <input
                     id={evidenceId}
                     type="text"
-                    className="mt-1 w-full rounded-md border border-slate-300 p-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
+                    className="mt-1 w-full rounded-md border border-inzbc-navy/20 p-2 text-sm transition-colors hover:border-inzbc-navy/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
                     value={evidenceReference}
                     onChange={(event) => setEvidenceReference(event.target.value)}
                   />
@@ -301,7 +301,7 @@ export function CeoDecisionScreen({ report, onChange }: Props) {
                 <input
                   id={nextReviewId}
                   type="date"
-                  className="mt-1 w-full rounded-md border border-slate-300 p-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue sm:w-auto"
+                  className="mt-1 w-full rounded-md border border-inzbc-navy/20 p-2 text-sm transition-colors hover:border-inzbc-navy/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue sm:w-auto"
                   value={nextReviewDate}
                   onChange={(event) => setNextReviewDate(event.target.value)}
                 />
@@ -312,7 +312,7 @@ export function CeoDecisionScreen({ report, onChange }: Props) {
                   type="button"
                   onClick={() => void onSubmitDecision()}
                   disabled={!canSubmit || submitState.kind === 'loading'}
-                  className="rounded-md bg-inzbc-tangerine px-4 py-2 font-semibold text-white disabled:cursor-progress disabled:opacity-60"
+                  className="rounded-md bg-inzbc-tangerine px-4 py-2 font-semibold text-white transition-colors hover:enabled:bg-inzbc-tangerine/90 disabled:cursor-progress disabled:opacity-60"
                 >
                   {submitState.kind === 'loading' ? 'Recording…' : 'Record decision'}
                 </button>
@@ -342,7 +342,7 @@ export function CeoDecisionScreen({ report, onChange }: Props) {
           {(report.state === 'Continue' || report.state === 'Continue With Correction') &&
           report.decision &&
           !report.decision.distributionDecidedAt ? (
-            <div className="space-y-2 rounded-md border border-slate-200 bg-white p-3">
+            <div className="space-y-2 rounded-md border border-inzbc-navy/10 bg-white shadow-sm p-3">
               <h3 className="text-sm font-semibold text-inzbc-navy">Authorise distribution</h3>
               <p className="text-xs text-slate-500">
                 A second, independent decision — approving the report is not permission to send.
@@ -360,7 +360,7 @@ export function CeoDecisionScreen({ report, onChange }: Props) {
                   type="button"
                   onClick={() => void onAuthoriseDistribution(false)}
                   disabled={distributionState.kind === 'loading'}
-                  className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-inzbc-navy disabled:cursor-progress disabled:opacity-60"
+                  className="rounded-md border border-inzbc-navy/20 px-3 py-2 text-sm font-medium text-inzbc-navy transition-colors hover:enabled:border-inzbc-navy hover:enabled:bg-inzbc-navy/5 disabled:cursor-progress disabled:opacity-60"
                 >
                   No
                 </button>

@@ -11,7 +11,7 @@ interface Props {
 // "healthy" association as the rest of this UI), crimson = flagged (matches the alert/error
 // colour used everywhere else in this component), slate = still pending, nothing decided yet.
 const SECTION_CARD_CLASSES: Record<ReviewStatus, string> = {
-  pending: 'border-slate-200 bg-white',
+  pending: 'border-inzbc-navy/10 bg-white',
   approved: 'border-inzbc-forest bg-inzbc-forest/5',
   flagged: 'border-inzbc-crimson bg-inzbc-crimson/5',
 }
@@ -199,7 +199,7 @@ export function QaReviewScreen({ report, onChange }: Props) {
                   className={`rounded-md border px-2 py-1 text-xs font-medium ${
                     section.reviewStatus === 'approved'
                       ? 'border-inzbc-forest bg-inzbc-forest text-white'
-                      : 'border-slate-300 text-inzbc-navy'
+                      : 'border-inzbc-navy/20 text-inzbc-navy'
                   }`}
                 >
                   Approve
@@ -211,7 +211,7 @@ export function QaReviewScreen({ report, onChange }: Props) {
                   className={`rounded-md border px-2 py-1 text-xs font-medium ${
                     section.reviewStatus === 'flagged'
                       ? 'border-inzbc-crimson bg-inzbc-crimson text-white'
-                      : 'border-slate-300 text-inzbc-navy'
+                      : 'border-inzbc-navy/20 text-inzbc-navy'
                   }`}
                 >
                   Flag
@@ -235,7 +235,7 @@ export function QaReviewScreen({ report, onChange }: Props) {
                 </label>
                 <textarea
                   id={`${editFieldId}-${section.id}`}
-                  className="mt-1 min-h-20 w-full rounded-md border border-slate-300 p-2 text-sm text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
+                  className="mt-1 min-h-20 w-full rounded-md border border-inzbc-navy/20 p-2 text-sm text-slate-700 transition-colors hover:border-inzbc-navy/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
                   value={section.content}
                   onChange={(event) => updateSectionContent(section.id, event.target.value)}
                 />
@@ -268,7 +268,7 @@ export function QaReviewScreen({ report, onChange }: Props) {
           second scoring model. The checklist score below is the one grounded in an actual
           completed check (SIP-188), which is why it's labelled separately rather than merged into
           one invented "quality score." */}
-      <div className="rounded-md border border-slate-200 bg-white p-3">
+      <div className="rounded-md border border-inzbc-navy/10 bg-white shadow-sm p-3">
         <h3 className="text-sm font-semibold text-inzbc-navy">Section review breakdown</h3>
         <dl className="mt-2 grid grid-cols-3 gap-2 text-center text-sm">
           <div>
@@ -300,7 +300,7 @@ export function QaReviewScreen({ report, onChange }: Props) {
           <p className="text-sm text-slate-500">No Critical/High signals recorded for this run.</p>
         ) : (
           report.criticalHighSignals.map((signal) => (
-            <div key={signal.id} className="rounded-md border border-slate-200 bg-white p-3">
+            <div key={signal.id} className="rounded-md border border-inzbc-navy/10 bg-white shadow-sm p-3">
               {/* flex-wrap: missing here, unlike every other card header in this screen — a long
                   headline next to the strength badge would force this row wider than its
                   container at narrow viewports (WCAG 2.2 §1.4.10) instead of just wrapping. */}
@@ -322,7 +322,7 @@ export function QaReviewScreen({ report, onChange }: Props) {
       <div className="space-y-4">
         <h3 className="text-sm font-semibold text-inzbc-navy">SIP-188 QA checklist</h3>
         {report.qaChecklist.map((group) => (
-          <div key={group.id} className="rounded-md border border-slate-200 bg-white p-3">
+          <div key={group.id} className="rounded-md border border-inzbc-navy/10 bg-white shadow-sm p-3">
             <h4 className="text-sm font-medium text-inzbc-navy">{group.title}</h4>
             <ul className="mt-2 space-y-2">
               {group.items.map((item) => (
@@ -347,7 +347,7 @@ export function QaReviewScreen({ report, onChange }: Props) {
                             ? option.value === 'fail'
                               ? 'border-inzbc-crimson bg-inzbc-crimson text-white'
                               : 'border-inzbc-forest bg-inzbc-forest text-white'
-                            : 'border-slate-300 text-inzbc-navy'
+                            : 'border-inzbc-navy/20 text-inzbc-navy'
                         }`}
                       >
                         {option.label}
@@ -381,7 +381,7 @@ export function QaReviewScreen({ report, onChange }: Props) {
             type="button"
             onClick={() => void onRecordResult()}
             disabled={!allAnswered || submitState.kind === 'loading'}
-            className="rounded-md bg-inzbc-tangerine px-4 py-2 font-semibold text-white disabled:cursor-progress disabled:opacity-60"
+            className="rounded-md bg-inzbc-tangerine px-4 py-2 font-semibold text-white transition-colors hover:enabled:bg-inzbc-tangerine/90 disabled:cursor-progress disabled:opacity-60"
           >
             {submitState.kind === 'loading' ? 'Recording…' : 'Record QA result'}
           </button>
