@@ -6,6 +6,7 @@ import { CeoDecisionScreen } from '../screens/CeoDecisionScreen'
 import { DistributionStatusScreen } from '../screens/DistributionStatusScreen'
 import { QaReviewScreen } from '../screens/QaReviewScreen'
 import { SCREENS, type ScreenId } from '../types'
+import { Footer } from './Footer'
 
 // A 4-screen internal tool with no deep-linking requirement in docs/sip-ui-spec.md — plain state
 // avoids a router dependency for something this small. `report` is the one run moving through
@@ -17,7 +18,10 @@ export function AppShell() {
   const [report, setReport] = useState<DailyBriefReport>(() => newDraftReportFixture())
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    // flex-col + flex-1 on main (not min-h-screen on main alone) so the footer sits at the
+    // bottom of short pages without overlapping content on tall ones — same sticky-footer
+    // layout as apps/comms/ui's App.tsx.
+    <div className="flex min-h-screen flex-col bg-slate-50">
       {/* Navy background + white text per INZBC Brand Guidelines 2026 v1.0 (Colour Palette,
           p.16) — same treatment as apps/comms/ui's Header, so the two staff tools share one
           visual language. No logo asset exists in the repo yet (docs/design-decisions.md Open
@@ -69,12 +73,13 @@ export function AppShell() {
         </nav>
       </header>
 
-      <main id="main-content" className="mx-auto max-w-4xl px-4 py-6">
+      <main id="main-content" className="mx-auto w-full max-w-4xl flex-1 px-4 py-6">
         {screen === 'brief-builder' ? <BriefBuilderScreen report={report} onChange={setReport} /> : null}
         {screen === 'qa-review' ? <QaReviewScreen report={report} onChange={setReport} /> : null}
         {screen === 'ceo-decision' ? <CeoDecisionScreen report={report} onChange={setReport} /> : null}
         {screen === 'distribution-status' ? <DistributionStatusScreen report={report} /> : null}
       </main>
+      <Footer />
     </div>
   )
 }
