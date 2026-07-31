@@ -26,7 +26,7 @@ on which frontend is asking:
 | Staff SIP control UI | GitHub OAuth + session | Same-origin (API serves the static UI) | Specified (`api-contract.md`), not yet backed by a live DB |
 | Staff Comms Assistant UI | GitHub OAuth + session | Same-origin | Architecture decided, endpoint not built (issue #65) |
 
-The **member portal is not on this list.** It runs on Wix Members Area and talks to Member
+The **member portal is not on this list.** It is expected to run behind a Wix gate and talk to Member
 Jungle, not to `services/api` — see `docs/modules/member-portal-spec.md`. Nothing in this doc
 applies to it.
 
@@ -81,14 +81,12 @@ Full endpoint list from `schemas/api-contract.md` (v0.1 draft — shapes may sti
 **Cross-cutting:** `GET /api/audit` (append-only, read), `GET /api/config` (server-side flags,
 read).
 
-> **Superseded, 31 July 2026.** The control list above is the v0.1 contract and ADR-0005 has since
-> been accepted. A single `POST /api/reports/:id/decision` no longer holds: the CEO ruling and the
-> distribution authority are separate commands with their own actor and timestamp, there is a third
-> stream for report approval that this list does not model, distribution delivery is recorded
-> separately from the authority that permitted it, and `users.role_id` has been replaced by
-> `user_roles` so authorisation binds to the role held at the time of an act. Do not build against
-> this list. Bhanu updates `schemas/api-contract.md` first; this section then follows it rather than
-> inventing a replacement shape here.
+> **Superseded, 31 July 2026.** The control list above is the v0.1 contract. ADR-0005 replaced it
+> and `schemas/api-contract.md` now carries the current shape: `/approve` and `/request-changes` for
+> the report-approval stream, `/ruling` for the CEO decision, `/distribution` for the authority, and
+> `/delivery` for an actual send. Each is a separate command with its own actor and timestamp,
+> because a single submission is one action however many rows it writes. Build against
+> `api-contract.md`, not the list above.
 
 These endpoints map directly onto the four screens in `docs/sip-ui-spec.md` (brief builder → QA
 → CEO decision → distribution status) — that doc has the screen-by-screen call sequence; this
@@ -170,11 +168,15 @@ use before that review passes, same gate as SIP.
   `model_gateway.py` server-side (NFR-01, shipped, tested — `test_model_gateway.py`).
 - **Fail-closed on Critical conditions** (NFR-02) — across SIP gates today; the same principle
   should extend to the Comms redaction gate once it's built, per the flag above.
-- **Same-origin throughout** — deliberate per ADR-0004: "session cookies never cross an origin
-  boundary and CORS is not part of the staff auth path." Note this applies to the public FTA
-  endpoint too: `services/api` installs no CORS middleware at all, and the Docker image serves the
-  FTA UI and the API from one origin. Targeted CORS is future work if the public UI ever moves to
-  its own origin, not something in place today.
+- **Same-origin for the authenticated surface** — deliberate per ADR-0004: "session cookies never
+  cross an origin boundary and CORS is not part of the staff auth path."
+- **Single-origin today, including the public endpoint, but that is not ADR-0004's design.**
+  ADR-0004 puts the public FTA UI on a separate host with CORS enabled on the read endpoint. The
+  current deployment serves both from one origin because the authenticated surface does not exist
+  yet, which `Dockerfile:3-7` states as an interim decision: with no cookies and no member data,
+  removing CORS entirely is safer than configuring it. `services/api` installs no CORS middleware.
+  When the staff surface lands, ADR-0004's split applies and CORS returns on the public endpoint
+  only.
 - **`production_enabled` stays false** everywhere until a formal launch-approval record exists
   (`docs/sip/README.md`). To be exact about what that means today: the API has no SIP write
   endpoints, no auth, no RBAC, no audit middleware and no distribution path, so there is nothing
