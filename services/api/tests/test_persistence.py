@@ -44,9 +44,14 @@ def initiated_by() -> str:
             "insert into roles (id, name) values (1, 'Analyst') on conflict do nothing"
         )
         row = conn.execute(
-            "insert into users (name, email, role_id) values (%s, %s, 1) returning id",
+            "insert into users (name, email) values (%s, %s) returning id",
             (f"Test User {uuid.uuid4()}", f"{uuid.uuid4()}@example.com"),
         ).fetchone()
+        # ADR-0005 replaced users.role_id with user_roles: one principal may hold several roles,
+        # because the steady state after the placement is one person holding every one of them.
+        conn.execute(
+            "insert into user_roles (user_id, role_id) values (%s, 1)", (row[0],)
+        )
         conn.commit()
     return str(row[0])
 
