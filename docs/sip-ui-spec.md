@@ -46,9 +46,11 @@ to be the only thing preventing it.**
 > hold both sides, the decision still commits, but only against a **recorded exception** naming the
 > approver, the reason and a review date. An unrecorded self-approval is refused.
 >
-> So this UI needs a third state per control, not just enabled or disabled: **acting under a recorded
-> exception**, shown as such. Sunil still has to approve that exception before the controlled launch
-> runs; it is a governance call, not something the interface can decide.
+> ADR-0005 requires the exception to be recorded with an approver, a reason and a review date. It
+> does not say who approves one, and it does not prescribe a UI. Showing a third state per control,
+> acting under a recorded exception, is one way to surface it and is worth considering, but the
+> spec should not present it as required. Who may approve an exception is a governance call for
+> INZBC and is unresolved.
 
 ## State machine this UI drives
 
@@ -177,7 +179,13 @@ source document (do not renumber or reword them):**
 **Entry condition:** run is in `Awaiting CEO Decision` (i.e., QA passed). Not reachable from any
 earlier state.
 
-**API:** `POST /api/reports/:id/decision`.
+**API:** `POST /api/reports/:id/ruling` then `POST /api/reports/:id/distribution`, per
+`schemas/api-contract.md`. The single `POST /api/reports/:id/decision` this spec originally named was
+removed by ADR-0005: REQ-U-02 wants distribution captured as a separate action, and one endpoint
+writing two fields cannot satisfy that however many rows it writes.
+
+There is also a third stream this spec does not yet model, **report approval**
+(`/approve`, `/request-changes`), which is distinct from the CEO ruling.
 
 **Two separate, sequential decisions — never presented as one combined control:**
 
