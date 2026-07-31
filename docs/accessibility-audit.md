@@ -43,12 +43,22 @@ current pages**, so those sections below audit every live page feeding into the 
 Verdict key: **Pass** (observed and correct) · **Fail** (observed and wrong) · **Not
 verified** (cannot be determined from static HTML).
 
+Heading structure is recorded as **Not verified**, not Fail. A missing `<h1>` and skipped ranks
+are real observations and almost certainly problems, but neither is a WCAG 2.2 AA failure on its
+own: no success criterion requires an `h1`, and proper nesting is an advisory technique for
+SC 1.3.1 (G141), not a requirement. SC 1.3.1 asks whether structure conveyed visually is also
+available programmatically, which needs a rendered comparison this method cannot make. The counts
+below stand as evidence for the rendered pass to confirm.
+
+Filename-as-alt-text is different, and is recorded as **Fail**: W3C documents using a filename as
+the text alternative as a failure of SC 1.1.1, and that is visible in the served markup.
+
 ### Home (`/`)
 | Criterion | Verdict | Evidence |
 |---|---|---|
 | 3.1.1 Language of Page | Pass | `<html lang="en">` |
 | 2.4.2 Page Titled | Pass | `<title>India New Zealand Business Council \| Home</title>` |
-| 1.3.1 Info and Relationships (headings) | Fail | No `<h1>` anywhere on the page. Headings present are 5×`<h2>`, 1×`<h5>`, 4×`<h6>` — jumps straight from h2 to h5/h6, skipping h3/h4. Levels read as font-size choices, not document structure. |
+| 1.3.1 Info and Relationships (headings) | Not verified | No `<h1>` anywhere on the page. Headings present are 5×`<h2>`, 1×`<h5>`, 4×`<h6>` — jumps straight from h2 to h5/h6, skipping h3/h4. Levels read as font-size choices, not document structure. |
 | 1.1.1 Non-text Content | Fail (mixed) | 36 `<img>` tags, all carry an `alt` attribute (none missing outright), but 26 use raw, auto-generated filenames as the alt text, e.g. `alt="Screen Shot 2022-04-13 at 1.01.19 PM.png"`, `alt="WhatsApp Image 2025-05-12 at 2.06.54 PM.jpg"`. 10 use `alt=""`. Genuine pass: the four social-media icons carry clean alt text (`"Twitter"`, `"LinkedIn"`, `"Facebook"`, `"YouTube"`). |
 | 2.4.4 Link Purpose (nav) | Pass | Primary nav links are descriptive (`About INZBC`, `Executive Council`, `Our Sponsors`, `Trade Shows`, `Join INZBC`, etc.) — no bare "click here"/"read more" in the nav. Body-copy links not exhaustively checked. |
 | 4.1.2 Name, Role, Value | Pass | Custom "More…" carousel buttons carry explicit `aria-label`, e.g. `aria-label="More ABOUT US pages"`. `role="button"` (×7) and `role="region"` (×4) present; real keyboard operability of these custom roles is Not verified. |
@@ -64,7 +74,7 @@ verified** (cannot be determined from static HTML).
 | Criterion | Verdict | Evidence |
 |---|---|---|
 | 3.1.1 / 2.4.2 | Pass | `lang="en"`; `<title>About INZBC \| India New Zealand Business Council</title>` |
-| 1.3.1 (headings) | Fail | Only 2×`<h2>` on the whole page. No `<h1>`, no h3–h6. |
+| 1.3.1 (headings) | Not verified | Only 2×`<h2>` on the whole page. No `<h1>`, no h3–h6. |
 | 1.1.1 Non-text Content | Fail (mixed) | 15 images; 4 `alt=""`, rest filename-derived (`alt="Screen Shot 2021-08-30 at 11.42.18 AM.png"`, `alt="Screen Shot 2020-05-12 at 4.38.52 PM.png"`) except the same four social icons, which pass. |
 | Landmarks | Pass | One each of header/main/footer/nav. |
 | Contrast / reflow / non-text contrast / keyboard / focus / target size | Not verified | Same static-fetch limitation as Home. |
@@ -73,7 +83,7 @@ verified** (cannot be determined from static HTML).
 | Criterion | Verdict | Evidence |
 |---|---|---|
 | 3.1.1 / 2.4.2 | Pass | Both pages: `lang="en"`; titled `Event Calendar \| …` and `Past Events \| …` |
-| 1.3.1 (headings) | Fail | `/upcoming-events`: 1×h2 then 7×h4 — skips h3, no h1. `/past-events`: 5×h2 only, no h1. |
+| 1.3.1 (headings) | Not verified | `/upcoming-events`: 1×h2 then 7×h4 — skips h3, no h1. `/past-events`: 5×h2 only, no h1. |
 | 1.1.1 Non-text Content | Fail (mixed) | `/upcoming-events`: 17 images, mostly event-flyer filenames as alt text (`alt="Invite-Chch-Diwali-V2.jpg"`, `alt="Covid-series_invite-part3-low.jpg"`) — same social-icon pass pattern. `/past-events`: 18 images, same pattern. |
 | Note | — | `/upcoming-events` returned HTTP 200 on this fetch (29 Jul 2026). `docs/discovery.md`'s earlier audit recorded this slug as 404 — that appears resolved or was transient; not re-verified against the earlier crawl conditions. |
 | Contrast / reflow / non-text contrast / keyboard / focus / target size | Not verified | — |
@@ -82,8 +92,8 @@ verified** (cannot be determined from static HTML).
 | Criterion | Verdict | Evidence |
 |---|---|---|
 | 3.1.1 / 2.4.2 | Pass | Both: `lang="en"`; titled `Trade Shows \| …` and `Trade Bazaar \| …` |
-| 1.3.1 (headings) | Fail | `/trade-news`: 10×h2, no h1, nothing else. `/trade-bazaar`: 1×h2 only, no h1. |
-| 1.1.1 Non-text Content | **Pass (best on the site)** | `/trade-news`'s 28 event images use genuinely descriptive alt text matching the real event title, e.g. `alt="11th CII HR Conclave - "Powering Growth with Head, Heart and Courage" on 25-26 Nov 2021"`, `alt="Hon Phil Twyford's Address to the 7th International INZBC Summit 2021"`. This is the pattern every other page should match. `/trade-bazaar` reverts to the filename/empty-alt pattern seen elsewhere (10 images, 4 empty, rest generic). |
+| 1.3.1 (headings) | Not verified | `/trade-news`: 10×h2, no h1, nothing else. `/trade-bazaar`: 1×h2 only, no h1. |
+| 1.1.1 Non-text Content | **Pass** on `/trade-news`, **Fail** on `/trade-bazaar` | `/trade-news`'s 28 event images use genuinely descriptive alt text matching the real event title, e.g. `alt="11th CII HR Conclave - "Powering Growth with Head, Heart and Courage" on 25-26 Nov 2021"`, `alt="Hon Phil Twyford's Address to the 7th International INZBC Summit 2021"`. This is the pattern every other page should match. `/trade-bazaar` reverts to the filename/empty-alt pattern seen elsewhere (10 images, 4 empty, rest generic). |
 | Contrast / reflow / non-text contrast / keyboard / focus / target size | Not verified | — |
 
 ### Members (`/join-inzbc`, `/member-directory`)
@@ -98,7 +108,7 @@ verified** (cannot be determined from static HTML).
 | Criterion | Verdict | Evidence |
 |---|---|---|
 | 3.1.1 / 2.4.2 | Pass | `lang="en"`; `<title>Our Sponsors \| India New Zealand Business Council</title>` |
-| 1.3.1 (headings) | Fail | 1×h2, then 6×h4 — skips h3, no h1. |
+| 1.3.1 (headings) | Not verified | 1×h2, then 6×h4 — skips h3, no h1. |
 | 1.1.1 Non-text Content | Fail (mixed) | 19 images. Partner/sponsor logos are partially identifying but still mostly filename-derived: `alt="HCI"` is a genuine pass (short, meaningful), but `alt="bnz-logo-1.png"`, `alt="UoA logo.png"`, `alt="Duco Consultancy New Logo.png"` just repeat the filename rather than naming the partner clearly. Three images share the identical generic `alt="Sponsors-Card_Logo_Plate_1200x785.jpg"`, which is actively unhelpful for distinguishing them by screen reader. |
 | Contrast / reflow / non-text contrast / keyboard / focus / target size | Not verified | — |
 
@@ -106,7 +116,7 @@ verified** (cannot be determined from static HTML).
 | Criterion | Verdict | Evidence |
 |---|---|---|
 | 3.1.1 / 2.4.2 | Pass | `lang="en"`; `<title>Connect \| India New Zealand Business Council</title>` |
-| 1.3.1 (headings) | Fail | 4×h3, 1×h5, 7×h6 — no h1, no h2. Structure jumps straight to h3 then down to h5/h6. |
+| 1.3.1 (headings) | Not verified | 4×h3, 1×h5, 7×h6 — no h1, no h2. Structure jumps straight to h3 then down to h5/h6. |
 | **Landmarks** | **Fail** | Page has **two `<main>` elements**. Only one `<main>` is valid per page — a second one breaks the "jump to main content" landmark for screen-reader users, who get no reliable way to know which is the real content region. |
 | 1.1.1 Non-text Content | Fail (mixed), with a pass on video links | 26 images. Same generic-filename pattern as other pages (`alt="Untitled-1.jpg"`, `alt="inzbc-website-foot-23.jpg"` ×2, `alt="newsletter-mop.png"`). Genuine pass: embedded video links carry descriptive alt text (`alt="Summit 2019 Highlights"`, `alt="INZBC SUMMIT 2018 - Highlights"`). Social icons pass as elsewhere. |
 | 3.3.2 Labels or Instructions (contact form) | **Pass** | The enquiry form (first name, last name, email, phone, message) uses real `<label for="input_comp-…">` elements each correctly bound by `id` to its field — genuine, correct programmatic labelling. The email field additionally has `type="email"`, `required`, and a validation `pattern`. |
