@@ -77,7 +77,37 @@ forms nobody has written content for yet.
 
 Per `website.md`: **confirmation email to the submitter + owner notification + webhook to the
 internal system.** Proposed shape, consistent with `schemas/api-contract.md`'s REST/JSON
-convention (not yet agreed with Bhanu — flagged below):
+convention (not yet agreed with Bhanu — flagged below).
+
+> **Lane.** `/services/api` and `/schemas` are Bhanu's, so the wire shape below is illustrative of
+> what this UI needs, not a contract. Bhanu publishes the Pydantic/OpenAPI contract in `/schemas`
+> and implements the receiver in `/services/api`; this spec then states the frontend requirements
+> against it. The `bhanu.md` marker that prompted the earlier reading ("SHARED-OK: receiver side
+> from Paras") is ambiguous and Bhanu is rewording it: elsewhere in that file the same marker
+> records where an item *came from*, not who owns it.
+>
+> **Two requirements to carry into that contract, both missing here.**
+>
+> *Authenticity and replay.* As sketched, the receiver has no signature or JWT verification, no
+> event or submission id, no idempotency key, no schema version and no server-recorded receipt
+> time. Anyone able to reach the URL could insert submissions and trigger notification emails, and
+> a retry would duplicate both. Wix's own Submission Created event carries a JWT to verify and a
+> unique id for duplicate suppression; if we use Wix Automations instead, the contract needs
+> equivalent authentication and idempotency.
+>
+> *Privacy.* `privacy_act_acknowledged: true` is neither consent nor evidence of compliance. IPP 3
+> wants a collection notice stating purpose, which fields are required, recipients, where the data
+> is held, any overseas processing, retention, access and correction, and a privacy contact. There
+> is no field-level purpose or minimisation here either. A PIA and a form data inventory are build
+> blockers, and the boolean should become a versioned notice reference only where evidence of
+> notice is actually needed.
+>
+> *One authoritative store.* The receiver persisting the full payload while Wix also keeps native
+> submissions gives two homes for the same enquiry PII, which `CLAUDE.md` forbids. Pick the
+> authoritative store; the other is a minimal audit copy keyed by submission id, with explicit
+> retention and deletion.
+
+Illustrative shape:
 
 ```
 POST /api/forms/submissions        (webhook target, internal receiver — Wix calls this)
