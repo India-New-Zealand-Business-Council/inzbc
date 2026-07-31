@@ -1,7 +1,13 @@
 name: CI
 
 on:
+  # `edited` matters for the linked-issue job below. Without it the default types are opened,
+  # synchronize and reopened, so a PR that forgets `Closes #NN` cannot be fixed the way that job's
+  # own error message tells you to: editing the body fires no event, and the job reads the body
+  # from the event payload, so a re-run just replays the old one. The author had to push a commit
+  # or reopen the PR. PR #143 sat red for four days on exactly this.
   pull_request:
+    types: [opened, synchronize, reopened, edited]
   workflow_dispatch:
 
 jobs:
@@ -161,7 +167,11 @@ jobs:
       - name: Typecheck
         run: pnpm -r --if-present typecheck
       - name: Test + coverage
-        run: pnpm --filter @inzbc/fta-ui run coverage
+        # Recursive, not filtered to one package. Lint, typecheck and build already run with -r,
+        # so a second UI app was linted and built but never tested: apps/comms/ui (#162) and
+        # apps/sip/ui (#166) both ship failing suites while showing every check green, because
+        # this step only ever ran @inzbc/fta-ui. A gate that cannot fail is not a gate.
+        run: pnpm -r --if-present coverage
       - name: Build
         run: pnpm -r --if-present build
       # Compile check only: proves the stories and Storybook config build. It does NOT run the
