@@ -137,7 +137,7 @@ describe('recordCeoDecision', () => {
       reason: 'On track',
       conditions: '',
       owner: 'Sunil',
-      evidenceReference: '',
+      evidenceReference: 'Doc ref 123',
       nextReviewDate: '2026-08-01',
       decidedAt: new Date().toISOString(),
       ...overrides,
@@ -171,6 +171,32 @@ describe('recordCeoDecision', () => {
       recordCeoDecision(awaitingDecisionReport(), baseDecision({ decision: null })),
     ).rejects.toThrow(/report decision.*is required/i)
   })
+
+  it('rejects blank required fields rather than relying solely on the UI\'s disabled button', async () => {
+    await expect(
+      recordCeoDecision(awaitingDecisionReport(), baseDecision({ reportVersion: '' })),
+    ).rejects.toThrow(/report version.*is required/i)
+    await expect(recordCeoDecision(awaitingDecisionReport(), baseDecision({ reason: '' }))).rejects.toThrow(
+      /reason.*is required/i,
+    )
+    await expect(recordCeoDecision(awaitingDecisionReport(), baseDecision({ owner: '' }))).rejects.toThrow(
+      /owner.*is required/i,
+    )
+    await expect(
+      recordCeoDecision(awaitingDecisionReport(), baseDecision({ evidenceReference: '' })),
+    ).rejects.toThrow(/evidence reference.*is required/i)
+    await expect(
+      recordCeoDecision(awaitingDecisionReport(), baseDecision({ nextReviewDate: '' })),
+    ).rejects.toThrow(/next review date.*is required/i)
+    await expect(
+      recordCeoDecision(awaitingDecisionReport(), baseDecision({ decidedAt: null })),
+    ).rejects.toThrow(/decision timestamp.*is required/i)
+  })
+
+  it('does not require conditions — the field is genuinely optional', async () => {
+    const result = await recordCeoDecision(awaitingDecisionReport(), baseDecision({ conditions: '' }))
+    expect(result.state).toBe('Continue')
+  })
 })
 
 describe('authoriseDistribution', () => {
@@ -182,7 +208,7 @@ describe('authoriseDistribution', () => {
       reason: 'On track',
       conditions: '',
       owner: 'Sunil',
-      evidenceReference: '',
+      evidenceReference: 'Doc ref 123',
       nextReviewDate: '2026-08-01',
       decidedAt: new Date().toISOString(),
     })
@@ -228,7 +254,7 @@ describe('authoriseDistribution', () => {
       reason: 'Waiting on confirmation',
       conditions: '',
       owner: 'Sunil',
-      evidenceReference: '',
+      evidenceReference: 'Doc ref 123',
       nextReviewDate: '2026-08-01',
       decidedAt: new Date().toISOString(),
     })

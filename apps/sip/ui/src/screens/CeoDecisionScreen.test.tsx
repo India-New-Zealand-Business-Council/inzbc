@@ -44,7 +44,12 @@ describe('CeoDecisionScreen', () => {
     const report = reportAwaitingDecision()
     render(<CeoDecisionScreen report={report} onChange={vi.fn()} />)
 
-    expect(screen.getByText(report.approvedVersionSet)).toBeInTheDocument()
+    // getByText(..., { exact: false }) on a short string like "v1" can match this paragraph *and*
+    // its parent (whose combined text also contains it) — toHaveTextContent on the one paragraph
+    // avoids that ambiguity.
+    const versionLine = screen.getByText(/deciding against report version/i)
+    expect(versionLine).toHaveTextContent(report.reportVersion)
+    expect(versionLine).toHaveTextContent(report.approvedVersionSet)
     expect(
       screen.getByText(/human-reviewed\. not authorised for member, external, website or social publication\./i),
     ).toBeInTheDocument()
@@ -195,6 +200,15 @@ describe('CeoDecisionScreen', () => {
     await userEvent.click(screen.getByRole('button', { name: /cancel/i }))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(screen.queryByText(/distribution authorised:/i)).not.toBeInTheDocument()
+  })
+
+  it('names the authorised recipient and confirms automated channels are off, in the modal', async () => {
+    render(<ControlledCeoDecision initial={reportDecided('Continue')} />)
+    await userEvent.click(screen.getByRole('button', { name: /yes, authorise/i }))
+
+    const dialog = screen.getByRole('dialog', { name: /authorise distribution/i })
+    expect(dialog).toHaveTextContent(/sunilkaushalnz@gmail\.com/i)
+    expect(dialog).toHaveTextContent(/all disabled/i)
   })
 
   it('confirming the modal authorises distribution and advances to Approved for Manual Distribution', async () => {

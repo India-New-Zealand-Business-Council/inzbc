@@ -1,5 +1,5 @@
 import type { CeoDecisionRecord, DailyBriefReport, QaChecklistGroup, ReportDecisionType } from '../domain'
-import { candidatesFixture, generatedDigestContent } from '../lib/fixtures'
+import { candidatesFixture, generatedDigestContent, qaChecklistFixture } from '../lib/fixtures'
 import { validateBrief } from '../lib/validation'
 
 export class ReportsApiError extends Error {}
@@ -35,6 +35,15 @@ function delay(ms: number, signal?: AbortSignal): Promise<void> {
  * apps/comms/ui/src/api/client.ts and apps/fta/ui/src/api/client.ts.
  */
 
+/** Numeric suffix of a "v<N>" version string, bumped by one — "v1" -> "v2". Falls back to "v2" for
+ * anything that doesn't parse, so a resubmission always visibly advances rather than silently
+ * repeating the same version string. */
+function bumpReportVersion(version: string): string {
+  const match = /^v(\d+)$/.exec(version.trim())
+  const next = match ? Number(match[1]) + 1 : 2
+  return `v${next}`
+}
+
 /** POST /api/reports/:id/submit — Report Drafted -> QA In Progress. Re-validates server-side in
  * the real system; this fixture re-runs the same client-side rule so the stub can't be tricked by
  * a caller that bypasses the UI's own disabled-button gate.
@@ -43,7 +52,13 @@ function delay(ms: number, signal?: AbortSignal): Promise<void> {
  * version took a bare `selectedCandidateCount`, so the actual selected candidates never reached
  * `generatedDigestContent`, which returned the same two hardcoded signals regardless of what was
  * selected. Resolving ids to candidates here (rather than requiring the caller to pass full
- * candidate objects) mirrors how a real endpoint would look them up server-side from an id list. */
+ * candidate objects) mirrors how a real endpoint would look them up server-side from an id list.
+ *
+ * A resubmission (this report already carries a `qa` record from a prior round returned for
+ * correction) bumps `reportVersion` and starts the checklist and QA result fresh — an earlier
+ * version regenerated the digest but left the previous round's checklist answers and Fail record
+ * in place, so the reviewer's second pass silently inherited a stale, already-failed result
+ * instead of reviewing the corrected content on its own terms. */
 export async function submitReportForQa(
   report: DailyBriefReport,
   options: { signal?: AbortSignal } = {},
@@ -59,11 +74,15 @@ export async function submitReportForQa(
   const selectedCandidates = candidatesFixture().filter((candidate) =>
     report.selectedCandidateIds.includes(candidate.id),
   )
+  const isResubmission = report.qa !== null
   return {
     ...report,
     ...generatedDigestContent(selectedCandidates),
     state: 'QA In Progress',
     generatedAt: report.generatedAt || new Date().toISOString(),
+    reportVersion: isResubmission ? bumpReportVersion(report.reportVersion) : report.reportVersion,
+    qaChecklist: isResubmission ? qaChecklistFixture() : report.qaChecklist,
+    qa: isResubmission ? null : report.qa,
   }
 }
 
@@ -158,6 +177,29 @@ export async function recordCeoDecision(
     throw new ReportsApiError(
       'A report decision (Continue / Continue With Correction / Pause / Stop) is required.',
     )
+  }
+  // Fail-closed re-check of the same required fields CeoDecisionScreen's disabled-button gate
+  // enforces (`conditions` is the one genuinely optional field, per its "if any" label) — an
+  // earlier version only checked `decision` here, so a caller bypassing the UI could record a
+  // decision with a blank reason, owner, evidence reference, next review date or version, or a
+  // null timestamp.
+  if (!decision.reportVersion.trim()) {
+    throw new ReportsApiError('A report version is required.')
+  }
+  if (!decision.reason.trim()) {
+    throw new ReportsApiError('A reason is required.')
+  }
+  if (!decision.owner.trim()) {
+    throw new ReportsApiError('An owner is required.')
+  }
+  if (!decision.evidenceReference.trim()) {
+    throw new ReportsApiError('An evidence reference is required.')
+  }
+  if (!decision.nextReviewDate.trim()) {
+    throw new ReportsApiError('A next review date is required.')
+  }
+  if (!decision.decidedAt) {
+    throw new ReportsApiError('A decision timestamp is required.')
   }
   await delay(SIMULATED_LATENCY_MS, options.signal)
   return {

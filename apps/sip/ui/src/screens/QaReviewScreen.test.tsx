@@ -45,6 +45,13 @@ describe('QaReviewScreen', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(/cannot be its own reviewer/i)
   })
 
+  it('carries the governance line — docs/sip-ui-spec.md requires it on every view of the brief', () => {
+    render(<QaReviewScreen report={reportInQa()} onChange={vi.fn()} />)
+    expect(
+      screen.getByText(/human-reviewed\. not authorised for member, external, website or social publication\./i),
+    ).toBeInTheDocument()
+  })
+
   it('renders every brief section read-only once QA is reachable', () => {
     render(<QaReviewScreen report={reportInQa()} onChange={vi.fn()} />)
     for (const section of generatedDigestContent(candidatesFixture()).sections) {

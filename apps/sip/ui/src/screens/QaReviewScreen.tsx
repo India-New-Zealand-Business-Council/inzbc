@@ -1,6 +1,6 @@
 import { useId, useMemo, useRef, useState } from 'react'
 import { returnForCorrection, ReportsApiError, submitQaResult } from '../api/reportsStore'
-import type { DailyBriefReport, QaAnswer, ReviewStatus } from '../domain'
+import { GOVERNANCE_LINE, type DailyBriefReport, type QaAnswer, type ReviewStatus } from '../domain'
 
 interface Props {
   report: DailyBriefReport
@@ -190,6 +190,11 @@ export function QaReviewScreen({ report, onChange }: Props) {
         <p className="mt-1 text-sm text-slate-600">
           Independent SIP-188 quality review before this brief reaches the CEO. Reviewer:{' '}
           {report.reviewer}.
+        </p>
+        {/* docs/sip-ui-spec.md: this line belongs "on every view of the brief, always" — an
+            earlier version only rendered it on the CEO decision screen. */}
+        <p className="mt-2 rounded-md border border-inzbc-navy/20 bg-inzbc-navy/5 p-2 text-xs font-medium text-inzbc-navy">
+          {GOVERNANCE_LINE}
         </p>
       </div>
 
@@ -413,7 +418,7 @@ export function QaReviewScreen({ report, onChange }: Props) {
             type="button"
             onClick={() => void onRecordResult()}
             disabled={!allAnswered || submitState.kind === 'loading'}
-            className="rounded-md bg-inzbc-tangerine px-4 py-2 font-semibold text-white transition-colors hover:enabled:bg-inzbc-tangerine/90 disabled:cursor-progress disabled:opacity-60"
+            className="rounded-md bg-inzbc-tangerine px-4 py-2 font-semibold text-inzbc-navy transition-colors hover:enabled:bg-inzbc-tangerine/90 disabled:cursor-progress disabled:opacity-60"
           >
             {submitState.kind === 'loading' ? 'Recording…' : 'Record QA result'}
           </button>

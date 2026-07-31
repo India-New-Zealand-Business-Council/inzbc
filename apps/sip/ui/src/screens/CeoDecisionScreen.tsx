@@ -26,6 +26,20 @@ function AuthoriseDistributionModal({ onConfirm, onCancel }: { onConfirm: () => 
           send anything — manual send happens outside this application
           (docs/sip/operator-guide.md Step 13).
         </p>
+        {/* Recipient and launch-control state, sourced from docs/sip/launch/launch-config.md —
+            an earlier version of this modal showed neither, so the CEO was asked to confirm
+            "authorise distribution" with nothing on screen naming who that goes to or confirming
+            every automated channel is still off. */}
+        <dl className="mt-3 space-y-1 rounded-md border border-inzbc-navy/10 bg-inzbc-navy/5 p-2 text-xs text-inzbc-navy">
+          <div>
+            <dt className="inline font-semibold">Authorised recipient: </dt>
+            <dd className="inline">Sunil Kaushal, sunilkaushalnz@gmail.com (manual email only)</dd>
+          </div>
+          <div>
+            <dt className="inline font-semibold">Automated distribution channels: </dt>
+            <dd className="inline">all disabled (email, member, external, website, social)</dd>
+          </div>
+        </dl>
         <div className="mt-4 flex justify-end gap-2">
           <button
             type="button"
@@ -82,6 +96,14 @@ const DECISION_OPTIONS: { value: ReportDecisionType; label: string; tone: 'appro
  * after this one is recorded (see the Continue/Continue With Correction branch below and
  * `authoriseDistribution` in reportsStore.ts) and is wired in a later commit; it deliberately has
  * no path back into this same submit.
+ *
+ * Unlike QaReviewScreen, this screen has no role gate at all — anyone with a report in
+ * `Awaiting CEO Decision` can record its decision, regardless of who they are. QaReviewScreen's
+ * own gate (`report.reviewer` standing in for the authenticated session) is itself only a partial
+ * answer, since there is no live auth yet (docs/api-integration-spec.md) to check that stand-in
+ * against. Adding an equivalent check here would mean inventing a "current user" concept with
+ * nothing real behind it — that's issue #42 (auth and role model), not something to fake in a UI
+ * spec-fixture screen.
  */
 export function CeoDecisionScreen({ report, onChange }: Props) {
   const [selectedDecision, setSelectedDecision] = useState<ReportDecisionType | null>(null)
@@ -120,7 +142,7 @@ export function CeoDecisionScreen({ report, onChange }: Props) {
       const updated = await recordCeoDecision(
         report,
         {
-          reportVersion: report.approvedVersionSet,
+          reportVersion: report.reportVersion,
           decision: selectedDecision,
           reason: reason.trim(),
           conditions: conditions.trim(),
@@ -183,7 +205,8 @@ export function CeoDecisionScreen({ report, onChange }: Props) {
       <div>
         <h2 className="text-lg font-semibold text-inzbc-navy">CEO Decision</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Deciding against version <strong>{report.approvedVersionSet}</strong>. Run: {report.runId}.
+          Deciding against report version <strong>{report.reportVersion}</strong>. Run: {report.runId}.
+          Built against controlling documents {report.approvedVersionSet}.
         </p>
         <p className="mt-2 rounded-md border border-inzbc-navy/20 bg-inzbc-navy/5 p-2 text-xs font-medium text-inzbc-navy">
           {GOVERNANCE_LINE}
@@ -312,7 +335,7 @@ export function CeoDecisionScreen({ report, onChange }: Props) {
                   type="button"
                   onClick={() => void onSubmitDecision()}
                   disabled={!canSubmit || submitState.kind === 'loading'}
-                  className="rounded-md bg-inzbc-tangerine px-4 py-2 font-semibold text-white transition-colors hover:enabled:bg-inzbc-tangerine/90 disabled:cursor-progress disabled:opacity-60"
+                  className="rounded-md bg-inzbc-tangerine px-4 py-2 font-semibold text-inzbc-navy transition-colors hover:enabled:bg-inzbc-tangerine/90 disabled:cursor-progress disabled:opacity-60"
                 >
                   {submitState.kind === 'loading' ? 'Recording…' : 'Record decision'}
                 </button>

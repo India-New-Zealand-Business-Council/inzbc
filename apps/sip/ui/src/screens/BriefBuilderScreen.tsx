@@ -1,6 +1,6 @@
 import { useId, useMemo, useRef, useState } from 'react'
 import { ReportsApiError, submitReportForQa } from '../api/reportsStore'
-import type { Candidate, DailyBriefReport, SourceOutcome } from '../domain'
+import { GOVERNANCE_LINE, type Candidate, type DailyBriefReport, type SourceOutcome } from '../domain'
 import { candidatesFixture } from '../lib/fixtures'
 import { FOCUS_NOTE_MAX_LENGTH, validateBrief } from '../lib/validation'
 
@@ -107,6 +107,11 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
         <p className="mt-1 text-sm text-slate-600">
           Assemble the SIP-186 daily brief from scored candidates (Analyst).
         </p>
+        {/* docs/sip-ui-spec.md: this line belongs "on every view of the brief, always" — an
+            earlier version only rendered it on the CEO decision screen. */}
+        <p className="mt-2 rounded-md border border-inzbc-navy/20 bg-inzbc-navy/5 p-2 text-xs font-medium text-inzbc-navy">
+          {GOVERNANCE_LINE}
+        </p>
       </div>
 
       {!isDraft ? (
@@ -114,6 +119,33 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
           Submitted for QA — this run is now <strong>{report.state}</strong>. Further edits happen
           on the QA Review screen, not here.
         </p>
+      ) : null}
+
+      {/* Correction is a loop, not a dead end: an earlier version left the reviewer's findings
+          only on the QA screen, so the analyst came back here to a blank slate with no record of
+          what to fix. Resubmitting (reportsStore.submitReportForQa) starts a fresh checklist and
+          bumps reportVersion — this panel is what's revised against. */}
+      {isDraft && report.qa?.result === 'Fail' ? (
+        <div role="alert" className="space-y-2 rounded-md border border-inzbc-crimson bg-inzbc-crimson/10 p-3 text-sm text-inzbc-crimson">
+          <p className="font-semibold">
+            Returned for correction ({report.reportVersion}) — reviewed by {report.qa.reviewer}:
+          </p>
+          {report.qa.criticalFailuresFound ? (
+            <p>Critical failures: {report.qa.criticalFailuresFound}</p>
+          ) : null}
+          {report.qa.correctionsRequired ? <p>{report.qa.correctionsRequired}</p> : null}
+          {report.sections.some((section) => section.reviewStatus === 'flagged') ? (
+            <ul className="list-inside list-disc">
+              {report.sections
+                .filter((section) => section.reviewStatus === 'flagged')
+                .map((section) => (
+                  <li key={section.id}>
+                    <strong>{section.title}:</strong> {section.flagReason || 'Flagged, no reason recorded.'}
+                  </li>
+                ))}
+            </ul>
+          ) : null}
+        </div>
       ) : null}
 
       <dl className="grid grid-cols-2 gap-x-4 gap-y-2 rounded-md border border-inzbc-navy/10 bg-white shadow-sm p-4 text-sm sm:grid-cols-4">
@@ -284,7 +316,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
             type="button"
             onClick={() => void onSubmitForQa()}
             disabled={errors.length > 0 || submitState.kind === 'loading'}
-            className="rounded-md bg-inzbc-tangerine px-4 py-2 font-semibold text-white transition-colors hover:enabled:bg-inzbc-tangerine/90 disabled:cursor-progress disabled:opacity-60"
+            className="rounded-md bg-inzbc-tangerine px-4 py-2 font-semibold text-inzbc-navy transition-colors hover:enabled:bg-inzbc-tangerine/90 disabled:cursor-progress disabled:opacity-60"
           >
             {submitState.kind === 'loading' ? 'Submitting…' : 'Submit for QA'}
           </button>

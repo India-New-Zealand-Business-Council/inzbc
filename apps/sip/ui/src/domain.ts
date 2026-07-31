@@ -180,6 +180,12 @@ export interface DailyBriefReport {
   generatedAt: string
   analyst: string
   reviewer: string
+  // The daily report's own version — bumped by reportsStore.submitReportForQa each time a
+  // corrected brief is resubmitted after a QA Failed round. Distinct from `approvedVersionSet`
+  // (the controlling document list this report was built against, e.g. "SIP-050 v1.1, DB v1.9,
+  // ...") — an earlier version of CeoDecisionScreen populated CeoDecisionRecord.reportVersion
+  // from approvedVersionSet, so the recorded decision named the wrong document as its subject.
+  reportVersion: string
   approvedVersionSet: string
   sourceConfidenceSummary: string
   sourceMix: string

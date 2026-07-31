@@ -83,6 +83,14 @@ describe('BriefBuilderScreen', () => {
     expect(screen.getByText(/not a sip-186 field/i)).toBeInTheDocument()
   })
 
+  it('carries the governance line — docs/sip-ui-spec.md requires it on every view of the brief', () => {
+    const report = newDraftReportFixture()
+    render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)
+    expect(
+      screen.getByText(/human-reviewed\. not authorised for member, external, website or social publication\./i),
+    ).toBeInTheDocument()
+  })
+
   it('blocks on blank mandatory source outcomes and no candidate selected, by default', () => {
     const report = newDraftReportFixture()
     render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)
@@ -110,6 +118,30 @@ describe('BriefBuilderScreen', () => {
 
     expect(screen.getByText(/ready to submit for qa/i)).toBeInTheDocument()
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('shows the reviewer\'s findings when a run comes back for correction', () => {
+    const report: DailyBriefReport = {
+      ...reportReadyForQa(),
+      reportVersion: 'v2',
+      qa: {
+        reviewer: 'Paras',
+        timestamp: '2026-07-30T00:00:00Z',
+        result: 'Fail',
+        criticalFailuresFound: 'Approved version set present; no uncontrolled change.',
+        correctionsRequired: 'See flagged Critical items above.',
+      },
+      sections: [
+        { id: 'sec-1', title: '1. Executive judgement', content: 'x', reviewStatus: 'flagged', flagReason: 'Numbers need a source check' },
+      ],
+    }
+    render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)
+
+    const alert = screen.getByRole('alert')
+    expect(alert).toHaveTextContent('v2')
+    expect(alert).toHaveTextContent('Paras')
+    expect(alert).toHaveTextContent(/approved version set present/i)
+    expect(alert).toHaveTextContent(/numbers need a source check/i)
   })
 
   it('disables Submit for QA while the brief is invalid', () => {

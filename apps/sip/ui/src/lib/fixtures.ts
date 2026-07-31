@@ -329,7 +329,10 @@ export function qaChecklistFixture(): QaChecklistGroup[] {
         },
         {
           id: 'e2',
-          text: 'Distribution authority correct; recipient limited to the authorised recipient on file.',
+          // Verbatim from docs/sip/launch/SIP-188_qa_checklist_v0.9.md:37 — an earlier version
+          // softened the named recipient to "the authorised recipient on file", which drifts
+          // from the source doc's actual checklist wording.
+          text: 'Distribution authority correct; recipient limited to sunilkaushalnz@gmail.com.',
           critical: false,
           answer: null,
         },
@@ -475,6 +478,7 @@ export function newDraftReportFixture(): DailyBriefReport {
     generatedAt: '',
     analyst: 'Sunil',
     reviewer: 'Paras',
+    reportVersion: 'v1',
     approvedVersionSet: 'SIP-050 v1.1, DB v1.9, SIP-185/186/188 v0.9',
     sourceConfidenceSummary: '',
     sourceMix: '',
