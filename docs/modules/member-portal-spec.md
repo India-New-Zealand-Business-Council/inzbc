@@ -26,9 +26,11 @@ systems**, and the member portal uses neither of the ones documented in most det
    [ADR-0004](../decisions/0004-platform-graduation.md). Roles: SIP Owner, Analyst, Reviewer,
    Secretariat, Administrator, Board Viewer, Auditor (`database/schema.sql`, `roles` table). This
    is for the five-person internal team, not members.
-2. **Member portal auth** — Wix Members Area, native Wix login, per `member-portal.md`
-   ("Platform: Wix Members Area (login-gated)"). Roles here are Wix member roles (below), a
-   completely different set, on a completely different system.
+2. **Member portal auth** — `[[proposed, pending INZBC confirmation]]`. `member-portal.md` proposes
+   Wix Members Area with native Wix login ("Platform: Wix Members Area (login-gated)"), but nothing
+   has confirmed it: `client-answers.md` C1, C5, C6 and C7 are all `PROPOSED`. Whatever is chosen,
+   any roles it carries are member-side and a completely different set from the internal team's,
+   on a completely different system.
 
 **A real, unresolved tension worth surfacing:** `docs/workstreams/bhanu.md`'s Next Up list has
 "Member portal access control: member roles + Members Area gating on the auth/RBAC model"
@@ -164,11 +166,15 @@ integration mechanism is unknown, so it specifies the surface before the thing t
 the surface may exist.
 
 Until the assessment lands, the portal is **link-out only**: a gated shell that sends members to
-Member Jungle for membership, billing, directory and registration. If retain-and-integrate is later
+Member Jungle for membership, billing, directory and registration. That shell is buildable now, on
+staging, because it holds no member data: it is navigation and copy. What is not buildable is any
+screen that displays or writes membership status, renewal dates, invoices, directory consent or
+corporate seats. If retain-and-integrate is later
 chosen, Member Jungle stays authoritative and Wix may be a defined read-through presentation
 surface with no copied register.
 
-A privacy assessment is also a build blocker, not a later step. `membership-crm.md:24-26` requires a
+A privacy assessment gates migration, integration and any processing of live personal data. It
+does not gate a static prototype that holds none. Before either of those steps: `membership-crm.md:24-26` requires a
 PIA before migration plus a cross-border assessment, and `inzbc-ai-operating-system.md:662-673`
 requires one before connecting Wix and Member Jungle. An approved PIA, data map, retention policy
 and access/correction process are all prerequisites.
@@ -176,9 +182,9 @@ and access/correction process are all prerequisites.
 ## Dependencies
 - Foundation decision on Member Jungle (retain/integrate/replace) — formally still `PROPOSED`.
 - Approved PIA, data map, retention policy, access and correction process, cross-border assessment.
-- `docs/forms-spec.md` and `docs/design-decisions.md` are referenced here but live in unmerged PRs
-  (#160 and #155). #160 cites this file back, so the two cannot both rely on each other landing
-  first; cite merged sources or state the merge order.
+- `docs/forms-spec.md` (#160) and `docs/design-decisions.md` (#155) are referenced here. #160 cites
+  this file back, so neither can depend on the other having landed. Both references are to content,
+  not to merge state, and neither blocks this document.
 - Bhanu's access-control model, and the system-1-vs-system-2 conflict flagged above.
 - The website shell (Paras) — this portal sits behind Wix Members Area gating on top of it.
 - Final fee/tier structure from INZBC before the Billing screen can show real numbers.
