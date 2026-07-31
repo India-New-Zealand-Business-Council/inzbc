@@ -83,10 +83,10 @@ convention (not yet agreed with Bhanu — flagged below).
 > what this UI needs, not a contract. Bhanu publishes the Pydantic/OpenAPI contract in `/schemas`
 > and implements the receiver in `/services/api`; this spec then states the frontend requirements
 > against it. The `bhanu.md` marker that prompted the earlier reading ("SHARED-OK: receiver side
-> from Paras") is ambiguous and Bhanu is rewording it: elsewhere in that file the same marker
-> records where an item *came from*, not who owns it.
+> from Paras") is ambiguous: elsewhere in that file the same marker records where an item *came
+> from*, not who owns it. Bhanu owns clarifying it.
 >
-> **Two requirements to carry into that contract, both missing here.**
+> **Three requirements to carry into that contract, all missing here.**
 >
 > *Authenticity and replay.* As sketched, the receiver has no signature or JWT verification, no
 > event or submission id, no idempotency key, no schema version and no server-recorded receipt
@@ -96,16 +96,22 @@ convention (not yet agreed with Bhanu — flagged below).
 > equivalent authentication and idempotency.
 >
 > *Privacy.* `privacy_act_acknowledged: true` is neither consent nor evidence of compliance. IPP 3
-> wants a collection notice stating purpose, which fields are required, recipients, where the data
-> is held, any overseas processing, retention, access and correction, and a privacy contact. There
-> is no field-level purpose or minimisation here either. A PIA and a form data inventory are build
-> blockers, and the boolean should become a versioned notice reference only where evidence of
+> requires a collection notice covering the purpose, the intended recipients, the agency collecting
+> and holding the information, any legal authority, the consequences of not providing it, and the
+> rights of access and correction. Retention, overseas processing and where the data is held are not
+> IPP 3 itself: they come from this project's own privacy design in
+> `docs/inzbc-ai-operating-system.md`, and from IPP 5 and IPP 9. Both sets belong in the notice; the
+> attribution matters because someone will check it.
+>
+> There is no field-level purpose or minimisation here either. A PIA and a form data inventory gate
+> the live form, and the boolean should become a versioned notice reference only where evidence of
 > notice is actually needed.
 >
 > *One authoritative store.* The receiver persisting the full payload while Wix also keeps native
-> submissions gives two homes for the same enquiry PII, which `CLAUDE.md` forbids. Pick the
-> authoritative store; the other is a minimal audit copy keyed by submission id, with explicit
-> retention and deletion.
+> submissions gives two homes for the same enquiry PII. `CLAUDE.md` requires one system of record
+> per data type; it does not forbid an operational copy outright. So name which store is
+> authoritative, and make the other a minimal copy keyed by submission id with its own retention
+> and deletion policy. Calling Wix a "fallback of record" without deciding that is the problem.
 
 Illustrative shape:
 
@@ -171,9 +177,18 @@ correction.
 ## Privacy
 
 NZ Privacy Act 2020 applies to every form that collects personal information (per `trade.md`'s
-footer note and `CLAUDE.md`'s membership-data rule). Every form needs a visible privacy
-acknowledgement or link, consistent with the `consent.privacy_act_acknowledged` field in the
-proposed payload above.
+footer note and `CLAUDE.md`'s membership-data rule).
+
+A visible link is the minimum, and only sufficient if it leads to a complete collection notice.
+IPP 3 requires that notice to cover the purpose, the intended recipients, the agency collecting and
+holding the information, any legal authority, the consequences of not providing it, and the rights
+of access and correction. This project's own privacy design adds retention, overseas processing and
+where the data is held.
+
+The `consent.privacy_act_acknowledged` boolean in the payload above is **not** that. A true flag
+records that a checkbox was ticked; it is neither consent nor evidence that notice was given, and it
+carries no version of the notice the person actually saw. Where evidence of notice genuinely matters,
+store a reference to the versioned notice instead of a boolean.
 
 ## Open items
 1. Exact webhook payload contract — this doc proposes a shape; Bhanu finalises it.
