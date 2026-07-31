@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import inzbcLogoAcronymWhite from '../assets/inzbc-logo-acronym-white.svg'
 import type { DailyBriefReport } from '../domain'
 import { newDraftReportFixture } from '../lib/fixtures'
 import { BriefBuilderScreen } from '../screens/BriefBuilderScreen'
@@ -24,9 +25,10 @@ export function AppShell() {
     <div className="flex min-h-screen flex-col bg-slate-50">
       {/* Navy background + white text per INZBC Brand Guidelines 2026 v1.0 (Colour Palette,
           p.16) — same treatment as apps/comms/ui's Header, so the two staff tools share one
-          visual language. No logo asset exists in the repo yet (docs/design-decisions.md Open
-          item #5), so "INZBC" renders as the guide's own acronym-logo concept (p.8) rather than
-          a fabricated image. */}
+          visual language. Logo: the acronym lockup, white variant, sourced from Drive (Brand/
+          Logo Files/Export/SVG - Vector/INZBC_Logo_Acronym_White.svg), not fabricated — the
+          guide (p.8) recommends it "at small scales, where 'India New Zealand Business Council'
+          might become illegible," exactly this header's use case. */}
       <header className="bg-inzbc-navy text-white">
         <a
           href="#main-content"
@@ -35,11 +37,11 @@ export function AppShell() {
           Skip to main content
         </a>
         <div className="mx-auto max-w-4xl px-4 py-4 sm:py-6">
-          <div className="flex items-baseline gap-2">
-            <span className="font-[family-name:var(--font-heading)] text-sm font-bold uppercase tracking-wide text-white/70">
-              INZBC
-            </span>
-            <span aria-hidden="true" className="h-4 w-px translate-y-0.5 bg-white/30" />
+          <div className="flex items-center gap-2">
+            {/* Guide, p.11: acronym logo minimum size is 8mm / 25px wide — h-6 (24px tall)
+                renders this ~81px wide at its native aspect ratio, above that floor. */}
+            <img src={inzbcLogoAcronymWhite} alt="INZBC" className="h-6 w-auto" />
+            <span aria-hidden="true" className="h-4 w-px bg-white/30" />
             {/* font-family/weight/uppercase come from the h1 rule in index.css's @layer base. */}
             <h1 className="text-xl text-white sm:text-2xl">SIP Review</h1>
           </div>
