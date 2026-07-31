@@ -146,6 +146,21 @@ class RunRepository:
             if current is None:
                 raise KeyError(f"no run {run_id!r}")
 
+            # Staleness is checked before legality, and the order matters. A caller that lost a
+            # race is holding an old state as well as an old version, so judging its transition
+            # against the row's *current* state answers a question it never asked. Two threads
+            # racing the same legal move is the clearest case: the loser reads the winner's
+            # committed state and gets told 'Run Authorised' -> 'Run Authorised' is illegal, when
+            # what actually happened is that its version went stale and it should re-read and
+            # retry. Checking legality first also made that a timing-dependent test failure,
+            # because the answer depended on whether the loser's read landed before or after the
+            # winner's commit.
+            if current["version"] != expected_version:
+                raise ConcurrentModificationError(
+                    f"run {run_id!r} was not at version {expected_version} - another transition "
+                    "committed first; re-read the run before retrying"
+                )
+
             current_state = RunState(current["state"])
             if not is_legal_transition(current_state, new_state):
                 raise IllegalTransition(
