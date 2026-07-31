@@ -16,7 +16,11 @@ describe('DistributionStatusScreen', () => {
     const report = newDraftReportFixture()
     render(<DistributionStatusScreen report={report} />)
 
-    expect(screen.getByText(report.state)).toBeInTheDocument()
+    // Scoped via the "Current state" <dt>, not a bare getByText(report.state): the run archive
+    // below can contain a fixture row in the same state ("Report Drafted"), which would otherwise
+    // make this an ambiguous, multiple-element match.
+    const currentStateDt = screen.getByText('Current state')
+    expect(currentStateDt.nextElementSibling).toHaveTextContent(report.state)
     expect(screen.getByText(/qa has not been recorded yet/i)).toBeInTheDocument()
     expect(screen.getByText(/no ceo decision recorded yet/i)).toBeInTheDocument()
     expect(screen.getByText(/no send recorded yet/i)).toBeInTheDocument()
@@ -34,8 +38,12 @@ describe('DistributionStatusScreen', () => {
       },
     }
     render(<DistributionStatusScreen report={report} />)
-    expect(screen.getByText('Pass')).toBeInTheDocument()
-    expect(screen.getByText('Paras')).toBeInTheDocument()
+    // Scoped to the QA result card, and matched as a substring: the archive fixture below has its
+    // own "Pass" rows, and "Paras" only ever renders as "Reviewer: Paras" — an exact, unscoped
+    // getByText('Pass') / getByText('Paras') matches neither correctly.
+    const qaSection = screen.getByText('QA result').closest('div')!
+    expect(within(qaSection).getByText('Pass', { exact: false })).toBeInTheDocument()
+    expect(within(qaSection).getByText(/paras/i)).toBeInTheDocument()
   })
 
   it('shows distribution authorisation as Pending until it has actually been decided', () => {
@@ -93,8 +101,10 @@ describe('DistributionStatusScreen', () => {
       },
     }
     render(<DistributionStatusScreen report={report} />)
-    expect(screen.getByText('INZBC member distribution list')).toBeInTheDocument()
-    expect(screen.getByText('Delivered')).toBeInTheDocument()
+    // { exact: false }: both render as one text node with their label ("Recipient: ...",
+    // "Delivery result: ..."), so an exact match finds neither.
+    expect(screen.getByText('INZBC member distribution list', { exact: false })).toBeInTheDocument()
+    expect(screen.getByText('Delivered', { exact: false })).toBeInTheDocument()
   })
 
   it('renders the run archive as a read-only table, one row per past run', () => {
