@@ -49,7 +49,7 @@ The guide's four tiles do not survive contact with primary sources. Three of the
 | Guide tile | Decision |
 |---|---|
 | `$3.68b two-way trade` | Replace with **NZ$3.95bn, year ended December 2025** (MFAT key facts). |
-| `95% of current NZ exports receiving tariff removal` | Rewrite the tense: **95% of NZ exports will be tariff-free or face sharply reduced tariffs as the FTA enters force and phases in.** |
+| `95% of current NZ exports receiving tariff removal` | Fix the tense **and the denominator**: **95% of New Zealand's current exports to India will receive tariff elimination or reduction over time: 57% duty-free at entry into force, rising to 82%, with a further 13% receiving sharp cuts.** |
 | `300,000 strong Indian diaspora` | Replace with **292,092 people identified with the Indian ethnic group, 2023 Census** (Stats NZ). |
 | `India middle class growth story` | Replace with **NZ$7bn two-way trade by 2030**, labelled an aspiration. |
 
@@ -57,7 +57,12 @@ The guide's four tiles do not survive contact with primary sources. Three of the
 2026 economic impact assessment. It is six months older than the $3.95bn series, not wrong. Worth
 saying because the repo has been treating it as a suspect number.
 
-**The tense correction is the one that matters.** The FTA was signed 27 April 2026 and is **not yet
+**Two things are wrong with that tile, not one.** The denominator first: "95% of NZ exports" reads
+as 95% of New Zealand's exports to the world. The figure is 95% of New Zealand's current exports
+**to India**. `apps/fta/corpus.py:132` already states it correctly, with the phasing; the homepage
+must not state it more broadly than the corpus does.
+
+**And the tense.** The FTA was signed 27 April 2026 and is **not yet
 in force**; MFAT still lists it under agreements concluded but not in force. "Receiving" states as
 current something that has not happened. `apps/fta/corpus.py` already gets this right, both in its
 status line and in phrasing outcomes as "at entry into force", and the FTA Explainer attaches that
@@ -78,8 +83,16 @@ Every tile carries its period and links a source note. On staging an unresolved 
 
 ## 3. Member portal
 
-**Decision: a public Wix shell with deep links to Member Jungle. No Wix member roles, membership
-status, renewal dates, invoices, directory preferences or corporate seats.**
+**Interim position for the staging build: a public Wix shell with deep links to Member Jungle. No
+Wix member roles, membership status, renewal dates, invoices, directory preferences or corporate
+seats.**
+
+This is what to build on staging now. It is **not** a resolution of the retain/integrate/replace
+question, which `CLAUDE.md` reserves to INZBC and which `member-portal-spec.md` still records as
+open along with authentication, SSO and directory integration. In particular, **do not apply the
+`/member-profile` redirect in production**: that route is member-gated today, and pointing it at a
+public page before the privacy and Member Jungle decisions are made would expose a members-only
+path. Redirect it on staging only, and revisit at cutover.
 
 This is what comparable organisations do. The British Chamber of Commerce Singapore keeps profiles,
 directory consent, membership details, corporate seats, events and payments in its membership SaaS
