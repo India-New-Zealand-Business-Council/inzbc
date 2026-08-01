@@ -119,11 +119,53 @@ describe('BriefBuilderScreen', () => {
     const onChange = vi.fn()
     render(<BriefBuilderScreen report={report} onChange={onChange} />)
 
+    // Source categories are collapsed by default (see BriefBuilderScreen's grouping) — expand
+    // the first one before its select controls exist in the DOM.
+    await userEvent.click(screen.getByRole('button', { name: /nz official/i }))
     fireEvent.change(screen.getAllByRole('combobox')[0]!, { target: { value: 'Included' } })
 
     const latestCall = onChange.mock.calls.at(-1)
     if (!latestCall) throw new Error('onChange was not called')
     expect(latestCall[0].sourceCoverage[0].outcome).toBe('Included')
+  })
+
+  it('collapses the 112-source register into category groups by default, with a summary count', () => {
+    const report = newDraftReportFixture()
+    render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)
+
+    expect(screen.getByText('112 mandatory sources — 0 recorded')).toBeInTheDocument()
+    // No source rows rendered until a category is expanded — none of the 224 per-row form
+    // controls exist in the DOM by default.
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /nz official/i })).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('expands a single category to reveal only that group\'s source rows', async () => {
+    const report = newDraftReportFixture()
+    render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)
+
+    const nzOfficial = screen.getByRole('button', { name: /nz official/i })
+    await userEvent.click(nzOfficial)
+
+    expect(nzOfficial).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByText('New Zealand Parliament')).toBeInTheDocument()
+    // A different, still-collapsed category's sources aren't rendered.
+    expect(screen.queryByText('World Trade Organization')).not.toBeInTheDocument()
+  })
+
+  it('expands and collapses every category via the Expand all / Collapse all toggle', async () => {
+    const report = newDraftReportFixture()
+    render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)
+
+    await userEvent.click(screen.getByRole('button', { name: /^expand all$/i }))
+
+    expect(screen.getByText('New Zealand Parliament')).toBeInTheDocument()
+    expect(screen.getByText('World Trade Organization')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: /^collapse all$/i }))
+
+    expect(screen.queryByText('New Zealand Parliament')).not.toBeInTheDocument()
+    expect(screen.queryByText('World Trade Organization')).not.toBeInTheDocument()
   })
 
   it('clears once a candidate is selected and every mandatory source has an outcome', () => {
