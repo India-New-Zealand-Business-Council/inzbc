@@ -56,23 +56,36 @@ From the guide §5, with the current URL verified against the sitemap.
 | `/news/categories/news` | `/media/news` | 301 | yes |
 | `/trade-shows` | `/trade-missions` | 301 | **404 today; keep the 301 to rescue old links** |
 
-## Undecided — live pages with no plan
+## Decided
 
-Each needs a target or an explicit "keep as-is". `[[decision]]` marks what INZBC owes.
+All eleven are resolved in [`wix-rebuild-decisions.md`](wix-rebuild-decisions.md) section 1, with
+the reasoning and sources. Two corrections to what this file previously proposed:
 
-| Live URL | Note | Proposed target |
+- `/connect`, `/executive-council`, `/our-patron` and `/news` are **kept**, not redirected. A short
+  descriptive URL gains nothing from being redirected purely to express hierarchy in its path.
+- The two Boardroom to Border pages get **their own URLs**, not a shared `/events/past`. They are
+  distinct events, and Google treats many old URLs pointed at one generic destination as soft 404s
+  when that destination does not carry their content.
+
+The table below is kept for the live-page inventory and the note on each page.
+
+## Live page inventory
+
+Final mappings. The reasoning and sources are in `wix-rebuild-decisions.md` section 1.
+
+| Live URL | Decision | Type |
 |---|---|---|
-| `/connect` | Contact / enquiry entry point. | `[[decision]]` — keep, or fold into `/about-inzbc` |
-| `/executive-council` | Board and executive bios; cited by `client-answers.md` D1. | Keep. Sits under About in the new tree. |
-| `/our-patron` | Patron page; `client-answers.md` C8 says Patron belongs in About, linked from Partners. | `/about-inzbc/patron` `[[decision]]` |
-| `/members` | Overlaps `/join-inzbc` and `/membership-form`. | `/membership` `[[decision]]` |
-| `/member-directory` | C5 says link out to Member Jungle, do not copy the directory. | `/membership/directory` `[[decision]]` |
-| `/member-profile` | Members Area dynamic page, not a content page. | Keep. Do not redirect a Members Area route. |
-| `/past-events` | Guide wants one event hub with a clean archive. | `/events/past` `[[decision]]` |
-| `/trade-news` | **This is the Trade Shows page**, despite the slug. Title: "Trade Shows \| India New Zealand Business Council". Linked from the live nav as "Trade Shows". | Trade Resources / `/trade-missions` `[[decision]]`. **Not** Insights or Media: `discovery.md:41` and `page-specs.md:42` both put Trade Shows under Trade. |
-| `/india-x-nz` | **Boardroom to Border, Auckland.** Title: "Boardroom to Border \| INZBC". A real 2025 event page, not a campaign of unknown purpose. | `/events/past` `[[decision]]` |
-| `/copy-of-boardroom-to-border` | **Boardroom to Border, Christchurch.** Title: "Boardroom to Border - Christchurch \| INZBC". The `copy-of-` prefix is an editor artefact, but the page is a distinct event and is linked from current navigation. | `/events/past` `[[decision]]`. **Do not unpublish**: it is indexed and substantive, and unpublishing without a redirect breaks this document's own prerequisite. |
-| `/news` | Blog root. Guide moves news under Media Centre. | `/media/news` `[[decision]]` |
+| `/connect` | **Keep.** Contact is a distinct top-level task and `page-specs.md` retains it in the header. | no redirect |
+| `/executive-council` | **Keep**, placed under About in navigation. Hierarchy belongs in the menu, not the path. | no redirect |
+| `/our-patron` | **Keep**, under About, linked from Partners per `client-answers.md` C8. | no redirect |
+| `/members` | 301 to `/membership`. The live page is an empty Wix "Items (All)" shell. | 301 |
+| `/member-directory` | 301 to `/membership/directory`, a static gateway to Member Jungle. | 301 |
+| `/member-profile` | **Staging only**: 301 to `/membership/member-services`. Do not apply in production until the Member Jungle and privacy decisions are made; it is a member-gated route today. | staging 301 |
+| `/past-events` | 301 to `/events/past`, which must link through to individual event records. | 301 |
+| `/trade-news` | 301 to `/trade-missions`. This is the Trade Shows page despite the slug; `discovery.md:41` and `page-specs.md:42` put Trade Shows under Trade. | 301 |
+| `/india-x-nz` | 301 to a unique Auckland event URL, `/events/boardroom-to-border-auckland-2025`. Its own date, venue, agenda, speakers and pricing. | 301 |
+| `/copy-of-boardroom-to-border` | 301 to a unique Christchurch event URL, `/events/boardroom-to-border-christchurch-2025`. A distinct event, not a duplicate. Do not unpublish. | 301 |
+| `/news` | **Keep** as the blog root. Label it Media in navigation without changing the URL. | no redirect |
 
 ## Blog categories
 
@@ -83,10 +96,10 @@ the one row in §5.
 | Live category | Proposed |
 |---|---|
 | `/news/categories/news` | `/media/news` (in guide) |
-| `/news/categories/announcement` | `[[decision]]` |
-| `/news/categories/past-events` | `[[decision]]` |
-| `/news/categories/upcoming-events` | `[[decision]]` |
-| `/news/categories/trade-events` | `[[decision]]` |
+| `/news/categories/announcement` | 301 to the new category that absorbs it, per the six-category taxonomy |
+| `/news/categories/past-events` | 301 to `/media/events` (or the Events category URL Wix generates) |
+| `/news/categories/upcoming-events` | 301 to `/media/events`, same destination as past-events |
+| `/news/categories/trade-events` | 301 to `/media/events` unless INZBC wants trade events kept separate |
 
 ## Blog posts
 
@@ -129,3 +142,7 @@ Straight from the guide's SEO checklist, and not to be reordered:
 - Redirects are configured in Wix SEO tools and only apply on the **live** site. They cannot be
   tested on the duplicate, so the redirect list has to be right before cutover rather than
   discovered afterwards.
+
+The exact category URLs Wix generates must be confirmed on staging before these are configured;
+Wix reserves some paths and the classic editor generates its own for blog categories. The mapping
+decision stands either way.

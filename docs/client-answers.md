@@ -84,7 +84,7 @@ These are ours to propose; Sunil approves.
 | # | Answer | Status |
 |---|---|---|
 | D6 | Replace the unsupported "majority of delegations" claim with: *"Since 1988, INZBC has hosted and supported numerous government, business and sector delegations between India and New Zealand."* | `PROPOSED` — drafting suggestion, safe because it asserts nothing countable |
-| D7 | Replace the unsourced "300,000" with the Stats NZ 2023 Census count for the Indian ethnic group, cited and linked. **Could not verify the figure: the Stats NZ summaries tool renders its data in JavaScript and returned no numbers, and the direct 2023-census URL 404s.** So no number is recorded here. Any long-range projection is shown separately and never as the current population. | `OPEN` — figure must be read off Stats NZ directly before publication |
+| D7 | **292,092 people identified with the Indian ethnic group (2023 Census, Stats NZ).** People may identify with more than one ethnic group, so this is an ethnicity count, not citizenship, birthplace or ancestry. MFAT itself uses "300,000-strong diaspora" as rounded policy shorthand, which is defensible, but the census measure is more transparent and is what we publish. Always cite the measure and the year. | `PUBLIC-SOURCE` — Stats NZ 2023 Census, read 31 Jul 2026 |
 | D8 | Use **"INZBC Summit"**. "India Unplugged Summit" appears in no sourced document. Do not use it unless INZBC confirms a rename. | `PROPOSED` |
 
 ### Membership and partners
