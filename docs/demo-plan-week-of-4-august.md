@@ -25,10 +25,17 @@ useless to an exporter.
 
 ## Deployment
 
-ADR-0004's 27 July amendment governs: zero recurring cost, no payment method on any account. API on
-Render free tier, public UI on Cloudflare Pages. Cloud Run stays deferred until Phase 2 stores member
-data and the NZ Privacy Act residency requirement returns. Tracked as #99, which was gated on
-billing confirmation (#93) that the amendment made moot.
+ADR-0004's 27 July amendment governs: zero recurring cost, no payment method on any account. Cloud
+Run stays deferred until Phase 2 stores member data and the NZ Privacy Act residency requirement
+returns. Tracked as #99, which was gated on billing confirmation (#93) that the amendment made moot.
+
+**Deploy the combined image on Render, not the Render-plus-Cloudflare split.** ADR-0004 names that
+split as the target and it does not work today without new code: `apps/fta/ui/src/api/client.ts`
+defaults `baseUrl` to the empty string and nothing passes one, so a Cloudflare-hosted UI would
+request Cloudflare's own `/api/fta/query`, and `services/api` installs no CORS for the cross-origin
+case. The Dockerfile already serves API and UI from one origin, and the `docker` CI job smoke-tests
+exactly that arrangement. Splitting the hosts is separate work: a configurable API origin, a CORS
+policy, and Cloudflare build configuration.
 
 **The honest caveat, and it needs saying before the session, not during it.** Render's free tier
 sleeps after roughly 15 minutes, with a cold start near a minute. ADR-0004 already records this as
