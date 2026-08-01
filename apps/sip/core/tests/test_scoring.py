@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 import json
 
 import pytest
@@ -12,6 +14,7 @@ from apps.sip.core.scoring import (
     to_assessment,
 )
 from apps.sip.pipeline.models import SignalStrength, SourceConfidence
+from services.api.redaction import RedactionRule
 from services.api.model_gateway import GatewayCallError, ModelGateway
 
 
@@ -56,8 +59,21 @@ CANDIDATE = {
 }
 
 
+# Redaction runs inside the gateway on every call (#37), so a gateway built without a policy
+# refuses to send. These tests are about scoring, not redaction, so they pass an explicit
+# minimal rule set; the fail-closed behaviour itself is covered in
+# services/api/tests/test_redaction.py.
+_TEST_REDACTION = [
+    RedactionRule(
+        name="email",
+        pattern=re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+"),
+        replacement="[redacted:email]",
+    )
+]
+
+
 def _gateway(outputs: list[object]) -> ModelGateway:
-    return ModelGateway(client=_FakeClient(outputs))
+    return ModelGateway(client=_FakeClient(outputs), redaction_rules=_TEST_REDACTION)
 
 
 def test_valid_output_parses_into_validated_recommendation() -> None:

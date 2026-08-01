@@ -11,9 +11,15 @@ the platform builds on keys that already exist rather than waiting on new access
 is configuration, not architecture: swapping models/providers means changing env values, not
 call sites.
 
+Every prompt is redacted here before it reaches a provider (#37). Redaction lives in the gateway
+rather than in each caller for the same reason the client does: a control that every caller has to
+remember is a control that one caller will forget. With no policy configured the call is refused,
+so a deployment that has not decided what counts as confidential sends nothing at all.
+
 Configuration (environment):
-- OPENAI_API_KEY  - required for live calls; absent -> GatewayNotConfiguredError (fail closed).
-- SIP_MODEL_NAME  - optional, defaults to gpt-4.1-mini.
+- OPENAI_API_KEY          - required for live calls; absent -> GatewayNotConfiguredError.
+- SIP_MODEL_NAME          - optional, defaults to gpt-4.1-mini.
+- REDACTION_POLICY_PATH   - required; absent -> RedactionNotConfiguredError. See redaction.py.
 
 No key, endpoint or model name is ever hardcoded beyond that default.
 """
@@ -22,7 +28,9 @@ from __future__ import annotations
 
 import os
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+
+from services.api.redaction import RedactionRule, redact
 
 DEFAULT_MODEL = "gpt-4.1-mini"
 _RETRYABLE_ATTEMPTS = 2  # one retry on a transient failure, then surface the error
@@ -48,6 +56,10 @@ class GatewayResult:
     text: str
     model: str
     duration_seconds: float
+    # Which redaction rules fired, by name and count. Never the matched text: an audit trail that
+    # quotes what it redacted has not redacted it. Empty means the policy ran and matched nothing,
+    # which is different from redaction not having run, because an unredacted call cannot happen.
+    redaction_counts: dict[str, int] = field(default_factory=dict)
 
 
 class ModelGateway:
@@ -59,9 +71,18 @@ class ModelGateway:
     environment on first use.
     """
 
-    def __init__(self, client: object | None = None, model: str | None = None) -> None:
+    def __init__(
+        self,
+        client: object | None = None,
+        model: str | None = None,
+        redaction_rules: list[RedactionRule] | None = None,
+    ) -> None:
         self._client = client
         self.model = model or os.getenv("SIP_MODEL_NAME", DEFAULT_MODEL)
+        # None means "load the configured policy at call time", which raises when there is none.
+        # Passing rules explicitly is for tests and for a caller that has already loaded them; it
+        # is not a way to opt out, because an empty list is refused too.
+        self._redaction_rules = redaction_rules
 
     def _ensure_client(self) -> object:
         if self._client is None:
@@ -78,17 +99,24 @@ class ModelGateway:
         return self._client
 
     def complete(self, prompt: str) -> GatewayResult:
-        """One prompt in, text out, with a single retry on a transient provider failure."""
+        """One prompt in, text out, with a single retry on a transient provider failure.
+
+        The prompt is redacted first. This happens before `_ensure_client`, so a missing policy is
+        reported even on a machine with no API key, and before any network call, so an
+        unredacted payload cannot leave the process while a policy is being argued about.
+        """
+        redaction = redact(prompt, self._redaction_rules)
         client = self._ensure_client()
         started = time.monotonic()
         last_error: Exception | None = None
         for attempt in range(_RETRYABLE_ATTEMPTS):
             try:
-                response = client.responses.create(model=self.model, input=prompt)
+                response = client.responses.create(model=self.model, input=redaction.text)
                 return GatewayResult(
                     text=response.output_text,
                     model=self.model,
                     duration_seconds=time.monotonic() - started,
+                    redaction_counts=dict(redaction.counts),
                 )
             except GatewayNotConfiguredError:
                 raise

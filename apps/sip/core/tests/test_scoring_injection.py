@@ -14,6 +14,8 @@ Plus a small golden set that guards the JSON contract against drift.
 
 from __future__ import annotations
 
+import re
+
 import json
 
 import pytest
@@ -25,6 +27,7 @@ from apps.sip.core.scoring import (
     score_candidate,
 )
 from apps.sip.pipeline.models import SignalStrength, SourceConfidence
+from services.api.redaction import RedactionRule
 from services.api.model_gateway import ModelGateway
 
 _CONTRACT_KEYS = (
@@ -72,8 +75,21 @@ class _FakeClient:
         self.responses = _FakeResponses(output)
 
 
+# Redaction runs inside the gateway on every call (#37), so a gateway built without a policy
+# refuses to send. These tests are about scoring, not redaction, so they pass an explicit
+# minimal rule set; the fail-closed behaviour itself is covered in
+# services/api/tests/test_redaction.py.
+_TEST_REDACTION = [
+    RedactionRule(
+        name="email",
+        pattern=re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+"),
+        replacement="[redacted:email]",
+    )
+]
+
+
 def _gateway(model_output: str) -> ModelGateway:
-    return ModelGateway(client=_FakeClient(model_output))
+    return ModelGateway(client=_FakeClient(model_output), redaction_rules=_TEST_REDACTION)
 
 
 # ---------- prompt structural safety (format-injection) ----------
