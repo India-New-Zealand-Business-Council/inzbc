@@ -41,9 +41,16 @@ authorization" section — reproduced here as a flow, not re-decided:
 2. GitHub authenticates the user and redirects back with a successful login.
 3. **Allowlist check:** the API looks up the GitHub login against the `users` table. No active
    row → `403`, no session issued. **A successful GitHub login is not, by itself, authorisation.**
-4. If allowed: `users.role_id` resolves to a role (`SIP Owner` / `Analyst` / `Quality Reviewer` /
-   `Secretariat` / `Administrator` / `Board Viewer` / `Auditor`), seeded from
+4. If allowed: `user_roles` resolves the roles the person holds (`SIP Owner` / `Analyst` /
+   `Quality Reviewer` / `Secretariat` / `Administrator` / `Board Viewer` / `Auditor`), seeded from
    `docs/sip/launch/launch-config.md`. Role changes are a data edit, not a deploy.
+
+   ADR-0005 replaced the single `users.role_id` column with `user_roles`, so a principal may hold
+   several roles at once. That is the normal case here, not an edge one: the three-engineer split
+   is a 16-week placement and the steady state afterwards is one person holding every role.
+   Authorisation therefore binds to the role used for a given act, not to the person, and any
+   code that assumes one role per user is wrong. Not every role in that list is seeded by
+   `launch-config.md` today.
 5. **Server-side session created** — opaque session id in a cookie, session state in Postgres.
    Not a JWT: chosen specifically so a session can be revoked immediately rather than waiting out
    a token's expiry.
