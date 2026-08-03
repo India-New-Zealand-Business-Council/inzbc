@@ -104,28 +104,28 @@ describe('BriefBuilderScreen', () => {
     ).toBeInTheDocument()
   })
 
-  it('blocks on blank mandatory source outcomes and no candidate selected, by default', () => {
+  it('stays invalid on blank mandatory sources and no candidate selected, without alarming on load', () => {
+    // A fresh brief is invalid by construction (112 blank sources, no candidate yet) — that's
+    // expected, not an error state. The detailed box only appears after a submit attempt
+    // (hasAttemptedSubmit); on load, this is just the ordinary starting point.
     const report = newDraftReportFixture()
     render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)
 
-    const alert = screen.getByRole('alert')
-    expect(alert).toHaveTextContent(/at least one scored candidate must be selected/i)
-    expect(alert).toHaveTextContent(/mandatory source with no recorded outcome/i)
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     expect(screen.queryByText(/ready to submit for qa/i)).not.toBeInTheDocument()
   })
 
   it('still blocks submit when the only unrecorded source sits inside a collapsed group', async () => {
     // The risk this change introduces: 112 rows are now hidden by default, so a staff member sees
     // a tidy screen and could believe coverage is complete. Validation runs on the report, not on
-    // what is rendered, and the error list names the missing source whether or not its group is
-    // open. Collapsing must never be able to buy a submit.
+    // what is rendered, regardless of collapse state. Collapsing must never be able to buy a submit.
     const report = newDraftReportFixture()
     render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)
 
     // Every group is collapsed, so no row is on screen at all.
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
 
-    expect(screen.getByRole('alert')).toHaveTextContent(/mandatory source with no recorded outcome/i)
+    expect(screen.getByRole('button', { name: /submit for qa/i })).toBeDisabled()
     expect(screen.queryByText(/ready to submit for qa/i)).not.toBeInTheDocument()
   })
 

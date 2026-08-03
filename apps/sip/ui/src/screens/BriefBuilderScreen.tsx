@@ -410,7 +410,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
         </p>
       ) : null}
 
-      {isDraft && errors.length > 0 ? (
+      {isDraft && hasAttemptedSubmit && errors.length > 0 ? (
         <div role="alert" className="rounded-md border border-inzbc-crimson bg-inzbc-crimson/10 p-3 text-sm text-inzbc-crimson">
           <p className="font-semibold">Before this brief can be submitted for QA:</p>
           <ul className="mt-1 list-inside list-disc">
