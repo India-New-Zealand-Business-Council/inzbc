@@ -10,6 +10,12 @@ the client is carried into a new signed version rather than only landing in git.
 Contact details for learners, the sponsor and the supervisors are deliberately **not** recorded
 here. They live on the submitted form only.
 
+Two client documents are cited below and are not in this repository: the module menu put to INZBC
+for prioritisation (fifteen modules, four selected), and the INZBC Digital System Overview supplied
+3 August 2026, which is where the ten FTA sectors and the nine-part system come from. Both are held
+by the client. Anything drawn from them is attributed rather than asserted, because a reader cannot
+check them here.
+
 ---
 
 ## 1. Identification
@@ -131,9 +137,9 @@ Priority uses MoSCoW.
 
 **Committed build — the four modules the client selected**
 
-- FTA Opportunity Explainer, with the tariff database, the ten sectors INZBC named (wool, wine,
-  seafood, primary industries, tourism, education, defence and security, investment, immigration,
-  sports) and three levels of information depth.
+- FTA Opportunity Explainer, with the tariff database, the ten sectors INZBC named in the Digital
+  System Overview (wool, wine, seafood, primary industries, tourism, education, defence and
+  security, investment, immigration, sports) and three levels of information depth.
 - Trade Intelligence Digest produced by SIP: collection, source register, scoring, review, QA,
   approval, distribution and audit.
 - AI Communications Assistant for staff drafting, adversarially tested before use.
