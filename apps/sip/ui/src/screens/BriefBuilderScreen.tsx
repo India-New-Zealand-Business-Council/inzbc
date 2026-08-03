@@ -33,6 +33,20 @@ function categoryForSource(sip185Code: string): string {
   return category?.label ?? 'Other'
 }
 
+/**
+ * Calm, non-error state for a brief nobody has finished yet — shown until the analyst actually
+ * tries to submit. Takes only the two counts it needs to render, not `expandedCategories` or
+ * either toggle function: it has no way to force a source group open, by construction, not by
+ * convention.
+ */
+function SourceProgressIndicator({ recorded, total }: { recorded: number; total: number }) {
+  return (
+    <p className="rounded-md border border-inzbc-navy/20 bg-white p-3 text-sm text-slate-700 shadow-sm">
+      {recorded} / {total} sources recorded
+    </p>
+  )
+}
+
 interface Props {
   report: DailyBriefReport
   onChange: (report: DailyBriefReport) => void
@@ -401,15 +415,11 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
         </div>
       </div>
 
-      {/* Calm, non-error state for a brief nobody has finished yet — replaces the detailed error
-          box below until the analyst actually tries to submit (hasAttemptedSubmit). Sources only,
-          not every validateBrief() rule: sources are the overwhelming majority of what's blank on
-          a fresh brief (112 rows vs. 4-5 header fields), and this indicator's job is to make that
-          specific case look like ordinary progress, not a wall of errors. */}
+      {/* Sources only, not every validateBrief() rule: sources are the overwhelming majority of
+          what's blank on a fresh brief (112 rows vs. 4-5 header fields), and this indicator's job
+          is to make that specific case look like ordinary progress, not a wall of errors. */}
       {isDraft && !hasAttemptedSubmit && errors.length > 0 ? (
-        <p className="rounded-md border border-inzbc-navy/20 bg-white p-3 text-sm text-slate-700 shadow-sm">
-          {recordedSourceCount} / {report.sourceCoverage.length} sources recorded
-        </p>
+        <SourceProgressIndicator recorded={recordedSourceCount} total={report.sourceCoverage.length} />
       ) : null}
 
       {isDraft && hasAttemptedSubmit && errors.length > 0 ? (
