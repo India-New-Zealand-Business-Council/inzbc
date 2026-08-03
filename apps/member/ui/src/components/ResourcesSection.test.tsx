@@ -18,4 +18,14 @@ describe('ResourcesSection', () => {
       expect(link).toHaveAttribute('rel', 'noopener noreferrer')
     }
   })
+
+  it('does not use the Lavender focus ring on the tangerine buttons', () => {
+    // Regression guard: Lavender-on-white is ~1.6:1, failing SC 1.4.11's 3:1 non-text-contrast
+    // minimum — this button sits on a white card, unlike Header's navy background where Lavender
+    // is correct. See the fix commit for the full explanation.
+    render(<ResourcesSection />)
+    for (const link of screen.getAllByRole('link', { name: /sign in to view/i })) {
+      expect(link.className).not.toContain('outline-inzbc-lavender')
+    }
+  })
 })

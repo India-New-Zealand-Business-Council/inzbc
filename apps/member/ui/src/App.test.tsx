@@ -15,6 +15,15 @@ describe('App', () => {
     expect(screen.getByRole('contentinfo')).toBeInTheDocument()
   })
 
+  it("makes the skip link's target focusable, so activating it actually moves focus", () => {
+    render(<App />)
+    // A plain <main> isn't in the browser's focusable-elements set — without tabIndex=-1,
+    // Header's "Skip to main content" link would scroll here without moving keyboard/AT focus
+    // (WCAG technique G1/H69). document.getElementById, not getByRole, because <main> has no
+    // accessible name and getByRole('main') would still pass even without the fix.
+    expect(document.getElementById('main-content')).toHaveAttribute('tabindex', '-1')
+  })
+
   it('renders the Notifications section', () => {
     render(<App />)
     expect(screen.getByRole('heading', { level: 2, name: /^notifications$/i })).toBeInTheDocument()
