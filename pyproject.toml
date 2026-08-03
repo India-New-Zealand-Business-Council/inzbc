@@ -16,6 +16,10 @@ dependencies = [
   # Added by ADR-0004: the API graduates from a scheduled process to a hosted service.
   "fastapi>=0.115",
   "uvicorn[standard]>=0.32",
+  # Added for #117: the persistence adapter. Sync, matching main.py's existing `def` (not
+  # `async def`) handlers - no second concurrency model to reason about. [binary] avoids
+  # requiring libpq/build tools on every machine that installs this.
+  "psycopg[binary]>=3.1",
 ]
 
 [project.optional-dependencies]

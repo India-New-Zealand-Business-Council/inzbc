@@ -11,9 +11,15 @@ the platform builds on keys that already exist rather than waiting on new access
 is configuration, not architecture: swapping models/providers means changing env values, not
 call sites.
 
+Every prompt is redacted here before it reaches a provider (#37). Redaction lives in the gateway
+rather than in each caller for the same reason the client does: a control that every caller has to
+remember is a control that one caller will forget. With no policy configured the call is refused,
+so a deployment that has not decided what counts as confidential sends nothing at all.
+
 Configuration (environment):
-- OPENAI_API_KEY  - required for live calls; absent -> GatewayNotConfiguredError (fail closed).
-- SIP_MODEL_NAME  - optional, defaults to gpt-4.1-mini.
+- OPENAI_API_KEY          - required for live calls; absent -> GatewayNotConfiguredError.
+- SIP_MODEL_NAME          - optional, defaults to gpt-4.1-mini.
+- REDACTION_POLICY_PATH   - required; absent -> RedactionNotConfiguredError. See redaction.py.
 
 No key, endpoint or model name is ever hardcoded beyond that default.
 """
@@ -22,7 +28,9 @@ from __future__ import annotations
 
 import os
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+
+from services.api.redaction import redact
 
 DEFAULT_MODEL = "gpt-4.1-mini"
 _RETRYABLE_ATTEMPTS = 2  # one retry on a transient failure, then surface the error
@@ -48,6 +56,10 @@ class GatewayResult:
     text: str
     model: str
     duration_seconds: float
+    # Which redaction rules fired, by name and count. Never the matched text: an audit trail that
+    # quotes what it redacted has not redacted it. Empty means the policy ran and matched nothing,
+    # which is different from redaction not having run, because an unredacted call cannot happen.
+    redaction_counts: dict[str, int] = field(default_factory=dict)
 
 
 class ModelGateway:
@@ -78,17 +90,31 @@ class ModelGateway:
         return self._client
 
     def complete(self, prompt: str) -> GatewayResult:
-        """One prompt in, text out, with a single retry on a transient provider failure."""
+        """One prompt in, text out, with a single retry on a transient provider failure.
+
+        The prompt is redacted first, against the policy at `REDACTION_POLICY_PATH`. This happens
+        before `_ensure_client`, so a missing policy is reported even on a machine with no API key,
+        and before any network call, so an unredacted payload cannot leave the process while a
+        policy is being argued about.
+
+        There is deliberately no way for a caller to supply its own rules. An earlier version took
+        an injectable rule set so tests need not write a policy file; that made "redaction is
+        configured" mean only "a non-empty list was passed", and a list of rules matching nothing
+        would have sailed through with an empty audit trail. Tests now point
+        `REDACTION_POLICY_PATH` at a real file, the same way production does.
+        """
+        redaction = redact(prompt)
         client = self._ensure_client()
         started = time.monotonic()
         last_error: Exception | None = None
         for attempt in range(_RETRYABLE_ATTEMPTS):
             try:
-                response = client.responses.create(model=self.model, input=prompt)
+                response = client.responses.create(model=self.model, input=redaction.text)
                 return GatewayResult(
                     text=response.output_text,
                     model=self.model,
                     duration_seconds=time.monotonic() - started,
+                    redaction_counts=dict(redaction.counts),
                 )
             except GatewayNotConfiguredError:
                 raise

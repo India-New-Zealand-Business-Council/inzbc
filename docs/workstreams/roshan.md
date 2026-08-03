@@ -22,7 +22,35 @@ own PR flow; this lane is the integration that pulls its output into SIP.
 ## Depends on (Bhanu's contracts)
 DB schema, API contract, auth. Build against them; don't write to control-plane tables.
 
+**Lane note, 28 Jul 2026:** #117/#118/#120/#121/#122/#130 (persistence adapter, audit service,
+run + candidate endpoints, REQ-I-05 acceptance criteria, restart/rehydration test) were assigned
+to me as a **one-off delegation to balance Bhanu's workload, not a lane transfer** — confirmed
+with him directly. `/services/api`, `/database` and `/schemas` stay his lane; the delegation
+reverts once these six are done, and nothing else under those paths gets picked up without asking
+him first. Recording this so a later reader doesn't mistake the one-off for a standing change.
+
+Of the six, #122/#117/#118 are done (closed via PRs #154/#163, and #118 below) — the remaining three
+(#120/#121/#130) sit inside a cluster that's otherwise his: #117/#118 were foundational and his
+#124/#125/#126 write through this persistence adapter and audit service; #119 (separation of
+duties, his) constrains #120/#121 here. The conventions set in #117/#118 are the ones he then has
+to build on — keep them boring and close to what the schema and ADR-0005 already imply, and flag
+anything that's inventing a contract shape rather than following one already decided, instead of
+deciding it here.
+
 ## Next up
+- [ ] Run endpoints (#120): `/api/runs` + start/pause/resume/complete, against ADR-0005's
+  reconciled contract. **Unblocked 1 Aug** — Bhanu confirmed `schemas/api-contract.md` now reflects
+  ADR-0005 (#176 merged): three separate approval/ruling/distribution commands, session-cookie auth,
+  roles via `user_roles`. Drive state through `persistence.apply_transition`, which now writes the
+  audit row transactionally (#118) and refuses illegal jumps (#174) — pass `actor_id`/`reason`.
+- [ ] Candidate command endpoints (#121): explicit commands (capture, record verification, score,
+  submit assessment, supersede assessment), not a blanket PATCH — a PATCH can't produce a
+  meaningful audit record since the server never learns which action was intended. **Unblocked
+  1 Aug** alongside #120; `/verify` `/score` `/route` `/merge` stand as specified, `/assess` moved
+  out of ADR-0005 as unrelated to decision authority.
+- [ ] Backend restart/rehydration integration test (#130): restart the app + DB fixture
+  deliberately, prove replay produces identical state. Server-side counterpart to the Playwright
+  persistence test — do last, once #120/#121 exist to actually restart and rehydrate.
 - SHARED-OK: SIP-050 relevance/signal/confidence scoring moved to Bhanu's worklog — it runs
   through the model gateway he owns. `assessment.py` stays the validation/carry layer here.
 - [ ] Comms Assistant service side (`apps/comms`): draft-generation flow with the named-reviewer
@@ -35,6 +63,9 @@ DB schema, API contract, auth. Build against them; don't write to control-plane 
 - [ ] End-to-end pipeline run once org-repo secrets land (Bhanu's item): collector → capture →
   assessment live against the SIP-184 SOP; fix what breaks; record the run.
 - [ ] Collection-engine improvements in `daily-india-nz-news-agent` (via its own PR flow).
+- [ ] Bump the CI ruff pin to 0.16.0 (#31): the collector/FTA findings are fixed and merged (PR
+  #152), but the pin itself is still 0.15.22 pending `apps/sip/core`, `scripts/board.py` and
+  `services/api` (Bhanu's lane) going clean under 0.16.0 too.
 
 See Blocked / decisions needed for what's still open before any of this runs live (secrets,
 INZBC sector/disclaimer sign-off).
@@ -53,7 +84,36 @@ INZBC sector/disclaimer sign-off).
   before committing: the first version of the ranking-order test used a query whose correct order
   happened to match `CORPUS`'s insertion order regardless of whether ranking ran at all, so
   disabling ranking entirely still passed it. Replaced with a query ("peptones dairy") where
-  ranked and insertion order genuinely differ, confirmed disabling ranking now fails it, restored.
+  ranked and insertion order genuinely differ, confirmed disabling ranking now fails it,
+  restored. The neighbouring tiebreak test had the same flaw and was not caught: it compared
+  two calls of a pure function, which agree whatever the sort key is, so deleting `entry.id`
+  from it left the file passing. Fixed in review by swapping in a corpus built in reverse id
+  order, where insertion order and id order genuinely disagree.
+- [x] Transactional audit service (#118). `services/api/audit.py` — `record_audit(conn, ...)` writes
+  `old_value`/`new_value`/`reason`/`approval_ref` into `audit_log` on the **caller's** open
+  connection and never commits, so the audit row shares the mutation's transaction: they commit
+  together or not at all. Wired into `persistence.apply_transition`, which now takes `actor_id` +
+  `reason` (+ optional `approval_ref`) and records the transition before its single commit — audited
+  only when the CAS actually lands, never on a lost race. Immutable **at the database**, not by
+  convention: an `audit_log_append_only` trigger reusing the decision tables' existing
+  `reject_evidence_change()` refuses UPDATE/DELETE from any role, and the app login role is granted
+  INSERT/SELECT only (`database/audit_role.sql`, kept out of `schema.sql` because CI applies the
+  schema with no app role existing). Tests (`test_audit.py`, live-Postgres, skip without
+  `DATABASE_URL` like #117): trigger refuses UPDATE/DELETE (55000); the INSERT/SELECT-only role is
+  refused at the privilege layer (42501, before the trigger); `record_audit` leaves the transaction
+  boundary to the caller (a rollback discards it); `apply_transition` writes a matching row; and a
+  forced audit-write failure rolls back the state change with it. Verified both new controls bite:
+  dropped the trigger → immutability tests fail; committed before the audit write → the atomicity
+  test fails; restored. Also a text-level guard in `test_schema_decisions.py` so trigger removal
+  fails CI even on the no-DB path. Ran against a real Postgres 16: 256 passed, 98.11% coverage.
+- [x] Persistence adapter with concurrency control (#117, closed via PR #163). Optimistic
+  concurrency on `runs.version` (compare-and-swap), proven by a real two-thread race against
+  Postgres; `apply_transition` also refuses an illegal state jump. Foundational — #120/#121 write
+  through it. Now also writes the transition's audit row (#118).
+- [x] Pipeline integration test suite wired into CI (#56, closed via PR #151). `FakeSipApi` holds
+  state across calls to catch regressions at the seam between modules: capture → cross-run dedupe,
+  the verification gate end-to-end, and the mandatory-source Critical stop against the real
+  112-source register. Verified it catches a regression before merging.
 - [x] Ruff 0.16.0 findings in my lane fixed (#31): `apps/fta` and `apps/sip/collector` are clean
   under 0.16.0. Auto-fixed the mechanical ones (`UP035` typing.Iterable → collections.abc,
   `UP017` datetime.UTC alias, `I001` import sort, `FLY002` f-string). The one real finding,
@@ -84,6 +144,14 @@ INZBC sector/disclaimer sign-off).
   gate test failed, restored it. "Wired into CI" needed no workflow change — `pyproject.toml`'s
   `testpaths` already runs everything under `apps`/`services`, so this suite runs on every PR
   Bhanu's existing `ci.yml` `python` job already gates on.
+- [x] Config nit from PR #17: moved `No Material New Signal` out of `source_outcome_extras` in
+  `docs/sip/SIP_Reference_Config.json` — SIP-185 line 59 is explicit it's the day-level run
+  conclusion (SIP-184 §9), not a per-source outcome code, so the config disagreed with the doc it
+  mirrors. No code referenced the removed value.
+- [x] REQ-I-05 acceptance criteria (#122, closed): the only requirement in `docs/requirements.md`
+  with none, so there was no definition of done for the end-to-end pipeline run (#55). Scoped to
+  SIP-184 §1-7; each criterion distinguishes "tested against fakes" from "proven against a live
+  run" to match the requirement's own Blocked status. Merged via PR #154.
 - [x] Client + lookup layer for `GET /api/source-library`, implemented locally ahead of the
   endpoint (refs #52 — not closed; the endpoint itself isn't deployed yet, see below). New
   `apps/sip/collector/source_lookup.py`: `build_source_lookups()` splits one

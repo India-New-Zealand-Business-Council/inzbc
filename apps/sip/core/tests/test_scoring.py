@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+
 import json
 
 import pytest
@@ -55,6 +56,26 @@ CANDIDATE = {
     "summary": "Tariff eliminated day one under the FTA.",
 }
 
+
+
+
+
+# Redaction runs inside the gateway on every call (#37) and loads its policy from
+# REDACTION_POLICY_PATH. There is deliberately no way to inject rules: a rule set that matches
+# nothing would otherwise count as "configured". These tests are about scoring, so they point at a
+# real minimal policy; the fail-closed behaviour is covered in services/api/tests/test_redaction.py.
+@pytest.fixture(autouse=True)
+def _redaction_policy(tmp_path, monkeypatch):
+    policy = tmp_path / "policy.json"
+    policy.write_text(
+        json.dumps(
+            {"rules": [{"name": "email", "pattern": r"[\w.+-]+@[\w-]+\.[\w.]+",
+                        "replacement": "[redacted:email]",
+                        "example": "mail sunil@example.test"}]}
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("REDACTION_POLICY_PATH", str(policy))
 
 def _gateway(outputs: list[object]) -> ModelGateway:
     return ModelGateway(client=_FakeClient(outputs))

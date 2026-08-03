@@ -9,8 +9,20 @@ create type signal_strength   as enum ('Low','Medium','High','Critical');
 create type source_confidence as enum ('High','Medium','Low','Unverified');
 create type source_outcome    as enum ('Included','Context','Suppressed','Inaccessible','Excluded','No Qualifying Item');
 create type verification_state as enum ('Verified','Partially Verified','Unverified','Not Required','Rejected');
+-- approval_state stays: daily_intelligence.approval still uses it for per-item approval.
+-- distribution_state is gone with the approvals table it served. ADR-0005 records distribution
+-- authority as a decision value, so 'Distributed' and 'Withdrawn' no longer live in two enums.
 create type approval_state     as enum ('Pending','Approved','Rejected','Returned for Correction','Superseded');
-create type distribution_state as enum ('Not Authorised','Internal Approved','Member Approved','Public Approved','Distributed','Withdrawn');
+
+-- ADR-0005: the three decision facts, and the values each may carry. The kind/value pairing is
+-- enforced on decision_records; this enum is only the union of legal values.
+create type decision_kind      as enum ('CEO Ruling','Report Approval','Distribution Authority');
+create type decision_value     as enum (
+  'Continue','Continue With Correction','Pause','Stop',
+  'Approved','Rejected','Returned for Correction',
+  'Authorised','Not Authorised'
+);
+
 create type run_state          as enum (
   'Draft','Run Authorised','Coverage Locked','Scanning','Candidate Review','Report Drafted',
   'QA In Progress','QA Failed','Awaiting CEO Decision','Continue','Continue With Correction',
@@ -27,11 +39,22 @@ create table users (
   id            uuid primary key default gen_random_uuid(),
   name          text not null,
   email         text not null unique,
-  role_id       smallint not null references roles(id),
   active        boolean not null default true,
   mfa_enabled   boolean not null default false,
   created_at    timestamptz not null default now(),
   last_login_at timestamptz
+);
+
+-- One principal may hold any number of roles. ADR-0005 binds separation of duties to the role held
+-- at the time of an act, and the three-engineer split is a 16-week placement: the steady state
+-- afterwards is one person holding every role. A single users.role_id could not express that.
+-- This supersedes the one-column mapping ADR-0004 described; role mapping is still data.
+create table user_roles (
+  user_id     uuid not null references users(id),
+  role_id     smallint not null references roles(id),
+  enabled     boolean not null default true,
+  assigned_at timestamptz not null default now(),
+  primary key (user_id, role_id)
 );
 
 -- ---------- production run ----------
@@ -50,6 +73,11 @@ create table runs (
   started_at            timestamptz,
   completed_at          timestamptz,
   qa_status             text,
+  -- Optimistic concurrency (#117): every state transition does
+  -- `UPDATE ... SET version = version + 1 WHERE id = ? AND version = ?`. Zero rows affected means
+  -- someone else's transition landed first - the caller must re-read and retry, not silently
+  -- overwrite. Two reviewers acting on the same run at once must not both be able to commit.
+  version               integer not null default 0,
   created_at            timestamptz not null default now(),
   check (coverage_end_utc > coverage_start_utc),
   check (analyst_id is null or reviewer_id is null or analyst_id <> reviewer_id)
@@ -166,21 +194,287 @@ create table exceptions (
   created_at    timestamptz not null default now()
 );
 
-create table approvals (
-  id                 uuid primary key default gen_random_uuid(),
-  run_id             uuid not null references runs(id),
-  report_version     text not null,
-  ceo_decision       text,                  -- Continue / Continue with Correction / Pause / Stop
-  approval           approval_state not null default 'Pending',
-  distribution       distribution_state not null default 'Not Authorised',
-  approver_id        uuid references users(id),
-  decided_at         timestamptz,
-  recipient          text,
-  sent_at            timestamptz,
-  delivery_result    text
+-- ---------- decisions (ADR-0005) ----------
+-- The old `approvals` table stored one mutable row per run. It could not tell an explicit CEO
+-- "distribution: No" from a run nobody had ruled on (both were the column default), gave a
+-- distribution decision no actor or timestamp of its own, and overwrote its own history on
+-- correction. SIP-050 s24 forbids overwriting approvals and distribution decisions, and s26 wants
+-- an approver, decision, timestamp, conditions and audience recorded per decision. What follows
+-- replaces it.
+
+-- Which role may record which decision. With no row for a (kind, role) pair, decision_records' FK
+-- has nothing to point at and the insert is refused, so an unconfigured role genuinely cannot
+-- decide. Note the FK matches on (kind, actor_role_id) only: `enabled = false` does NOT currently
+-- block anything, and the writing command must check it.
+create table decision_role_permissions (
+  kind          decision_kind not null,
+  actor_role_id smallint not null references roles(id),
+  enabled       boolean not null default true,
+  primary key (kind, actor_role_id)
 );
 
+-- "For this decision kind, whoever acts in actor_role_id must be a different person from whoever
+-- acted in other_role_id." Configuration, not code, so the staffing change at the end of the
+-- placement is a data change.
+-- NOT enforced by this schema. Nothing references this table; the only CHECK below says the two
+-- role ids differ, which says nothing about whether one person performed both acts. Comparing
+-- actors across two decision records is cross-row, so CHECK cannot do it. Until the writing
+-- command consults this table, sod_exception_id stays nullable in practice and an unrecorded
+-- self-approval is NOT refused, contrary to ADR-0005 Required follow-up 4. Enforcement is
+-- follow-up 4's job, not this table's.
+create table decision_sod_role_pairs (
+  kind          decision_kind not null,
+  actor_role_id smallint not null,
+  other_role_id smallint not null references roles(id),
+  enabled       boolean not null default true,
+  primary key (kind, actor_role_id, other_role_id),
+  foreign key (kind, actor_role_id) references decision_role_permissions(kind, actor_role_id),
+  check (actor_role_id <> other_role_id)
+);
+
+-- Deliberately unseeded: client-answers B8 is still PROPOSED.
+-- NOT enforced by this schema. Nothing references this table, so an empty row set does NOT by
+-- itself stop an Authorised decision being recorded. The release predicate in ADR-0005 Decision 2
+-- (current approval Approved, current ruling Continue, no open Critical QA failure, recipient
+-- matching this row) spans rows and tables, which CHECK cannot see. It has to be enforced by the
+-- single application command that writes a decision, inside the same transaction that advances
+-- the stream head. Until that command exists, treat this table as configuration, not a gate.
+create table distribution_configuration (
+  singleton         boolean primary key default true check (singleton),
+  recipient_address text not null check (btrim(recipient_address) <> ''),
+  channel           text not null check (btrim(channel) <> ''),
+  configured_by     uuid not null references users(id),
+  configured_at     timestamptz not null default now()
+);
+
+-- A decision binds to an exact artefact. Free text could not: 'v1', '1' and 'v1 final' may all
+-- mean one report.
+create table report_versions (
+  id                 uuid primary key default gen_random_uuid(),
+  run_id             uuid not null references runs(id),
+  version_number     integer not null check (version_number > 0),
+  created_by         uuid not null,
+  created_by_role_id smallint not null,
+  content_sha256     text not null check (content_sha256 ~ '^[0-9a-f]{64}$'),
+  created_at         timestamptz not null,
+  submitted_at       timestamptz not null default now(),
+  unique (run_id, version_number),
+  foreign key (created_by, created_by_role_id) references user_roles(user_id, role_id),
+  check (submitted_at >= created_at)
+);
+
+-- One stream per (version, kind), opened when the version is submitted. This is what makes
+-- absence meaningful: a stream with a null head is submitted-but-undecided, which is a different
+-- fact from no stream at all. The head is the only mutable part of the decision model.
+create table decision_streams (
+  id                uuid primary key default gen_random_uuid(),
+  report_version_id uuid not null references report_versions(id),
+  kind              decision_kind not null,
+  current_record_id uuid,
+  head_revision     integer not null default 0,
+  opened_at         timestamptz not null default now(),
+  unique (report_version_id, kind),
+  unique (id, report_version_id, kind),
+  check (
+    (current_record_id is null and head_revision = 0)
+    or (current_record_id is not null and head_revision > 0)
+  )
+);
+
+-- Where one principal must hold both sides of a required-distinct pair, the decision still
+-- commits, but only against a recorded exception. Scoped to the exact version, kind, actor and
+-- acting role so it cannot be reused as a blanket waiver.
+create table sod_exceptions (
+  id                uuid primary key default gen_random_uuid(),
+  report_version_id uuid not null references report_versions(id),
+  kind              decision_kind not null,
+  actor_id          uuid not null,
+  actor_role_id     smallint not null,
+  approved_by       uuid not null references users(id),
+  approved_at       timestamptz not null default now(),
+  reason            text not null check (btrim(reason) <> ''),
+  review_date       date not null,
+  evidence_ref      text,
+  unique (id, report_version_id, kind, actor_id, actor_role_id),
+  foreign key (actor_id, actor_role_id) references user_roles(user_id, role_id)
+);
+
+-- Immutable. Never updated, never deleted; a correction appends a record superseding its
+-- predecessor. REQ-U-02's reason, conditions, owner, evidence and next review are mandatory here
+-- because a decision without them cannot be audited later.
+create table decision_records (
+  id                     uuid primary key default gen_random_uuid(),
+  stream_id              uuid not null,
+  report_version_id      uuid not null,
+  kind                   decision_kind not null,
+  stream_revision        integer not null check (stream_revision > 0),
+  value                  decision_value not null,
+  actor_id               uuid not null,
+  actor_role_id          smallint not null,
+  decided_at             timestamptz not null,
+  recorded_at            timestamptz not null default now(),
+  reason                 text not null check (btrim(reason) <> ''),
+  conditions             text[] not null default '{}',
+  owner_id               uuid not null references users(id),
+  evidence_ref           text not null check (btrim(evidence_ref) <> ''),
+  next_review            date not null,
+  distribution_recipient text,
+  supersedes_id          uuid,
+  sod_exception_id       uuid,
+  idempotency_key        uuid not null unique,
+
+  unique (stream_id, stream_revision),
+  unique (stream_id, id),
+  unique (stream_id, id, stream_revision),
+  unique (supersedes_id),
+  unique (sod_exception_id),
+  unique (id, report_version_id, kind, value, distribution_recipient),
+
+  -- The record cannot claim a stream it does not belong to, or a kind its stream does not carry.
+  foreign key (stream_id, report_version_id, kind)
+    references decision_streams(id, report_version_id, kind),
+  -- Supersession cannot cross streams.
+  foreign key (stream_id, supersedes_id) references decision_records(stream_id, id),
+  foreign key (actor_id, actor_role_id) references user_roles(user_id, role_id),
+  foreign key (kind, actor_role_id) references decision_role_permissions(kind, actor_role_id),
+  foreign key (sod_exception_id, report_version_id, kind, actor_id, actor_role_id)
+    references sod_exceptions(id, report_version_id, kind, actor_id, actor_role_id),
+
+  check (supersedes_id is null or supersedes_id <> id),
+  -- Revision 1 is the only root; every later revision supersedes exactly one predecessor.
+  check (
+    (stream_revision = 1 and supersedes_id is null)
+    or (stream_revision > 1 and supersedes_id is not null)
+  ),
+  check (
+    (kind = 'CEO Ruling' and value in ('Continue','Continue With Correction','Pause','Stop'))
+    or (kind = 'Report Approval' and value in ('Approved','Rejected','Returned for Correction'))
+    or (kind = 'Distribution Authority' and value in ('Authorised','Not Authorised'))
+  ),
+  -- Both Yes and No are decisions about a concrete requested recipient.
+  check (
+    (kind = 'Distribution Authority'
+      and distribution_recipient is not null and btrim(distribution_recipient) <> '')
+    or (kind <> 'Distribution Authority' and distribution_recipient is null)
+  )
+);
+
+-- Added after both tables exist. Proves only that the referenced (stream, record, revision) tuple
+-- exists and belongs to this stream. It does NOT prove the record is the newest, nor that the head
+-- moved forward: this constraint alone still permits moving a head backwards to an earlier
+-- revision, or pointing it at any historical record of the same stream. Ordering is the writing
+-- command's job — it must compare-and-swap on the existing head, requiring
+-- new_revision = old_head_revision + 1 and supersedes_id = old_current_record_id, and abort the
+-- whole decision on a zero-row result.
+alter table decision_streams
+  add constraint decision_streams_current_record_fk
+  foreign key (id, current_record_id, head_revision)
+  references decision_records(stream_id, id, stream_revision);
+
+-- What was actually sent. Distribution delivery is execution evidence, not an authority state.
+-- The composite FK means a delivery can only reference an Authorised authority for the same
+-- version and the same recipient; that it is still current is checked in the transaction.
+create table distribution_deliveries (
+  id                  uuid primary key default gen_random_uuid(),
+  authority_record_id uuid not null,
+  report_version_id   uuid not null,
+  authority_kind      decision_kind not null default 'Distribution Authority'
+    check (authority_kind = 'Distribution Authority'),
+  authority_value     decision_value not null default 'Authorised'
+    check (authority_value = 'Authorised'),
+  sender_id           uuid not null references users(id),
+  recipient_address   text not null check (btrim(recipient_address) <> ''),
+  channel             text not null check (btrim(channel) <> ''),
+  sent_at             timestamptz not null,
+  delivery_result     text not null check (btrim(delivery_result) <> ''),
+  recorded_at         timestamptz not null default now(),
+  idempotency_key     uuid not null unique,
+  foreign key (authority_record_id, report_version_id, authority_kind, authority_value,
+               recipient_address)
+    references decision_records(id, report_version_id, kind, value, distribution_recipient)
+);
+
+-- The one authoritative combined read. Null value columns mean undecided; 'Not Authorised' is an
+-- explicit refusal. Consumers use this rather than each inventing a derivation rule.
+create view current_report_decisions as
+select
+  rv.id   as report_version_id,
+  rv.run_id,
+  rv.version_number,
+  rv.content_sha256,
+  rv.submitted_at,
+  ruling.value     as ceo_ruling,
+  ruling.actor_id  as ceo_ruling_actor_id,
+  ruling.decided_at as ceo_ruling_decided_at,
+  appr.value       as report_approval,
+  appr.actor_id    as report_approval_actor_id,
+  appr.decided_at  as report_approval_decided_at,
+  auth.value       as distribution_authority,
+  auth.actor_id    as distribution_authority_actor_id,
+  auth.decided_at  as distribution_authority_decided_at,
+  auth.distribution_recipient
+from report_versions rv
+join decision_streams rs
+  on rs.report_version_id = rv.id and rs.kind = 'CEO Ruling'
+left join decision_records ruling
+  on ruling.id = rs.current_record_id and ruling.stream_id = rs.id
+join decision_streams as_
+  on as_.report_version_id = rv.id and as_.kind = 'Report Approval'
+left join decision_records appr
+  on appr.id = as_.current_record_id and appr.stream_id = as_.id
+join decision_streams ds
+  on ds.report_version_id = rv.id and ds.kind = 'Distribution Authority'
+left join decision_records auth
+  on auth.id = ds.current_record_id and auth.stream_id = ds.id;
+
+-- Submitting a version opens its three streams, so a decision can never arrive for a stream
+-- nobody created.
+create function open_decision_streams() returns trigger
+language plpgsql as $$
+begin
+  insert into decision_streams (report_version_id, kind)
+  values (new.id, 'CEO Ruling'), (new.id, 'Report Approval'), (new.id, 'Distribution Authority');
+  return new;
+end;
+$$;
+
+create trigger report_version_open_decision_streams
+after insert on report_versions
+for each row execute function open_decision_streams();
+
+-- Belt and braces against an accidental UPDATE or DELETE. The real boundary is the grants below;
+-- a table owner can always re-grant itself privileges, so this catches mistakes, not malice.
+create function reject_evidence_change() returns trigger
+language plpgsql as $$
+begin
+  raise exception '% is append-only; % is not allowed', tg_table_name, tg_op
+    using errcode = '55000';
+end;
+$$;
+
+create trigger report_versions_append_only before update or delete on report_versions
+  for each row execute function reject_evidence_change();
+create trigger sod_exceptions_append_only before update or delete on sod_exceptions
+  for each row execute function reject_evidence_change();
+create trigger decision_records_append_only before update or delete on decision_records
+  for each row execute function reject_evidence_change();
+create trigger distribution_deliveries_append_only before update or delete on distribution_deliveries
+  for each row execute function reject_evidence_change();
+
+-- Grants are intentionally not applied here: the application login role is provisioned outside
+-- this file (see database/audit_role.sql), and CI applies this schema with no such role existing.
+-- When it does exist, the decision tables get SELECT and INSERT only, decision_streams gets
+-- UPDATE (current_record_id, head_revision) and nothing else, and audit_log gets INSERT and SELECT
+-- only. That grant is the real append-only boundary for audit_log; the trigger below catches a
+-- mistake by a role that can still UPDATE/DELETE (a migration, or the table owner).
+
 -- ---------- append-only audit ----------
+-- Immutable by database rule, not by application convention (#118). A mutation writes its audit row
+-- (old_value/new_value/reason/approval_ref) inside its own transaction via services/api/audit.py, so
+-- the state change and its audit record commit together or not at all. Nothing may later rewrite or
+-- erase that record: the app login role is granted INSERT/SELECT only (database/audit_role.sql), and
+-- the trigger below refuses UPDATE/DELETE from any role, reusing the same reject_evidence_change()
+-- guard the decision tables use.
 create table audit_log (
   id           bigserial primary key,
   at           timestamptz not null default now(),
@@ -193,3 +487,6 @@ create table audit_log (
   reason       text,
   approval_ref text
 );
+
+create trigger audit_log_append_only before update or delete on audit_log
+  for each row execute function reject_evidence_change();
