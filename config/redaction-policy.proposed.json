@@ -87,13 +87,13 @@
       "name": "credential",
       "pattern": "\\b(?:sk-[A-Za-z0-9_-]{16,}|gh[pousr]_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|xox[baprs]-[A-Za-z0-9-]{10,})",
       "replacement": "[redacted:credential]",
-      "example": "the key is sk-abcdefghijklmnopqrstuvwx and it works"
+      "example": "the key is sk-XXXXXXXXXXXXXXXXXXXXXXXX and it works"
     },
     {
       "name": "secret-assignment",
       "pattern": "(?i)\\b(?:api[_-]?key|secret|password|passwd|token|bearer)\\b\\s*[:=]\\s*\\S+",
       "replacement": "[redacted:credential]",
-      "example": "set api_key=abc123def456 in the environment"
+      "example": "set api_key=REPLACE_ME_NOT_A_REAL_VALUE in the environment"
     }
   ]
 }

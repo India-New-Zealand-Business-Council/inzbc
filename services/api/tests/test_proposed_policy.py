@@ -61,8 +61,8 @@ def test_trade_content_survives_untouched(rules, text):
         ("GSTIN 27AAAAA0000A1Z5 on the tax invoice.", "27AAAAA0000A1Z5"),
         ("Deposit to 01-0123-0123456-00 by Friday.", "01-0123-0123456-00"),
         ("IRD number 123-456-789 on the invoice.", "123-456-789"),
-        ("The key is sk-abcdefghijklmnopqrstuvwx, do not share.", "sk-abcdefghijklmnopqrstuvwx"),
-        ("Set api_key=abc123def456 in the environment.", "abc123def456"),
+        ("The key is sk-XXXXXXXXXXXXXXXXXXXXXXXX, do not share.", "sk-XXXXXXXXXXXXXXXXXXXXXXXX"),
+        ("Set api_key=REPLACE_ME_NOT_A_REAL_VALUE in the env.", "REPLACE_ME_NOT_A_REAL_VALUE"),
     ],
 )
 def test_personal_and_secret_data_does_not_survive(rules, text, must_not_survive):
