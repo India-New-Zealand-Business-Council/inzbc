@@ -21,7 +21,8 @@ def test_missing_key_fails_closed_not_silent(monkeypatch: pytest.MonkeyPatch, tm
     policy = tmp_path / "policy.json"
     policy.write_text(
         json.dumps({"rules": [{"name": "email", "pattern": r"[\w.+-]+@[\w-]+\.[\w.]+",
-                               "replacement": "[redacted]"}]}),
+                               "replacement": "[redacted]",
+                               "example": "mail sunil@example.test"}]}),
         encoding="utf-8",
     )
     monkeypatch.setenv("REDACTION_POLICY_PATH", str(policy))

@@ -25,8 +25,15 @@ from services.api.redaction import (
 
 
 def _policy_file(tmp_path, rules: list[dict]) -> str:
+    """Writes a policy file, defaulting `example` so each test declares only what it is about.
+
+    Every rule needs an example it can actually redact (see `load_policy`). Tests that are about
+    some other property should not have to restate that, so a rule without one gets a default that
+    its pattern matches.
+    """
+    filled = [{"example": "member sunil@example.test asked", **rule} for rule in rules]
     path = tmp_path / "policy.json"
-    path.write_text(json.dumps({"rules": rules}), encoding="utf-8")
+    path.write_text(json.dumps({"rules": filled}), encoding="utf-8")
     return str(path)
 
 
@@ -34,6 +41,7 @@ EMAIL_POLICY = {
     "name": "email",
     "pattern": r"[\w.+-]+@[\w-]+\.[\w.]+",
     "replacement": "[redacted:email]",
+    "example": "contact sunil@example.test about the brief",
 }
 
 EMAIL_RULE = RedactionRule(
@@ -75,7 +83,7 @@ def test_a_backreference_replacement_is_refused(monkeypatch, tmp_path):
 
 def test_a_rule_matching_the_empty_string_is_refused(monkeypatch, tmp_path):
     monkeypatch.setenv(POLICY_PATH_ENV, _policy_file(tmp_path, [
-        {"name": "everything", "pattern": "x*", "replacement": "[redacted]"},
+        {"name": "everything", "pattern": "x*", "replacement": "[redacted]", "example": "xx"},
     ]))
     with pytest.raises(RedactionPolicyError, match="empty string"):
         load_policy()
@@ -121,6 +129,43 @@ def test_an_oversized_payload_is_refused_rather_than_scanned():
     rule = RedactionRule(name="x", pattern=re.compile("zzz"), replacement="[redacted]")
     with pytest.raises(RedactionPolicyError, match="over the"):
         redact("a" * (MAX_PAYLOAD_CHARS + 1), [rule])
+
+
+def test_a_rule_that_redacts_nothing_in_its_own_example_is_refused(monkeypatch, tmp_path):
+    """A pure assertion loads cleanly and then removes nothing.
+
+    Checking `match("")` only catches a pattern that is empty at position 0. `(?=.*secret)` is not:
+    it needs the word to be somewhere ahead, so it passes that check, loads, and then produces only
+    zero-length matches, all of which `redact` skips. Nothing is removed. The count is honestly 0,
+    so the audit trail does not lie, but whoever wrote the rule believes a control is in place and
+    it is not. A typo in a pattern fails the same silent way.
+    """
+    monkeypatch.setenv(POLICY_PATH_ENV, _policy_file(tmp_path, [
+        {"name": "looks-like-a-rule", "pattern": "(?=.*secret)", "replacement": "[redacted]",
+         "example": "my secret token"},
+    ]))
+    with pytest.raises(RedactionPolicyError, match="does not redact anything"):
+        load_policy()
+
+
+def test_a_rule_must_carry_an_example(monkeypatch, tmp_path):
+    path = tmp_path / "no-example.json"
+    path.write_text(json.dumps({"rules": [
+        {"name": "email", "pattern": r"[\w.+-]+@[\w-]+\.[\w.]+", "replacement": "[r]"},
+    ]}), encoding="utf-8")
+    monkeypatch.setenv(POLICY_PATH_ENV, str(path))
+    with pytest.raises(RedactionPolicyError, match="example"):
+        load_policy()
+
+
+def test_a_typo_that_stops_a_rule_matching_is_caught_at_load(monkeypatch, tmp_path):
+    """The case this is really for: the pattern is well-formed but wrong."""
+    monkeypatch.setenv(POLICY_PATH_ENV, _policy_file(tmp_path, [
+        {"name": "member-id", "pattern": r"Member ID\s+\d+", "replacement": "[redacted]",
+         "example": "Member ID: 123456"},  # the colon is in the data, not the pattern
+    ]))
+    with pytest.raises(RedactionPolicyError, match="does not redact anything"):
+        load_policy()
 
 
 def test_a_duplicate_json_key_is_refused(monkeypatch, tmp_path):

@@ -82,7 +82,11 @@ def load_policy(path: str | Path | None = None) -> list[RedactionRule]:
 
     Expected shape:
 
-        {"rules": [{"name": "member-email", "pattern": "...", "replacement": "[redacted]"}]}
+        {"rules": [{"name": "member-email", "pattern": "...", "replacement": "[redacted]",
+                    "example": "contact sunil@example.test about the brief"}]}
+
+    Every rule carries an `example`: a sample of what it is meant to catch. The rule must actually
+    redact something in it, or the policy does not load. See the check below for why.
     """
     raw_path = str(path) if path is not None else os.getenv(POLICY_PATH_ENV, "")
     if not raw_path:
@@ -128,9 +132,10 @@ def load_policy(path: str | Path | None = None) -> list[RedactionRule]:
         name = entry.get("name")
         pattern = entry.get("pattern")
         replacement = entry.get("replacement")
-        if not name or not pattern or not replacement:
+        example = entry.get("example")
+        if not name or not pattern or not replacement or not example:
             raise RedactionPolicyError(
-                f"rule {index} needs a name, a pattern and a replacement; got {entry!r}"
+                f"rule {index} needs a name, a pattern, a replacement and an example; got {entry!r}"
             )
         if _BACKREF.search(replacement):
             raise RedactionPolicyError(
@@ -146,6 +151,22 @@ def load_policy(path: str | Path | None = None) -> list[RedactionRule]:
             raise RedactionPolicyError(
                 f"rule {name!r} matches the empty string, which would rewrite every position in the "
                 "payload rather than redact anything."
+            )
+        # Every rule must prove, at load, that it removes something from its own example.
+        #
+        # Matching the empty string at position 0 was too narrow a check. A pure assertion such as
+        # `(?=.*secret)` passes it, loads cleanly, and then redacts nothing: every match it produces
+        # is zero-length, and `redact` skips those. The audit trail stays honest (the count is 0),
+        # but the author believed they had shipped a control and had not. A typo in a pattern fails
+        # the same silent way.
+        #
+        # Undecidable in general, so it is not inferred: the rule carries a sample of what it is
+        # meant to catch, and a rule that cannot redact its own example does not load.
+        if not any(m.end() > m.start() for m in compiled.finditer(example)):
+            raise RedactionPolicyError(
+                f"rule {name!r} does not redact anything in its own example {example!r}. A rule "
+                "whose every match is zero-length loads cleanly and then removes nothing, so it "
+                "must demonstrate on a sample that it works."
             )
         rules.append(RedactionRule(name=name, pattern=compiled, replacement=replacement))
     return rules

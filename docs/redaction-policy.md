@@ -29,7 +29,9 @@ approve it:
 ```json
 {
   "rules": [
-    { "name": "member-email", "pattern": "[\\w.+-]+@[\\w-]+\\.[\\w.]+", "replacement": "[redacted:email]" }
+    { "name": "member-email", "pattern": "[\\w.+-]+@[\\w-]+\\.[\\w.]+",
+      "replacement": "[redacted:email]",
+      "example": "contact sunil@example.test about the brief" }
   ]
 }
 ```
@@ -60,6 +62,20 @@ matches are merged so the union is redacted. Both matter, and an earlier version
 rule that masked `Member ID:` first left `Member ID: 123456` no longer matching the rule that
 would have removed the number, and a rule matching another rule's replacement token could put the
 original value back. An overlap can now only ever remove more text, never less.
+
+Every rule carries an `example`: a sample of the thing it is meant to catch. At load, the rule is
+run against its own example, and a rule that removes nothing from it is refused.
+
+This exists because the earlier check was too narrow. It rejected a pattern that matched the empty
+string at position 0, which catches `x*` but not `(?=.*secret)`. That second one is a pure
+assertion: it loads cleanly, and every match it produces is zero-length, so the redactor skips all
+of them and nothing is removed. The count is honestly zero, so the audit trail does not lie, but
+whoever wrote the rule believes there is a control where there is none. A pattern with a typo in it
+fails in exactly the same silent way, and that is the likelier case: `Member ID\s+\d+` looks right
+and never fires against `Member ID: 123456`.
+
+Whether a rule can ever match is undecidable in general, so it is not inferred. The rule states
+what it should catch and has to prove it on that sample before the policy will load.
 
 Replacements are literal. Backreference syntax is refused at load, because a rule replacing a match
 with `\1` would emit the original value while the audit trail recorded a successful redaction.

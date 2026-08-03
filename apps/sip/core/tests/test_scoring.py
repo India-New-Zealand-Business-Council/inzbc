@@ -70,7 +70,8 @@ def _redaction_policy(tmp_path, monkeypatch):
     policy.write_text(
         json.dumps(
             {"rules": [{"name": "email", "pattern": r"[\w.+-]+@[\w-]+\.[\w.]+",
-                        "replacement": "[redacted:email]"}]}
+                        "replacement": "[redacted:email]",
+                        "example": "mail sunil@example.test"}]}
         ),
         encoding="utf-8",
     )
