@@ -41,6 +41,12 @@ export function Header() {
             Member Portal
           </span>
           <a
+            href="#notifications"
+            className="rounded-sm text-sm font-medium text-white/80 transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-lavender"
+          >
+            Notifications
+          </a>
+          <a
             href="#membership"
             className="rounded-sm text-sm font-medium text-white/80 transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-lavender"
           >

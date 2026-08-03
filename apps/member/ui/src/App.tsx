@@ -2,6 +2,7 @@ import { EventsSection } from './components/EventsSection'
 import { Footer } from './components/Footer'
 import { Header } from './components/Header'
 import { MembershipSection } from './components/MembershipSection'
+import { NotificationsSection } from './components/NotificationsSection'
 import { ResourcesSection } from './components/ResourcesSection'
 import './index.css'
 
@@ -24,6 +25,7 @@ export function App() {
             links out to Member Jungle for those rather than holding membership data itself.
           </p>
 
+          <NotificationsSection />
           <MembershipSection />
           <EventsSection />
           <ResourcesSection />

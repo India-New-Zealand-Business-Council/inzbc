@@ -20,6 +20,13 @@ describe('Header', () => {
     )
   })
 
+  it('links to the Notifications section in primary navigation', () => {
+    render(<Header />)
+    expect(
+      screen.getByRole('navigation', { name: 'Primary' }).querySelector('a[href="#notifications"]'),
+    ).toHaveTextContent('Notifications')
+  })
+
   it('links to the Membership section in primary navigation', () => {
     render(<Header />)
     expect(

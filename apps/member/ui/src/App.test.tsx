@@ -15,6 +15,11 @@ describe('App', () => {
     expect(screen.getByRole('contentinfo')).toBeInTheDocument()
   })
 
+  it('renders the Notifications section', () => {
+    render(<App />)
+    expect(screen.getByRole('heading', { level: 2, name: /^notifications$/i })).toBeInTheDocument()
+  })
+
   it('renders the Membership section', () => {
     render(<App />)
     expect(screen.getByRole('heading', { level: 2, name: /^membership$/i })).toBeInTheDocument()
