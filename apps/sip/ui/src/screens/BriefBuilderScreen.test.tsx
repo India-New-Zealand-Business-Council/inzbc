@@ -115,6 +115,26 @@ describe('BriefBuilderScreen', () => {
     expect(screen.queryByText(/ready to submit for qa/i)).not.toBeInTheDocument()
   })
 
+  it('shows the calm progress count instead of the red box before any submit attempt', () => {
+    const report = newDraftReportFixture()
+    render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)
+
+    expect(screen.getByText('0 / 112 sources recorded')).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('leaves the Outcome select with a neutral border before any submit attempt', async () => {
+    const report = newDraftReportFixture()
+    render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)
+
+    // Expand a group to reach a still-blank mandatory Outcome select.
+    await userEvent.click(screen.getByRole('button', { name: /nz official/i }))
+    const outcomeSelect = screen.getAllByRole('combobox')[0]!
+
+    expect(outcomeSelect.className).not.toContain('border-inzbc-crimson')
+    expect(outcomeSelect.className).toContain('border-inzbc-navy/20')
+  })
+
   it('still blocks submit when the only unrecorded source sits inside a collapsed group', async () => {
     // The risk this change introduces: 112 rows are now hidden by default, so a staff member sees
     // a tidy screen and could believe coverage is complete. Validation runs on the report, not on
