@@ -1,6 +1,6 @@
 import { useId, useMemo, useRef, useState } from 'react'
 import { ReportsApiError, submitReportForQa } from '../api/reportsStore'
-import { GOVERNANCE_LINE, type Candidate, type DailyBriefReport, type SourceOutcome } from '../domain'
+import { GOVERNANCE_LINE, type Candidate, type DailyBriefReport, type SourceCoverageRow, type SourceOutcome } from '../domain'
 import { candidatesFixture } from '../lib/fixtures'
 import { FOCUS_NOTE_MAX_LENGTH, validateBrief } from '../lib/validation'
 
@@ -15,6 +15,23 @@ const OUTCOME_OPTIONS: SourceOutcome[] = [
   'Excluded',
   'No Qualifying Item',
 ]
+
+// Derived from the sip185Code prefixes actually present in the SIP-185 mandatory source register
+// (lib/fixtures.ts) — not an independently invented taxonomy. 112 sources in one flat table was
+// unusable; this groups them the way the register itself is already organised, each group
+// collapsed by default so staff aren't scrolling past 112 rows to find the handful that matter.
+const SOURCE_CATEGORIES: { label: string; prefixes: string[] }[] = [
+  { label: 'NZ Official', prefixes: ['NZ-OFF-'] },
+  { label: 'India Official', prefixes: ['IND-OFF-'] },
+  { label: 'International', prefixes: ['INT-'] },
+  { label: 'Sector', prefixes: ['NZ-SEC-', 'IND-SEC-'] },
+  { label: 'Media', prefixes: ['NZ-MED-', 'IND-MED-', 'GLB-MED-'] },
+]
+
+function categoryForSource(sip185Code: string): string {
+  const category = SOURCE_CATEGORIES.find((entry) => entry.prefixes.some((prefix) => sip185Code.startsWith(prefix)))
+  return category?.label ?? 'Other'
+}
 
 interface Props {
   report: DailyBriefReport
@@ -52,6 +69,43 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
 
   const errors = useMemo(() => validateBrief(report), [report])
   const isDraft = report.state === 'Report Drafted'
+
+  // Collapsed by default (Set starts empty) — the errors list below already names every blank
+  // mandatory source by name regardless of collapse state, so nothing actionable is hidden.
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(() => new Set())
+
+  const sourceGroups = useMemo(() => {
+    const groups = new Map<string, SourceCoverageRow[]>()
+    for (const row of report.sourceCoverage) {
+      const label = categoryForSource(row.sip185Code)
+      const existing = groups.get(label)
+      if (existing) existing.push(row)
+      else groups.set(label, [row])
+    }
+    const order = [...SOURCE_CATEGORIES.map((category) => category.label), 'Other']
+    return order
+      .filter((label) => groups.has(label))
+      .map((label) => [label, groups.get(label) as SourceCoverageRow[]] as const)
+  }, [report.sourceCoverage])
+
+  const recordedSourceCount = useMemo(
+    () => report.sourceCoverage.filter((row) => row.outcome !== '').length,
+    [report.sourceCoverage],
+  )
+
+  function toggleCategory(label: string) {
+    setExpandedCategories((prev) => {
+      const next = new Set(prev)
+      if (next.has(label)) next.delete(label)
+      else next.add(label)
+      return next
+    })
+  }
+
+  const allCategoriesExpanded = sourceGroups.length > 0 && sourceGroups.every(([label]) => expandedCategories.has(label))
+  function toggleAllCategories() {
+    setExpandedCategories(allCategoriesExpanded ? new Set() : new Set(sourceGroups.map(([label]) => label)))
+  }
 
   async function onSubmitForQa() {
     if (errors.length > 0 || !isDraft) return
@@ -230,68 +284,108 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
       </div>
 
       <div>
-        <h3 className="mb-2 text-sm font-semibold text-inzbc-navy">
-          12. Source coverage and exceptions — mandatory sources
-        </h3>
-        <div className="overflow-x-auto rounded-md border border-inzbc-navy/10 bg-white shadow-sm">
-          <table className="w-full min-w-[36rem] text-left text-sm">
-            <thead className="border-b border-inzbc-navy/10 text-xs uppercase text-slate-500">
-              <tr>
-                <th scope="col" className="px-3 py-2">
-                  Source
-                </th>
-                <th scope="col" className="px-3 py-2">
-                  Outcome
-                </th>
-                <th scope="col" className="px-3 py-2">
-                  Fallback attempt (if inaccessible/excluded)
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {report.sourceCoverage.map((row) => {
-                return (
-                  <tr key={row.sourceId} className="border-b border-slate-100 last:border-0">
-                    <td className="px-3 py-2 align-top">
-                      <span className="block font-medium text-inzbc-navy">{row.sourceName}</span>
-                      <span className="block text-xs text-slate-500">{row.sip185Code}</span>
-                    </td>
-                    <td className="px-3 py-2 align-top">
-                      <label className="sr-only" htmlFor={`outcome-${row.sourceId}`}>
-                        Outcome for {row.sourceName}
-                      </label>
-                      <select
-                        id={`outcome-${row.sourceId}`}
-                        value={row.outcome}
-                        onChange={(event) => setSourceOutcome(row.sourceId, event.target.value as SourceOutcome)}
-                        className={`rounded-md border px-2 py-1 text-sm ${
-                          row.mandatory && row.outcome === '' ? 'border-inzbc-crimson' : 'border-inzbc-navy/20'
-                        }`}
-                      >
-                        {OUTCOME_OPTIONS.map((option) => (
-                          <option key={option || 'blank'} value={option}>
-                            {option || '— not recorded —'}
-                          </option>
+        <div className="mb-2 flex items-baseline justify-between gap-3">
+          <h3 className="text-sm font-semibold text-inzbc-navy">
+            12. Source coverage and exceptions — mandatory sources
+          </h3>
+          {sourceGroups.length > 0 ? (
+            <button
+              type="button"
+              onClick={toggleAllCategories}
+              className="text-xs font-medium text-inzbc-blue hover:underline"
+            >
+              {allCategoriesExpanded ? 'Collapse all' : 'Expand all'}
+            </button>
+          ) : null}
+        </div>
+        <p className="mb-2 text-sm text-slate-600">
+          {report.sourceCoverage.length} mandatory sources — {recordedSourceCount} recorded
+        </p>
+        <div className="space-y-2">
+          {sourceGroups.map(([label, rows]) => {
+            const recordedInGroup = rows.filter((row) => row.outcome !== '').length
+            const isExpanded = expandedCategories.has(label)
+            return (
+              <div key={label} className="overflow-hidden rounded-md border border-inzbc-navy/10 bg-white shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => toggleCategory(label)}
+                  aria-expanded={isExpanded}
+                  className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm font-medium text-inzbc-navy hover:bg-inzbc-navy/5"
+                >
+                  <span>
+                    {label} ({rows.length})
+                  </span>
+                  <span className="flex items-center gap-2 text-xs font-normal text-slate-500">
+                    {recordedInGroup} / {rows.length} recorded
+                    <span aria-hidden="true">{isExpanded ? '▲' : '▼'}</span>
+                  </span>
+                </button>
+                {isExpanded ? (
+                  <div className="overflow-x-auto border-t border-inzbc-navy/10">
+                    <table className="w-full min-w-[36rem] text-left text-sm">
+                      <thead className="border-b border-inzbc-navy/10 text-xs uppercase text-slate-500">
+                        <tr>
+                          <th scope="col" className="px-3 py-2">
+                            Source
+                          </th>
+                          <th scope="col" className="px-3 py-2">
+                            Outcome
+                          </th>
+                          <th scope="col" className="px-3 py-2">
+                            Fallback attempt (if inaccessible/excluded)
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rows.map((row) => (
+                          <tr key={row.sourceId} className="border-b border-slate-100 last:border-0">
+                            <td className="px-3 py-2 align-top">
+                              <span className="block font-medium text-inzbc-navy">{row.sourceName}</span>
+                              <span className="block text-xs text-slate-500">{row.sip185Code}</span>
+                            </td>
+                            <td className="px-3 py-2 align-top">
+                              <label className="sr-only" htmlFor={`outcome-${row.sourceId}`}>
+                                Outcome for {row.sourceName}
+                              </label>
+                              <select
+                                id={`outcome-${row.sourceId}`}
+                                value={row.outcome}
+                                onChange={(event) =>
+                                  setSourceOutcome(row.sourceId, event.target.value as SourceOutcome)
+                                }
+                                className={`rounded-md border px-2 py-1 text-sm ${
+                                  row.mandatory && row.outcome === '' ? 'border-inzbc-crimson' : 'border-inzbc-navy/20'
+                                }`}
+                              >
+                                {OUTCOME_OPTIONS.map((option) => (
+                                  <option key={option || 'blank'} value={option}>
+                                    {option || '— not recorded —'}
+                                  </option>
+                                ))}
+                              </select>
+                            </td>
+                            <td className="px-3 py-2 align-top">
+                              <label className="sr-only" htmlFor={`fallback-${row.sourceId}`}>
+                                Fallback attempt for {row.sourceName}
+                              </label>
+                              <input
+                                id={`fallback-${row.sourceId}`}
+                                type="text"
+                                value={row.fallbackAttempt}
+                                onChange={(event) => setSourceFallback(row.sourceId, event.target.value)}
+                                className="w-full rounded-md border border-inzbc-navy/20 px-2 py-1 text-sm transition-colors hover:border-inzbc-navy/40"
+                              />
+                            </td>
+                          </tr>
                         ))}
-                      </select>
-                    </td>
-                    <td className="px-3 py-2 align-top">
-                      <label className="sr-only" htmlFor={`fallback-${row.sourceId}`}>
-                        Fallback attempt for {row.sourceName}
-                      </label>
-                      <input
-                        id={`fallback-${row.sourceId}`}
-                        type="text"
-                        value={row.fallbackAttempt}
-                        onChange={(event) => setSourceFallback(row.sourceId, event.target.value)}
-                        className="w-full rounded-md border border-inzbc-navy/20 px-2 py-1 text-sm transition-colors hover:border-inzbc-navy/40"
-                      />
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+                      </tbody>
+                    </table>
+                  </div>
+                ) : null}
+              </div>
+            )
+          })}
         </div>
       </div>
 
