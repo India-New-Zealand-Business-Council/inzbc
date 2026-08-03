@@ -19,4 +19,9 @@ describe('App', () => {
     render(<App />)
     expect(screen.getByRole('heading', { level: 2, name: /upcoming events/i })).toBeInTheDocument()
   })
+
+  it('renders the Resources section', () => {
+    render(<App />)
+    expect(screen.getByRole('heading', { level: 2, name: /^resources$/i })).toBeInTheDocument()
+  })
 })

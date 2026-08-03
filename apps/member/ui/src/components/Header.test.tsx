@@ -27,6 +27,13 @@ describe('Header', () => {
     ).toHaveTextContent('Events')
   })
 
+  it('links to the Resources section in primary navigation', () => {
+    render(<Header />)
+    expect(
+      screen.getByRole('navigation', { name: 'Primary' }).querySelector('a[href="#resources"]'),
+    ).toHaveTextContent('Resources')
+  })
+
   it('links Member Login out to Member Jungle rather than rendering a login form', () => {
     render(<Header />)
     const loginLink = screen.getByRole('link', { name: /member login/i })
