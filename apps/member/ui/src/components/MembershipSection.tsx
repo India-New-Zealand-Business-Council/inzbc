@@ -40,7 +40,7 @@ export function MembershipSection() {
         member directory are managed there, not duplicated on this portal.
       </p>
 
-      <ul className="mt-4 grid gap-3 sm:grid-cols-3">
+      <ul className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
         {MEMBERSHIP_ACTIONS.map((action) => (
           <li key={action.id} className="rounded-md border border-slate-200 bg-white p-4">
             <p className="font-medium text-inzbc-navy">{action.label}</p>

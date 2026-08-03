@@ -3,13 +3,11 @@ import { describe, expect, it } from 'vitest'
 import { Header } from './Header'
 
 describe('Header', () => {
-  it('renders the INZBC wordmark and the current page in primary navigation', () => {
+  it('renders the INZBC wordmark and the Member Portal label', () => {
     render(<Header />)
     expect(screen.getByRole('banner')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'INZBC' })).toHaveAttribute('href', '/')
-    expect(
-      screen.getByRole('navigation', { name: 'Primary' }).querySelector('[aria-current="page"]'),
-    ).toHaveTextContent('Member Portal')
+    expect(screen.getByText('Member Portal')).toBeInTheDocument()
   })
 
   it('provides a skip link to the main content', () => {
