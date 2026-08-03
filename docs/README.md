@@ -13,7 +13,8 @@ Two conventions hold across this tree:
 
 ## I am new to the project
 1. [`project-charter.md`](project-charter.md) — scope, objectives, roles, phase gates and the four
-   decisions INZBC owns. The agreed shape of the engagement, in one page.
+   decisions INZBC owns. The **proposed** shape of the engagement, in one page. It is not signed
+   yet, so it is not yet client authority.
 2. [`inzbc-ai-operating-system.md`](inzbc-ai-operating-system.md) — what INZBC is building and why.
 3. [`architecture.md`](architecture.md) — system diagrams: context, components, run state machine,
    fail-closed controls, data model.
@@ -24,8 +25,10 @@ Two conventions hold across this tree:
 ## I am running SIP (analyst, reviewer or CEO)
 - [`sip/operator-guide.md`](sip/operator-guide.md) — **start here.** One full day, in order, in
   plain language.
-- [`sip/launch/`](sip/launch/) — the controlled documents themselves. `SIP-184` is the procedure of
-  record; the operator guide is its plain-language companion.
+- [`sip/launch/`](sip/launch/) — the launch pack. `SIP-184` is the daily-run procedure, but the
+  pack is at **v0.9 review draft and is not approved**: the only approved controlling document is
+  `SIP-050 Master Prompt v1.1`. Treat `SIP-184` as the working procedure for the controlled launch,
+  not as an approved instruction to act under.
 - [`sip/README.md`](sip/README.md) — SIP scope, non-negotiables and control boundary.
 
 ## I am building a module
@@ -66,9 +69,10 @@ Two conventions hold across this tree:
 - [`discovery.md`](discovery.md) — the original discovery work.
 - [`ai-service-architecture.md`](ai-service-architecture.md) — why the AI layer is hosted separately
   from the website platform.
-- [`inzbc-talking-points.md`](inzbc-talking-points.md), [`sunil-requests.md`](sunil-requests.md),
-  [`client-comms-drafts.md`](client-comms-drafts.md) — client-facing material and requests.
-- [`services-agreement-draft.md`](services-agreement-draft.md) — engagement terms draft.
+- [`client-comms-drafts.md`](client-comms-drafts.md) — client-facing drafts.
+- `inzbc-talking-points.md`, `sunil-requests.md` and `services-agreement-draft.md` are gitignored
+  and exist only on the author's machine. They are named here so their absence is deliberate rather
+  than a gap, and are not linked because the link resolves for nobody else.
 
 ---
 
@@ -77,7 +81,8 @@ Two conventions hold across this tree:
 | Repository | Holds |
 |---|---|
 | `inzbc` (this one) | The platform, the shared contracts, and all controlled documentation |
-| `daily-india-nz-news-agent` | The collection engine that runs the live daily digest |
+| `daily-india-nz-news-agent` | The collection engine behind the daily digest, draft-only |
 
-The collection engine is deliberately separate: it has its own release cadence and runs on a
-schedule, while this repository holds the platform and the documents of record.
+The collection engine is deliberately separate: it has its own release cadence and reaches out to
+untrusted sources, while this repository holds the platform and the documents of record. It
+prepares drafts; it does not run on a timer and does not send anything automatically.
