@@ -8,6 +8,36 @@ counts as confidential is a business rule, and `CLAUDE.md` says not to fill an u
 an assumption. So `services/api/redaction.py` ships the machinery and treats a missing policy as a
 refusal rather than as permission.
 
+
+## Approving a policy
+
+A proposed starting point is committed at `config/redaction-policy.proposed.json`. It covers
+email, New Zealand and India phone numbers, IRD and NZBN, GSTIN and PAN, passport numbers, payment
+cards, New Zealand bank accounts, member identifiers, street addresses and credential shapes.
+
+Nothing loads it. `REDACTION_POLICY_PATH` is unset, so every model call still refuses. That is
+deliberate: a file sitting in the repository is not a decision INZBC has made.
+
+To approve one:
+
+1. Read the rules. They are regexes with a literal replacement, chosen so a non-engineer can check
+   what each one does. If a rule is not readable, it is not approvable, and that is a defect in the
+   rule.
+2. Decide what is missing. The proposed set covers shapes we could anticipate. INZBC knows its own
+   data, and anything it considers confidential that is not on the list will not be redacted.
+3. Copy it to the deployment path under a name without `proposed` in it, and set
+   `REDACTION_POLICY_PATH` to that path.
+4. Record who approved it and when. The point of this control is that somebody owns the answer to
+   what counts as confidential.
+
+Never put real member data in the repository copy. The examples use `example.test` addresses and
+invented numbers on purpose.
+
+`services/api/tests/test_proposed_policy.py` holds both ends still: sensitive shapes must not
+survive, and real trade content must. Over-redaction is the quieter failure. A brief that reaches a
+member with its tariff line masked is useless, and nobody will report it as a redaction bug.
+
+
 ## How it behaves today
 
 Every call goes through `ModelGateway.complete()`, which redacts before it reaches a provider. Not
