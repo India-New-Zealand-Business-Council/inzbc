@@ -462,11 +462,19 @@ create trigger distribution_deliveries_append_only before update or delete on di
   for each row execute function reject_evidence_change();
 
 -- Grants are intentionally not applied here: the application login role is provisioned outside
--- this file, and CI applies this schema with no such role existing. When it does exist, the
--- decision tables get SELECT and INSERT only, and decision_streams gets
--- UPDATE (current_record_id, head_revision) and nothing else.
+-- this file (see database/audit_role.sql), and CI applies this schema with no such role existing.
+-- When it does exist, the decision tables get SELECT and INSERT only, decision_streams gets
+-- UPDATE (current_record_id, head_revision) and nothing else, and audit_log gets INSERT and SELECT
+-- only. That grant is the real append-only boundary for audit_log; the trigger below catches a
+-- mistake by a role that can still UPDATE/DELETE (a migration, or the table owner).
 
 -- ---------- append-only audit ----------
+-- Immutable by database rule, not by application convention (#118). A mutation writes its audit row
+-- (old_value/new_value/reason/approval_ref) inside its own transaction via services/api/audit.py, so
+-- the state change and its audit record commit together or not at all. Nothing may later rewrite or
+-- erase that record: the app login role is granted INSERT/SELECT only (database/audit_role.sql), and
+-- the trigger below refuses UPDATE/DELETE from any role, reusing the same reject_evidence_change()
+-- guard the decision tables use.
 create table audit_log (
   id           bigserial primary key,
   at           timestamptz not null default now(),
@@ -479,3 +487,6 @@ create table audit_log (
   reason       text,
   approval_ref text
 );
+
+create trigger audit_log_append_only before update or delete on audit_log
+  for each row execute function reject_evidence_change();

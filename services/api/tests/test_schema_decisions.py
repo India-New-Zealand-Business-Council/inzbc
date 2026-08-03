@@ -85,3 +85,17 @@ def test_users_has_no_single_role_column() -> None:
 
 def test_current_decision_view_is_the_named_combined_read() -> None:
     assert "create view current_report_decisions as" in _schema()
+
+
+def test_audit_log_is_append_only_by_trigger() -> None:
+    """#118: audit_log must carry the same UPDATE/DELETE-blocking trigger the decision tables use.
+
+    Behaviour is proven against a real Postgres in test_audit.py; this text-level guard runs with no
+    database, so removing the trigger line fails CI even on the no-DB path rather than silently
+    dropping immutability.
+    """
+    sql = _schema()
+    assert (
+        "create trigger audit_log_append_only before update or delete on audit_log" in sql
+    ), "audit_log lost its append-only trigger"
+    assert "execute function reject_evidence_change()" in sql
