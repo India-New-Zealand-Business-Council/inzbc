@@ -37,6 +37,15 @@ REPORT_APPROVAL = "Report Approval"
 DISTRIBUTION_AUTHORITY = "Distribution Authority"
 
 
+class DecisionNotPermittedError(RuntimeError):
+    """Raised when the actor may not record this decision kind in this role.
+
+    Fail closed, the same shape as the rest of ADR-0005: a disabled permission, a disabled role
+    assignment or an inactive account all refuse. The foreign key alone cannot express this,
+    because it matches on `(kind, actor_role_id)` and never looks at `enabled`.
+    """
+
+
 class DecisionConflictError(RuntimeError):
     """Raised when the stream head moved between read and write.
 
@@ -95,25 +104,39 @@ class DecisionRepository:
         self._database_url = database_url or os.environ["DATABASE_URL"]
 
     def current(self, report_version_id: str) -> CurrentDecisions:
+        """Reads the current decisions and the revision each was read at, in one statement.
+
+        One statement, not two, and that is the whole point. Under `READ COMMITTED` every statement
+        takes its own snapshot, so reading the values and then the head revisions let a decision
+        commit in between: the caller received a ruling from before the write paired with the head
+        revision from after it. Passing that revision back to `record` then satisfied the
+        compare-and-swap, and the correction superseded a ruling nobody had seen. The revision is
+        supposed to mean "this is the ruling I read", and split across two statements it did not.
+
+        The subquery shares the enclosing statement's snapshot, so values and revisions cannot
+        disagree.
+        """
         with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
             row = conn.execute(
-                "select report_version_id, ceo_ruling, report_approval, distribution_authority, "
-                "distribution_recipient from current_report_decisions where report_version_id = %s",
+                "select v.report_version_id, v.ceo_ruling, v.report_approval, "
+                "       v.distribution_authority, v.distribution_recipient, "
+                "       coalesce("
+                "         (select jsonb_object_agg(s.kind, s.head_revision) "
+                "          from decision_streams s "
+                "          where s.report_version_id = v.report_version_id), "
+                "         '{}'::jsonb) as revisions "
+                "from current_report_decisions v where v.report_version_id = %s",
                 (report_version_id,),
             ).fetchone()
             if row is None:
                 raise KeyError(f"no submitted report version {report_version_id!r}")
-            heads = conn.execute(
-                "select kind, head_revision from decision_streams where report_version_id = %s",
-                (report_version_id,),
-            ).fetchall()
         return CurrentDecisions(
             report_version_id=str(row["report_version_id"]),
             ceo_ruling=row["ceo_ruling"],
             report_approval=row["report_approval"],
             distribution_authority=row["distribution_authority"],
             distribution_recipient=row["distribution_recipient"],
-            revisions={h["kind"]: h["head_revision"] for h in heads},
+            revisions=dict(row["revisions"] or {}),
         )
 
     def record(
@@ -153,6 +176,28 @@ class DecisionRepository:
         """
         with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
             with conn.transaction():
+                # The foreign key on (kind, actor_role_id) proves a permission row exists. It does
+                # not prove the row is enabled, that the actor still holds the role, or that the
+                # account is active, because a foreign key cannot look at a column it does not
+                # match on. `database/schema.sql` says so and says the writing command must check;
+                # this is that check, and without it revoking a permission by setting
+                # `enabled = false` did nothing at all.
+                allowed = conn.execute(
+                    "select 1 from decision_role_permissions p "
+                    "join user_roles ur on ur.role_id = p.actor_role_id "
+                    "join users u on u.id = ur.user_id "
+                    "where p.kind = %s and p.actor_role_id = %s and p.enabled "
+                    "  and ur.user_id = %s and ur.enabled and u.active",
+                    (kind, actor_role_id, actor_id),
+                ).fetchone()
+                if allowed is None:
+                    raise DecisionNotPermittedError(
+                        f"{actor_id!r} may not record a {kind!r} decision as role "
+                        f"{actor_role_id}. Either the permission is disabled, the actor does not "
+                        "hold that role, the role assignment is disabled, or the account is "
+                        "inactive. Absence is a refusal, not a gap to fill."
+                    )
+
                 stream = conn.execute(
                     "select id, current_record_id, head_revision from decision_streams "
                     "where report_version_id = %s and kind = %s for update",

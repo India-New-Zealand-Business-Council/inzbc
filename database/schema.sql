@@ -461,6 +461,19 @@ create trigger decision_records_append_only before update or delete on decision_
 create trigger distribution_deliveries_append_only before update or delete on distribution_deliveries
   for each row execute function reject_evidence_change();
 
+-- A row trigger never fires for a whole-table wipe, so every guard above could be walked past in
+-- one statement. The restricted application role has no such privilege, but these triggers are
+-- described as catching a mistake by the table owner or a migration, and that is precisely who
+-- runs one. Only a statement-level trigger sees it.
+create trigger report_versions_no_wipe before truncate on report_versions
+  for each statement execute function reject_evidence_change();
+create trigger sod_exceptions_no_wipe before truncate on sod_exceptions
+  for each statement execute function reject_evidence_change();
+create trigger decision_records_no_wipe before truncate on decision_records
+  for each statement execute function reject_evidence_change();
+create trigger distribution_deliveries_no_wipe before truncate on distribution_deliveries
+  for each statement execute function reject_evidence_change();
+
 -- Grants are intentionally not applied here: the application login role is provisioned outside
 -- this file (see database/audit_role.sql), and CI applies this schema with no such role existing.
 -- When it does exist, the decision tables get SELECT and INSERT only, decision_streams gets
@@ -490,3 +503,5 @@ create table audit_log (
 
 create trigger audit_log_append_only before update or delete on audit_log
   for each row execute function reject_evidence_change();
+create trigger audit_log_no_wipe before truncate on audit_log
+  for each statement execute function reject_evidence_change();
