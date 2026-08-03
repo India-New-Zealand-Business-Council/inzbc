@@ -12,12 +12,14 @@ Two conventions hold across this tree:
 ---
 
 ## I am new to the project
-1. [`inzbc-ai-operating-system.md`](inzbc-ai-operating-system.md) — what INZBC is building and why.
-2. [`architecture.md`](architecture.md) — system diagrams: context, components, run state machine,
+1. [`project-charter.md`](project-charter.md) — scope, objectives, roles, phase gates and the four
+   decisions INZBC owns. The agreed shape of the engagement, in one page.
+2. [`inzbc-ai-operating-system.md`](inzbc-ai-operating-system.md) — what INZBC is building and why.
+3. [`architecture.md`](architecture.md) — system diagrams: context, components, run state machine,
    fail-closed controls, data model.
-3. [`../CONTRIBUTING.md`](../CONTRIBUTING.md) and [`../CLAUDE.md`](../CLAUDE.md) — how work lands
+4. [`../CONTRIBUTING.md`](../CONTRIBUTING.md) and [`../CLAUDE.md`](../CLAUDE.md) — how work lands
    here: branch, PR, review, evidence block.
-4. [`workstreams/README.md`](workstreams/README.md) — how the lanes are divided and who owns what.
+5. [`workstreams/README.md`](workstreams/README.md) — how the lanes are divided and who owns what.
 
 ## I am running SIP (analyst, reviewer or CEO)
 - [`sip/operator-guide.md`](sip/operator-guide.md) — **start here.** One full day, in order, in
