@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+from datetime import date
+
+from apps.fta import explainer
+from apps.fta.corpus import TariffOutcome
+
 from apps.fta.explainer import (
     DISCLAIMER,
     NO_MATCH_CONFIDENCE,
@@ -8,6 +13,21 @@ from apps.fta.explainer import (
     no_match,
 )
 from apps.fta.standards import AI_INFORMATION_STANDARD, Confidence
+
+
+def _entry(entry_id: str, topic: str) -> TariffOutcome:
+    """A confirmed entry that scores only on its sector, so a set of them ties exactly."""
+    return TariffOutcome(
+        id=entry_id,
+        topic=topic,
+        sector="Wool",
+        treatment="Tariff eliminated on entry into force.",
+        confirmed=True,
+        citation="MFAT National Interest Analysis",
+        verified_at=date(2026, 7, 20),
+        notes=None,
+        source_tier=1,
+    )
 
 
 def test_answer_query_matches_a_specific_product() -> None:
@@ -24,6 +44,46 @@ def test_answer_query_matches_a_sector_with_multiple_entries() -> None:
     assert "Dairy - bulk infant formula and other dairy-based food preparations" in topics
     assert "Dairy - peptones" in topics
     assert "Dairy - albumins" in topics
+
+
+def test_answer_query_ranks_a_multi_term_match_above_a_sector_only_match() -> None:
+    # "peptones dairy" shares two keywords with "Dairy - peptones" (topic + sector) but only one
+    # ("dairy", the sector) with the other three Dairy entries. This specific query is chosen
+    # because "Dairy - peptones" is *not* first in CORPUS's own definition order (milk/cheese/
+    # butter is) - a test that only ever checks the one case where ranked and insertion order
+    # happen to coincide would not catch ranking being silently disabled, which is exactly what
+    # happened here first: this test originally used "dairy milk", whose correct order matches
+    # CORPUS's insertion order regardless of whether ranking runs at all.
+    answers = answer_query("peptones dairy")
+    assert answers[0].topic == "Dairy - peptones"
+    assert {a.topic for a in answers} == {
+        "Dairy - milk, cheese, butter",
+        "Dairy - bulk infant formula and other dairy-based food preparations",
+        "Dairy - peptones",
+        "Dairy - albumins",
+    }
+
+
+def test_answer_query_gives_entries_with_equal_relevance_a_stable_order(monkeypatch) -> None:
+    """Equal-scoring entries come back in entry-id order, not corpus order.
+
+    Calling the function twice and comparing cannot show this. `answer_query` is pure and the
+    corpus is a module-level list, so two calls agree whatever the tiebreak is, and the assertion
+    holds even with no tiebreak at all. Deleting `entry.id` from the sort key left the whole file
+    passing.
+
+    The property only has teeth when corpus order and id order disagree, so the corpus here is
+    built deliberately backwards. Without the id tiebreak the result follows insertion order and
+    this fails.
+    """
+    reversed_corpus = [
+        _entry("FTA-902", "Wool - carpet grades"),
+        _entry("FTA-901", "Wool - carded"),
+        _entry("FTA-900", "Wool - greasy"),
+    ]
+    monkeypatch.setattr(explainer, "CORPUS", reversed_corpus)
+
+    assert [a.id for a in answer_query("wool")] == ["FTA-900", "FTA-901", "FTA-902"]
 
 
 def test_answer_query_distinguishes_milk_from_infant_formula() -> None:

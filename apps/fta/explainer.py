@@ -1,10 +1,10 @@
 """FTA Opportunity Explainer: sector/product query -> sourced answer.
 
-Matches a member's query against apps/fta/corpus.py by shared keywords only - no model call, no
-guessing beyond what's in the corpus. Per docs/modules/fta-centre.md's definition of done,
-"unsupported-answer behaviour" (no corpus match) must route to INZBC, never invent an answer -
-`answer_query` returning `[]` is that signal, and `no_match()` builds the Action Required state a
-caller renders instead of treating the empty list as an error.
+Ranks matches against apps/fta/corpus.py by shared keyword relevance (#54) - no model call, no
+guessing beyond what's in the corpus, no vector/embedding service. Per docs/modules/fta-centre.md's
+definition of done, "unsupported-answer behaviour" (no corpus match) must route to INZBC, never
+invent an answer - `answer_query` returning `[]` is that signal, and `no_match()` builds the Action
+Required state a caller renders instead of treating the empty list as an error.
 
 `NoMatch` is deliberately **not** shaped like `ExplainerAnswer`: it carries no topic, sector,
 treatment, citation or verified_at. A renderer therefore cannot feed it through the sourced-answer
@@ -15,6 +15,7 @@ test_explainer.py asserts it.
 
 from __future__ import annotations
 
+import math
 import re
 from dataclasses import dataclass
 from datetime import date
@@ -45,6 +46,63 @@ _STOPWORDS = frozenset(
 
 def _keywords(text: str) -> set[str]:
     return {word for word in _WORD_RE.findall(text.lower()) if word not in _STOPWORDS}
+
+
+# Topic keywords score higher than sector keywords: "wool" in an entry's topic is a precise
+# product match, but "agriculture" in its sector is shared by most of the corpus and should not
+# outweigh a specific topic hit. Both are then weighted by inverse document frequency, so a term
+# nearly every confirmed entry shares (few of these survive stopword filtering, but sector words
+# like "agriculture"/"dairy" still recur) contributes less than a term unique to one or two
+# entries - the standard ranked-retrieval idea, sized to an 18-row corpus rather than a vector
+# index. This is what "better ranking on multi-term queries" (#54's acceptance criterion) means
+# here: a query sharing more, rarer terms with an entry ranks it above one sharing fewer, commoner
+# terms, rather than every keyword-overlapping entry being an unordered, equally-weighted match.
+_TOPIC_WEIGHT = 2.0
+_SECTOR_WEIGHT = 1.0
+
+
+def _document_frequencies() -> dict[str, int]:
+    """How many confirmed entries' topic+sector keywords contain each term.
+
+    Computed over confirmed entries only: unconfirmed entries (e.g. FTA-003) never reach a member
+    (see `answer_query`), so their vocabulary should not influence the ranking of ones that do.
+    """
+    counts: dict[str, int] = {}
+    for entry in CORPUS:
+        if not entry.confirmed:
+            continue
+        for keyword in _keywords(entry.topic) | _keywords(entry.sector):
+            counts[keyword] = counts.get(keyword, 0) + 1
+    return counts
+
+
+_DOCUMENT_FREQUENCIES = _document_frequencies()
+_CONFIRMED_ENTRY_COUNT = sum(1 for entry in CORPUS if entry.confirmed)
+
+
+def _idf(keyword: str) -> float:
+    """Smoothed inverse document frequency. `+1` on both sides keeps this positive and finite
+    even for a keyword in every confirmed entry or (defensively) one seen in none.
+    """
+    df = _DOCUMENT_FREQUENCIES.get(keyword, 0)
+    return math.log((_CONFIRMED_ENTRY_COUNT + 1) / (df + 1)) + 1
+
+
+def _entry_keyword_weights(entry: TariffOutcome) -> dict[str, float]:
+    """keyword -> relevance weight for one entry, combining topic/sector position weight with
+    the term's corpus-wide rarity. A keyword present in both topic and sector accumulates both.
+    """
+    weights: dict[str, float] = {}
+    for keyword in _keywords(entry.topic):
+        weights[keyword] = weights.get(keyword, 0.0) + _TOPIC_WEIGHT * _idf(keyword)
+    for keyword in _keywords(entry.sector):
+        weights[keyword] = weights.get(keyword, 0.0) + _SECTOR_WEIGHT * _idf(keyword)
+    return weights
+
+
+def _relevance_score(query_keywords: set[str], entry: TariffOutcome) -> float:
+    weights = _entry_keyword_weights(entry)
+    return sum(weights.get(keyword, 0.0) for keyword in query_keywords)
 
 
 @dataclass(frozen=True)
@@ -159,26 +217,31 @@ def no_match(query: str) -> NoMatch:
 
 
 def answer_query(query: str) -> list[ExplainerAnswer]:
-    """Matches `query` against the corpus by shared keyword with each entry's topic or sector.
+    """Ranks `query` against the corpus by weighted shared-keyword relevance with each entry's
+    topic and sector (topic matches and rarer terms score higher - see `_relevance_score`).
 
-    Returns every matching **confirmed** entry (a sector query like "dairy" naturally maps to
-    more than one tariff outcome). `confirmed=False` corpus entries (e.g. the still-unconfirmed
-    ~70% tariff-line figure) are never surfaced here - docs/fta-source-corpus.md explicitly says
-    not to cite that figure in the Explainer until it's confirmed against a primary source, so a
-    query that only matches an unconfirmed entry gets the same `[]` as no match at all, not a
-    caveated figure.
+    Returns every matching **confirmed** entry, most relevant first (a sector query like "dairy"
+    naturally maps to more than one tariff outcome, and a multi-term query should surface the
+    entry sharing the most, rarest terms before one sharing only a common sector word).
+    `confirmed=False` corpus entries (e.g. the still-unconfirmed ~70% tariff-line figure) are
+    never surfaced here - docs/fta-source-corpus.md explicitly says not to cite that figure in
+    the Explainer until it's confirmed against a primary source, so a query that only matches an
+    unconfirmed entry gets the same `[]` as no match at all, not a caveated figure.
 
     Returns `[]` when nothing confirmed matches, including when `query` is empty or only
-    stopwords - the caller routes that to INZBC rather than guessing.
+    stopwords - the caller routes that to INZBC rather than guessing. Ranking only orders and
+    never widens the match set: an entry with zero shared keywords still scores 0 and is
+    excluded, exactly as before.
     """
     query_keywords = _keywords(query)
     if not query_keywords:
         return []
 
-    matches = [
-        entry
-        for entry in CORPUS
-        if entry.confirmed
-        and (query_keywords & _keywords(entry.topic) or query_keywords & _keywords(entry.sector))
+    scored = [
+        (entry, _relevance_score(query_keywords, entry)) for entry in CORPUS if entry.confirmed
     ]
-    return [_to_answer(entry) for entry in matches]
+    matched = [(entry, score) for entry, score in scored if score > 0]
+    # entry.id as the tiebreaker: deterministic, stable ordering for entries that score equally
+    # (e.g. two entries sharing the same single sector keyword and nothing else).
+    matched.sort(key=lambda pair: (-pair[1], pair[0].id))
+    return [_to_answer(entry) for entry, _score in matched]

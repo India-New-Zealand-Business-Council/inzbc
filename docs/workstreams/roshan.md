@@ -60,10 +60,6 @@ deciding it here.
   unowned. Non-negotiable per `comms-assistant.md`'s "drafts only, adversarially tested" promise —
   no request may reach the model gateway from this flow until redaction has an owner and an
   implementation. Not starting this until that's resolved.
-- [ ] FTA Explainer retrieval upgrade (#54): replace `explainer.py`'s keyword matching with ranked
-  retrieval over the corpus — still no answer without a Tier-1 citation; `[]`/escalate on
-  low-confidence matches stays. PR #168 open, awaiting review (IDF-weighted keyword ranker, stdlib
-  only; match set unchanged, ordering only).
 - [ ] End-to-end pipeline run once org-repo secrets land (Bhanu's item): collector → capture →
   assessment live against the SIP-184 SOP; fix what breaks; record the run.
 - [ ] Collection-engine improvements in `daily-india-nz-news-agent` (via its own PR flow).
@@ -75,6 +71,24 @@ See Blocked / decisions needed for what's still open before any of this runs liv
 INZBC sector/disclaimer sign-off).
 
 ## Done
+- [x] FTA Explainer retrieval upgrade (#54): `answer_query` now ranks confirmed matches by
+  weighted keyword relevance instead of returning an unordered keyword-overlap set. Self-contained
+  TF-IDF-style scorer (`_relevance_score`) — no vector service, no new dependency: topic-keyword
+  matches score higher than sector-keyword matches, and both are weighted by inverse document
+  frequency across confirmed entries, so a common sector word like "agriculture" contributes less
+  than a term unique to one or two entries. Ties (e.g. plain "dairy" scoring all four Dairy
+  entries equally) break on entry id for a deterministic, repeatable order. Match set is
+  unchanged — ranking only orders, an entry with zero shared keywords still scores 0 and is
+  excluded, so every existing guarantee (no answer without Tier-1 citation, unconfirmed entries
+  suppressed, `[]`/escalate on no match) holds exactly as before. Caught my own test-design bug
+  before committing: the first version of the ranking-order test used a query whose correct order
+  happened to match `CORPUS`'s insertion order regardless of whether ranking ran at all, so
+  disabling ranking entirely still passed it. Replaced with a query ("peptones dairy") where
+  ranked and insertion order genuinely differ, confirmed disabling ranking now fails it,
+  restored. The neighbouring tiebreak test had the same flaw and was not caught: it compared
+  two calls of a pure function, which agree whatever the sort key is, so deleting `entry.id`
+  from it left the file passing. Fixed in review by swapping in a corpus built in reverse id
+  order, where insertion order and id order genuinely disagree.
 - [x] Transactional audit service (#118). `services/api/audit.py` — `record_audit(conn, ...)` writes
   `old_value`/`new_value`/`reason`/`approval_ref` into `audit_log` on the **caller's** open
   connection and never commits, so the audit row shares the mutation's transaction: they commit
