@@ -1,3 +1,4 @@
+import { EventsSection } from './components/EventsSection'
 import { Footer } from './components/Footer'
 import { Header } from './components/Header'
 import './index.css'
@@ -20,6 +21,8 @@ export function App() {
             Membership, billing and the member directory are managed on Member Jungle. This portal
             links out to Member Jungle for those rather than holding membership data itself.
           </p>
+
+          <EventsSection />
         </div>
       </main>
       <Footer />

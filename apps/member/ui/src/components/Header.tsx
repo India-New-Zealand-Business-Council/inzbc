@@ -40,6 +40,12 @@ export function Header() {
           <span aria-current="page" className="border-b-2 border-inzbc-lavender text-sm font-medium text-white">
             Member Portal
           </span>
+          <a
+            href="#events"
+            className="rounded-sm text-sm font-medium text-white/80 transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-lavender"
+          >
+            Events
+          </a>
           {/* Tangerine CTA per docs/design-decisions.md: reserved as the accent colour for
               primary actions. Navy text on Tangerine is 5.56:1 (AA pass) — white text on
               Tangerine is only 3.37:1 and fails, the exact bug fixed in PR #162; don't repeat it. */}

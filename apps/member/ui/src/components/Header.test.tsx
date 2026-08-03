@@ -20,6 +20,13 @@ describe('Header', () => {
     )
   })
 
+  it('links to the Events section in primary navigation', () => {
+    render(<Header />)
+    expect(
+      screen.getByRole('navigation', { name: 'Primary' }).querySelector('a[href="#events"]'),
+    ).toHaveTextContent('Events')
+  })
+
   it('links Member Login out to Member Jungle rather than rendering a login form', () => {
     render(<Header />)
     const loginLink = screen.getByRole('link', { name: /member login/i })
