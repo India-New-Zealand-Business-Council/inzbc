@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 
 import json
 
@@ -14,7 +13,6 @@ from apps.sip.core.scoring import (
     to_assessment,
 )
 from apps.sip.pipeline.models import SignalStrength, SourceConfidence
-from services.api.redaction import RedactionRule
 from services.api.model_gateway import GatewayCallError, ModelGateway
 
 
@@ -59,21 +57,27 @@ CANDIDATE = {
 }
 
 
-# Redaction runs inside the gateway on every call (#37), so a gateway built without a policy
-# refuses to send. These tests are about scoring, not redaction, so they pass an explicit
-# minimal rule set; the fail-closed behaviour itself is covered in
-# services/api/tests/test_redaction.py.
-_TEST_REDACTION = [
-    RedactionRule(
-        name="email",
-        pattern=re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+"),
-        replacement="[redacted:email]",
-    )
-]
 
+
+
+# Redaction runs inside the gateway on every call (#37) and loads its policy from
+# REDACTION_POLICY_PATH. There is deliberately no way to inject rules: a rule set that matches
+# nothing would otherwise count as "configured". These tests are about scoring, so they point at a
+# real minimal policy; the fail-closed behaviour is covered in services/api/tests/test_redaction.py.
+@pytest.fixture(autouse=True)
+def _redaction_policy(tmp_path, monkeypatch):
+    policy = tmp_path / "policy.json"
+    policy.write_text(
+        json.dumps(
+            {"rules": [{"name": "email", "pattern": r"[\w.+-]+@[\w-]+\.[\w.]+",
+                        "replacement": "[redacted:email]"}]}
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("REDACTION_POLICY_PATH", str(policy))
 
 def _gateway(outputs: list[object]) -> ModelGateway:
-    return ModelGateway(client=_FakeClient(outputs), redaction_rules=_TEST_REDACTION)
+    return ModelGateway(client=_FakeClient(outputs))
 
 
 def test_valid_output_parses_into_validated_recommendation() -> None:

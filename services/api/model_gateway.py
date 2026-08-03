@@ -30,7 +30,7 @@ import os
 import time
 from dataclasses import dataclass, field
 
-from services.api.redaction import RedactionRule, redact
+from services.api.redaction import redact
 
 DEFAULT_MODEL = "gpt-4.1-mini"
 _RETRYABLE_ATTEMPTS = 2  # one retry on a transient failure, then surface the error
@@ -71,18 +71,9 @@ class ModelGateway:
     environment on first use.
     """
 
-    def __init__(
-        self,
-        client: object | None = None,
-        model: str | None = None,
-        redaction_rules: list[RedactionRule] | None = None,
-    ) -> None:
+    def __init__(self, client: object | None = None, model: str | None = None) -> None:
         self._client = client
         self.model = model or os.getenv("SIP_MODEL_NAME", DEFAULT_MODEL)
-        # None means "load the configured policy at call time", which raises when there is none.
-        # Passing rules explicitly is for tests and for a caller that has already loaded them; it
-        # is not a way to opt out, because an empty list is refused too.
-        self._redaction_rules = redaction_rules
 
     def _ensure_client(self) -> object:
         if self._client is None:
@@ -101,11 +92,18 @@ class ModelGateway:
     def complete(self, prompt: str) -> GatewayResult:
         """One prompt in, text out, with a single retry on a transient provider failure.
 
-        The prompt is redacted first. This happens before `_ensure_client`, so a missing policy is
-        reported even on a machine with no API key, and before any network call, so an
-        unredacted payload cannot leave the process while a policy is being argued about.
+        The prompt is redacted first, against the policy at `REDACTION_POLICY_PATH`. This happens
+        before `_ensure_client`, so a missing policy is reported even on a machine with no API key,
+        and before any network call, so an unredacted payload cannot leave the process while a
+        policy is being argued about.
+
+        There is deliberately no way for a caller to supply its own rules. An earlier version took
+        an injectable rule set so tests need not write a policy file; that made "redaction is
+        configured" mean only "a non-empty list was passed", and a list of rules matching nothing
+        would have sailed through with an empty audit trail. Tests now point
+        `REDACTION_POLICY_PATH` at a real file, the same way production does.
         """
-        redaction = redact(prompt, self._redaction_rules)
+        redaction = redact(prompt)
         client = self._ensure_client()
         started = time.monotonic()
         last_error: Exception | None = None

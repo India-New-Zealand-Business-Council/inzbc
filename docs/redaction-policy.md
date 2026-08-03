@@ -55,9 +55,20 @@ mechanically; it is not a guarantee that nothing sensitive reaches a provider, a
 described to INZBC as one. The named-reviewer gate before publication remains the control that
 catches what this cannot.
 
-Rules apply in file order, so a broader rule placed later cannot undo a narrower one placed
-earlier. Every rule runs on every payload; there is no short-circuit, because two categories can
-appear in the same text.
+Every rule matches the **original** payload, not the previous rule's output, and overlapping
+matches are merged so the union is redacted. Both matter, and an earlier version got both wrong: a
+rule that masked `Member ID:` first left `Member ID: 123456` no longer matching the rule that
+would have removed the number, and a rule matching another rule's replacement token could put the
+original value back. An overlap can now only ever remove more text, never less.
+
+Replacements are literal. Backreference syntax is refused at load, because a rule replacing a match
+with `\1` would emit the original value while the audit trail recorded a successful redaction.
+
+Payloads are capped at 200,000 characters. Python's regex engine has no match timeout, so a
+pathological pattern against unbounded input can hang a worker; roughly 31 characters is enough
+with the wrong rule. The cap removes the unbounded case but does not make a bad rule safe. **Policy
+authorship is a trusted operation**: whoever writes the file can write a rule that hangs the
+gateway, so it belongs with the people who already hold production configuration.
 
 ## Related
 

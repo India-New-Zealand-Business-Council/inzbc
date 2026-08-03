@@ -41,6 +41,13 @@ class RedactionPolicyError(ValueError):
     """Raised when a policy file exists but cannot be trusted to do its job."""
 
 
+# A replacement is a literal token, never a template. `re.sub` expands `\1` and `\g<0>`, so a rule
+# with `"replacement": "\\1"` would send the matched secret straight through while the audit trail
+# recorded a successful redaction. False assurance is worse than no control, so backreference syntax
+# is refused at load and every replacement is escaped before it reaches `re`.
+_BACKREF = re.compile(r"\\[0-9gG]|\\g<")
+
+
 @dataclass(frozen=True)
 class RedactionRule:
     """One named rule. `name` appears in the audit trail, never the matched text itself."""
@@ -92,7 +99,18 @@ def load_policy(path: str | Path | None = None) -> list[RedactionRule]:
         )
 
     try:
-        document = json.loads(policy_file.read_text(encoding="utf-8"))
+        def _no_duplicates(pairs: list[tuple[str, object]]) -> dict:
+            seen: dict[str, object] = {}
+            for key, value in pairs:
+                if key in seen:
+                    raise RedactionPolicyError(
+                        f"duplicate key {key!r} in the redaction policy. Last-key-wins would let a "
+                        "reviewed rule be silently replaced by one nobody approved."
+                    )
+                seen[key] = value
+            return seen
+
+        document = json.loads(policy_file.read_text(encoding="utf-8"), object_pairs_hook=_no_duplicates)
     except json.JSONDecodeError as error:
         raise RedactionPolicyError(f"redaction policy at {policy_file} is not valid JSON") from error
 
@@ -114,29 +132,88 @@ def load_policy(path: str | Path | None = None) -> list[RedactionRule]:
             raise RedactionPolicyError(
                 f"rule {index} needs a name, a pattern and a replacement; got {entry!r}"
             )
+        if _BACKREF.search(replacement):
+            raise RedactionPolicyError(
+                f"rule {name!r} has a replacement containing backreference syntax. Replacements are "
+                "literal text: a backreference would re-emit the matched value while the audit "
+                "trail recorded a redaction."
+            )
         try:
             compiled = re.compile(pattern)
         except re.error as error:
             raise RedactionPolicyError(f"rule {name!r} has an invalid pattern: {error}") from error
+        if compiled.match(""):
+            raise RedactionPolicyError(
+                f"rule {name!r} matches the empty string, which would rewrite every position in the "
+                "payload rather than redact anything."
+            )
         rules.append(RedactionRule(name=name, pattern=compiled, replacement=replacement))
     return rules
 
 
-def redact(text: str, rules: list[RedactionRule] | None = None) -> RedactionResult:
-    """Applies every rule to `text`, in order.
+MAX_PAYLOAD_CHARS = 200_000
 
-    Rules are applied in the order the policy lists them, so a broader rule placed later cannot
-    undo a narrower one placed earlier. Every rule runs; there is no short-circuit, because two
-    categories can appear in the same payload.
+
+def redact(text: str, rules: list[RedactionRule] | None = None) -> RedactionResult:
+    """Redacts `text` against every rule.
+
+    Every rule matches the **original** text, not the previous rule's output. Chaining them was
+    wrong in both directions: a rule whose input an earlier rule had already rewritten would stop
+    matching and let the value through (`"Member ID:"` masked first, so `"Member ID: 123456"` no
+    longer matched and the number survived), and a later rule matching an earlier rule's token
+    could put the original value back.
+
+    Matches are collected as spans and overlapping ones are merged, so the union is redacted. An
+    overlap can therefore only ever remove more text, never less, and no rule can shrink another's
+    coverage. Every contributing rule is counted.
     """
     active = load_policy() if rules is None else rules
     if not active:
         raise RedactionNotConfiguredError("no redaction rules loaded; refusing to send.")
 
-    counts: dict[str, int] = {}
-    result = text
+    if len(text) > MAX_PAYLOAD_CHARS:
+        # Bounded input is the only cheap defence available: Python's `re` has no match timeout,
+        # so a pathological pattern is only survivable if the payload cannot grow without limit.
+        # See docs/redaction-policy.md on why policy authorship is a trusted operation.
+        raise RedactionPolicyError(
+            f"payload is {len(text)} characters, over the {MAX_PAYLOAD_CHARS} limit; refusing to "
+            "run redaction rules over an unbounded input."
+        )
+
+    spans: list[tuple[int, int, str, str]] = []
     for rule in active:
-        result, hits = rule.pattern.subn(rule.replacement, result)
-        if hits:
-            counts[rule.name] = counts.get(rule.name, 0) + hits
-    return RedactionResult(text=result, counts=counts)
+        for match in rule.pattern.finditer(text):
+            if match.end() > match.start():
+                spans.append((match.start(), match.end(), rule.name, rule.replacement))
+
+    if not spans:
+        return RedactionResult(text=text, counts={})
+
+    order = {rule.name: index for index, rule in enumerate(active)}
+    spans.sort(key=lambda s: (s[0], -s[1], order.get(s[2], 0)))
+
+    # Overlapping matches are merged and the union is redacted. Picking one and discarding the rest
+    # is what let a value survive: masking `Member ID:` first left `Member ID: 123456` no longer
+    # matching the rule that would have removed the number, so the identifier stayed in the payload.
+    # Redacting the union means an overlap can only ever remove more, never less.
+    merged: list[tuple[int, int, str, list[str]]] = []
+    for start, end, name, replacement in spans:
+        if merged and start <= merged[-1][1]:
+            prev_start, prev_end, prev_token, names = merged[-1]
+            merged[-1] = (prev_start, max(prev_end, end), prev_token, names + [name])
+        else:
+            merged.append((start, end, replacement, [name]))
+
+    counts: dict[str, int] = {}
+    out: list[str] = []
+    cursor = 0
+    for start, end, token, names in merged:
+        out.append(text[cursor:start])
+        out.append(token)
+        # Every rule that contributed to the region is credited, so the audit trail shows which
+        # categories were present rather than only the one whose token was used.
+        for name in names:
+            counts[name] = counts.get(name, 0) + 1
+        cursor = end
+    out.append(text[cursor:])
+    return RedactionResult(text="".join(out), counts=counts)
