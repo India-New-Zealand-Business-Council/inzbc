@@ -23,6 +23,43 @@ INZBC rather than guess.
 those are *excluded* from India's tariff concessions. A system that only told the good news would be
 useless to an exporter.
 
+## Verified working, 4 August 2026
+
+Run locally against the merged `main`, not asserted. The API was started, queried and stopped.
+
+    GET /health
+    {"status":"ok"}
+
+    GET /api/fta/query?q=wool
+    status: matched
+      Wool | MFAT National Interest Analysis | confidence: High
+
+    GET /api/fta/query?q=dairy%20tariff
+    status: matched
+      Dairy - milk, cheese, butter                          | High
+      Dairy - bulk infant formula and other dairy preparations | High
+
+    GET /api/fta/query?q=how%20do%20I%20export%20software%20to%20India
+    status: no_match
+    answers: []
+    action_required:
+      "INZBC does not hold a verified answer to this question in its FTA source
+       corpus. Rather than provide an unverified answer, this query is referred
+       to INZBC."
+      next_step, escalation_path, status_line, jurisdiction,
+      approved disclaimer, confidence: Action Required
+
+The third response is the one to show INZBC, and it is the point of the whole build. Asked
+something outside the sourced corpus, the system does not guess, does not soften, and does not
+produce a plausible answer with a hedge. It returns no answers at all, says so plainly, and hands
+the question back with a route to a human.
+
+The `answers` array is empty rather than absent, and the escalation carries no evidence fields, so
+there is no shape of response in which a no-match could be rendered as a finding.
+
+The second response also demonstrates ranked retrieval (#54): multiple matches ordered by weighted
+keyword relevance, each with its own citation and confidence, rather than an unordered set.
+
 ## Deployment
 
 ADR-0004's 27 July amendment governs: zero recurring cost, no payment method on any account. Cloud

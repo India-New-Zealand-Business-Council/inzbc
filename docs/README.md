@@ -65,6 +65,14 @@ Two conventions hold across this tree:
   material only, `[[placeholders]]` where a fact is owed by INZBC, and a named human reviewer before
   anything publishes.
 
+## I am working on the Wix site
+- [`wix-staging-readiness.md`](wix-staging-readiness.md) — **read first.** What is verified on the
+  duplicate, what cannot be scripted, and why publishing it before the content is real is the
+  thing to avoid.
+- [`website-redirect-map.md`](website-redirect-map.md) and
+  [`wix-rebuild-decisions.md`](wix-rebuild-decisions.md) — the URLs and the decisions behind them.
+- [`wix-changes-log.md`](wix-changes-log.md) — every editor session, before and after text.
+
 ## Background and client context
 - [`discovery.md`](discovery.md) — the original discovery work.
 - [`ai-service-architecture.md`](ai-service-architecture.md) — why the AI layer is hosted separately
