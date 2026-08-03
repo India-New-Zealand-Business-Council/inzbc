@@ -106,7 +106,13 @@ def test_apply_transition_commits_and_advances_version(
         initiated_by=initiated_by,
     )
 
-    updated = repo.apply_transition(run.id, expected_version=0, new_state=RunState.RUN_AUTHORISED)
+    updated = repo.apply_transition(
+        run.id,
+        expected_version=0,
+        new_state=RunState.RUN_AUTHORISED,
+        actor_id=initiated_by,
+        reason="authorise run",
+    )
 
     assert updated.state == RunState.RUN_AUTHORISED
     assert updated.version == 1
@@ -123,12 +129,24 @@ def test_apply_transition_raises_when_version_is_stale(
         initiated_by=initiated_by,
     )
     # A first transition commits and moves the row to version 1...
-    repo.apply_transition(run.id, expected_version=0, new_state=RunState.RUN_AUTHORISED)
+    repo.apply_transition(
+        run.id,
+        expected_version=0,
+        new_state=RunState.RUN_AUTHORISED,
+        actor_id=initiated_by,
+        reason="authorise run",
+    )
 
     # ...so a second caller still holding version=0 (e.g. read before the first committed) must
     # be refused, not silently applied on top.
     with pytest.raises(ConcurrentModificationError):
-        repo.apply_transition(run.id, expected_version=0, new_state=RunState.COVERAGE_LOCKED)
+        repo.apply_transition(
+            run.id,
+            expected_version=0,
+            new_state=RunState.COVERAGE_LOCKED,
+            actor_id=initiated_by,
+            reason="lock coverage",
+        )
 
     # The refused write must not have landed - state and version are exactly the first writer's.
     current = repo.get_run(run.id)
@@ -155,24 +173,48 @@ def test_a_stale_caller_is_told_it_is_stale_not_that_its_transition_is_illegal(
         coverage_end_utc="2026-07-28T07:00:00+12:00",
         initiated_by=initiated_by,
     )
-    repo.apply_transition(run.id, expected_version=0, new_state=RunState.RUN_AUTHORISED)
+    repo.apply_transition(
+        run.id,
+        expected_version=0,
+        new_state=RunState.RUN_AUTHORISED,
+        actor_id=initiated_by,
+        reason="authorise run",
+    )
 
     # Repeating the winner's own transition: illegal from the new state (Run Authorised has no
     # self-loop), and stale. The caller must hear about the staleness.
     with pytest.raises(ConcurrentModificationError):
-        repo.apply_transition(run.id, expected_version=0, new_state=RunState.RUN_AUTHORISED)
+        repo.apply_transition(
+            run.id,
+            expected_version=0,
+            new_state=RunState.RUN_AUTHORISED,
+            actor_id=initiated_by,
+            reason="authorise run",
+        )
 
     # A genuinely illegal transition at the *current* version still raises IllegalTransition, so
     # this precedence does not swallow the legality check.
     with pytest.raises(IllegalTransition):
-        repo.apply_transition(run.id, expected_version=1, new_state=RunState.CLOSED)
+        repo.apply_transition(
+            run.id,
+            expected_version=1,
+            new_state=RunState.CLOSED,
+            actor_id=initiated_by,
+            reason="close run",
+        )
 
     # The same self-loop as above, but at the current version, must still be IllegalTransition.
     # Without this an implementation that simply treats every self-loop as a conflict would pass:
     # the two assertions above only ever ask for a self-loop while stale, so they cannot tell
     # "checked staleness first" from "special-cased self-loops".
     with pytest.raises(IllegalTransition):
-        repo.apply_transition(run.id, expected_version=1, new_state=RunState.RUN_AUTHORISED)
+        repo.apply_transition(
+            run.id,
+            expected_version=1,
+            new_state=RunState.RUN_AUTHORISED,
+            actor_id=initiated_by,
+            reason="authorise run",
+        )
 
 
 def test_apply_transition_rejects_an_illegal_state_jump(
@@ -190,7 +232,13 @@ def test_apply_transition_rejects_an_illegal_state_jump(
     )
 
     with pytest.raises(IllegalTransition):
-        repo.apply_transition(run.id, expected_version=0, new_state=RunState.CLOSED)
+        repo.apply_transition(
+            run.id,
+            expected_version=0,
+            new_state=RunState.CLOSED,
+            actor_id=initiated_by,
+            reason="close run",
+        )
 
     # The refused write must not have landed.
     current = repo.get_run(run.id)
@@ -205,7 +253,13 @@ def test_apply_transition_raises_key_error_for_an_unknown_run_not_stale_version(
     # the same 0-row UPDATE result, so a caller couldn't tell 404 from 409. The legality check now
     # reads the row first, so a genuinely missing run raises KeyError instead.
     with pytest.raises(KeyError):
-        repo.apply_transition(str(uuid.uuid4()), expected_version=0, new_state=RunState.CLOSED)
+        repo.apply_transition(
+            str(uuid.uuid4()),
+            expected_version=0,
+            new_state=RunState.CLOSED,
+            actor_id=str(uuid.uuid4()),
+            reason="unreached - run does not exist",
+        )
 
 
 def test_two_concurrent_transitions_cannot_both_commit(
@@ -237,7 +291,11 @@ def test_two_concurrent_transitions_cannot_both_commit(
         start.wait()  # both threads release together, forcing a genuine race, not a fluke.
         try:
             return thread_repo.apply_transition(
-                run.id, expected_version=0, new_state=RunState.RUN_AUTHORISED
+                run.id,
+                expected_version=0,
+                new_state=RunState.RUN_AUTHORISED,
+                actor_id=initiated_by,
+                reason="authorise run",
             )
         except ConcurrentModificationError as error:
             return error

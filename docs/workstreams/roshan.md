@@ -29,8 +29,8 @@ with him directly. `/services/api`, `/database` and `/schemas` stay his lane; th
 reverts once these six are done, and nothing else under those paths gets picked up without asking
 him first. Recording this so a later reader doesn't mistake the one-off for a standing change.
 
-Of the six, #122 is done (closed via PR #154, moved to Done below) — the remaining five
-(#117/#118/#120/#121/#130) sit inside a cluster that's otherwise his: #117/#118 are foundational and his
+Of the six, #122/#117/#118 are done (closed via PRs #154/#163, and #118 below) — the remaining three
+(#120/#121/#130) sit inside a cluster that's otherwise his: #117/#118 were foundational and his
 #124/#125/#126 write through this persistence adapter and audit service; #119 (separation of
 duties, his) constrains #120/#121 here. The conventions set in #117/#118 are the ones he then has
 to build on — keep them boring and close to what the schema and ADR-0005 already imply, and flag
@@ -38,22 +38,19 @@ anything that's inventing a contract shape rather than following one already dec
 deciding it here.
 
 ## Next up
-- [ ] Persistence adapter with concurrency control (#117): optimistic concurrency or row locking;
-  acceptance is a test proving two concurrent transitions cannot both commit. Foundational — the
-  endpoints below write through this. PR #163 open, in review.
-- [ ] Transactional audit service (#118): `old_value`/`new_value`/`reason`/`approval_ref` written
-  inside the mutation's own transaction, an INSERT/SELECT-only DB role, a trigger blocking
-  UPDATE/DELETE — immutable at the database level, not by application convention. Also
-  foundational; the command endpoints below should write through this from the start rather than
-  bolting audit on after.
 - [ ] Run endpoints (#120): `/api/runs` + start/pause/resume/complete, against ADR-0005's
-  reconciled contract.
+  reconciled contract. **Unblocked 1 Aug** — Bhanu confirmed `schemas/api-contract.md` now reflects
+  ADR-0005 (#176 merged): three separate approval/ruling/distribution commands, session-cookie auth,
+  roles via `user_roles`. Drive state through `persistence.apply_transition`, which now writes the
+  audit row transactionally (#118) and refuses illegal jumps (#174) — pass `actor_id`/`reason`.
 - [ ] Candidate command endpoints (#121): explicit commands (capture, record verification, score,
   submit assessment, supersede assessment), not a blanket PATCH — a PATCH can't produce a
-  meaningful audit record since the server never learns which action was intended.
+  meaningful audit record since the server never learns which action was intended. **Unblocked
+  1 Aug** alongside #120; `/verify` `/score` `/route` `/merge` stand as specified, `/assess` moved
+  out of ADR-0005 as unrelated to decision authority.
 - [ ] Backend restart/rehydration integration test (#130): restart the app + DB fixture
   deliberately, prove replay produces identical state. Server-side counterpart to the Playwright
-  persistence test — do last, once the above exists to actually restart and rehydrate.
+  persistence test — do last, once #120/#121 exist to actually restart and rehydrate.
 - SHARED-OK: SIP-050 relevance/signal/confidence scoring moved to Bhanu's worklog — it runs
   through the model gateway he owns. `assessment.py` stays the validation/carry layer here.
 - [ ] Comms Assistant service side (`apps/comms`): draft-generation flow with the named-reviewer
@@ -63,15 +60,13 @@ deciding it here.
   unowned. Non-negotiable per `comms-assistant.md`'s "drafts only, adversarially tested" promise —
   no request may reach the model gateway from this flow until redaction has an owner and an
   implementation. Not starting this until that's resolved.
-- [ ] FTA Explainer retrieval upgrade: replace `explainer.py`'s keyword matching with ranked
+- [ ] FTA Explainer retrieval upgrade (#54): replace `explainer.py`'s keyword matching with ranked
   retrieval over the corpus — still no answer without a Tier-1 citation; `[]`/escalate on
-  low-confidence matches stays.
+  low-confidence matches stays. PR #168 open, awaiting review (IDF-weighted keyword ranker, stdlib
+  only; match set unchanged, ordering only).
 - [ ] End-to-end pipeline run once org-repo secrets land (Bhanu's item): collector → capture →
   assessment live against the SIP-184 SOP; fix what breaks; record the run.
 - [ ] Collection-engine improvements in `daily-india-nz-news-agent` (via its own PR flow).
-- [ ] Pipeline integration test suite wired into CI (#56): PR #151 open — Bhanu's review found the
-  coverage-gate tests verified a count, not what was actually persisted (proved by mutation);
-  fixed and pushed, awaiting re-review.
 - [ ] Bump the CI ruff pin to 0.16.0 (#31): the collector/FTA findings are fixed and merged (PR
   #152), but the pin itself is still 0.15.22 pending `apps/sip/core`, `scripts/board.py` and
   `services/api` (Bhanu's lane) going clean under 0.16.0 too.
@@ -80,6 +75,31 @@ See Blocked / decisions needed for what's still open before any of this runs liv
 INZBC sector/disclaimer sign-off).
 
 ## Done
+- [x] Transactional audit service (#118). `services/api/audit.py` — `record_audit(conn, ...)` writes
+  `old_value`/`new_value`/`reason`/`approval_ref` into `audit_log` on the **caller's** open
+  connection and never commits, so the audit row shares the mutation's transaction: they commit
+  together or not at all. Wired into `persistence.apply_transition`, which now takes `actor_id` +
+  `reason` (+ optional `approval_ref`) and records the transition before its single commit — audited
+  only when the CAS actually lands, never on a lost race. Immutable **at the database**, not by
+  convention: an `audit_log_append_only` trigger reusing the decision tables' existing
+  `reject_evidence_change()` refuses UPDATE/DELETE from any role, and the app login role is granted
+  INSERT/SELECT only (`database/audit_role.sql`, kept out of `schema.sql` because CI applies the
+  schema with no app role existing). Tests (`test_audit.py`, live-Postgres, skip without
+  `DATABASE_URL` like #117): trigger refuses UPDATE/DELETE (55000); the INSERT/SELECT-only role is
+  refused at the privilege layer (42501, before the trigger); `record_audit` leaves the transaction
+  boundary to the caller (a rollback discards it); `apply_transition` writes a matching row; and a
+  forced audit-write failure rolls back the state change with it. Verified both new controls bite:
+  dropped the trigger → immutability tests fail; committed before the audit write → the atomicity
+  test fails; restored. Also a text-level guard in `test_schema_decisions.py` so trigger removal
+  fails CI even on the no-DB path. Ran against a real Postgres 16: 256 passed, 98.11% coverage.
+- [x] Persistence adapter with concurrency control (#117, closed via PR #163). Optimistic
+  concurrency on `runs.version` (compare-and-swap), proven by a real two-thread race against
+  Postgres; `apply_transition` also refuses an illegal state jump. Foundational — #120/#121 write
+  through it. Now also writes the transition's audit row (#118).
+- [x] Pipeline integration test suite wired into CI (#56, closed via PR #151). `FakeSipApi` holds
+  state across calls to catch regressions at the seam between modules: capture → cross-run dedupe,
+  the verification gate end-to-end, and the mandatory-source Critical stop against the real
+  112-source register. Verified it catches a regression before merging.
 - [x] Ruff 0.16.0 findings in my lane fixed (#31): `apps/fta` and `apps/sip/collector` are clean
   under 0.16.0. Auto-fixed the mechanical ones (`UP035` typing.Iterable → collections.abc,
   `UP017` datetime.UTC alias, `I001` import sort, `FLY002` f-string). The one real finding,

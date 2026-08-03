@@ -20,11 +20,30 @@ that client (ADR-0001).
 | `GET /api/fta/query` | Live. Reads the sourced FTA corpus; no database, no auth |
 | `GET /health` | Live. Liveness probe for the host health check (ADR-0004) |
 | `model_gateway.py` | Live. The single server-side model-call path |
+| `persistence.py` | Live (#117). Postgres `runs` adapter with optimistic concurrency |
+| `audit.py` | Live (#118). Transactional audit writes into an append-only `audit_log` |
 | Run, candidate, report and decision endpoints | Not built — need the database and the orchestrator's persistence |
 
-Auth, RBAC and the audit log are not implemented yet. Nothing here is reachable by staff, and
-`production_enabled` stays `false`; the adversarial security review in `docs/sip/README.md` gates
-any staff use.
+Auth and RBAC are not implemented yet, and the run/candidate endpoints do not exist, so nothing here
+is reachable by staff and `production_enabled` stays `false`; the adversarial security review in
+`docs/sip/README.md` gates any staff use.
+
+## Audit trail (#118)
+
+Every state-changing write records `old_value`/`new_value`/`reason`/`approval_ref` in `audit_log`
+**inside the mutation's own transaction** (`audit.record_audit`, called on the caller's connection),
+so a change and its audit record commit together or not at all — `persistence.apply_transition` is
+the first writer wired this way. Immutability is enforced by the database, not by convention:
+
+- an `audit_log_append_only` trigger refuses `UPDATE`/`DELETE` from any role (`database/schema.sql`);
+- the application login role is granted `INSERT`/`SELECT` only. That grant lives in
+  `database/audit_role.sql`, applied against a deployed database after `schema.sql`:
+
+  ```bash
+  psql "$DATABASE_URL" -v app_role=inzbc_app -f database/audit_role.sql
+  ```
+
+  It is kept out of `schema.sql` because CI applies the schema with no application role existing.
 
 ## The FTA response envelope
 

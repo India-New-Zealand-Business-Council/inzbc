@@ -31,6 +31,7 @@ from psycopg.rows import dict_row
 
 from apps.sip.core.orchestrator import IllegalTransition, is_legal_transition
 from apps.sip.pipeline.models import RunState
+from services.api.audit import record_audit
 
 
 class ConcurrentModificationError(RuntimeError):
@@ -114,11 +115,25 @@ class RunRepository:
         return _row_to_record(row)
 
     def apply_transition(
-        self, run_id: str, expected_version: int, new_state: RunState
+        self,
+        run_id: str,
+        expected_version: int,
+        new_state: RunState,
+        *,
+        actor_id: str,
+        reason: str,
+        approval_ref: str | None = None,
     ) -> RunRecord:
         """Commits `new_state` iff the row is still at `expected_version` (compare-and-swap) AND
         `new_state` is reachable from the row's current state per the state machine
         (`orchestrator.is_legal_transition`, the same table `Orchestrator.advance` enforces).
+
+        Writes the transition's audit row (`old_value`/`new_value`/`reason`/`approval_ref`, actor
+        `actor_id`) inside this same transaction via `record_audit`, so the state change and its
+        audit record commit together or not at all (#118) — there is no window in which a run moved
+        with no record of who moved it or why. `actor_id` and `reason` are required precisely
+        because an audit row without them cannot be reconstructed later; `approval_ref` is optional,
+        set only for a transition a recorded approval authorised.
 
         The legality check reads the current state, then the CAS write still guards against a
         race: if another transition lands between the read and the write, `version` will have
@@ -179,6 +194,23 @@ class RunRepository:
                 f"returning {_SELECT_COLUMNS}",
                 (new_state.value, run_id, expected_version),
             ).fetchone()
+            # Audit only a transition that actually landed. A 0-row CAS result (row is None) means
+            # another writer won the race between the version read above and this update; nothing
+            # changed, so there is nothing to audit. Written before commit and on this same
+            # connection so it shares the update's transaction: if the audit insert fails, the
+            # connection context manager rolls back and the state change is undone with it.
+            if row is not None:
+                record_audit(
+                    conn,
+                    user_id=actor_id,
+                    action="run.transition",
+                    record_type="runs",
+                    record_id=run_id,
+                    old_value=current_state.value,
+                    new_value=new_state.value,
+                    reason=reason,
+                    approval_ref=approval_ref,
+                )
             conn.commit()
         if row is None:
             raise ConcurrentModificationError(
