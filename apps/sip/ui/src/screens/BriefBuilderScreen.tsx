@@ -55,6 +55,12 @@ interface Props {
 export function BriefBuilderScreen({ report, onChange }: Props) {
   const [candidates] = useState<Candidate[]>(() => candidatesFixture())
   const [submitState, setSubmitState] = useState<SubmitState>({ kind: 'idle' })
+  // False until the analyst actually tries to submit — see onSubmitForQa. A fresh brief starts
+  // with all 112 mandatory sources blank; showing the full "Before this brief can be submitted"
+  // error list against a form nobody has touched yet made a normal empty state look like 112
+  // mistakes. Gates the detailed error box and the per-select red border; the calm progress
+  // indicator below covers the pre-attempt state instead.
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false)
   const inFlight = useRef<AbortController | null>(null)
   const reportDateId = useId()
   const coverageStartId = useId()
@@ -108,6 +114,10 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
   }
 
   async function onSubmitForQa() {
+    // Set before the validity check below, not after: an attempt that fails validation still
+    // counts as an attempt — that's what reveals the detailed error box and the per-select red
+    // borders (both gated on this flag elsewhere in this component).
+    setHasAttemptedSubmit(true)
     if (errors.length > 0 || !isDraft) return
     inFlight.current?.abort()
     const controller = new AbortController()
@@ -388,6 +398,17 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
           })}
         </div>
       </div>
+
+      {/* Calm, non-error state for a brief nobody has finished yet — replaces the detailed error
+          box below until the analyst actually tries to submit (hasAttemptedSubmit). Sources only,
+          not every validateBrief() rule: sources are the overwhelming majority of what's blank on
+          a fresh brief (112 rows vs. 4-5 header fields), and this indicator's job is to make that
+          specific case look like ordinary progress, not a wall of errors. */}
+      {isDraft && !hasAttemptedSubmit && errors.length > 0 ? (
+        <p className="rounded-md border border-inzbc-navy/20 bg-white p-3 text-sm text-slate-700 shadow-sm">
+          {recordedSourceCount} / {report.sourceCoverage.length} sources recorded
+        </p>
+      ) : null}
 
       {isDraft && errors.length > 0 ? (
         <div role="alert" className="rounded-md border border-inzbc-crimson bg-inzbc-crimson/10 p-3 text-sm text-inzbc-crimson">
