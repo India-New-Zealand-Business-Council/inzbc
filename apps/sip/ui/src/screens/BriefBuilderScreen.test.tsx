@@ -207,6 +207,30 @@ describe('BriefBuilderScreen', () => {
     expect(screen.queryByText('World Trade Organization')).not.toBeInTheDocument()
   })
 
+  it('leaves collapsed groups collapsed through a failed submit attempt, and expand still works after', async () => {
+    // PR #179's whole point was reducing visual overwhelm by collapsing 112 rows by default.
+    // A validation-state change (calm indicator -> red box) must not silently reopen every group
+    // behind the analyst's back — that would be the same overwhelm PR #179 removed, just
+    // triggered by a different action.
+    const report = newDraftReportFixture()
+    render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)
+
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: /submit for qa/i }))
+
+    expect(screen.getByRole('alert')).toBeInTheDocument()
+    // Still no rows on screen — the red box named every blank source by text; it didn't need to
+    // force any group open to do it.
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /nz official/i })).toHaveAttribute('aria-expanded', 'false')
+
+    // Expanding a single category still works normally with the red box showing.
+    await userEvent.click(screen.getByRole('button', { name: /nz official/i }))
+    expect(screen.getByText('New Zealand Parliament')).toBeInTheDocument()
+    expect(screen.queryByText('World Trade Organization')).not.toBeInTheDocument()
+  })
+
   it('clears once a candidate is selected and every mandatory source has an outcome', () => {
     render(<ControlledBriefBuilder initial={reportReadyForQa()} />)
 
