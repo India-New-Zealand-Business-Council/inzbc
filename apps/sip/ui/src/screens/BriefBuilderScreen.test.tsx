@@ -125,7 +125,11 @@ describe('BriefBuilderScreen', () => {
     // Every group is collapsed, so no row is on screen at all.
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
 
-    expect(screen.getByRole('button', { name: /submit for qa/i })).toBeDisabled()
+    const submitSpy = vi.spyOn(reportsStore, 'submitReportForQa')
+    await userEvent.click(screen.getByRole('button', { name: /submit for qa/i }))
+
+    expect(submitSpy).not.toHaveBeenCalled()
+    expect(screen.getByRole('alert')).toHaveTextContent(/mandatory source with no recorded outcome/i)
     expect(screen.queryByText(/ready to submit for qa/i)).not.toBeInTheDocument()
   })
 
@@ -214,10 +218,22 @@ describe('BriefBuilderScreen', () => {
     expect(alert).toHaveTextContent(/numbers need a source check/i)
   })
 
-  it('disables Submit for QA while the brief is invalid', () => {
+  it('keeps Submit for QA clickable while the brief is invalid, revealing errors instead of submitting', async () => {
+    // Not disabled: a disabled button can't be clicked, so there'd be no way to attempt a submit
+    // and see why it's blocked. onSubmitForQa still refuses to call the API while errors remain —
+    // clicking while invalid must surface the validation box, not silently succeed.
+    const submitSpy = vi.spyOn(reportsStore, 'submitReportForQa')
     const report = newDraftReportFixture()
     render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)
-    expect(screen.getByRole('button', { name: /submit for qa/i })).toBeDisabled()
+
+    const submit = screen.getByRole('button', { name: /submit for qa/i })
+    expect(submit).toBeEnabled()
+    await userEvent.click(submit)
+
+    expect(submitSpy).not.toHaveBeenCalled()
+    const alert = screen.getByRole('alert')
+    expect(alert).toHaveTextContent(/at least one scored candidate must be selected/i)
+    expect(alert).toHaveTextContent(/mandatory source with no recorded outcome/i)
   })
 
   it('shows a loading state, then a submitted banner, on a successful submit', async () => {

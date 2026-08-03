@@ -430,10 +430,14 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
 
       {isDraft ? (
         <div>
+          {/* Not disabled while invalid: a disabled button can't be clicked at all, so there'd be
+              no way for an attempt to register and reveal what's missing (hasAttemptedSubmit).
+              onSubmitForQa still refuses to call the API when errors.length > 0 — this only
+              changes whether a click while invalid does nothing or shows the analyst why. */}
           <button
             type="button"
             onClick={() => void onSubmitForQa()}
-            disabled={errors.length > 0 || submitState.kind === 'loading'}
+            disabled={submitState.kind === 'loading'}
             className="rounded-md bg-inzbc-tangerine px-4 py-2 font-semibold text-inzbc-navy transition-colors hover:enabled:bg-inzbc-tangerine/90 disabled:cursor-progress disabled:opacity-60"
           >
             {submitState.kind === 'loading' ? 'Submitting…' : 'Submit for QA'}
