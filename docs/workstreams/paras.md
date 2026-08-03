@@ -62,9 +62,6 @@ The shared API + auth for anything that reads/writes data. Roshan's FTA service 
       needs the Wix MCP connected (OI-1).
 - [ ] CMS collection schemas mapped to page-specs now (news, events, sector reports, board,
       sponsors), ready to create as dynamic pages now that Wix account access is in place.
-- [ ] Member portal shell (Members Area); link out to Member Jungle for membership
-      (do NOT rebuild membership — see the AIOS Member Jungle decision). SHARED-OK: member
-      roles/access control moved to Bhanu's worklog — it builds on his auth/RBAC model.
 - [ ] Forms UI: confirmation email + owner notification. SHARED-OK: the webhook-to-internal
       delivery (contract + receiver service) moved to Bhanu's worklog.
 - [ ] Executive dashboard UI (control state, open actions, QA/distribution status) — reads
@@ -73,6 +70,42 @@ The shared API + auth for anything that reads/writes data. Roshan's FTA service 
       this is the end-to-end verification pass).
 
 ## Done
+- Member portal link-out shell (`apps/member/ui`, `feat/paras/member-portal-ui`, 9 commits).
+  Was asked for as a 16-commit build (branded shell, login, dashboard, profile, a searchable
+  member directory, events, resources, Member Jungle link-out, notifications, responsive,
+  a11y, loading skeletons). Read against `docs/modules/member-portal-spec.md`'s own "Build
+  gate" first: login forms, a dashboard/profile carrying real membership status, and a
+  member directory are all explicitly named there as "not buildable until the
+  retain/integrate/replace assessment is approved" — the same rule `CLAUDE.md` and
+  `docs/modules/membership-crm.md` state (do not rebuild membership on Wix, link out, don't
+  duplicate the register; that assessment is still `PROPOSED`, not confirmed). Flagged the
+  conflict rather than building against it; scoped down to what the spec's own carve-out
+  says *is* buildable now — "a gated shell that sends members to Member Jungle for
+  membership, billing, directory and registration... navigation and copy," holding no member
+  data.
+  Built: branded header/footer (real INZBC logo, same asset already committed under
+  `apps/sip/ui`/`apps/comms/ui`) with a "Member Login" link-out to Member Jungle rather than
+  a login form (the login mechanism itself — SSO vs. a separate Member Jungle login, Wix
+  Members Area at all — is `member-portal.md`'s own unresolved open item, not something to
+  build against as an assumption); Membership section (Join/Renew, Directory, Billing, all
+  link out to `inzbc.memberjungle.club`, sourced from `apps/site/content/members.md` and
+  `client-answers.md` C1/C5); Events section (link out per event to Member Jungle or Zoho per
+  C6/C7, using the confirmed "INZBC Summit" name only where illustrative, never a fabricated
+  date); Resources and Notifications sections (placeholder-labelled rows only — no invented
+  report titles or announcements, per `CLAUDE.md`'s "never invent" rule); a mobile pass
+  (Header's four nav links didn't fit one row under 375px — restructured into a logo+CTA row
+  plus a horizontally-scrollable nav strip, the same pattern `apps/sip/ui`'s `AppShell.tsx`
+  already uses for its screen switcher); a WCAG 2.2 AA pass that found and fixed three real
+  defects (an unfocusable skip-link target, three tangerine CTA buttons whose focus ring was
+  copied from a navy context onto a white one and fell to ~1.6:1 contrast, and a "Placeholder"
+  badge at ~4.34:1, just under the 4.5:1 small-text minimum) — everything else audited clean
+  (keyboard access, heading hierarchy, landmarks, focus order).
+  Deliberately **not** built: the loading-skeleton commit from the original ask — this shell
+  fetches no live data (every screen is static copy or an external link), so a skeleton would
+  simulate loading that never happens.
+  Not visually verified in a real browser (Chrome tools weren't enabled this session) —
+  correctness for layout/contrast was reasoned from Tailwind class values and computed
+  contrast ratios, not an actual render; worth an eyeball pass before this ships.
 - SIP review/approval UI (`apps/sip/ui`), built against contract fixtures — no live backend
   exists yet (`services/api` has no `/api/reports/*` routes, blocked on migrations, issue #44).
   Four screens per `docs/sip-ui-spec.md`: brief builder (run header, coverage window, candidate
