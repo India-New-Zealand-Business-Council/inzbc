@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+
+
 import pytest
 
 from services.api.model_gateway import (
@@ -9,8 +12,20 @@ from services.api.model_gateway import (
 )
 
 
-def test_missing_key_fails_closed_not_silent(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_missing_key_fails_closed_not_silent(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+    # Redaction runs before the key is needed (#37), so this passes a rule set to isolate the key
+    # path. The precedence between the two is pinned deliberately by
+    # services/api/tests/test_redaction.py::test_redaction_happens_before_the_api_key_is_needed:
+    # an unredacted payload must not be sendable even on a machine that could reach a provider.
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    policy = tmp_path / "policy.json"
+    policy.write_text(
+        json.dumps({"rules": [{"name": "email", "pattern": r"[\w.+-]+@[\w-]+\.[\w.]+",
+                               "replacement": "[redacted]",
+                               "example": "mail sunil@example.test"}]}),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("REDACTION_POLICY_PATH", str(policy))
     with pytest.raises(GatewayNotConfiguredError):
         ModelGateway().complete("anything")
 
