@@ -21,6 +21,7 @@ from services.api.decisions import (
     DISTRIBUTION_AUTHORITY,
     REPORT_APPROVAL,
     DecisionConflictError,
+    DecisionNotPermittedError,
     DecisionRejected,
     DecisionRepository,
 )
@@ -57,14 +58,17 @@ def seeded() -> dict:
             (f"CEO {uuid.uuid4()}", f"{uuid.uuid4()}@example.test"),
         ).fetchone()
         conn.execute(
-            "insert into user_roles (user_id, role_id) values (%s, %s)",
+            "insert into user_roles (user_id, role_id) values (%s, %s) "
+            "on conflict (user_id, role_id) do update set enabled = true",
             (user["id"], SIP_OWNER_ROLE),
         )
         # No row here means nobody may decide, so every kind needs one. Fail-closed by design.
         for kind in (CEO_RULING, REPORT_APPROVAL, DISTRIBUTION_AUTHORITY):
+            # `do update`, not `do nothing`: these rows are keyed on (kind, role) and shared
+            # across tests, so a test that disables one would leak into every test after it.
             conn.execute(
                 "insert into decision_role_permissions (kind, actor_role_id) values (%s, %s) "
-                "on conflict do nothing",
+                "on conflict (kind, actor_role_id) do update set enabled = true",
                 (kind, SIP_OWNER_ROLE),
             )
         run = conn.execute(
@@ -160,7 +164,12 @@ def test_distribution_authority_requires_a_recipient(
 
 
 def test_an_unpermitted_role_cannot_decide(repo: DecisionRepository, seeded: dict) -> None:
-    """No `decision_role_permissions` row means nobody may act in that capacity."""
+    """No `decision_role_permissions` row means nobody may act in that capacity.
+
+    This used to surface as a foreign-key violation, which refused the write but only as a side
+    effect of the constraint. The writer now checks first and says why, so the refusal is the
+    control rather than a collision with one.
+    """
     with psycopg.connect(DATABASE_URL, row_factory=psycopg.rows.dict_row) as conn:
         conn.execute("insert into roles (id, name) values (9, 'Board Viewer') on conflict do nothing")
         conn.execute(
@@ -169,7 +178,7 @@ def test_an_unpermitted_role_cannot_decide(repo: DecisionRepository, seeded: dic
         )
         conn.commit()
 
-    with pytest.raises(DecisionRejected):
+    with pytest.raises(DecisionNotPermittedError):
         repo.record(**_kwargs(seeded, kind=CEO_RULING, value="Continue", actor_role_id=9))
 
 
@@ -217,3 +226,73 @@ def test_two_concurrent_decisions_on_one_stream_cannot_both_commit(
 def test_deciding_on_an_unsubmitted_version_raises_key_error(repo: DecisionRepository) -> None:
     with pytest.raises(KeyError):
         repo.current(str(uuid.uuid4()))
+
+
+def test_a_disabled_permission_refuses_the_decision(repo, seeded) -> None:
+    """`enabled = false` must actually revoke.
+
+    The foreign key on decision_records matches `(kind, actor_role_id)` only, so it proves a
+    permission row exists and never looks at `enabled`. `database/schema.sql` says as much and says
+    the writing command must check it. It did not, so revoking a permission the documented way
+    changed nothing at all and the decision still landed.
+    """
+    with psycopg.connect(DATABASE_URL) as conn:
+        conn.execute(
+            "update decision_role_permissions set enabled = false "
+            "where kind = %s and actor_role_id = %s",
+            (CEO_RULING, SIP_OWNER_ROLE),
+        )
+        conn.commit()
+
+    with pytest.raises(DecisionNotPermittedError):
+        repo.record(**_kwargs(seeded, kind=CEO_RULING, value="Continue",
+                              expected_head_revision=0))
+
+
+def test_a_disabled_role_assignment_refuses_the_decision(repo, seeded) -> None:
+    """Holding the role once is not holding it now."""
+    with psycopg.connect(DATABASE_URL) as conn:
+        conn.execute(
+            "update user_roles set enabled = false where user_id = %s and role_id = %s",
+            (seeded["user_id"], SIP_OWNER_ROLE),
+        )
+        conn.commit()
+
+    with pytest.raises(DecisionNotPermittedError):
+        repo.record(**_kwargs(seeded, kind=CEO_RULING, value="Continue",
+                              expected_head_revision=0))
+
+
+def test_an_inactive_account_refuses_the_decision(repo, seeded) -> None:
+    """A departed staff member's account must not still be able to authorise a release."""
+    with psycopg.connect(DATABASE_URL) as conn:
+        conn.execute("update users set active = false where id = %s", (seeded["user_id"],))
+        conn.commit()
+
+    with pytest.raises(DecisionNotPermittedError):
+        repo.record(**_kwargs(seeded, kind=CEO_RULING, value="Continue",
+                              expected_head_revision=0))
+
+
+def test_current_pairs_each_value_with_the_revision_it_was_read_at(repo, seeded) -> None:
+    """The revision has to describe the value returned beside it.
+
+    Values and head revisions used to be read in two statements. Under READ COMMITTED each takes
+    its own snapshot, so a decision committing between them returned the ruling from before the
+    write paired with the revision from after it. Passing that revision back satisfied the
+    compare-and-swap, and the correction superseded a ruling nobody had seen.
+
+    One statement cannot disagree with itself, so this asserts the pairing directly.
+    """
+    repo.record(**_kwargs(seeded, kind=CEO_RULING, value="Continue", expected_head_revision=0))
+
+    first = repo.current(seeded["report_version_id"])
+    assert first.ceo_ruling == "Continue"
+    assert first.revisions[CEO_RULING] == 1
+
+    repo.record(**_kwargs(seeded, kind=CEO_RULING, value="Pause",
+                          expected_head_revision=first.revisions[CEO_RULING]))
+
+    second = repo.current(seeded["report_version_id"])
+    assert second.ceo_ruling == "Pause"
+    assert second.revisions[CEO_RULING] == 2

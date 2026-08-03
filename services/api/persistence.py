@@ -1,8 +1,12 @@
 """Postgres persistence adapter for SIP runs, with optimistic concurrency (#117).
 
-`apps.sip.core.orchestrator.Orchestrator` is the in-memory transition engine and owns the human
-gates (`HumanDecision`, `is_human_gated`) — this module does not re-implement those. It does,
-however, refuse an illegal state jump (`orchestrator.is_legal_transition`) before writing: a
+`apps.sip.core.orchestrator.Orchestrator` is the in-memory transition engine and defines the
+human gates (`HumanDecision`, `is_human_gated`). This module used to leave enforcement to it,
+which meant the guarantee held only inside that one process: nothing reaching the database went
+through the orchestrator, so `Draft -> Run Authorised` committed with no decision behind it and
+the durable record claimed an authorisation that never happened. A gated transition here now
+requires `approval_ref` to name a row in `decision_records`, which is append-only, so the
+evidence cannot later be edited into saying something else. It also refuses an illegal state jump (`orchestrator.is_legal_transition`) before writing: a
 persistence layer that trusts every caller to have already checked legality is a second way to
 reach a state the orchestrator would refuse, not a durability concern. This module is the separate
 concern of making an accepted transition *durable*, and doing so safely when two reviewers might
@@ -29,9 +33,29 @@ from dataclasses import dataclass
 import psycopg
 from psycopg.rows import dict_row
 
-from apps.sip.core.orchestrator import IllegalTransition, is_legal_transition
+from apps.sip.core.orchestrator import IllegalTransition, is_human_gated, is_legal_transition
 from apps.sip.pipeline.models import RunState
 from services.api.audit import record_audit
+
+
+# The two human gates that happen before a report version exists, so ADR-0005's decision streams
+# (all keyed to `report_version_id`) cannot record them. Launch authority and resumption authority
+# have no home in the model yet, so `approval_ref` for these two cannot be verified against
+# anything. See #227.
+_RUN_LEVEL_GATES: frozenset[tuple[RunState, RunState]] = frozenset(
+    {
+        (RunState.DRAFT, RunState.RUN_AUTHORISED),
+        (RunState.PAUSED, RunState.COVERAGE_LOCKED),
+    }
+)
+
+
+class HumanGateNotSatisfied(RuntimeError):
+    """Raised when a human-gated transition is attempted with no decision record behind it.
+
+    Fail closed. The in-memory orchestrator has always refused these, but that guarantee lived in
+    one process and every durable write went around it.
+    """
 
 
 class ConcurrentModificationError(RuntimeError):
@@ -94,7 +118,12 @@ class RunRepository:
         coverage_end_utc: str,
         initiated_by: str,
     ) -> RunRecord:
-        """Inserts a new run in `Draft` state at `version=0`."""
+        """Inserts a new run in `Draft` state at `version=0`, with its audit row.
+
+        Creating a run is a state-changing write and was not audited, while `services/api/README.md`
+        said every state-changing write is. The trail therefore began at the first transition, so
+        the one fact it could never answer was who started the run.
+        """
         with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
             row = conn.execute(
                 f"insert into runs (run_number, prompt_version, coverage_start_utc, "
@@ -102,6 +131,17 @@ class RunRepository:
                 f"returning {_SELECT_COLUMNS}",
                 (run_number, prompt_version, coverage_start_utc, coverage_end_utc, initiated_by),
             ).fetchone()
+            # Same connection, before the single commit, so the run and its audit row land together
+            # or not at all.
+            record_audit(
+                conn,
+                user_id=initiated_by,
+                action="run.create",
+                record_type="runs",
+                record_id=str(row["id"]),
+                new_value=RunState.DRAFT.value,
+                reason=f"run {run_number} created",
+            )
             conn.commit()
         return _row_to_record(row)
 
@@ -132,8 +172,9 @@ class RunRepository:
         `actor_id`) inside this same transaction via `record_audit`, so the state change and its
         audit record commit together or not at all (#118) — there is no window in which a run moved
         with no record of who moved it or why. `actor_id` and `reason` are required precisely
-        because an audit row without them cannot be reconstructed later; `approval_ref` is optional,
-        set only for a transition a recorded approval authorised.
+        because an audit row without them cannot be reconstructed later. `approval_ref` is required for
+        a human-gated transition and must name an existing `decision_records` row; it stays optional
+        for the mechanical transitions the agent drives on its own.
 
         The legality check reads the current state, then the CAS write still guards against a
         race: if another transition lands between the read and the write, `version` will have
@@ -187,6 +228,42 @@ class RunRepository:
                     f"{current_state.value!r} -> {new_state.value!r} is not a legal transition "
                     "per schemas/state-machine.md"
                 )
+
+            # A human-gated move needs evidence a human made it, and the evidence has to be a
+            # decision that exists rather than a string somebody typed.
+            #
+            # This layer used to check legality only. `Draft -> Run Authorised` is legal, so it
+            # committed with `approval_ref` left NULL, and the durable record then said the run was
+            # authorised with nothing anywhere showing that anyone authorised it. The in-memory
+            # orchestrator refuses that, but nothing reaching the database went through the
+            # orchestrator, so the guarantee stopped at the boundary of the process that held it.
+            if is_human_gated(current_state, new_state):
+                if not approval_ref:
+                    raise HumanGateNotSatisfied(
+                        f"{current_state.value!r} -> {new_state.value!r} is human gated and needs "
+                        "approval_ref. A durable state saying the run was authorised, with no "
+                        "record of the authorisation, is worse than refusing the move."
+                    )
+                # Only the report-level gates can be checked against `decision_records`, because
+                # that table is keyed to a report version. The run-level gates are launch and
+                # resumption authority, which happen before any report version exists, so ADR-0005's
+                # three streams have nowhere to record them. That is a real gap in the model rather
+                # than something to paper over with a looser check here: until it has a home,
+                # approval_ref for those two is unverifiable free text. Tracked as #227.
+                if (current_state, new_state) not in _RUN_LEVEL_GATES:
+                    # Compared as text, not cast to uuid: `approval_ref` is caller-supplied, and
+                    # comparing against a uuid column raises a type error for anything that is not
+                    # one. Free text is exactly what this refuses, so it has to come back as a
+                    # refusal with a reason rather than an opaque database error.
+                    decided = conn.execute(
+                        "select 1 from decision_records where id::text = %s", (approval_ref,)
+                    ).fetchone()
+                    if decided is None:
+                        raise HumanGateNotSatisfied(
+                            f"approval_ref {approval_ref!r} is not a decision record. Free text "
+                            "cannot authorise a gated transition; decision_records is append-only, "
+                            "so a reference into it cannot later be edited to say something else."
+                        )
 
             row = conn.execute(
                 f"update runs set state = %s, version = version + 1 "

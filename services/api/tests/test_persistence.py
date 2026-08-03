@@ -19,7 +19,11 @@ import pytest
 
 from apps.sip.core.orchestrator import IllegalTransition
 from apps.sip.pipeline.models import RunState
-from services.api.persistence import ConcurrentModificationError, RunRepository
+from services.api.persistence import (
+    ConcurrentModificationError,
+    HumanGateNotSatisfied,
+    RunRepository,
+)
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
@@ -110,6 +114,7 @@ def test_apply_transition_commits_and_advances_version(
         run.id,
         expected_version=0,
         new_state=RunState.RUN_AUTHORISED,
+        approval_ref="launch-authority-recorded",
         actor_id=initiated_by,
         reason="authorise run",
     )
@@ -133,6 +138,7 @@ def test_apply_transition_raises_when_version_is_stale(
         run.id,
         expected_version=0,
         new_state=RunState.RUN_AUTHORISED,
+        approval_ref="launch-authority-recorded",
         actor_id=initiated_by,
         reason="authorise run",
     )
@@ -177,6 +183,7 @@ def test_a_stale_caller_is_told_it_is_stale_not_that_its_transition_is_illegal(
         run.id,
         expected_version=0,
         new_state=RunState.RUN_AUTHORISED,
+        approval_ref="launch-authority-recorded",
         actor_id=initiated_by,
         reason="authorise run",
     )
@@ -188,6 +195,7 @@ def test_a_stale_caller_is_told_it_is_stale_not_that_its_transition_is_illegal(
             run.id,
             expected_version=0,
             new_state=RunState.RUN_AUTHORISED,
+            approval_ref="launch-authority-recorded",
             actor_id=initiated_by,
             reason="authorise run",
         )
@@ -212,6 +220,7 @@ def test_a_stale_caller_is_told_it_is_stale_not_that_its_transition_is_illegal(
             run.id,
             expected_version=1,
             new_state=RunState.RUN_AUTHORISED,
+            approval_ref="launch-authority-recorded",
             actor_id=initiated_by,
             reason="authorise run",
         )
@@ -294,6 +303,7 @@ def test_two_concurrent_transitions_cannot_both_commit(
                 run.id,
                 expected_version=0,
                 new_state=RunState.RUN_AUTHORISED,
+                approval_ref="launch-authority-recorded",
                 actor_id=initiated_by,
                 reason="authorise run",
             )
@@ -314,3 +324,75 @@ def test_two_concurrent_transitions_cannot_both_commit(
     final = repo.get_run(run.id)
     assert final.version == 1, "version must advance by exactly one commit, not two"
     assert final.state == RunState.RUN_AUTHORISED
+
+
+def test_a_human_gated_transition_is_refused_without_authority(repo, initiated_by) -> None:
+    """The durable path must not commit a gated move on nobody's authority.
+
+    `Draft -> Run Authorised` is human gated. This layer used to check legality only, so it
+    committed with `approval_ref` left NULL and the stored state then said the run was authorised
+    with nothing anywhere showing that anyone authorised it. The in-memory orchestrator refuses
+    this, but nothing reaching the database went through the orchestrator, so the guarantee stopped
+    at the edge of that process.
+    """
+    run = repo.create_run(
+        run_number=_run_number(),
+        prompt_version="SIP-050 v1.1",
+        coverage_start_utc="2026-07-27T07:00:00+12:00",
+        coverage_end_utc="2026-07-28T07:00:00+12:00",
+        initiated_by=initiated_by,
+    )
+
+    with pytest.raises(HumanGateNotSatisfied):
+        repo.apply_transition(
+            run.id,
+            expected_version=0,
+            new_state=RunState.RUN_AUTHORISED,
+            actor_id=initiated_by,
+            reason="authorise run",
+        )
+
+    assert repo.get_run(run.id).state == RunState.DRAFT
+    assert repo.get_run(run.id).version == 0
+
+
+def test_a_report_level_gate_needs_a_real_decision_record(repo, initiated_by) -> None:
+    """Free text cannot authorise a gated transition that has somewhere to point.
+
+    Run-level authority (launch, resumption) has no home in ADR-0005's streams yet, because those
+    are keyed to a report version that does not exist at that point, so those two gates accept an
+    unverifiable reference and #227 tracks giving them one. Every other gate is checked against
+    `decision_records`, which is append-only, so the reference cannot later be edited into saying
+    something else.
+    """
+    run = repo.create_run(
+        run_number=_run_number(),
+        prompt_version="SIP-050 v1.1",
+        coverage_start_utc="2026-07-27T07:00:00+12:00",
+        coverage_end_utc="2026-07-28T07:00:00+12:00",
+        initiated_by=initiated_by,
+    )
+
+    # Walk to the first gate that is not run level. Only the first move is gated on the way.
+    walk = [
+        (RunState.RUN_AUTHORISED, "launch-authority-recorded"),
+        (RunState.COVERAGE_LOCKED, None),
+        (RunState.SCANNING, None),
+        (RunState.CANDIDATE_REVIEW, None),
+        (RunState.REPORT_DRAFTED, None),
+        (RunState.QA_IN_PROGRESS, None),
+    ]
+    for version, (state, ref) in enumerate(walk):
+        repo.apply_transition(
+            run.id, expected_version=version, new_state=state,
+            actor_id=initiated_by, reason="walk to the QA gate", approval_ref=ref,
+        )
+
+    with pytest.raises(HumanGateNotSatisfied, match="not a decision record"):
+        repo.apply_transition(
+            run.id, expected_version=len(walk), new_state=RunState.AWAITING_CEO_DECISION,
+            actor_id=initiated_by, reason="QA sign-off",
+            approval_ref="signed-off-by-me-honest",
+        )
+
+    assert repo.get_run(run.id).state == RunState.QA_IN_PROGRESS

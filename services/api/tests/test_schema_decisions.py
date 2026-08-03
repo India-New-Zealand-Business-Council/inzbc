@@ -99,3 +99,25 @@ def test_audit_log_is_append_only_by_trigger() -> None:
         "create trigger audit_log_append_only before update or delete on audit_log" in sql
     ), "audit_log lost its append-only trigger"
     assert "execute function reject_evidence_change()" in sql
+
+
+def test_no_append_only_table_can_be_emptied_in_one_statement() -> None:
+    """A row trigger never fires for a whole-table wipe.
+
+    Every append-only guard was `for each row`, so one statement could clear the evidence without
+    meeting any of them. The restricted application role has no such privilege, but the schema
+    describes these triggers as catching a mistake by the table owner or a migration, and that is
+    exactly who would run one. Only a statement-level trigger sees it.
+    """
+    sql = _schema()
+
+    for table in (
+        "report_versions",
+        "sod_exceptions",
+        "decision_records",
+        "distribution_deliveries",
+        "audit_log",
+    ):
+        assert f"before truncate on {table}" in sql, (
+            f"{table} can still be emptied in one statement without meeting its append-only guard"
+        )

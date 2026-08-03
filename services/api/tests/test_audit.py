@@ -166,7 +166,8 @@ def test_apply_transition_writes_a_matching_audit_row(
     with psycopg.connect(DATABASE_URL) as conn:
         row = conn.execute(
             "select user_id, action, record_type, record_id, old_value, new_value, reason, "
-            "approval_ref from audit_log where record_type = 'runs' and record_id = %s",
+            "approval_ref from audit_log where record_type = 'runs' and record_id = %s "
+            "and action = 'run.transition'",
             (run_id,),
         ).fetchone()
 
@@ -200,6 +201,7 @@ def test_a_failed_audit_write_rolls_back_the_state_change(
             run_id,
             expected_version=0,
             new_state=RunState.RUN_AUTHORISED,
+            approval_ref="launch-authority-recorded",
             actor_id=actor_id,
             reason="authorise the daily run",
         )
@@ -209,10 +211,12 @@ def test_a_failed_audit_write_rolls_back_the_state_change(
     assert current.state == RunState.DRAFT
     assert current.version == 0
 
-    # ...and no audit row was left behind for this run.
+    # ...and no *transition* audit row was left behind. The run's creation row stays, because
+    # create_run is itself an audited write and committed long before this attempt.
     with psycopg.connect(DATABASE_URL) as conn:
         count = conn.execute(
-            "select count(*) from audit_log where record_type = 'runs' and record_id = %s",
+            "select count(*) from audit_log where record_type = 'runs' and record_id = %s "
+            "and action = 'run.transition'",
             (run_id,),
         ).fetchone()[0]
     assert count == 0
