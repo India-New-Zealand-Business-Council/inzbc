@@ -47,6 +47,29 @@ function SourceProgressIndicator({ recorded, total }: { recorded: number; total:
   )
 }
 
+/**
+ * Shown only after a failed submit attempt. Takes only the resolved error strings, not
+ * `expandedCategories` or either toggle function: it names sources by text, the same way
+ * regardless of which groups are open or closed, and has no way to force one open — by
+ * construction, not by convention. Collapsed groups stay collapsed; the analyst expands the
+ * relevant category to go investigate.
+ */
+function ValidationSummary({ errors }: { errors: string[] }) {
+  return (
+    <div role="alert" className="rounded-md border border-inzbc-crimson bg-inzbc-crimson/10 p-3 text-sm text-inzbc-crimson">
+      <p className="font-semibold">Before this brief can be submitted for QA:</p>
+      <ul className="mt-1 list-inside list-disc">
+        {errors.map((error, index) => (
+          // Index, not the message text: two mandatory sources share a name across the NZ/India
+          // split (e.g. "Ministry of Defence"), so their blank-outcome messages are identical
+          // strings — a text key collided and React logged a duplicate-key warning.
+          <li key={index}>{error}</li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
 interface Props {
   report: DailyBriefReport
   onChange: (report: DailyBriefReport) => void
@@ -422,19 +445,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
         <SourceProgressIndicator recorded={recordedSourceCount} total={report.sourceCoverage.length} />
       ) : null}
 
-      {isDraft && hasAttemptedSubmit && errors.length > 0 ? (
-        <div role="alert" className="rounded-md border border-inzbc-crimson bg-inzbc-crimson/10 p-3 text-sm text-inzbc-crimson">
-          <p className="font-semibold">Before this brief can be submitted for QA:</p>
-          <ul className="mt-1 list-inside list-disc">
-            {errors.map((error, index) => (
-              // Index, not the message text: two mandatory sources share a name across the NZ/
-              // India split (e.g. "Ministry of Defence"), so their blank-outcome messages are
-              // identical strings — a text key collided and React logged a duplicate-key warning.
-              <li key={index}>{error}</li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+      {isDraft && hasAttemptedSubmit && errors.length > 0 ? <ValidationSummary errors={errors} /> : null}
 
       {isDraft && errors.length === 0 ? (
         <p className="text-sm font-medium text-inzbc-forest">Ready to submit for QA.</p>
