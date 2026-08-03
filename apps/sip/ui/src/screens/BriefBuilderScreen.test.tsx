@@ -114,6 +114,21 @@ describe('BriefBuilderScreen', () => {
     expect(screen.queryByText(/ready to submit for qa/i)).not.toBeInTheDocument()
   })
 
+  it('still blocks submit when the only unrecorded source sits inside a collapsed group', async () => {
+    // The risk this change introduces: 112 rows are now hidden by default, so a staff member sees
+    // a tidy screen and could believe coverage is complete. Validation runs on the report, not on
+    // what is rendered, and the error list names the missing source whether or not its group is
+    // open. Collapsing must never be able to buy a submit.
+    const report = newDraftReportFixture()
+    render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)
+
+    // Every group is collapsed, so no row is on screen at all.
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+
+    expect(screen.getByRole('alert')).toHaveTextContent(/mandatory source with no recorded outcome/i)
+    expect(screen.queryByText(/ready to submit for qa/i)).not.toBeInTheDocument()
+  })
+
   it('records a source-outcome change via onChange', async () => {
     const report = newDraftReportFixture()
     const onChange = vi.fn()
