@@ -168,6 +168,22 @@ def load_policy(path: str | Path | None = None) -> list[RedactionRule]:
                 "whose every match is zero-length loads cleanly and then removes nothing, so it "
                 "must demonstrate on a sample that it works."
             )
+        # Matching is not redacting. `"pattern": "sunil", "replacement": "sunil"` matches, so the
+        # check above passes, and then substitution puts the value straight back and counts a
+        # redaction. That is the backreference bug again by a different route: the payload leaves
+        # unchanged while the audit trail says it was masked.
+        if compiled.search(replacement):
+            raise RedactionPolicyError(
+                f"rule {name!r} has a replacement that its own pattern matches. The value would be "
+                "re-emitted while the audit trail recorded a redaction, and the token would match "
+                "on any later pass."
+            )
+        if redact(example, [RedactionRule(name=name, pattern=compiled,
+                                          replacement=replacement)]).text == example:
+            raise RedactionPolicyError(
+                f"rule {name!r} leaves its own example {example!r} unchanged. Matching is not "
+                "redacting: the rule must be shown to remove something, not merely to fire."
+            )
         rules.append(RedactionRule(name=name, pattern=compiled, replacement=replacement))
     return rules
 

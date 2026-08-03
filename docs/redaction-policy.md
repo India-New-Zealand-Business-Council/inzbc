@@ -9,6 +9,26 @@ an assumption. So `services/api/redaction.py` ships the machinery and treats a m
 refusal rather than as permission.
 
 
+## What this layer cannot do
+
+These rules match formatted identifiers. They do not catch a person's name, job title, employer, or
+anything else carried in ordinary prose, and no set of regexes will. This input passes through
+untouched:
+
+    Delegation lead: Priya Sharma, Chief Executive, Koru Exports Ltd
+
+The policy document previously pointed at review-before-publication as the remaining control for
+this. That is wrong, and the error mattered: review happens after the payload has already reached
+the provider. Publication review cannot undo a disclosure.
+
+The control for prose is not to send it. Prohibited inputs and structured-field removal, so that a
+brief's member fields are dropped before assembly rather than masked afterwards, are tracked as
+**#223**. Until that exists, this layer must not be described as making it safe to send member data
+to a model, and approving the policy does not make it so.
+
+Two evasions are defended because they are cheap to defend: a full-width `＠` homoglyph, and a
+number split across a line break. Others are not. Policy authorship remains a trusted operation.
+
 ## Approving a policy
 
 A proposed starting point is committed at `config/redaction-policy.proposed.json`. It covers
