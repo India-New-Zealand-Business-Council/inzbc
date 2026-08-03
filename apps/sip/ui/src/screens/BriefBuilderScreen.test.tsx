@@ -256,6 +256,46 @@ describe('BriefBuilderScreen', () => {
     expect(alert).toHaveTextContent(/mandatory source with no recorded outcome/i)
   })
 
+  it('replaces the calm progress count with the red box once a submit attempt fails', async () => {
+    const report = newDraftReportFixture()
+    render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)
+
+    expect(screen.getByText('0 / 112 sources recorded')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /submit for qa/i }))
+
+    expect(screen.queryByText(/sources recorded/i)).not.toBeInTheDocument()
+    expect(screen.getByRole('alert')).toBeInTheDocument()
+  })
+
+  it('marks a still-blank mandatory Outcome select red once a submit attempt fails', async () => {
+    const report = newDraftReportFixture()
+    render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)
+
+    await userEvent.click(screen.getByRole('button', { name: /nz official/i }))
+    const outcomeSelect = screen.getAllByRole('combobox')[0]!
+    await userEvent.click(screen.getByRole('button', { name: /submit for qa/i }))
+
+    expect(outcomeSelect.className).toContain('border-inzbc-crimson')
+  })
+
+  it('clears a source from the red box and its own red border once its outcome is recorded', async () => {
+    render(<ControlledBriefBuilder initial={newDraftReportFixture()} />)
+
+    await userEvent.click(screen.getByRole('button', { name: /nz official/i }))
+    const outcomeSelect = screen.getAllByRole('combobox')[0]!
+    await userEvent.click(screen.getByRole('button', { name: /submit for qa/i }))
+    expect(outcomeSelect.className).toContain('border-inzbc-crimson')
+    const alertBefore = screen.getByRole('alert')
+    const blankCountBefore = within(alertBefore).getAllByText(/mandatory source with no recorded outcome/i).length
+
+    fireEvent.change(outcomeSelect, { target: { value: 'Included' } })
+
+    expect(outcomeSelect.className).not.toContain('border-inzbc-crimson')
+    const alertAfter = screen.getByRole('alert')
+    const blankCountAfter = within(alertAfter).getAllByText(/mandatory source with no recorded outcome/i).length
+    expect(blankCountAfter).toBe(blankCountBefore - 1)
+  })
+
   it('shows a loading state, then a submitted banner, on a successful submit', async () => {
     render(<ControlledBriefBuilder initial={reportReadyForQa()} />)
 
