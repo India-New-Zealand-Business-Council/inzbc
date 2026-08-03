@@ -365,7 +365,9 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
                                   setSourceOutcome(row.sourceId, event.target.value as SourceOutcome)
                                 }
                                 className={`rounded-md border px-2 py-1 text-sm ${
-                                  row.mandatory && row.outcome === '' ? 'border-inzbc-crimson' : 'border-inzbc-navy/20'
+                                  hasAttemptedSubmit && row.mandatory && row.outcome === ''
+                                    ? 'border-inzbc-crimson'
+                                    : 'border-inzbc-navy/20'
                                 }`}
                               >
                                 {OUTCOME_OPTIONS.map((option) => (
