@@ -82,6 +82,8 @@ Two conventions hold across this tree:
   anything publishes.
 
 ## I am working on the Wix site
+- [`studio-build-spec.md`](studio-build-spec.md) — the build spec for the Studio site: tokens,
+  page tree, slugs, content rules, and the checklist that gates the first republish.
 - [`website-rebuild-plan.md`](website-rebuild-plan.md) — **read first.** What the rebuild
   does in what order, the Editor versus Studio decision that governs it, and which external
   research findings survived checking.
