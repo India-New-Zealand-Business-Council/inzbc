@@ -1,3 +1,4 @@
+import { Container } from './components/Container'
 import { EventsSection } from './components/EventsSection'
 import { Footer } from './components/Footer'
 import { Header } from './components/Header'
@@ -18,7 +19,7 @@ export function App() {
           — the next Tab press would carry on from wherever focus was before, defeating the skip
           link (WCAG technique G1/H69). */}
       <main id="main-content" tabIndex={-1} className="flex-1 bg-slate-50 focus:outline-none">
-        <div className="mx-auto max-w-2xl px-4 py-6 sm:py-8">
+        <Container className="py-6 sm:py-8">
           <h1 className="text-2xl font-extrabold text-inzbc-navy sm:text-3xl">Member Portal</h1>
           {/* Per docs/modules/member-portal-spec.md's build gate: membership status, renewal,
               invoices, directory and login stay on Member Jungle until the retain/integrate/
@@ -33,7 +34,7 @@ export function App() {
           <MembershipSection />
           <EventsSection />
           <ResourcesSection />
-        </div>
+        </Container>
       </main>
       <Footer />
     </div>

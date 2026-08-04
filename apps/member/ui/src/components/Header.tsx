@@ -1,4 +1,5 @@
 import inzbcLogoAcronymWhite from '../assets/inzbc-logo-acronym-white.svg'
+import { Container } from './Container'
 
 // Navy background + white text per INZBC Brand Guidelines 2026 v1.0 (Colour Palette, p.16) — same
 // treatment as apps/comms/ui, apps/sip/ui and apps/fta/ui's headers. Logo: the acronym lockup,
@@ -32,7 +33,7 @@ export function Header() {
       >
         Skip to main content
       </a>
-      <div className="mx-auto max-w-2xl px-4 py-4">
+      <Container className="py-4">
         <div className="flex items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-2">
             <a
@@ -59,12 +60,14 @@ export function Header() {
             Member Login
           </a>
         </div>
-      </div>
+      </Container>
       {/* Horizontally scrollable, not wrapped: four section links plus the logo/CTA row above
           would overflow a 320px viewport if laid out in one row (the failure mode this whole
           commit exists to fix) — same overflow-x-auto tab-strip pattern as
-          apps/sip/ui/src/components/AppShell.tsx uses for its (longer) screen switcher. */}
-      <nav aria-label="Primary" className="mx-auto max-w-2xl overflow-x-auto px-4 pb-3">
+          apps/sip/ui/src/components/AppShell.tsx uses for its (longer) screen switcher. Same
+          max-w-7xl/padding as Container by hand, not the component itself: Container renders a
+          <div>, and this needs to be the <nav> element for its own aria-label. */}
+      <nav aria-label="Primary" className="mx-auto max-w-7xl overflow-x-auto px-4 pb-3 sm:px-6 lg:px-8">
         <ul className="flex gap-4">
           {SECTION_LINKS.map((link) => (
             <li key={link.href}>
