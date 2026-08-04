@@ -33,6 +33,43 @@ function categoryForSource(sip185Code: string): string {
   return category?.label ?? 'Other'
 }
 
+/**
+ * Calm, non-error state for a brief nobody has finished yet — shown until the analyst actually
+ * tries to submit. Takes only the two counts it needs to render, not `expandedCategories` or
+ * either toggle function: it has no way to force a source group open, by construction, not by
+ * convention.
+ */
+function SourceProgressIndicator({ recorded, total }: { recorded: number; total: number }) {
+  return (
+    <p className="rounded-md border border-inzbc-navy/20 bg-white p-3 text-sm text-slate-700 shadow-sm">
+      {recorded} / {total} sources recorded
+    </p>
+  )
+}
+
+/**
+ * Shown only after a failed submit attempt. Takes only the resolved error strings, not
+ * `expandedCategories` or either toggle function: it names sources by text, the same way
+ * regardless of which groups are open or closed, and has no way to force one open — by
+ * construction, not by convention. Collapsed groups stay collapsed; the analyst expands the
+ * relevant category to go investigate.
+ */
+function ValidationSummary({ errors }: { errors: string[] }) {
+  return (
+    <div role="alert" className="rounded-md border border-inzbc-crimson bg-inzbc-crimson/10 p-3 text-sm text-inzbc-crimson">
+      <p className="font-semibold">Before this brief can be submitted for QA:</p>
+      <ul className="mt-1 list-inside list-disc">
+        {errors.map((error, index) => (
+          // Index, not the message text: two mandatory sources share a name across the NZ/India
+          // split (e.g. "Ministry of Defence"), so their blank-outcome messages are identical
+          // strings — a text key collided and React logged a duplicate-key warning.
+          <li key={index}>{error}</li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
 interface Props {
   report: DailyBriefReport
   onChange: (report: DailyBriefReport) => void
@@ -55,6 +92,12 @@ interface Props {
 export function BriefBuilderScreen({ report, onChange }: Props) {
   const [candidates] = useState<Candidate[]>(() => candidatesFixture())
   const [submitState, setSubmitState] = useState<SubmitState>({ kind: 'idle' })
+  // False until the analyst actually tries to submit — see onSubmitForQa. A fresh brief starts
+  // with all 112 mandatory sources blank; showing the full "Before this brief can be submitted"
+  // error list against a form nobody has touched yet made a normal empty state look like 112
+  // mistakes. Gates the detailed error box and the per-select red border; the calm progress
+  // indicator below covers the pre-attempt state instead.
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false)
   const inFlight = useRef<AbortController | null>(null)
   const reportDateId = useId()
   const coverageStartId = useId()
@@ -108,6 +151,10 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
   }
 
   async function onSubmitForQa() {
+    // Set before the validity check below, not after: an attempt that fails validation still
+    // counts as an attempt — that's what reveals the detailed error box and the per-select red
+    // borders (both gated on this flag elsewhere in this component).
+    setHasAttemptedSubmit(true)
     if (errors.length > 0 || !isDraft) return
     inFlight.current?.abort()
     const controller = new AbortController()
@@ -355,7 +402,9 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
                                   setSourceOutcome(row.sourceId, event.target.value as SourceOutcome)
                                 }
                                 className={`rounded-md border px-2 py-1 text-sm ${
-                                  row.mandatory && row.outcome === '' ? 'border-inzbc-crimson' : 'border-inzbc-navy/20'
+                                  hasAttemptedSubmit && row.mandatory && row.outcome === ''
+                                    ? 'border-inzbc-crimson'
+                                    : 'border-inzbc-navy/20'
                                 }`}
                               >
                                 {OUTCOME_OPTIONS.map((option) => (
@@ -389,19 +438,14 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
         </div>
       </div>
 
-      {isDraft && errors.length > 0 ? (
-        <div role="alert" className="rounded-md border border-inzbc-crimson bg-inzbc-crimson/10 p-3 text-sm text-inzbc-crimson">
-          <p className="font-semibold">Before this brief can be submitted for QA:</p>
-          <ul className="mt-1 list-inside list-disc">
-            {errors.map((error, index) => (
-              // Index, not the message text: two mandatory sources share a name across the NZ/
-              // India split (e.g. "Ministry of Defence"), so their blank-outcome messages are
-              // identical strings — a text key collided and React logged a duplicate-key warning.
-              <li key={index}>{error}</li>
-            ))}
-          </ul>
-        </div>
+      {/* Sources only, not every validateBrief() rule: sources are the overwhelming majority of
+          what's blank on a fresh brief (112 rows vs. 4-5 header fields), and this indicator's job
+          is to make that specific case look like ordinary progress, not a wall of errors. */}
+      {isDraft && !hasAttemptedSubmit && errors.length > 0 ? (
+        <SourceProgressIndicator recorded={recordedSourceCount} total={report.sourceCoverage.length} />
       ) : null}
+
+      {isDraft && hasAttemptedSubmit && errors.length > 0 ? <ValidationSummary errors={errors} /> : null}
 
       {isDraft && errors.length === 0 ? (
         <p className="text-sm font-medium text-inzbc-forest">Ready to submit for QA.</p>
@@ -409,10 +453,14 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
 
       {isDraft ? (
         <div>
+          {/* Not disabled while invalid: a disabled button can't be clicked at all, so there'd be
+              no way for an attempt to register and reveal what's missing (hasAttemptedSubmit).
+              onSubmitForQa still refuses to call the API when errors.length > 0 — this only
+              changes whether a click while invalid does nothing or shows the analyst why. */}
           <button
             type="button"
             onClick={() => void onSubmitForQa()}
-            disabled={errors.length > 0 || submitState.kind === 'loading'}
+            disabled={submitState.kind === 'loading'}
             className="rounded-md bg-inzbc-tangerine px-4 py-2 font-semibold text-inzbc-navy transition-colors hover:enabled:bg-inzbc-tangerine/90 disabled:cursor-progress disabled:opacity-60"
           >
             {submitState.kind === 'loading' ? 'Submitting…' : 'Submit for QA'}
