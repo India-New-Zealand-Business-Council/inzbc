@@ -11,7 +11,7 @@ Nothing on the site was changed to produce this. Every result below is a read.
 
 | Property | Value | Why it matters |
 |---|---|---|
-| Status | **Draft**, never published | Wix serves nothing at all for an unpublished site. There is no public exposure today |
+| Status | **Published** 4 August 2026, on Bhanu's authority | Live at `inzbcsecretariat.wixsite.com/website-2`. It was Draft until then; the publish is recorded in [`wix-changes-log.md`](./wix-changes-log.md) |
 | Plan | Free | Publishing gives a public `wixsite.com` address. No custom domain needed for that |
 | Created / updated | 24 Jul 2026, same minute | Confirms nobody has edited it since duplication |
 | Editor | Wix Editor (not Studio) | Determines which editor instructions apply |
@@ -60,8 +60,11 @@ feature with no public API, so each redirect in the map is entered by hand.
 
 ## The publish trap
 
-The duplicate is safe while it stays unpublished. The risk begins the moment anyone clicks
-**Publish**, and it is not primarily an SEO risk.
+**This has now happened.** The duplicate was published on 4 August 2026, so there would be a preview
+URL to share, which is what the duplicate is for. What follows was written beforehand and still
+describes the exposure correctly. It is no longer a warning about a future click.
+
+The risk is not primarily an SEO risk.
 
 A free Wix site publishes to a public `<account>.wixsite.com/<site>` address. No domain, no DNS,
 nothing to buy. Anyone with the link reaches it, and search engines can index it.
