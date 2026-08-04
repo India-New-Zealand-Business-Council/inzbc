@@ -70,6 +70,33 @@ The shared API + auth for anything that reads/writes data. Roshan's FTA service 
       this is the end-to-end verification pass).
 
 ## Done
+- Member portal Dashboard (`apps/member/ui`, `feat/paras/member-dashboard`, 11 commits) — the
+  main overview screen on top of the link-out shell (issue #198, PR #217). Not a routed page:
+  no router exists anywhere in this codebase and this app has exactly one screen, so `Dashboard`
+  is a page-level component `App.tsx` renders above the existing full Notifications/Membership/
+  Events/Resources sections, which are unchanged below it. Four summary widgets
+  (`src/components/dashboard/`) reuse the full sections' own data — moved each section's
+  placeholder constants into `src/lib/*Data.ts` so both the widget and the full section import
+  the same array rather than risking two copies drifting apart — and link down to the matching
+  full section via the same in-page anchors (`#notifications` etc.) Header's nav already uses.
+  Widgets sit in a responsive grid: 1 column mobile, 2 at `sm`, 4 at `lg`.
+  Also fixed, as its own early commit since it affects the whole app: the shared layout was
+  capped at `max-w-2xl` (672px), leaving large dead margins on desktop/laptop. Widened to
+  `max-w-7xl` (1280px) via a new shared `Container` component used by Header, Footer and
+  `App.tsx`'s main content, so the width is consistent across the app rather than patched on
+  the Dashboard alone.
+  Accessibility pass found one real gap beyond the reused-safe colour/focus patterns already
+  established: the four cards were bare `<div>`s with no group semantics, so a screen reader
+  user tabbing through the grid had no signal of where one card's content ended and the next
+  began — added `role="group"` + `aria-labelledby` (via `useId`, same pattern
+  `apps/sip/ui`'s `BriefBuilderScreen` uses) to each card. Mobile pass found the widgets' bare
+  text links were ~20px tall, under WCAG 2.5.8's 24px tap-target minimum — padded with
+  `-mx-1 px-1 py-1` (cancels out visually, pads the hit area) rather than changing the visible
+  spacing.
+  Not visually verified in a real browser this session (Chrome tools weren't enabled) —
+  verified via Testing Library (44 tests) and reasoning about Tailwind class values, not an
+  actual render at each breakpoint; worth an eyeball pass at mobile/tablet/desktop widths
+  before this ships.
 - Member portal link-out shell (`apps/member/ui`, `feat/paras/member-portal-ui`, 9 commits).
   Was asked for as a 16-commit build (branded shell, login, dashboard, profile, a searchable
   member directory, events, resources, Member Jungle link-out, notifications, responsive,
