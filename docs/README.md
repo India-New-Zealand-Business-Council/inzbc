@@ -54,6 +54,12 @@ Two conventions hold across this tree:
 - [`project-charter.md`](project-charter.md) §11 and §18 — the four foundation decisions and the
   open items INZBC owns.
 
+## I am handling data
+- [`data/system-of-record-and-retention.md`](data/system-of-record-and-retention.md) — where each
+  data type authoritatively lives, how it is classified, and how long it may be kept. Starts with
+  the fact that the system holds no member data at all today, which is what makes the controls
+  cheap to put in now and expensive to retrofit later.
+
 ## I need to know why something was decided
 - [`decisions/`](decisions/) — architecture decision records. Each states the context, the options
   compared, the decision and its consequences.
