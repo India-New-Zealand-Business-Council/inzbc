@@ -1,3 +1,4 @@
+import { MembershipWidget } from '../components/dashboard/MembershipWidget'
 import { NotificationsWidget } from '../components/dashboard/NotificationsWidget'
 
 // The main overview screen — members see everything at a glance in one place. Not a routed page
@@ -16,8 +17,9 @@ export function Dashboard() {
         Notifications, membership, upcoming events and resources at a glance.
       </p>
 
-      <div className="mt-4">
+      <div className="mt-4 space-y-4">
         <NotificationsWidget />
+        <MembershipWidget />
       </div>
     </section>
   )
