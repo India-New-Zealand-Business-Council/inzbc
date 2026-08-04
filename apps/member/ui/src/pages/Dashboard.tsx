@@ -1,6 +1,7 @@
 import { EventsWidget } from '../components/dashboard/EventsWidget'
 import { MembershipWidget } from '../components/dashboard/MembershipWidget'
 import { NotificationsWidget } from '../components/dashboard/NotificationsWidget'
+import { ResourcesWidget } from '../components/dashboard/ResourcesWidget'
 
 // The main overview screen — members see everything at a glance in one place. Not a routed page
 // (no router exists anywhere in this codebase, and this app has exactly one screen): a distinct
@@ -22,6 +23,7 @@ export function Dashboard() {
         <NotificationsWidget />
         <MembershipWidget />
         <EventsWidget />
+        <ResourcesWidget />
       </div>
     </section>
   )
