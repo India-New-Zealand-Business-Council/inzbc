@@ -22,7 +22,7 @@ taken on an invented number is worse than a decision deferred.
 | # | Decision | Blocks | Urgency |
 |---|---|---|---|
 | 1 | The homepage says the FTA is in effect. It is not. | Nothing technical. It is wrong today | **Immediate** |
-| 2 | Cloud hosting: billing owner and monthly ceiling (F4) | Milestone M1, due Friday 7 August | **This week** |
+| 2 | Where the system lives after the placement, and who owns those accounts (F4) | Handover, not M1 | Medium |
 | 3 | Named reviewer for AI-drafted output | Anything the Digest or Comms Assistant would publish | **This week** |
 | 4 | Member Jungle: retain, integrate or replace (F1) | Member portal, membership and CRM, sponsors | High |
 | 5 | Website editor: classic Editor or Wix Studio (F5) | The entire website rebuild | High, and irreversible later |
@@ -69,33 +69,38 @@ Recorded as issue #234.
 
 ---
 
-## 2. Cloud hosting: billing owner and monthly ceiling
+## 2. Account ownership after the placement
 
-**This is the one blocking Friday.**
+**Correction to an earlier version of this pack.** This section previously said milestone M1 was
+blocked on a billing decision. That was wrong, and the error was ours: ADR-0004 was amended on
+27 July to record INZBC's zero-cost constraint, deferring the paid hosting option entirely. The
+deployment runs on free tiers with no payment method, so **nothing about M1 waits on INZBC.**
 
-ADR-0004 selects Google Cloud Run in `australia-southeast1` (Sydney), chosen so member data stays
-in an Australasian region under the Privacy Act 2020. Two questions were left open in that record
-and remain open:
+What remains is not urgent and is not about spend.
 
-1. **Who owns the billing account?** An INZBC organisation account, or an individual's.
-2. **What is the monthly ceiling?** A cap the team can provision under without returning for
-   approval each time.
+**The question.** The system currently runs on free-tier services and a GitHub organisation. After
+the placement ends, INZBC holds it. Accounts registered to an individual are a system INZBC does
+not control, and the team leaves in twelve weeks.
 
-**Cost of leaving it open.** Milestone M1 is the deployed FTA Explainer, due Friday 7 August. The
-software is built and verified working; it answers sector questions from sourced material with
-citations, and refuses to answer when it has no verified source. Nothing is deployed, because
-deploying incurs cost and no one has authorised the spend.
+Needed:
 
-If this is not answered by Wednesday, M1 will be reported as **hardened and deployable but not
-deployed**, with the reason recorded. The team will not provision paid infrastructure without
-authorisation.
+1. An INZBC-owned account for each service the system depends on, rather than an individual's.
+2. A named owner for each, so there is a person to ask when something stops.
 
-**Recommendation.** An INZBC-owned billing account, not an individual's, with a modest monthly
-ceiling `[[amount]]`. Cloud Run bills on use and this service is small; the ceiling is a safety
-limit rather than a forecast. An organisation-owned account also matters for handover: an account
-in a person's name is a system INZBC does not control.
+**Cost of leaving it open.** Nothing stops today. It becomes a problem at handover, and the cost of
+fixing it then is higher than the cost of setting it up now, because credentials and data have to
+move rather than simply being created in the right place.
 
-**Decision:** name the billing account owner and set the monthly ceiling.
+**One genuine running cost.** Model API usage is the only recurring charge, and it is accepted as
+such. Everything else is free tier.
+
+**What free tiers cost instead of money**, recorded honestly: the API sleeps after about 15 minutes
+of inactivity and takes close to a minute to wake. Fine for a demo that is warmed beforehand, poor
+for an unattended session. If INZBC later wants that removed, it becomes a paid conversation about
+a system it has already used, which is the better time to have it.
+
+**Recommendation.** Create the accounts under an INZBC identity now, while there is nothing to
+migrate.
 
 Recorded as issues #93 and #214.
 
@@ -254,7 +259,7 @@ Not started, deliberately: any page building on either editor, and any membershi
 | Decision | Answer | Name | Date |
 |---|---|---|---|
 | 1. FTA status wording | | | |
-| 2. Billing owner and ceiling | | | |
+| 2. Account ownership after handover | | | |
 | 3. Named reviewer and backup | | | |
 | 4. Member Jungle: A / B / C / D | | | |
 | 5. Editor or Studio | | | |
