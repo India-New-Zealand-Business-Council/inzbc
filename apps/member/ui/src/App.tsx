@@ -5,6 +5,7 @@ import { Header } from './components/Header'
 import { MembershipSection } from './components/MembershipSection'
 import { NotificationsSection } from './components/NotificationsSection'
 import { ResourcesSection } from './components/ResourcesSection'
+import { Dashboard } from './pages/Dashboard'
 import './index.css'
 
 export function App() {
@@ -29,6 +30,8 @@ export function App() {
             Membership, billing and the member directory are managed on Member Jungle. This portal
             links out to Member Jungle for those rather than holding membership data itself.
           </p>
+
+          <Dashboard />
 
           <NotificationsSection />
           <MembershipSection />
