@@ -44,6 +44,13 @@ Two conventions hold across this tree:
 - [`../database/schema.sql`](../database/schema.sql) — the data model. An entity diagram of it is in
   [`architecture.md`](architecture.md).
 
+## I am waiting on a client decision
+- [`membership/member-jungle-assessment.md`](membership/member-jungle-assessment.md) — foundation
+  decision F1: retain, integrate or replace Member Jungle. Blocks modules 2, 3 and 4, which is the
+  largest block of unstarted work in the programme.
+- [`project-charter.md`](project-charter.md) §11 and §18 — the four foundation decisions and the
+  open items INZBC owns.
+
 ## I need to know why something was decided
 - [`decisions/`](decisions/) — architecture decision records. Each states the context, the options
   compared, the decision and its consequences.
