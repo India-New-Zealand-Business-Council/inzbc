@@ -1,3 +1,5 @@
+import { NotificationsWidget } from '../components/dashboard/NotificationsWidget'
+
 // The main overview screen — members see everything at a glance in one place. Not a routed page
 // (no router exists anywhere in this codebase, and this app has exactly one screen): a distinct
 // page-level component App.tsx renders above the existing full Notifications/Membership/Events/
@@ -13,6 +15,10 @@ export function Dashboard() {
       <p className="mt-2 text-slate-700">
         Notifications, membership, upcoming events and resources at a glance.
       </p>
+
+      <div className="mt-4">
+        <NotificationsWidget />
+      </div>
     </section>
   )
 }
