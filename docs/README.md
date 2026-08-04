@@ -45,6 +45,9 @@ Two conventions hold across this tree:
   [`architecture.md`](architecture.md).
 
 ## I am waiting on a client decision
+- [`client-decision-pack.md`](client-decision-pack.md) — **start here.** The six decisions that
+  belong to INZBC, in one place, each with what it costs to leave open. Between them they hold up
+  17 tracked items.
 - [`membership/member-jungle-assessment.md`](membership/member-jungle-assessment.md) — foundation
   decision F1: retain, integrate or replace Member Jungle. Blocks modules 2, 3 and 4, which is the
   largest block of unstarted work in the programme.
