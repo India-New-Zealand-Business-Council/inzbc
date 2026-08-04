@@ -14,9 +14,9 @@ produce one site.
 
 | # | Task | Why |
 |---|---|---|
-| 1 | Rename the site from `My Site` | It is the display name and it currently reads as a test site |
-| 2 | Set region: **New Zealand**, **Pacific/Auckland**, **NZD**, language **en** | It is currently United States, New York and USD. Dates, currency and formatting all follow this. Dashboard only; there is no API for it |
-| 3 | **Do not republish** until §5 is satisfied | The site is already published once, so a republish ships whatever has been saved. Saving is safe; publishing is the irreversible-feeling step |
+| 1 | ~~Rename the site from `My Site`~~ | **Done 5 August.** Now `INZBC Studio` |
+| 2 | ~~Set region: New Zealand, Pacific/Auckland, NZD~~ | **Done 5 August** via the Site Properties API, not the dashboard. An earlier version of this spec said there was no API for it; there is (`PATCH /site-properties/v4/properties` with a field mask) |
+| 3 | **Do not republish** until §5 is satisfied | The site is already published once, so a republish ships whatever has been saved. Saving is safe; publishing is the step that matters |
 
 ---
 
