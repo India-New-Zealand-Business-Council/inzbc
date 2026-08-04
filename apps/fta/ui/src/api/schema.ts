@@ -4,6 +4,109 @@
  */
 
 export interface paths {
+    "/api/candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Candidates */
+        get: operations["list_candidates_api_candidates_get"];
+        put?: never;
+        /** Capture Candidate */
+        post: operations["capture_candidate_api_candidates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/candidates/{candidate_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Candidate */
+        get: operations["get_candidate_api_candidates__candidate_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/candidates/{candidate_id}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify Candidate */
+        post: operations["verify_candidate_api_candidates__candidate_id__verify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/candidates/{candidate_id}/score": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Score Candidate */
+        post: operations["score_candidate_api_candidates__candidate_id__score_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/candidates/{candidate_id}/route": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Route Candidate */
+        post: operations["route_candidate_api_candidates__candidate_id__route_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/candidates/{candidate_id}/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Merge Candidate */
+        post: operations["merge_candidate_api_candidates__candidate_id__merge_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/fta/query": {
         parameters: {
             query?: never;
@@ -111,6 +214,66 @@ export interface components {
             /** Notes */
             notes?: string | null;
         };
+        /** CandidateOut */
+        CandidateOut: {
+            /** Id */
+            id: string;
+            /** Run Id */
+            run_id: string;
+            /** Headline */
+            headline: string;
+            /** Source Id */
+            source_id: string | null;
+            /** Url */
+            url: string | null;
+            /** Summary */
+            summary: string | null;
+            /** Published At */
+            published_at: string | null;
+            /** Captured At */
+            captured_at: string;
+            /** In Coverage Window */
+            in_coverage_window: boolean | null;
+            /** Nz Relevance */
+            nz_relevance: number | null;
+            /** India Relevance */
+            india_relevance: number | null;
+            /** Member Relevance */
+            member_relevance: number | null;
+            /** Signal */
+            signal: string | null;
+            /** Confidence */
+            confidence: string | null;
+            /** Verification */
+            verification: string;
+            /** Duplicate Of */
+            duplicate_of: string | null;
+            /** Included */
+            included: boolean | null;
+            /** Reason */
+            reason: string | null;
+            /** Proposed Routing */
+            proposed_routing: string | null;
+        };
+        /** CaptureCandidateIn */
+        CaptureCandidateIn: {
+            /** Run Id */
+            run_id: string;
+            /** Headline */
+            headline: string;
+            /** Source Id */
+            source_id?: string | null;
+            /** Url */
+            url?: string | null;
+            /** Summary */
+            summary?: string | null;
+            /** Published At */
+            published_at?: string | null;
+            /** In Coverage Window */
+            in_coverage_window?: boolean | null;
+            /** Actor Id */
+            actor_id: string;
+        };
         /**
          * FtaQueryResponse
          * @description `status` is the field a client branches on — not the length of `answers`.
@@ -136,6 +299,51 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** MergeIn */
+        MergeIn: {
+            /** Duplicate Of */
+            duplicate_of: string;
+            /** Actor Id */
+            actor_id: string;
+            /** Reason */
+            reason: string;
+        };
+        /** RouteIn */
+        RouteIn: {
+            /** Proposed Routing */
+            proposed_routing?: string | null;
+            /** Included */
+            included?: boolean | null;
+            /** Actor Id */
+            actor_id: string;
+            /** Reason */
+            reason: string;
+        };
+        /** ScoreIn */
+        ScoreIn: {
+            /** Nz Relevance */
+            nz_relevance?: number | null;
+            /** India Relevance */
+            india_relevance?: number | null;
+            /** Member Relevance */
+            member_relevance?: number | null;
+            signal?: components["schemas"]["SignalStrength"] | null;
+            confidence?: components["schemas"]["SourceConfidence"] | null;
+            /** Actor Id */
+            actor_id: string;
+            /** Reason */
+            reason: string;
+        };
+        /**
+         * SignalStrength
+         * @enum {string}
+         */
+        SignalStrength: "Low" | "Medium" | "High" | "Critical";
+        /**
+         * SourceConfidence
+         * @enum {string}
+         */
+        SourceConfidence: "High" | "Medium" | "Low" | "Unverified";
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -149,6 +357,19 @@ export interface components {
             /** Context */
             ctx?: Record<string, never>;
         };
+        /**
+         * VerificationState
+         * @enum {string}
+         */
+        VerificationState: "Verified" | "Partially Verified" | "Unverified" | "Not Required" | "Rejected";
+        /** VerifyIn */
+        VerifyIn: {
+            verification: components["schemas"]["VerificationState"];
+            /** Actor Id */
+            actor_id: string;
+            /** Reason */
+            reason: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -158,6 +379,242 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_candidates_api_candidates_get: {
+        parameters: {
+            query: {
+                /** @description Run id to list candidates for. */
+                run: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidateOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    capture_candidate_api_candidates_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CaptureCandidateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_candidate_api_candidates__candidate_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                candidate_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verify_candidate_api_candidates__candidate_id__verify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                candidate_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerifyIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    score_candidate_api_candidates__candidate_id__score_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                candidate_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScoreIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    route_candidate_api_candidates__candidate_id__route_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                candidate_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RouteIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    merge_candidate_api_candidates__candidate_id__merge_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                candidate_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MergeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     fta_query_api_fta_query_get: {
         parameters: {
             query: {

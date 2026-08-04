@@ -1,8 +1,8 @@
 """INZBC API — FastAPI application.
 
-Implements `schemas/api-contract.md` over the domain modules. This first slice exposes the FTA
-Explainer read path only; the SIP run and candidate endpoints land once the database and the
-orchestrator's persistence exist (ADR-0004 graduated the platform to make that possible).
+Implements `schemas/api-contract.md` over the domain modules: the FTA Explainer read path and the
+candidate command endpoints (#121, `services/api/candidates.py`). Run lifecycle endpoints (#120)
+land separately in their own PR, against the same persistence-layer pattern.
 
 The response envelope is deliberately status-tagged rather than "a list that might be empty".
 `apps/fta/explainer` keeps `ExplainerAnswer` and `NoMatch` structurally distinct so escalation
@@ -21,6 +21,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, model_validator
 
 from apps.fta.explainer import ExplainerAnswer, NoMatch, answer_query, no_match
+from services.api.candidates import router as candidates_router
 from services.api.hardening import install as install_hardening
 
 app = FastAPI(
@@ -33,6 +34,7 @@ app = FastAPI(
 # here rather than per endpoint so a route added later is covered by default instead of by
 # somebody remembering.
 install_hardening(app)
+app.include_router(candidates_router)
 
 
 class AnswerOut(BaseModel):
