@@ -73,6 +73,9 @@ Two conventions hold across this tree:
   anything publishes.
 
 ## I am working on the Wix site
+- [`website-rebuild-plan.md`](website-rebuild-plan.md) — **read first.** What the rebuild
+  does in what order, the Editor versus Studio decision that governs it, and which external
+  research findings survived checking.
 - [`wix-staging-readiness.md`](wix-staging-readiness.md) — **read first.** What is verified on the
   duplicate, what cannot be scripted, and why publishing it before the content is real is the
   thing to avoid.
