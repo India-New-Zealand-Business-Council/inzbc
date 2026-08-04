@@ -1,3 +1,4 @@
+import { EventsWidget } from '../components/dashboard/EventsWidget'
 import { MembershipWidget } from '../components/dashboard/MembershipWidget'
 import { NotificationsWidget } from '../components/dashboard/NotificationsWidget'
 
@@ -20,6 +21,7 @@ export function Dashboard() {
       <div className="mt-4 space-y-4">
         <NotificationsWidget />
         <MembershipWidget />
+        <EventsWidget />
       </div>
     </section>
   )
