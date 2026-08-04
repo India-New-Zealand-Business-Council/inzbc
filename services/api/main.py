@@ -21,12 +21,18 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, model_validator
 
 from apps.fta.explainer import ExplainerAnswer, NoMatch, answer_query, no_match
+from services.api.hardening import install as install_hardening
 
 app = FastAPI(
     title="INZBC API",
     version="0.1.0",
     summary="Trade intelligence and FTA services for the India New Zealand Business Council.",
 )
+
+# Rate limiting, one error shape, security headers, and CORS only when configured (#98). Applied
+# here rather than per endpoint so a route added later is covered by default instead of by
+# somebody remembering.
+install_hardening(app)
 
 
 class AnswerOut(BaseModel):
