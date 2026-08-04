@@ -1,8 +1,14 @@
-import type { ReactNode } from 'react'
+import { useId, type ReactNode } from 'react'
 
 // Shared shell for the four Dashboard summary widgets — one place for the card chrome and the
 // "view full section" link pattern, so each widget's own commit only adds its content, not a
 // re-declaration of the same border/padding/link styling four times.
+//
+// role="group" + aria-labelledby: without it, a screen reader user tabbing through the grid has
+// no signal of where one card's content ends and the next begins — four cards' worth of links
+// would announce as one undifferentiated list. useId, not a title-derived slug, for the same
+// reason apps/sip/ui's BriefBuilderScreen uses it: guaranteed-unique regardless of what two
+// widgets happen to be titled.
 export function DashboardCard({
   title,
   linkHref,
@@ -14,9 +20,16 @@ export function DashboardCard({
   linkLabel: string
   children: ReactNode
 }) {
+  const titleId = useId()
   return (
-    <div className="flex h-full flex-col rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-      <h3 className="text-sm font-semibold text-inzbc-navy">{title}</h3>
+    <div
+      role="group"
+      aria-labelledby={titleId}
+      className="flex h-full flex-col rounded-md border border-slate-200 bg-white p-4 shadow-sm"
+    >
+      <h3 id={titleId} className="text-sm font-semibold text-inzbc-navy">
+        {title}
+      </h3>
       <div className="mt-2 flex-1 space-y-2">{children}</div>
       {/* Blue, not Lavender: this link sits on the white card background, not Header's navy —
           lavender-on-white is ~1.6:1, failing the 3:1 non-text-contrast minimum (SC 1.4.11).
