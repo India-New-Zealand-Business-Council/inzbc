@@ -24,6 +24,15 @@ describe('App', () => {
     expect(document.getElementById('main-content')).toHaveAttribute('tabindex', '-1')
   })
 
+  it('renders the Dashboard overview above the full sections', () => {
+    render(<App />)
+    const headings = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)
+    const dashboardIndex = headings.indexOf('Overview')
+    const notificationsIndex = headings.indexOf('Notifications')
+    expect(dashboardIndex).toBeGreaterThanOrEqual(0)
+    expect(dashboardIndex).toBeLessThan(notificationsIndex)
+  })
+
   it('renders the Notifications section', () => {
     render(<App />)
     expect(screen.getByRole('heading', { level: 2, name: /^notifications$/i })).toBeInTheDocument()
