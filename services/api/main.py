@@ -1,8 +1,8 @@
 """INZBC API — FastAPI application.
 
-Implements `schemas/api-contract.md` over the domain modules. This first slice exposes the FTA
-Explainer read path only; the SIP run and candidate endpoints land once the database and the
-orchestrator's persistence exist (ADR-0004 graduated the platform to make that possible).
+Implements `schemas/api-contract.md` over the domain modules. Now exposes the FTA Explainer read
+path and the SIP run lifecycle endpoints (#120, `services/api/runs.py`); candidate command
+endpoints (#121) land next against the same persistence layer.
 
 The response envelope is deliberately status-tagged rather than "a list that might be empty".
 `apps/fta/explainer` keeps `ExplainerAnswer` and `NoMatch` structurally distinct so escalation
@@ -21,12 +21,14 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, model_validator
 
 from apps.fta.explainer import ExplainerAnswer, NoMatch, answer_query, no_match
+from services.api.runs import router as runs_router
 
 app = FastAPI(
     title="INZBC API",
     version="0.1.0",
     summary="Trade intelligence and FTA services for the India New Zealand Business Council.",
 )
+app.include_router(runs_router)
 
 
 class AnswerOut(BaseModel):
