@@ -19,7 +19,10 @@ export function Dashboard() {
         Notifications, membership, upcoming events and resources at a glance.
       </p>
 
-      <div className="mt-4 space-y-4">
+      {/* 1 column on mobile, 2 at sm (tablet), 4 at lg (desktop/laptop) — matches the Container's
+          own breakpoints so the grid fills the widened layout rather than leaving it looking like
+          a narrow single column stretched across a wide page. */}
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <NotificationsWidget />
         <MembershipWidget />
         <EventsWidget />
