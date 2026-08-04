@@ -10,6 +10,46 @@ History restores saved page versions, so page edits are recoverable, but apps, s
 CMS data may not restore cleanly. Before cutover, record the Site History version and export CMS
 collections where applicable. Publishing still needs explicit written sign-off from Sunil.
 
+## 2026-08-04 — INZBC Staging published
+
+**Site:** `INZBC Staging` (duplicate), site id `5ba17306-89ea-4d17-a67d-47dcb21ba20c`
+**Public URL:** https://inzbcsecretariat.wixsite.com/website-2
+**Editor:** Bhanu, via the Wix API
+**Authority:** Bhanu, 4 August 2026. The live `inzbc.org` site was not touched.
+
+| # | Change | Before | After |
+|---|--------|--------|-------|
+| 1 | Site publish state | Draft, never published since duplication on 24 July | Published, reachable at the URL above |
+
+No page, content or setting was edited. The site still carries the copy of `inzbc.org` it received
+when it was duplicated on 24 July, so what is now public is last month's live content on a
+`wixsite.com` address, not the rebuild.
+
+**Why:** the duplicate exists to be shared as a preview (`discovery.md` OI-9), and an unpublished
+Wix site serves nothing at all, so there was no URL to share.
+
+### What this changes, and what to do about it
+
+Publishing made a second public copy of INZBC's content. Two consequences follow, and the first is
+now live rather than hypothetical.
+
+**Anything saved here from now on is one click from public.** The rebuild will carry
+`[[placeholders]]` wherever INZBC still owes a fact: member count, milestone dates, fee structure,
+Executive Council. Those are correct in a draft and indefensible on a page carrying the Council's
+name. Publishing is no longer a step someone has to decide on, because the site is already
+published; the next publish simply ships whatever has been saved.
+
+**Recommended before the rebuild starts:** set a site password on the duplicate. It is the only
+control that stops a person holding the link, which is the actual exposure, and it carries no
+cutover trap because removing it is inherently part of going live. `robots.txt` was considered and
+rejected, for the reasons in [`wix-staging-readiness.md`](./wix-staging-readiness.md). Site
+passwords have no API, so this is Sunil or a collaborator in the dashboard.
+
+**At cutover:** this site becomes `inzbc.org`. Confirm the password is removed, both SEO settings
+are still as recorded, and go-live sign-off is in writing.
+
+---
+
 ## 2026-07-28 — Homepage
 
 **Page:** Homepage (inzbc.org)
