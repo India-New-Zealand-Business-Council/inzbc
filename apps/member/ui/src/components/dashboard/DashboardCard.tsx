@@ -20,10 +20,13 @@ export function DashboardCard({
       <div className="mt-2 flex-1 space-y-2">{children}</div>
       {/* Blue, not Lavender: this link sits on the white card background, not Header's navy —
           lavender-on-white is ~1.6:1, failing the 3:1 non-text-contrast minimum (SC 1.4.11).
-          Blue-on-white is ~15:1 — same reasoning as the tangerine buttons elsewhere in this app. */}
+          Blue-on-white is ~15:1 — same reasoning as the tangerine buttons elsewhere in this app.
+          py-1 -mx-1 px-1: a bare text-sm line is ~20px tall, under the 24px WCAG 2.5.8 minimum
+          tap-target size — this pads the hit area without changing the visible spacing (the
+          negative margin cancels the added horizontal padding). */}
       <a
         href={linkHref}
-        className="mt-3 inline-block rounded-sm text-sm font-medium text-inzbc-blue underline decoration-inzbc-blue/40 underline-offset-2 hover:decoration-inzbc-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue"
+        className="-mx-1 mt-3 inline-block rounded-sm px-1 py-1 text-sm font-medium text-inzbc-blue underline decoration-inzbc-blue/40 underline-offset-2 hover:decoration-inzbc-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue"
       >
         {linkLabel}
       </a>

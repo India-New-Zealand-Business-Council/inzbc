@@ -11,11 +11,14 @@ export function MembershipWidget() {
       <ul className="space-y-2">
         {MEMBERSHIP_ACTIONS.map((action) => (
           <li key={action.id}>
+            {/* -mx-1 px-1 py-1: pads the tap target to WCAG 2.5.8's 24px minimum without
+                changing the visible spacing between list items (the negative margin cancels the
+                added horizontal padding). */}
             <a
               href={MEMBER_JUNGLE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm font-medium text-inzbc-navy underline decoration-inzbc-navy/30 underline-offset-2 hover:decoration-inzbc-navy focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue"
+              className="-mx-1 inline-block px-1 py-1 text-sm font-medium text-inzbc-navy underline decoration-inzbc-navy/30 underline-offset-2 hover:decoration-inzbc-navy focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue"
             >
               {action.label}
             </a>
