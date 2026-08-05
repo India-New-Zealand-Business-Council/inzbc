@@ -16,12 +16,19 @@ and delegations, executive/board dashboards, and the security/audit/backup/hando
 political systems. No data is shared between organisations without a documented lawful purpose.
 
 ## Status
-- **Phase 0 — SIP controlled launch, 27–31 July 2026:** runs **manually** on the current
-  Intelligence Database workbook + the collection agent + the v0.9 launch pack. Human approval
-  each day. No app required.
-- **Phases 1–4 (app build):** phased and **gated** — nothing past Phase 0/1 builds until INZBC
-  signs the four foundation decisions (membership platform, internal platform, identity model,
-  budget/ownership).
+- **Phase 0 — SIP controlled launch, 27–31 July 2026:** ran manually on the Intelligence Database
+  workbook + the collection agent + the v0.9 launch pack. Complete.
+- **Phase 2 — app build, in progress.** [ADR-0004](./docs/decisions/0004-platform-graduation.md)
+  graduated the platform from a scheduled process to an always-on hosted service with managed
+  Postgres, ahead of formal client sign-off, against the resolution it records for the four
+  foundation decisions. Merged so far: the SIP run lifecycle (`/api/runs`), candidate command
+  endpoints (`/api/candidates`), transactional append-only audit, a decision/approval/distribution
+  record layer ([ADR-0005](./docs/decisions/0005-decision-approval-distribution.md)), and a member
+  portal UI shell.
+- **Formal sign-off is still open.** The four foundation decisions themselves
+  (`docs/client-answers.md` E1) are tracked as `PROPOSED`, not yet confirmed by INZBC — the team is
+  building against ADR-0004's documented resolution of them in the meantime, not against a signed
+  client decision. Treat that distinction as live until it closes.
 
 Nothing is in production. Automated distribution and public publishing stay disabled behind human
 review (`production_enabled = false`).
@@ -37,10 +44,11 @@ review (`production_enabled = false`).
 ## Repository layout (monorepo)
 ```
 /apps/site        site (Velo) + content specs
-/apps/sip         SIP control app
+/apps/sip         SIP control app: collection, orchestrator, pipeline
 /apps/fta         FTA Explainer service + corpus
 /apps/comms       Communications Assistant
-/services/api     shared API, auth, audit
+/apps/member      Member portal UI shell
+/services/api     FastAPI app: run + candidate endpoints, decisions, audit, redaction, hardening
 /database         schema + migrations
 /schemas          shared types + API contract
 /docs             planning + governance (proposal, discovery, sip, workstreams, …)
@@ -61,7 +69,10 @@ branch, open a PR into `main` to the quality standard; Bhanu reviews and merges.
 to `main`.
 
 ## Key documents
+Full index, organised by what you're trying to do: [`docs/README.md`](./docs/README.md).
 - Programme brief: `docs/inzbc-ai-operating-system.md`
+- Project charter + the four foundation decisions: `docs/project-charter.md`
+- What's waiting on an INZBC decision: `docs/client-decision-pack.md`
 - Module map (full scope): `docs/modules/README.md`
 - Architecture decisions (ADRs): `docs/decisions/`
 - Discovery, IA, risks: `docs/discovery.md`

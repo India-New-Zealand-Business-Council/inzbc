@@ -64,8 +64,14 @@ Two conventions hold across this tree:
 - [`decisions/`](decisions/) — architecture decision records. Each states the context, the options
   compared, the decision and its consequences.
   - `0001-backend-language.md` — Python, FastAPI and Pydantic for the backend.
+  - `0002-internal-platform.md` — internal platform hosting.
   - `0003-frontend-tooling.md` — Storybook, Vitest, Playwright and Chromatic, with the paid
     alternatives explicitly rejected on cost.
+  - `0004-platform-graduation.md` — hosted service, managed Postgres, GitHub identity; the decision
+    that took the API from a scheduled process to an always-on service with a real database.
+  - `0005-decision-approval-distribution.md` — one authoritative record stream per decision,
+    approval and distribution; governs `services/api/decisions.py` and the run/candidate command
+    endpoints.
 
   A significant technical decision is recorded here **with the alternatives considered**, not
   announced after the fact.
