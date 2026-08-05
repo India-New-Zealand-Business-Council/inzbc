@@ -1,13 +1,4 @@
-const MEMBER_JUNGLE_EVENTS_URL = 'https://inzbc.memberjungle.club'
-
-// Placeholder rows only — CLAUDE.md: never invent event names, dates or details. The one real,
-// sourced event name in the repo is "INZBC Summit" (docs/client-answers.md D8 — "India Unplugged
-// Summit" appears in no sourced document and must not be used), but no sourced document gives it
-// a confirmed date, so even that name isn't used here as if it were a scheduled listing.
-const PLACEHOLDER_EVENTS = [
-  { id: 'event-1', name: '[[Event name — pending INZBC event calendar]]', date: '[[Date]]' },
-  { id: 'event-2', name: '[[Event name — pending INZBC event calendar]]', date: '[[Date]]' },
-]
+import { MEMBER_JUNGLE_EVENTS_URL, PLACEHOLDER_EVENTS } from '../lib/eventsData'
 
 // Registration platform framing per docs/client-answers.md C6/C7 and apps/site/content/events.md:
 // "Member Jungle is the normal registration platform; Zoho only where a major event needs
