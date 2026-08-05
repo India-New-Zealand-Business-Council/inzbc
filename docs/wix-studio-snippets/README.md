@@ -11,13 +11,39 @@ Every snippet uses inline CSS so it works as a standalone embed.
 
 | File | Paste location | What it does |
 |---|---|---|
-| `site-head.html` | Studio editor → **Settings** → **Custom Code** → `<head>` | Loads Google Fonts (Big Shoulders, Merriweather) and global CSS variables/colours. |
+| `site-head.html` | Studio → **Settings** → **Custom Code** → `<head>` | Loads Google Fonts (Big Shoulders, Merriweather) and global CSS variables/colours. |
+| `organization-schema.html` | Same, once details are final | JSON-LD `Organization` schema. |
+| **Homepage** |
 | `home-hero.html` | Home page → **Add** → **Embed** → **Embed HTML** | Hero section with headline, sub, and CTAs. |
 | `fta-feature-band.html` | Home page embed | Lavender→Blue→Navy gradient FTA announcement band. |
 | `trade-stats.html` | Home page embed | Trade-opportunity statistics grid. |
 | `credibility-strip.html` | Home page embed | Established / members / recognised-by-govts line. |
 | `join-cta.html` | Home or Membership page embed | Final conversion band. |
+| **About** |
 | `about-hero.html` | About page embed | About hero section. |
+| `executive-council.html` | `/executive-council` page embed | Board and executive team grid. |
+| `our-patron.html` | `/our-patron` page embed | Patron profile. |
+| **Membership** |
+| `membership.html` | `/membership` page embed | Value proposition and tiers placeholder. |
+| `membership-join.html` | `/membership/join` page embed | Application gateway to Member Jungle. |
+| `member-directory.html` | `/membership/directory` page embed | Static gateway to Member Jungle directory. |
+| **Events** |
+| `events.html` | `/events` page embed | Upcoming events grid. |
+| `events-past.html` | `/events/past` page embed | Past events archive. |
+| **Trade & FTA** |
+| `trade-resources.html` | Trade Resources page embed | Trade hub with four pathway cards. |
+| `trade-missions.html` | `/trade-missions` page embed | Trade missions and shows. |
+| `india-market-opportunities.html` | `/india-market-opportunities` page embed | Sector opportunity grid. |
+| `fta-centre.html` | `/fta` page embed | FTA Centre landing page. |
+| `fta-explainer.html` | `/fta/explainer` page embed | Wrapper for the deployed FTA Explainer app. |
+| **Insights** |
+| `insights-publications.html` | `/insights/publications` page embed | Publications library. |
+| `insights-newsletters.html` | `/insights/newsletters` page embed | Newsletters, Digest and Kia Ora India. |
+| `digest.html` | Trade Intelligence Digest page embed | Digest landing + archive. |
+| **Other** |
+| `news.html` | `/news` page embed | Blog/news landing. |
+| `partners.html` | `/partners` page embed | Sponsor/partner logos and become-a-sponsor CTA. |
+| `connect.html` | `/connect` page embed | Contact details and form placeholder. |
 
 ## Rules enforced in the CSS
 
