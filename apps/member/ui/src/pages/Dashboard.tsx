@@ -15,7 +15,7 @@ export function Dashboard() {
       <h2 id="dashboard-heading" className="text-xl text-inzbc-navy sm:text-2xl">
         Overview
       </h2>
-      <p className="mt-2 text-slate-700">
+      <p className="mt-2 text-slate-800">
         Notifications, membership, upcoming events and resources at a glance.
       </p>
 

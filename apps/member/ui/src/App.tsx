@@ -26,7 +26,10 @@ export function App() {
               invoices, directory and login stay on Member Jungle until the retain/integrate/
               replace assessment is approved. This portal links out to Member Jungle for those
               rather than duplicating them — see CLAUDE.md's "one system of record" rule. */}
-          <p className="mt-2 text-slate-700">
+          {/* slate-800, not -700: -700 already clears 4.5:1 on this background, but the
+              300-weight Merriweather body face reads faint at that shade — darker ink keeps the
+              legibility margin the light weight needs. */}
+          <p className="mt-2 text-slate-800">
             Membership, billing and the member directory are managed on Member Jungle. This portal
             links out to Member Jungle for those rather than holding membership data itself.
           </p>

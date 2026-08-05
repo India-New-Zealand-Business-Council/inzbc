@@ -10,7 +10,7 @@ export function ResourcesSection() {
       <h2 id="resources-heading" className="text-xl text-inzbc-navy sm:text-2xl">
         Resources
       </h2>
-      <p className="mt-2 text-slate-700">
+      <p className="mt-2 text-slate-800">
         Members-only reports, FTA sector briefings, event recordings, delegation opportunities and
         market-entry resources are available after signing in on Member Jungle.
       </p>

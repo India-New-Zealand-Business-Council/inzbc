@@ -6,7 +6,7 @@ export function MembershipSection() {
       <h2 id="membership-heading" className="text-xl text-inzbc-navy sm:text-2xl">
         Membership
       </h2>
-      <p className="mt-2 text-slate-700">
+      <p className="mt-2 text-slate-800">
         Member Jungle is INZBC&apos;s membership system of record. Membership, billing and the
         member directory are managed there, not duplicated on this portal.
       </p>

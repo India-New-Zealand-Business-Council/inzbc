@@ -6,7 +6,7 @@ export function NotificationsSection() {
       <h2 id="notifications-heading" className="text-xl text-inzbc-navy sm:text-2xl">
         Notifications
       </h2>
-      <p className="mt-2 text-slate-700">Recent INZBC updates and announcements.</p>
+      <p className="mt-2 text-slate-800">Recent INZBC updates and announcements.</p>
 
       <ul className="mt-4 space-y-3">
         {PLACEHOLDER_NOTIFICATIONS.map((notification) => (

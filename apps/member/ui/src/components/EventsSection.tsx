@@ -13,7 +13,7 @@ export function EventsSection() {
       <h2 id="events-heading" className="text-xl text-inzbc-navy sm:text-2xl">
         Upcoming Events
       </h2>
-      <p className="mt-2 text-slate-700">
+      <p className="mt-2 text-slate-800">
         Registration happens on Member Jungle, or on Zoho for the small number of events that need
         something Member Jungle can&apos;t provide. Each event links to whichever platform it
         actually uses — this portal doesn&apos;t run registration itself.
