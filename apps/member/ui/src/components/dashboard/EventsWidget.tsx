@@ -2,13 +2,13 @@ import { MEMBER_JUNGLE_EVENTS_URL, PLACEHOLDER_EVENTS } from '../../lib/eventsDa
 import { DashboardCard } from './DashboardCard'
 
 // Reuses the same data as the full EventsSection (not a re-declared copy) — see
-// src/lib/eventsData.ts. Shows the next two; the full section below (#events) has the rest and
-// the per-event Register links.
+// src/lib/eventsData.ts. Shows only the next one; the full section below (#events) has the rest
+// and the per-event Register links.
 export function EventsWidget() {
   return (
     <DashboardCard title="Upcoming Events" linkHref="#events" linkLabel="View all events">
       <ul className="space-y-2">
-        {PLACEHOLDER_EVENTS.slice(0, 2).map((event) => (
+        {PLACEHOLDER_EVENTS.slice(0, 1).map((event) => (
           <li key={event.id}>
             <span className="inline-block rounded-sm bg-slate-100 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-slate-600">
               Placeholder

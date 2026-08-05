@@ -4,10 +4,10 @@ import { PLACEHOLDER_NOTIFICATIONS } from '../../lib/notificationsData'
 import { NotificationsWidget } from './NotificationsWidget'
 
 describe('NotificationsWidget', () => {
-  it('shows the first two placeholder-labelled notifications reused from the full section', () => {
+  it('shows only the most recent placeholder-labelled notification, not the full list', () => {
     render(<NotificationsWidget />)
-    expect(screen.getAllByText('Placeholder')).toHaveLength(2)
-    expect(screen.getAllByText(PLACEHOLDER_NOTIFICATIONS[0]!.text)).toHaveLength(2)
+    expect(screen.getAllByText('Placeholder')).toHaveLength(1)
+    expect(screen.getAllByText(PLACEHOLDER_NOTIFICATIONS[0]!.text)).toHaveLength(1)
   })
 
   it('links to the full Notifications section', () => {

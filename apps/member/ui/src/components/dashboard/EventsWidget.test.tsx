@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest'
 import { EventsWidget } from './EventsWidget'
 
 describe('EventsWidget', () => {
-  it('shows placeholder-labelled events reused from the full section', () => {
+  it('shows only the next placeholder-labelled event, not the full list', () => {
     render(<EventsWidget />)
-    expect(screen.getAllByText('Placeholder')).toHaveLength(2)
+    expect(screen.getAllByText('Placeholder')).toHaveLength(1)
     expect(screen.getAllByText(/pending INZBC event calendar/i).length).toBeGreaterThan(0)
   })
 
