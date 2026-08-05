@@ -107,11 +107,18 @@ Two conventions hold across this tree:
 
 ## Repositories
 
+Three of them. [`repositories.md`](repositories.md) explains what each holds, why they are separate,
+and how to open a session that can see all three at once.
+
 | Repository | Holds |
 |---|---|
 | `inzbc` (this one) | The platform, the shared contracts, and all controlled documentation |
 | `daily-india-nz-news-agent` | The collection engine behind the daily digest, draft-only |
+| `inzbc-studio-site` | The Wix Studio website. Wix pushes to this one too |
 
-The collection engine is deliberately separate: it has its own release cadence and reaches out to
-untrusted sources, while this repository holds the platform and the documents of record. It
-prepares drafts; it does not run on a timer and does not send anything automatically.
+The short version: the collection engine reaches untrusted sources on a schedule, and Wix owns the
+structure of the site repository and pushes to it. Neither belongs inside the repository holding the
+shared contracts and the documents of record.
+
+**Controlled documents live here and nowhere else.** The other two link to them rather than copying
+them.
