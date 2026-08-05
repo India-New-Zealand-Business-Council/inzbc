@@ -154,6 +154,19 @@ class RunRepository:
             raise KeyError(f"no run {run_id!r}")
         return _row_to_record(row)
 
+    def list_runs(self) -> list[RunRecord]:
+        """Every run, most recently created first.
+
+        No filter/pagination yet - the UI's only current need (#120) is a full list to render.
+        Add both once a caller actually needs to page or filter by state, rather than guessing
+        the shape now.
+        """
+        with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
+            rows = conn.execute(
+                f"select {_SELECT_COLUMNS} from runs order by created_at desc"
+            ).fetchall()
+        return [_row_to_record(row) for row in rows]
+
     def apply_transition(
         self,
         run_id: str,

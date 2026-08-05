@@ -99,6 +99,44 @@ def test_get_run_raises_key_error_for_an_unknown_id(repo: RunRepository) -> None
         repo.get_run(str(uuid.uuid4()))
 
 
+def test_list_runs_includes_a_newly_created_run(repo: RunRepository, initiated_by: str) -> None:
+    created = repo.create_run(
+        run_number=_run_number(),
+        prompt_version="SIP-050 v1.1",
+        coverage_start_utc="2026-07-27T07:00:00+12:00",
+        coverage_end_utc="2026-07-28T07:00:00+12:00",
+        initiated_by=initiated_by,
+    )
+
+    runs = repo.list_runs()
+
+    assert created in runs
+
+
+def test_list_runs_orders_most_recently_created_first(
+    repo: RunRepository, initiated_by: str
+) -> None:
+    first = repo.create_run(
+        run_number=_run_number(),
+        prompt_version="SIP-050 v1.1",
+        coverage_start_utc="2026-07-27T07:00:00+12:00",
+        coverage_end_utc="2026-07-28T07:00:00+12:00",
+        initiated_by=initiated_by,
+    )
+    second = repo.create_run(
+        run_number=_run_number(),
+        prompt_version="SIP-050 v1.1",
+        coverage_start_utc="2026-07-27T07:00:00+12:00",
+        coverage_end_utc="2026-07-28T07:00:00+12:00",
+        initiated_by=initiated_by,
+    )
+
+    runs = repo.list_runs()
+    ids = [run.id for run in runs]
+
+    assert ids.index(second.id) < ids.index(first.id)
+
+
 def test_apply_transition_commits_and_advances_version(
     repo: RunRepository, initiated_by: str
 ) -> None:

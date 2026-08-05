@@ -6,8 +6,9 @@
 # auth lands, serving both from one origin is strictly safer, because it removes CORS from the
 # picture entirely rather than configuring it. It is also free: one service instead of two.
 #
-# Runtime dependencies are only FastAPI, uvicorn and pydantic. The FTA path makes no model call
-# and touches no database (see apps/fta/explainer.py), so this image needs no secrets to run.
+# Runtime dependencies: FastAPI, uvicorn, pydantic, and (since #120) psycopg for the run
+# endpoints' Postgres access. The FTA path itself still makes no model call and touches no
+# database (see apps/fta/explainer.py); DATABASE_URL is only required once /api/runs is called.
 
 # ---------- stage 1: build the React client ----------
 FROM node:22-alpine AS ui
@@ -33,12 +34,14 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# Only what the FTA read path imports. Installing the full project would pull in the collector's
-# dependencies, which this service does not run.
+# What the FTA read path and the run-lifecycle endpoints (#120) import. Installing the full
+# project would still pull in the collector's dependencies, which this service does not run.
+# psycopg added for services/api/persistence.py, now imported from main.py via runs.py.
 RUN pip install --no-cache-dir \
       "fastapi>=0.115" \
       "uvicorn[standard]>=0.32" \
-      "pydantic>=2.0"
+      "pydantic>=2.0" \
+      "psycopg[binary]>=3.1"
 
 COPY apps/ apps/
 COPY services/ services/
