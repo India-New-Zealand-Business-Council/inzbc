@@ -4,6 +4,122 @@
  */
 
 export interface paths {
+    "/api/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Runs */
+        get: operations["list_runs_api_runs_get"];
+        put?: never;
+        /** Create Run */
+        post: operations["create_run_api_runs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/runs/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Run */
+        get: operations["get_run_api_runs__run_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/runs/{run_id}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Run
+         * @description Draft -> Run Authorised. Launch authority; human gated (run-level, #227).
+         */
+        post: operations["start_run_api_runs__run_id__start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/runs/{run_id}/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pause Run
+         * @description Awaiting CEO Decision -> Paused. CEO decision; `approval_ref` must name a
+         *     `decision_records` row.
+         */
+        post: operations["pause_run_api_runs__run_id__pause_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/runs/{run_id}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resume Run
+         * @description Paused -> Coverage Locked. Resumption authority; human gated (run-level, #227).
+         */
+        post: operations["resume_run_api_runs__run_id__resume_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/runs/{run_id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Complete Run
+         * @description Distributed -> Closed. Mechanical closeout; not human gated.
+         */
+        post: operations["complete_run_api_runs__run_id__complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/candidates": {
         parameters: {
             query?: never;
@@ -274,6 +390,19 @@ export interface components {
             /** Actor Id */
             actor_id: string;
         };
+        /** CreateRunIn */
+        CreateRunIn: {
+            /** Run Number */
+            run_number: string;
+            /** Prompt Version */
+            prompt_version: string;
+            /** Coverage Start Utc */
+            coverage_start_utc: string;
+            /** Coverage End Utc */
+            coverage_end_utc: string;
+            /** Initiated By */
+            initiated_by: string;
+        };
         /**
          * FtaQueryResponse
          * @description `status` is the field a client branches on — not the length of `answers`.
@@ -319,6 +448,25 @@ export interface components {
             /** Reason */
             reason: string;
         };
+        /** RunOut */
+        RunOut: {
+            /** Id */
+            id: string;
+            /** Run Number */
+            run_number: string;
+            /** State */
+            state: string;
+            /** Version */
+            version: number;
+            /** Prompt Version */
+            prompt_version: string;
+            /** Coverage Start Utc */
+            coverage_start_utc: string;
+            /** Coverage End Utc */
+            coverage_end_utc: string;
+            /** Initiated By */
+            initiated_by: string;
+        };
         /** ScoreIn */
         ScoreIn: {
             /** Nz Relevance */
@@ -344,6 +492,23 @@ export interface components {
          * @enum {string}
          */
         SourceConfidence: "High" | "Medium" | "Low" | "Unverified";
+        /**
+         * TransitionIn
+         * @description Body shared by all four lifecycle commands. `approval_ref` is optional at the schema level
+         *     because only three of the four transitions are human-gated (`complete` is not) - `RunRepository`
+         *     is still the sole enforcer of which ones actually require it; this model does not duplicate
+         *     that rule.
+         */
+        TransitionIn: {
+            /** Expected Version */
+            expected_version: number;
+            /** Actor Id */
+            actor_id: string;
+            /** Reason */
+            reason: string;
+            /** Approval Ref */
+            approval_ref?: string | null;
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -379,6 +544,230 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_runs_api_runs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"][];
+                };
+            };
+        };
+    };
+    create_run_api_runs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRunIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_run_api_runs__run_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_run_api_runs__run_id__start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransitionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pause_run_api_runs__run_id__pause_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransitionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resume_run_api_runs__run_id__resume_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransitionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    complete_run_api_runs__run_id__complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransitionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_candidates_api_candidates_get: {
         parameters: {
             query: {

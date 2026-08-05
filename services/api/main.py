@@ -1,8 +1,8 @@
 """INZBC API — FastAPI application.
 
-Implements `schemas/api-contract.md` over the domain modules: the FTA Explainer read path and the
-candidate command endpoints (#121, `services/api/candidates.py`). Run lifecycle endpoints (#120)
-land separately in their own PR, against the same persistence-layer pattern.
+Implements `schemas/api-contract.md` over the domain modules: the FTA Explainer read path, the SIP
+run lifecycle endpoints (#120, `services/api/runs.py`) and the candidate command endpoints
+(#121, `services/api/candidates.py`).
 
 The response envelope is deliberately status-tagged rather than "a list that might be empty".
 `apps/fta/explainer` keeps `ExplainerAnswer` and `NoMatch` structurally distinct so escalation
@@ -23,12 +23,14 @@ from pydantic import BaseModel, ConfigDict, model_validator
 from apps.fta.explainer import ExplainerAnswer, NoMatch, answer_query, no_match
 from services.api.candidates import router as candidates_router
 from services.api.hardening import install as install_hardening
+from services.api.runs import router as runs_router
 
 app = FastAPI(
     title="INZBC API",
     version="0.1.0",
     summary="Trade intelligence and FTA services for the India New Zealand Business Council.",
 )
+app.include_router(runs_router)
 
 # Rate limiting, one error shape, security headers, and CORS only when configured (#98). Applied
 # here rather than per endpoint so a route added later is covered by default instead of by

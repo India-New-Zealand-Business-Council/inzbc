@@ -6,6 +6,324 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/api/runs": {
+      "get": {
+        "tags": [
+          "Runs"
+        ],
+        "summary": "List Runs",
+        "operationId": "list_runs_api_runs_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RunOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Runs Api Runs Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Runs"
+        ],
+        "summary": "Create Run",
+        "operationId": "create_run_api_runs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRunIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/runs/{run_id}": {
+      "get": {
+        "tags": [
+          "Runs"
+        ],
+        "summary": "Get Run",
+        "operationId": "get_run_api_runs__run_id__get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/runs/{run_id}/start": {
+      "post": {
+        "tags": [
+          "Runs"
+        ],
+        "summary": "Start Run",
+        "description": "Draft -> Run Authorised. Launch authority; human gated (run-level, #227).",
+        "operationId": "start_run_api_runs__run_id__start_post",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransitionIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/runs/{run_id}/pause": {
+      "post": {
+        "tags": [
+          "Runs"
+        ],
+        "summary": "Pause Run",
+        "description": "Awaiting CEO Decision -> Paused. CEO decision; `approval_ref` must name a\n`decision_records` row.",
+        "operationId": "pause_run_api_runs__run_id__pause_post",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransitionIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/runs/{run_id}/resume": {
+      "post": {
+        "tags": [
+          "Runs"
+        ],
+        "summary": "Resume Run",
+        "description": "Paused -> Coverage Locked. Resumption authority; human gated (run-level, #227).",
+        "operationId": "resume_run_api_runs__run_id__resume_post",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransitionIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/runs/{run_id}/complete": {
+      "post": {
+        "tags": [
+          "Runs"
+        ],
+        "summary": "Complete Run",
+        "description": "Distributed -> Closed. Mechanical closeout; not human gated.",
+        "operationId": "complete_run_api_runs__run_id__complete_post",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransitionIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/candidates": {
       "post": {
         "tags": [
@@ -836,6 +1154,40 @@
         ],
         "title": "CaptureCandidateIn"
       },
+      "CreateRunIn": {
+        "properties": {
+          "run_number": {
+            "type": "string",
+            "title": "Run Number"
+          },
+          "prompt_version": {
+            "type": "string",
+            "title": "Prompt Version"
+          },
+          "coverage_start_utc": {
+            "type": "string",
+            "title": "Coverage Start Utc"
+          },
+          "coverage_end_utc": {
+            "type": "string",
+            "title": "Coverage End Utc"
+          },
+          "initiated_by": {
+            "type": "string",
+            "title": "Initiated By"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "run_number",
+          "prompt_version",
+          "coverage_start_utc",
+          "coverage_end_utc",
+          "initiated_by"
+        ],
+        "title": "CreateRunIn"
+      },
       "FtaQueryResponse": {
         "properties": {
           "status": {
@@ -956,6 +1308,55 @@
         ],
         "title": "RouteIn"
       },
+      "RunOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "run_number": {
+            "type": "string",
+            "title": "Run Number"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "prompt_version": {
+            "type": "string",
+            "title": "Prompt Version"
+          },
+          "coverage_start_utc": {
+            "type": "string",
+            "title": "Coverage Start Utc"
+          },
+          "coverage_end_utc": {
+            "type": "string",
+            "title": "Coverage End Utc"
+          },
+          "initiated_by": {
+            "type": "string",
+            "title": "Initiated By"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "run_number",
+          "state",
+          "version",
+          "prompt_version",
+          "coverage_start_utc",
+          "coverage_end_utc",
+          "initiated_by"
+        ],
+        "title": "RunOut"
+      },
       "ScoreIn": {
         "properties": {
           "nz_relevance": {
@@ -1047,6 +1448,42 @@
           "Unverified"
         ],
         "title": "SourceConfidence"
+      },
+      "TransitionIn": {
+        "properties": {
+          "expected_version": {
+            "type": "integer",
+            "title": "Expected Version"
+          },
+          "actor_id": {
+            "type": "string",
+            "title": "Actor Id"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "approval_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approval Ref"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_version",
+          "actor_id",
+          "reason"
+        ],
+        "title": "TransitionIn",
+        "description": "Body shared by all four lifecycle commands. `approval_ref` is optional at the schema level\nbecause only three of the four transitions are human-gated (`complete` is not) - `RunRepository`\nis still the sole enforcer of which ones actually require it; this model does not duplicate\nthat rule."
       },
       "ValidationError": {
         "properties": {
