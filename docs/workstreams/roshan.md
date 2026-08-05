@@ -29,37 +29,46 @@ with him directly. `/services/api`, `/database` and `/schemas` stay his lane; th
 reverts once these six are done, and nothing else under those paths gets picked up without asking
 him first. Recording this so a later reader doesn't mistake the one-off for a standing change.
 
-Of the six, #122/#117/#118 are done (closed via PRs #154/#163, and #118 below) — the remaining three
-(#120/#121/#130) sit inside a cluster that's otherwise his: #117/#118 were foundational and his
-#124/#125/#126 write through this persistence adapter and audit service; #119 (separation of
-duties, his) constrains #120/#121 here. The conventions set in #117/#118 are the ones he then has
-to build on — keep them boring and close to what the schema and ADR-0005 already imply, and flag
-anything that's inventing a contract shape rather than following one already decided, instead of
-deciding it here.
+Of the six, #122/#117/#118 are done (closed via PRs #154/#163, and #118 below); the remaining
+three (#120/#121/#130) now all have open PRs (below) — the delegation's scope is fully in review,
+none of it picked up further without asking Bhanu first.
+
+## In review (opened, awaiting merge)
+- [ ] Run endpoints (#120, PR #237): `/api/runs` + start/pause/resume/complete, each mapped to one
+  exact `schemas/state-machine.md` edge. **CI is not running on this branch** — 4+ pushes (the
+  original PR, a Dockerfile fix for a missing `psycopg` in the runtime image, an empty retrigger,
+  and a Copilot-review test fix) have produced zero workflow runs, confirmed via the Actions API,
+  not just a stale `gh pr checks`. Other PRs get CI fine in the same window, so this looks like a
+  webhook/trigger fault specific to this branch — needs Bhanu or an admin to look at (re-auth the
+  branch, check Actions webhook deliveries, or close/reopen to force a fresh `synchronize` event).
+  All work is verified locally against a real Postgres (initdb, schema.sql applied): 114 passed.
+- [ ] Candidate command endpoints (#121, PR #242): `/verify` `/score` `/route` `/merge`, each
+  writing a named `audit_log` action instead of a blanket PATCH. Verification gate enforced
+  server-side in both directions (score refuses a High/Critical signal without verification;
+  verify refuses downgrading verification on an already-High/Critical candidate) — stronger than
+  the collector-side gate since this always reads a live row, so no `MissingCurrentSignalError`
+  case exists here. **CI green**, all 9 checks pass. Independent of #120 — branched off `main`
+  directly, either can merge first.
+- [ ] Backend restart/rehydration integration test (#130, PR #248): kills a real `uvicorn`
+  subprocess mid-run and starts a fresh one on the same port, proving a run's state survives an
+  actual process restart, not just a fresh request. Stacked on `feat/roshan/run-endpoints` (base
+  branch, not `main`) since it drives the run through the real `/api/runs` endpoints — genuinely
+  depends on #120's code, unlike #121. CI fired fine for this one (confirms the #237 anomaly is
+  isolated to that specific branch, not something that propagates downstream). 118 passed against
+  a real local Postgres.
 
 ## Next up
-- [ ] Run endpoints (#120): `/api/runs` + start/pause/resume/complete, against ADR-0005's
-  reconciled contract. **Unblocked 1 Aug** — Bhanu confirmed `schemas/api-contract.md` now reflects
-  ADR-0005 (#176 merged): three separate approval/ruling/distribution commands, session-cookie auth,
-  roles via `user_roles`. Drive state through `persistence.apply_transition`, which now writes the
-  audit row transactionally (#118) and refuses illegal jumps (#174) — pass `actor_id`/`reason`.
-- [ ] Candidate command endpoints (#121): explicit commands (capture, record verification, score,
-  submit assessment, supersede assessment), not a blanket PATCH — a PATCH can't produce a
-  meaningful audit record since the server never learns which action was intended. **Unblocked
-  1 Aug** alongside #120; `/verify` `/score` `/route` `/merge` stand as specified, `/assess` moved
-  out of ADR-0005 as unrelated to decision authority.
-- [ ] Backend restart/rehydration integration test (#130): restart the app + DB fixture
-  deliberately, prove replay produces identical state. Server-side counterpart to the Playwright
-  persistence test — do last, once #120/#121 exist to actually restart and rehydrate.
 - SHARED-OK: SIP-050 relevance/signal/confidence scoring moved to Bhanu's worklog — it runs
   through the model gateway he owns. `assessment.py` stays the validation/carry layer here.
 - [ ] Comms Assistant service side (`apps/comms`): draft-generation flow with the named-reviewer
-  gate, per [docs/modules/comms-assistant.md](../modules/comms-assistant.md). Corrected 30 Jul
-  (PR #161): the model gateway itself is already built and reusable
-  (`services/api/model_gateway.py`) — the actual blocker is the **redaction layer**, currently
-  unowned. Non-negotiable per `comms-assistant.md`'s "drafts only, adversarially tested" promise —
-  no request may reach the model gateway from this flow until redaction has an owner and an
-  implementation. Not starting this until that's resolved.
+  gate, per [docs/modules/comms-assistant.md](../modules/comms-assistant.md). **Still blocked, but
+  progress landed 3 Aug (PR #221, closes #220):** a proposed redaction policy now exists at
+  `config/redaction-policy.proposed.json`, and the gateway refuses every model call until a policy
+  is loaded (`REDACTION_POLICY_PATH` unset) — but a proposed file isn't a decision. INZBC still has
+  to approve it, copy it to a deployment path without `proposed` in the name, and record who
+  approved it (`docs/redaction-policy.md`). Non-negotiable per `comms-assistant.md`'s "drafts only,
+  adversarially tested" promise — no request may reach the model gateway from this flow until
+  that's done. Not starting this until it is.
 - [ ] End-to-end pipeline run once org-repo secrets land (Bhanu's item): collector → capture →
   assessment live against the SIP-184 SOP; fix what breaks; record the run.
 - [ ] Collection-engine improvements in `daily-india-nz-news-agent` (via its own PR flow).
@@ -277,16 +286,15 @@ the practice PDR (Week 5) and final PDR.
 
 | Obj | Requirement | Status | Evidence I have | Still need |
 |---|---|---|---|---|
-| 1.1 | Capture requirements via a methodology/tool | 🟢 | ADR-0001, SIP-050/184/185 specs, GitHub issues #52-56 | — |
-| 1.2 | Contribute meaningfully — **steady and regular**, not just volume | 🔴 | 25 commits, 5 merged PRs (#14,#15,#17,#19,#23) — but **all dated 22 Jul**, one day | Commits spread across *multiple distinct days* this block. One heavy day reads as a cram, not sustained contribution — this is the single biggest pass risk. |
-| 2.1 | Independent research, justified decisions | 🟢 | MFAT source verification (PR #14/#15), FTA corpus confirmed/unconfirmed flags, ADR-0001 rationale | Keep citing sources in PR descriptions as I go |
-| 3.1 | Team communication | 🟡 | none gathered yet | Screenshot/log standup (17:00 daily) and Wednesday client meeting attendance; keep PR review comment threads as evidence |
-| 3.2 | Industry-standard PM tools, used professionally | 🟡 | GitHub issues + org project board exist | Actually reference the board/issues in commits and PRs (e.g. "closes #52"), not just have them exist |
-| 3.3 | Documentation (technical + reflective) | 🟢 | Module docstrings, this worklog, PR evidence blocks, `apps/sip/collector/README.md` | Add a reflective report before the PDR — the marking criteria explicitly ask for one, separate from technical docs |
+| 1.1 | Capture requirements via a methodology/tool | 🟢 Done | ADR-0001, SIP-050/184/185 specs, `schemas/api-contract.md`/`state-machine.md` followed exactly for #120/#121's endpoint shapes | — |
+| 1.2 | Contribute meaningfully — **steady and regular**, not just volume | 🟢 | Merged/opened PRs now span **eight distinct days**: 22 Jul, 28-31 Jul, and 3-5 Aug (#237/#242/#248 this week alone) | Keep the cadence into the rest of the block — eight days across three weeks is real, no longer the single-day risk it was |
+| 2.1 | Independent research, justified decisions | 🟢 Done | MFAT source verification, FTA corpus confirmed/unconfirmed flags, ADR-0005 §7 read to confirm candidate commands don't need `decision_records`, mutation-tested every new gate/test before committing | — |
+| 3.1 | Team communication | 🟡 | Standup log `2026-07-20-week.md`, client meeting `2026-07-22-inzbc.md` | Still no standup/client-meeting record past 22 Jul — log this week's before the PDR |
+| 3.2 | Industry-standard PM tools, used professionally | 🟢 Done | Every PR closes/refs an issue; issue labels kept current (`stage:in-progress` on #120/#121/#130 as PRs opened); GitHub Projects board linked automatically via PR body | Board *Status* field stuck on "Todo" for #120/#121 — account lacks write permission on the board itself, flagged for Bhanu/admin, not something I can self-fix |
+| 3.3 | Documentation (technical + reflective) | 🟢 Done | Module docstrings, this worklog, PR evidence blocks, `apps/sip/collector/README.md` | Reflective report still owed before the PDR — separate from technical docs |
 
-**Action for this week:** don't batch commits into one sitting even when the code is ready sooner —
-land one focused PR per day against the open issues (#52 done; #31, #54, #56 next), so the git
-history itself is 3.1/1.2 evidence instead of a liability.
+**This week's real risk isn't 1.2 anymore — it's PR #237's stuck CI.** Flagged above; needs Bhanu
+or an admin, not more retries from this end.
 
 **Weekly hours target: 22-24h**, not just the assignment's 20h floor — the buffer absorbs a thin
 day (blocked review, a meeting running long) without dropping under the pass threshold. Tracked in
