@@ -37,6 +37,9 @@ class FakeRunRepository:
     def __init__(self) -> None:
         self._runs: dict[str, RunRecord] = {}
         self.next_error: Exception | None = None
+        # What the router last handed down. Without this the fake swallows its arguments, so a
+        # router that dropped or hardcoded one would still pass every test here.
+        self.last_transition: dict | None = None
 
     def create_run(
         self,
@@ -79,6 +82,14 @@ class FakeRunRepository:
         reason: str,
         approval_ref: str | None = None,
     ) -> RunRecord:
+        self.last_transition = {
+            "run_id": run_id,
+            "expected_version": expected_version,
+            "new_state": new_state,
+            "actor_id": actor_id,
+            "reason": reason,
+            "approval_ref": approval_ref,
+        }
         if self.next_error is not None:
             error, self.next_error = self.next_error, None
             raise error
@@ -241,3 +252,34 @@ def test_create_run_rejects_an_unknown_field() -> None:
         assert response.status_code == 422
     finally:
         app.dependency_overrides.pop(get_run_repository, None)
+
+
+def test_the_caller_s_authority_reaches_the_repository(
+    client: TestClient, fake_repo: FakeRunRepository
+) -> None:
+    """The router must hand down what the caller sent, not something of its own.
+
+    The 403 test above proves the error mapping by injecting the exception, so it never exercises
+    the argument. Replacing `approval_ref=body.approval_ref` with a hardcoded string passed every
+    test in this file: every gated transition would have been authorised by a value the caller
+    never supplied, and for a run-level gate nothing downstream re-checks it, because those two
+    cannot be verified against `decision_records` (#227).
+    """
+    created = _create(client)
+    actor = str(uuid.uuid4())
+
+    client.post(
+        f"/api/runs/{created['id']}/start",
+        json={
+            "expected_version": 0,
+            "actor_id": actor,
+            "reason": "authorise run",
+            "approval_ref": "launch-authority-2026-08-05",
+        },
+    )
+
+    handed_down = fake_repo.last_transition
+    assert handed_down is not None
+    assert handed_down["approval_ref"] == "launch-authority-2026-08-05"
+    assert handed_down["actor_id"] == actor
+    assert handed_down["reason"] == "authorise run"
