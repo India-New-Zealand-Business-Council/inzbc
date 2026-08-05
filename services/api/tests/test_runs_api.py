@@ -141,20 +141,37 @@ def test_list_runs_includes_a_created_run(client: TestClient) -> None:
     assert created["id"] in {run["id"] for run in response.json()}
 
 
-def test_start_advances_draft_to_run_authorised(client: TestClient) -> None:
+@pytest.mark.parametrize(
+    ("route", "expected_state"),
+    [
+        ("start", "Run Authorised"),
+        ("pause", "Paused"),
+        ("resume", "Coverage Locked"),
+        ("complete", "Closed"),
+    ],
+)
+def test_each_lifecycle_route_maps_to_its_own_target_state(
+    client: TestClient, route: str, expected_state: str
+) -> None:
+    """Each of the four routes must call `_apply` with its own `RunState`, not share one by
+    accident. `FakeRunRepository` doesn't check legality (that's `RunRepository`'s job, proven in
+    `test_persistence.py`), so this isolates exactly the router's route -> state wiring: a
+    swapped constant (e.g. `pause` accidentally passing `RunState.CLOSED`) would still return 200
+    here and only this assertion would catch it - previously only `start` had one.
+    """
     created = _create(client)
     response = client.post(
-        f"/api/runs/{created['id']}/start",
+        f"/api/runs/{created['id']}/{route}",
         json={
             "expected_version": 0,
             "actor_id": str(uuid.uuid4()),
-            "reason": "authorise run",
-            "approval_ref": "launch-authority-recorded",
+            "reason": f"{route} run",
+            "approval_ref": "recorded-authority",
         },
     )
     assert response.status_code == 200
     body = response.json()
-    assert body["state"] == "Run Authorised"
+    assert body["state"] == expected_state
     assert body["version"] == 1
 
 
