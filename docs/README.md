@@ -45,11 +45,20 @@ Two conventions hold across this tree:
   [`architecture.md`](architecture.md).
 
 ## I am waiting on a client decision
+- [`client-decision-pack.md`](client-decision-pack.md) — **start here.** The six decisions that
+  belong to INZBC, in one place, each with what it costs to leave open. Between them they hold up
+  17 tracked items.
 - [`membership/member-jungle-assessment.md`](membership/member-jungle-assessment.md) — foundation
   decision F1: retain, integrate or replace Member Jungle. Blocks modules 2, 3 and 4, which is the
   largest block of unstarted work in the programme.
 - [`project-charter.md`](project-charter.md) §11 and §18 — the four foundation decisions and the
   open items INZBC owns.
+
+## I am handling data
+- [`data/system-of-record-and-retention.md`](data/system-of-record-and-retention.md) — where each
+  data type authoritatively lives, how it is classified, and how long it may be kept. Starts with
+  the fact that the system holds no member data at all today, which is what makes the controls
+  cheap to put in now and expensive to retrofit later.
 
 ## I need to know why something was decided
 - [`decisions/`](decisions/) — architecture decision records. Each states the context, the options
@@ -73,6 +82,8 @@ Two conventions hold across this tree:
   anything publishes.
 
 ## I am working on the Wix site
+- [`studio-build-spec.md`](studio-build-spec.md) — the build spec for the Studio site: tokens,
+  page tree, slugs, content rules, and the checklist that gates the first republish.
 - [`website-rebuild-plan.md`](website-rebuild-plan.md) — **read first.** What the rebuild
   does in what order, the Editor versus Studio decision that governs it, and which external
   research findings survived checking.
@@ -96,11 +107,18 @@ Two conventions hold across this tree:
 
 ## Repositories
 
+Three of them. [`repositories.md`](repositories.md) explains what each holds, why they are separate,
+and how to open a session that can see all three at once.
+
 | Repository | Holds |
 |---|---|
 | `inzbc` (this one) | The platform, the shared contracts, and all controlled documentation |
 | `daily-india-nz-news-agent` | The collection engine behind the daily digest, draft-only |
+| `inzbc-studio-site` | The Wix Studio website. Wix pushes to this one too |
 
-The collection engine is deliberately separate: it has its own release cadence and reaches out to
-untrusted sources, while this repository holds the platform and the documents of record. It
-prepares drafts; it does not run on a timer and does not send anything automatically.
+The short version: the collection engine reaches untrusted sources on a schedule, and Wix owns the
+structure of the site repository and pushes to it. Neither belongs inside the repository holding the
+shared contracts and the documents of record.
+
+**Controlled documents live here and nowhere else.** The other two link to them rather than copying
+them.

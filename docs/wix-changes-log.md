@@ -10,6 +10,35 @@ History restores saved page versions, so page edits are recoverable, but apps, s
 CMS data may not restore cleanly. Before cutover, record the Site History version and export CMS
 collections where applicable. Publishing still needs explicit written sign-off from Sunil.
 
+## 2026-08-05 — Studio site region and name corrected
+
+**Site:** `INZBC Studio` (standalone Wix Studio site), id `040b006f-3745-4a4f-ae4d-03aedb08a7b1`
+**URL:** https://inzbcsecretariat.wixstudio.com/my-site
+**Editor:** Bhanu, via the Site Properties API
+**Authority:** Bhanu, 5 August 2026. The live `inzbc.org` site was not touched.
+
+| # | Property | Before | After |
+|---|---|---|---|
+| 1 | `locale.country` | `US` | `NZ` |
+| 2 | `timeZone` | `America/New_York` | `Pacific/Auckland` |
+| 3 | `paymentCurrency` | `USD` | `NZD` |
+| 4 | `siteDisplayName` | `My Site` | `INZBC Studio` |
+
+`language` was already `en` and is unchanged. Properties version moved 9 to 14, and the values were
+re-read after the write to confirm they applied rather than trusting the success response.
+
+No page, layout or content was changed. Those cannot be changed through the API at all: the Wix MCP
+recipe index covers analytics, apps, blog, bookings, CMS, contacts, domains, ecommerce, forms,
+payments, marketing, media, pricing plans, restaurants, rich content, site properties, sites and
+stores. There is no pages, editor, layout or design category, and no redirect-manager API. The
+build in [`studio-build-spec.md`](studio-build-spec.md) is hand work in the Studio editor.
+
+**Why this mattered before anything was built:** region drives date, currency and number formatting
+across every page, so correcting it after the build means re-checking every page that displays a
+date or an amount.
+
+---
+
 ## 2026-08-04 — INZBC Staging published
 
 **Site:** `INZBC Staging` (duplicate), site id `5ba17306-89ea-4d17-a67d-47dcb21ba20c`
