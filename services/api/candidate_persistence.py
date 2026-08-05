@@ -1,0 +1,317 @@
+"""Postgres persistence adapter for SIP candidates (#121).
+
+Split from `persistence.py` (which is `runs`-specific by its own docstring) rather than folded in,
+since candidates are a distinct table with no `version` column - `candidates` has no optimistic
+concurrency to reason about, so there is no compare-and-swap contract shared with `RunRepository`
+worth unifying.
+
+**Why explicit commands, not a blanket PATCH** (the point of #121 itself): a PATCH can't produce a
+meaningful audit record because the server never learns which action the caller intended - a row
+that went from `signal=None` to `signal=Critical` and `verification=Unverified` to `Verified` in
+one PATCH could be a scoring pass, a verification pass, or both, and `audit_log.action` would have
+to guess. Each method here writes its own named action (`candidate.verify`, `candidate.score`,
+`candidate.route`, `candidate.merge`), same transaction as the update, same pattern
+`RunRepository.apply_transition` already established for runs (#118).
+
+`PATCH /api/candidates/:id` (mechanical scoring during collection, via
+`apps/sip/collector/assessment.py`) is a **separate, still-valid path** - ADR-0005 explicitly kept
+it, calling it "unrelated to decision authority" (0005 §7). This module does not replace it; it
+adds the commands that do need a named decision on the record.
+
+**The verification gate is stronger here than the client-side version.**
+`apps/sip/collector/verification.py`'s `enforce_verification_gate` is reused unchanged, but the
+collector-side caller (`assessment.py`) has no live read of the candidate and has to be told
+`current_signal`/`current_verification` explicitly, raising `MissingCurrentSignalError` when
+neither the patch nor the caller supplies one - an unknown current state must not be assumed safe.
+This module always has a live row (it reads before it writes, same transaction), so "current" is
+never unknown and that failure mode does not exist here.
+"""
+
+from __future__ import annotations
+
+import os
+from dataclasses import dataclass
+
+import psycopg
+from psycopg.rows import dict_row
+
+from apps.sip.collector.verification import enforce_verification_gate
+from apps.sip.pipeline.models import SignalStrength, SourceConfidence, VerificationState
+from services.api.audit import record_audit
+
+
+@dataclass(frozen=True)
+class CandidateRecord:
+    id: str
+    run_id: str
+    headline: str
+    source_id: str | None
+    url: str | None
+    summary: str | None
+    published_at: str | None
+    captured_at: str
+    in_coverage_window: bool | None
+    nz_relevance: int | None
+    india_relevance: int | None
+    member_relevance: int | None
+    signal: SignalStrength | None
+    confidence: SourceConfidence | None
+    verification: VerificationState
+    duplicate_of: str | None
+    included: bool | None
+    reason: str | None
+    proposed_routing: str | None
+
+
+_SELECT_COLUMNS = (
+    "id, run_id, headline, source_id, url, summary, published_at, captured_at, "
+    "in_coverage_window, nz_relevance, india_relevance, member_relevance, signal, "
+    "confidence, verification, duplicate_of, included, reason, proposed_routing"
+)
+
+
+def _row_to_record(row: dict) -> CandidateRecord:
+    return CandidateRecord(
+        id=str(row["id"]),
+        run_id=str(row["run_id"]),
+        headline=row["headline"],
+        source_id=str(row["source_id"]) if row["source_id"] else None,
+        url=row["url"],
+        summary=row["summary"],
+        published_at=row["published_at"].isoformat() if row["published_at"] else None,
+        captured_at=row["captured_at"].isoformat(),
+        in_coverage_window=row["in_coverage_window"],
+        nz_relevance=row["nz_relevance"],
+        india_relevance=row["india_relevance"],
+        member_relevance=row["member_relevance"],
+        signal=SignalStrength(row["signal"]) if row["signal"] else None,
+        confidence=SourceConfidence(row["confidence"]) if row["confidence"] else None,
+        verification=VerificationState(row["verification"]),
+        duplicate_of=str(row["duplicate_of"]) if row["duplicate_of"] else None,
+        included=row["included"],
+        reason=row["reason"],
+        proposed_routing=row["proposed_routing"],
+    )
+
+
+class CandidateRepository:
+    """Postgres-backed persistence for `candidates`. See module docstring for the audit contract."""
+
+    def __init__(self, database_url: str | None = None):
+        # Read at construction, not at import time - same reasoning as RunRepository.
+        self._database_url = database_url or os.environ["DATABASE_URL"]
+
+    def capture(
+        self,
+        *,
+        run_id: str,
+        headline: str,
+        source_id: str | None,
+        url: str | None,
+        summary: str | None,
+        published_at: str | None,
+        in_coverage_window: bool | None,
+        actor_id: str,
+    ) -> CandidateRecord:
+        with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
+            row = conn.execute(
+                "insert into candidates (run_id, headline, source_id, url, summary, "
+                "published_at, in_coverage_window) values (%s, %s, %s, %s, %s, %s, %s) "
+                f"returning {_SELECT_COLUMNS}",
+                (run_id, headline, source_id, url, summary, published_at, in_coverage_window),
+            ).fetchone()
+            record_audit(
+                conn,
+                user_id=actor_id,
+                action="candidate.capture",
+                record_type="candidates",
+                record_id=str(row["id"]),
+                new_value=headline,
+                reason="candidate captured",
+            )
+            conn.commit()
+        return _row_to_record(row)
+
+    def get(self, candidate_id: str) -> CandidateRecord:
+        with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
+            row = conn.execute(
+                f"select {_SELECT_COLUMNS} from candidates where id = %s", (candidate_id,)
+            ).fetchone()
+        if row is None:
+            raise KeyError(f"no candidate {candidate_id!r}")
+        return _row_to_record(row)
+
+    def list_for_run(self, run_id: str) -> list[CandidateRecord]:
+        with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
+            rows = conn.execute(
+                f"select {_SELECT_COLUMNS} from candidates where run_id = %s "
+                "order by captured_at desc",
+                (run_id,),
+            ).fetchall()
+        return [_row_to_record(row) for row in rows]
+
+    def _get_locked(self, conn: psycopg.Connection, candidate_id: str) -> dict:
+        """Read the current row inside the caller's transaction. No `version` column on
+        `candidates`, so there is no CAS to guard a lost-update race the way `RunRepository` does
+        for `runs` - a follow-up if concurrent candidate edits turn out to matter in practice, not
+        assumed away here.
+        """
+        row = conn.execute(
+            f"select {_SELECT_COLUMNS} from candidates where id = %s", (candidate_id,)
+        ).fetchone()
+        if row is None:
+            raise KeyError(f"no candidate {candidate_id!r}")
+        return row
+
+    def record_verification(
+        self,
+        candidate_id: str,
+        verification: VerificationState,
+        *,
+        actor_id: str,
+        reason: str,
+    ) -> CandidateRecord:
+        """Sets `verification`. Refuses (via `enforce_verification_gate`) a downgrade away from
+        Verified/Partially Verified on a candidate whose *current* signal is High/Critical - the
+        live read means this is never guessing, unlike the collector-side gate.
+        """
+        with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
+            current = self._get_locked(conn, candidate_id)
+            current_signal = SignalStrength(current["signal"]) if current["signal"] else None
+            enforce_verification_gate(current_signal, verification)
+
+            row = conn.execute(
+                f"update candidates set verification = %s where id = %s "
+                f"returning {_SELECT_COLUMNS}",
+                (verification.value, candidate_id),
+            ).fetchone()
+            record_audit(
+                conn,
+                user_id=actor_id,
+                action="candidate.verify",
+                record_type="candidates",
+                record_id=candidate_id,
+                old_value=current["verification"],
+                new_value=verification.value,
+                reason=reason,
+            )
+            conn.commit()
+        return _row_to_record(row)
+
+    def record_score(
+        self,
+        candidate_id: str,
+        *,
+        nz_relevance: int | None,
+        india_relevance: int | None,
+        member_relevance: int | None,
+        signal: SignalStrength | None,
+        confidence: SourceConfidence | None,
+        actor_id: str,
+        reason: str,
+    ) -> CandidateRecord:
+        """Sets the scoring fields. Refuses setting a High/Critical `signal` on a candidate whose
+        *current* verification is not Verified/Partially Verified - the gate this candidate would
+        otherwise carry unenforced from capture straight through to a report.
+        """
+        with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
+            current = self._get_locked(conn, candidate_id)
+            current_verification = VerificationState(current["verification"])
+            enforce_verification_gate(signal, current_verification)
+
+            row = conn.execute(
+                "update candidates set nz_relevance = %s, india_relevance = %s, "
+                "member_relevance = %s, signal = %s, confidence = %s where id = %s "
+                f"returning {_SELECT_COLUMNS}",
+                (
+                    nz_relevance,
+                    india_relevance,
+                    member_relevance,
+                    signal.value if signal else None,
+                    confidence.value if confidence else None,
+                    candidate_id,
+                ),
+            ).fetchone()
+            record_audit(
+                conn,
+                user_id=actor_id,
+                action="candidate.score",
+                record_type="candidates",
+                record_id=candidate_id,
+                old_value=current["signal"],
+                new_value=signal.value if signal else None,
+                reason=reason,
+            )
+            conn.commit()
+        return _row_to_record(row)
+
+    def record_routing(
+        self,
+        candidate_id: str,
+        *,
+        proposed_routing: str | None,
+        included: bool | None,
+        actor_id: str,
+        reason: str,
+    ) -> CandidateRecord:
+        with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
+            current = self._get_locked(conn, candidate_id)
+            row = conn.execute(
+                "update candidates set proposed_routing = %s, included = %s where id = %s "
+                f"returning {_SELECT_COLUMNS}",
+                (proposed_routing, included, candidate_id),
+            ).fetchone()
+            record_audit(
+                conn,
+                user_id=actor_id,
+                action="candidate.route",
+                record_type="candidates",
+                record_id=candidate_id,
+                old_value=current["proposed_routing"],
+                new_value=proposed_routing,
+                reason=reason,
+            )
+            conn.commit()
+        return _row_to_record(row)
+
+    def merge(
+        self,
+        candidate_id: str,
+        duplicate_of: str,
+        *,
+        actor_id: str,
+        reason: str,
+    ) -> CandidateRecord:
+        """Marks `candidate_id` as a duplicate of `duplicate_of` and excludes it
+        (`included = false`) - a duplicate must not also count as a separate included finding.
+        Refuses merging a candidate into itself, and refuses if `duplicate_of` does not exist
+        (the foreign key would refuse it too, but a `KeyError` here tells the caller which id was
+        bad, rather than a raw integrity-constraint error crossing the HTTP boundary).
+        """
+        if candidate_id == duplicate_of:
+            raise ValueError(f"candidate {candidate_id!r} cannot be a duplicate of itself")
+        with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
+            current = self._get_locked(conn, candidate_id)
+            target = conn.execute(
+                "select 1 from candidates where id = %s", (duplicate_of,)
+            ).fetchone()
+            if target is None:
+                raise KeyError(f"no candidate {duplicate_of!r} to merge into")
+
+            row = conn.execute(
+                "update candidates set duplicate_of = %s, included = false where id = %s "
+                f"returning {_SELECT_COLUMNS}",
+                (duplicate_of, candidate_id),
+            ).fetchone()
+            record_audit(
+                conn,
+                user_id=actor_id,
+                action="candidate.merge",
+                record_type="candidates",
+                record_id=candidate_id,
+                old_value=current["duplicate_of"],
+                new_value=duplicate_of,
+                reason=reason,
+            )
+            conn.commit()
+        return _row_to_record(row)

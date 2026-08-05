@@ -324,6 +324,343 @@
         }
       }
     },
+    "/api/candidates": {
+      "post": {
+        "tags": [
+          "Candidates"
+        ],
+        "summary": "Capture Candidate",
+        "operationId": "capture_candidate_api_candidates_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaptureCandidateIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Candidates"
+        ],
+        "summary": "List Candidates",
+        "operationId": "list_candidates_api_candidates_get",
+        "parameters": [
+          {
+            "name": "run",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Run id to list candidates for.",
+              "title": "Run"
+            },
+            "description": "Run id to list candidates for."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CandidateOut"
+                  },
+                  "title": "Response List Candidates Api Candidates Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/candidates/{candidate_id}": {
+      "get": {
+        "tags": [
+          "Candidates"
+        ],
+        "summary": "Get Candidate",
+        "operationId": "get_candidate_api_candidates__candidate_id__get",
+        "parameters": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Candidate Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/candidates/{candidate_id}/verify": {
+      "post": {
+        "tags": [
+          "Candidates"
+        ],
+        "summary": "Verify Candidate",
+        "operationId": "verify_candidate_api_candidates__candidate_id__verify_post",
+        "parameters": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Candidate Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/candidates/{candidate_id}/score": {
+      "post": {
+        "tags": [
+          "Candidates"
+        ],
+        "summary": "Score Candidate",
+        "operationId": "score_candidate_api_candidates__candidate_id__score_post",
+        "parameters": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Candidate Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScoreIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/candidates/{candidate_id}/route": {
+      "post": {
+        "tags": [
+          "Candidates"
+        ],
+        "summary": "Route Candidate",
+        "operationId": "route_candidate_api_candidates__candidate_id__route_post",
+        "parameters": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Candidate Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RouteIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/candidates/{candidate_id}/merge": {
+      "post": {
+        "tags": [
+          "Candidates"
+        ],
+        "summary": "Merge Candidate",
+        "operationId": "merge_candidate_api_candidates__candidate_id__merge_post",
+        "parameters": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Candidate Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MergeIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/fta/query": {
       "get": {
         "tags": [
@@ -536,6 +873,287 @@
         "title": "AnswerOut",
         "description": "A sourced FTA finding. Every field is evidence or the presentation it must carry."
       },
+      "CandidateOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "headline": {
+            "type": "string",
+            "title": "Headline"
+          },
+          "source_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Id"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "captured_at": {
+            "type": "string",
+            "title": "Captured At"
+          },
+          "in_coverage_window": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "In Coverage Window"
+          },
+          "nz_relevance": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nz Relevance"
+          },
+          "india_relevance": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "India Relevance"
+          },
+          "member_relevance": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Member Relevance"
+          },
+          "signal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signal"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "verification": {
+            "type": "string",
+            "title": "Verification"
+          },
+          "duplicate_of": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duplicate Of"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "proposed_routing": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposed Routing"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "run_id",
+          "headline",
+          "source_id",
+          "url",
+          "summary",
+          "published_at",
+          "captured_at",
+          "in_coverage_window",
+          "nz_relevance",
+          "india_relevance",
+          "member_relevance",
+          "signal",
+          "confidence",
+          "verification",
+          "duplicate_of",
+          "included",
+          "reason",
+          "proposed_routing"
+        ],
+        "title": "CandidateOut"
+      },
+      "CaptureCandidateIn": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "headline": {
+            "type": "string",
+            "title": "Headline"
+          },
+          "source_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Id"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "in_coverage_window": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "In Coverage Window"
+          },
+          "actor_id": {
+            "type": "string",
+            "title": "Actor Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "run_id",
+          "headline",
+          "actor_id"
+        ],
+        "title": "CaptureCandidateIn"
+      },
       "CreateRunIn": {
         "properties": {
           "run_number": {
@@ -625,6 +1243,71 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "MergeIn": {
+        "properties": {
+          "duplicate_of": {
+            "type": "string",
+            "title": "Duplicate Of"
+          },
+          "actor_id": {
+            "type": "string",
+            "title": "Actor Id"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "duplicate_of",
+          "actor_id",
+          "reason"
+        ],
+        "title": "MergeIn"
+      },
+      "RouteIn": {
+        "properties": {
+          "proposed_routing": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposed Routing"
+          },
+          "included": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included"
+          },
+          "actor_id": {
+            "type": "string",
+            "title": "Actor Id"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "actor_id",
+          "reason"
+        ],
+        "title": "RouteIn"
+      },
       "RunOut": {
         "properties": {
           "id": {
@@ -673,6 +1356,98 @@
           "initiated_by"
         ],
         "title": "RunOut"
+      },
+      "ScoreIn": {
+        "properties": {
+          "nz_relevance": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nz Relevance"
+          },
+          "india_relevance": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "India Relevance"
+          },
+          "member_relevance": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Member Relevance"
+          },
+          "signal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SignalStrength"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SourceConfidence"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "actor_id": {
+            "type": "string",
+            "title": "Actor Id"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "actor_id",
+          "reason"
+        ],
+        "title": "ScoreIn"
+      },
+      "SignalStrength": {
+        "type": "string",
+        "enum": [
+          "Low",
+          "Medium",
+          "High",
+          "Critical"
+        ],
+        "title": "SignalStrength"
+      },
+      "SourceConfidence": {
+        "type": "string",
+        "enum": [
+          "High",
+          "Medium",
+          "Low",
+          "Unverified"
+        ],
+        "title": "SourceConfidence"
       },
       "TransitionIn": {
         "properties": {
@@ -749,6 +1524,40 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "VerificationState": {
+        "type": "string",
+        "enum": [
+          "Verified",
+          "Partially Verified",
+          "Unverified",
+          "Not Required",
+          "Rejected"
+        ],
+        "title": "VerificationState"
+      },
+      "VerifyIn": {
+        "properties": {
+          "verification": {
+            "$ref": "#/components/schemas/VerificationState"
+          },
+          "actor_id": {
+            "type": "string",
+            "title": "Actor Id"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "verification",
+          "actor_id",
+          "reason"
+        ],
+        "title": "VerifyIn"
       }
     }
   }
