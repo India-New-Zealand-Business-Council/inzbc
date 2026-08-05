@@ -21,7 +21,7 @@ Every snippet uses inline CSS so it works as a standalone embed.
 | `join-cta.html` | Home or Membership page embed | Final conversion band. |
 | **About** |
 | `about-hero.html` | About page embed | About hero section. |
-| `executive-council.html` | `/executive-council` page embed | Board and executive team grid. |
+| `executive-council.html` | `/executive-council` page embed | Board and executive team grid. **Carries real names. Do not publish without Board confirmation** (`client-answers.md` D1). |
 | `our-patron.html` | `/our-patron` page embed | Patron profile. |
 | **Membership** |
 | `membership.html` | `/membership` page embed | Value proposition and tiers placeholder. |
