@@ -1,6 +1,7 @@
 # INZBC New Site — Design Direction (PROVISIONAL)
 
-Working design file (gitignored). **Order of authority: Sunil's brand asset guide > this file.**
+Shared working design file, deliberately tracked — Paras builds the design system from it.
+**Order of authority: Sunil's brand asset guide > this file.**
 Everything tagged `[[brand-guide]]` is a placeholder to be replaced by INZBC's real brand kit
 when it arrives. UX/IA decisions below do not depend on brand colours and can proceed now.
 
