@@ -1,14 +1,6 @@
 import { useCallback, useEffect, useId, useState } from 'react'
-import {
-  completeRun,
-  listRuns,
-  nextAction,
-  pauseRun,
-  resumeRun,
-  startRun,
-  type RunOut,
-  SipApiError,
-} from '../api/runsClient'
+import { listRuns, nextAction, type RunOut, SipApiError } from '../api/runsClient'
+import { RUN_ACTION_LABEL as ACTION_LABEL, RUN_APPROVAL_REF_LABEL as APPROVAL_REF_LABEL, submitRunAction } from '../lib/runActions'
 import { stateBadgeClass } from '../lib/runState'
 
 interface Props {
@@ -21,22 +13,6 @@ interface Props {
 type LoadState = { kind: 'loading' } | { kind: 'error'; message: string } | { kind: 'loaded'; runs: RunOut[] }
 
 type ActionState = { kind: 'idle' } | { kind: 'loading' } | { kind: 'error'; message: string }
-
-const ACTION_LABEL: Record<'start' | 'pause' | 'resume' | 'complete', string> = {
-  start: 'Start',
-  pause: 'Pause',
-  resume: 'Resume',
-  complete: 'Complete',
-}
-
-/** `pause` (Awaiting CEO Decision -> Paused) is the one transition RunRepository actually
- * verifies `approval_ref` against a real `decision_records` row; `start`/`resume` only check it
- * is non-empty (#227, run-level gates with no report_version to attach a decision to yet). */
-const APPROVAL_REF_LABEL: Record<'start' | 'pause' | 'resume', string> = {
-  start: 'Approval reference (required — not yet verified against a record, #227)',
-  resume: 'Approval reference (required — not yet verified against a record, #227)',
-  pause: 'Decision record ID (required — must match an existing decision_records row)',
-}
 
 
 /** Runs list (#237): fetches on mount, and every lifecycle action (start/pause/resume/complete). */
@@ -103,8 +79,7 @@ export function RunsListScreen({ actorId, onSelectRun }: Props) {
       approval_ref: action === 'complete' ? null : approvalRef.trim(),
     }
     try {
-      const fn = { start: startRun, pause: pauseRun, resume: resumeRun, complete: completeRun }[action]
-      await fn(run.id, body)
+      await submitRunAction(action, run.id, body)
       setOpenRunId(null)
       setActionState({ kind: 'idle' })
       reload()
