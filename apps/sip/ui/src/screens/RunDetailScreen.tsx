@@ -2,12 +2,14 @@ import { useCallback, useEffect, useId, useState } from 'react'
 import { getRun, nextAction, type RunOut, SipApiError } from '../api/runsClient'
 import { RUN_ACTION_LABEL as ACTION_LABEL, RUN_APPROVAL_REF_LABEL as APPROVAL_REF_LABEL, submitRunAction } from '../lib/runActions'
 import { stateBadgeClass } from '../lib/runState'
+import { CandidatesListScreen } from './CandidatesListScreen'
 
 interface Props {
   runId: string
   /** UUID of the acting user — see RunsListScreen.tsx's Props doc for why this is caller-supplied. */
   actorId: string
   onBack: () => void
+  onSelectCandidate: (candidateId: string) => void
 }
 
 type LoadState = { kind: 'loading' } | { kind: 'error'; message: string } | { kind: 'loaded'; run: RunOut }
@@ -16,8 +18,9 @@ type ActionState = { kind: 'idle' } | { kind: 'loading' } | { kind: 'error'; mes
 
 /**
  * One run's full detail (`GET /api/runs/:id`) plus its own lifecycle action, mirroring
- * RunsListScreen.tsx's action panel. Candidates for this run render below it — see the next
- * commit; this one is the run's own info only.
+ * RunsListScreen.tsx's action panel. Candidates for this run render below it via
+ * CandidatesListScreen, scoped to `run.id` (the endpoint requires a `run` query param — there is
+ * no global candidates list).
  *
  * Callers must render this with `key={runId}` (the container screen wired up in a later commit
  * does). That forces a full remount — a fresh `useState({kind: 'loading'})` — when the selected
@@ -27,7 +30,7 @@ type ActionState = { kind: 'idle' } | { kind: 'loading' } | { kind: 'error'; mes
  * of function indirection (unlike RunsListScreen.tsx's fetch, which only ever runs once and never
  * needs that reset).
  */
-export function RunDetailScreen({ runId, actorId, onBack }: Props) {
+export function RunDetailScreen({ runId, actorId, onBack, onSelectCandidate }: Props) {
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
   const [actionOpen, setActionOpen] = useState(false)
   const [reason, setReason] = useState('')
@@ -226,6 +229,8 @@ export function RunDetailScreen({ runId, actorId, onBack }: Props) {
               </div>
             ) : null}
           </div>
+
+          <CandidatesListScreen runId={state.run.id} onSelectCandidate={onSelectCandidate} />
         </>
       ) : null}
     </section>
