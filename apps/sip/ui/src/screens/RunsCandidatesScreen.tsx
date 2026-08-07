@@ -56,8 +56,12 @@ export function RunsCandidatesScreen() {
           No session auth exists yet — every action records this id directly. Must be a real{' '}
           <code>users.id</code>; there is no endpoint to look one up from here.
         </p>
+        {/* Not role="alert": this re-renders on every keystroke while the field is mid-type
+            (e.g. a partial, not-yet-complete UUID), and an assertive alert firing on every
+            character would be alert fatigue for a screen reader user, not a genuine error —
+            unlike the submit-time action errors elsewhere in this screen tree, which do use it. */}
         {actorId && !actorIdValid ? (
-          <p role="alert" className="mt-1 text-xs text-inzbc-crimson">
+          <p className="mt-1 text-xs text-inzbc-crimson">
             Not a valid id — actions are disabled until this is a well-formed UUID.
           </p>
         ) : null}

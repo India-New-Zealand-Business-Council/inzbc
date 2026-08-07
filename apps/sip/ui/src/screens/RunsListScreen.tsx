@@ -100,9 +100,10 @@ export function RunsListScreen({ actorId, onSelectRun }: Props) {
     <section className="space-y-4" aria-labelledby="runs-list-heading">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 id="runs-list-heading" className="text-lg font-semibold text-inzbc-navy">
+          {/* h3, not h2: nested under RunsCandidatesScreen's h2 "Runs & Candidates". */}
+          <h3 id="runs-list-heading" className="text-lg font-semibold text-inzbc-navy">
             Runs
-          </h2>
+          </h3>
           <p className="mt-1 text-sm text-slate-600">
             Every SIP run recorded in the database (`/api/runs`, #237). Select a run to see its
             candidates and lifecycle actions.

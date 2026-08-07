@@ -127,9 +127,10 @@ export function RunDetailScreen({ runId, actorId, onBack, onSelectCandidate }: P
           <div className="rounded-md border border-inzbc-navy/10 bg-white shadow-sm p-4">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
-                <h2 id="run-detail-heading" className="text-lg font-semibold text-inzbc-navy">
+                {/* h3, not h2: nested under RunsCandidatesScreen's h2 "Runs & Candidates". */}
+                <h3 id="run-detail-heading" className="text-lg font-semibold text-inzbc-navy">
                   {state.run.run_number}
-                </h2>
+                </h3>
                 <p className="mt-1 text-xs text-slate-500">{state.run.id}</p>
               </div>
               <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ${stateBadgeClass(state.run.state)}`}>

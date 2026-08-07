@@ -59,9 +59,13 @@ export function CandidatesListScreen({ runId, actorId, onSelectCandidate }: Prop
   return (
     <section className="space-y-3" aria-labelledby="candidates-list-heading">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 id="candidates-list-heading" className="text-sm font-semibold text-inzbc-navy">
+        {/* h4, not h3: this screen is always nested inside RunDetailScreen's h3, not a sibling of
+            it (unlike CandidateDetailScreen, which replaces RunDetailScreen rather than nesting
+            in it). index.css only styles h1-h3 (Big Shoulders, uppercase) — h4 needs its own
+            classes here, which it already has. */}
+        <h4 id="candidates-list-heading" className="text-sm font-semibold text-inzbc-navy">
           Candidates
-        </h3>
+        </h4>
         <button
           type="button"
           onClick={() => {

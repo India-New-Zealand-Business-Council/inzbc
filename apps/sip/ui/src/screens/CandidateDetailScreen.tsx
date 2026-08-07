@@ -70,9 +70,11 @@ export function CandidateDetailScreen({ candidateId, actorId, onBack }: Props) {
         <div className="rounded-md border border-inzbc-navy/10 bg-white shadow-sm p-4">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
-              <h2 id="candidate-detail-heading" className="text-lg font-semibold text-inzbc-navy">
+              {/* h3, not h2: nested under RunsCandidatesScreen's h2 "Runs & Candidates" — this
+                  screen replaces RunDetailScreen (a sibling h3), it doesn't nest inside it. */}
+              <h3 id="candidate-detail-heading" className="text-lg font-semibold text-inzbc-navy">
                 {state.candidate.headline}
-              </h2>
+              </h3>
               <p className="mt-1 text-xs text-slate-500">{state.candidate.id}</p>
             </div>
             <div className="flex flex-wrap gap-1">
