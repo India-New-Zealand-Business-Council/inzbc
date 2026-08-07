@@ -19,15 +19,23 @@ export const RUN_APPROVAL_REF_LABEL: Record<Exclude<RunAction, 'complete'>, stri
   pause: 'Decision record ID (required — must match an existing decision_records row)',
 }
 
-const RUN_ACTION_FN: Record<RunAction, (runId: string, body: TransitionIn) => Promise<RunOut>> = {
-  start: startRun,
-  pause: pauseRun,
-  resume: resumeRun,
-  complete: completeRun,
-}
-
-/** Shared by RunsListScreen and RunDetailScreen's action panels, so the one endpoint-per-action
- * mapping lives once. */
+/**
+ * Shared by RunsListScreen and RunDetailScreen's action panels, so the one endpoint-per-action
+ * mapping lives once. A `switch` calling each function directly, not a dispatch table built from
+ * an object literal (`{start: startRun, ...}`) — that captures each function's value once at
+ * module load, so a test's `vi.spyOn(runsClient, 'startRun')` would silently never be seen here:
+ * the table would still hold the original, pre-spy reference. A direct call site reads the live
+ * (mockable) export each time instead.
+ */
 export function submitRunAction(action: RunAction, runId: string, body: TransitionIn): Promise<RunOut> {
-  return RUN_ACTION_FN[action](runId, body)
+  switch (action) {
+    case 'start':
+      return startRun(runId, body)
+    case 'pause':
+      return pauseRun(runId, body)
+    case 'resume':
+      return resumeRun(runId, body)
+    case 'complete':
+      return completeRun(runId, body)
+  }
 }

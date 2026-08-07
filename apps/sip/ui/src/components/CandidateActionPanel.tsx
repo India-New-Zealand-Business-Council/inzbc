@@ -188,8 +188,6 @@ export function CandidateActionPanel({ candidate, actorId, onUpdated }: Props) {
                   <input
                     id={`${formId}-nz`}
                     type="number"
-                    min={0}
-                    max={5}
                     value={nzRelevance}
                     onChange={(event) => setNzRelevance(event.target.value)}
                     className="mt-1 w-full rounded-md border border-inzbc-navy/20 p-2 text-sm transition-colors hover:border-inzbc-navy/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
@@ -202,8 +200,6 @@ export function CandidateActionPanel({ candidate, actorId, onUpdated }: Props) {
                   <input
                     id={`${formId}-india`}
                     type="number"
-                    min={0}
-                    max={5}
                     value={indiaRelevance}
                     onChange={(event) => setIndiaRelevance(event.target.value)}
                     className="mt-1 w-full rounded-md border border-inzbc-navy/20 p-2 text-sm transition-colors hover:border-inzbc-navy/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
@@ -216,8 +212,6 @@ export function CandidateActionPanel({ candidate, actorId, onUpdated }: Props) {
                   <input
                     id={`${formId}-member`}
                     type="number"
-                    min={0}
-                    max={5}
                     value={memberRelevance}
                     onChange={(event) => setMemberRelevance(event.target.value)}
                     className="mt-1 w-full rounded-md border border-inzbc-navy/20 p-2 text-sm transition-colors hover:border-inzbc-navy/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
