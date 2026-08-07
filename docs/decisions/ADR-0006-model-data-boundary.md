@@ -11,10 +11,18 @@ model payloads. The existing redaction mechanism is fail-closed and masks format
 but regex redaction cannot reliably detect names, employers, job titles, Board deliberations or
 other sensitive meaning carried in ordinary prose.
 
-Independent benchmarking puts regex-only PII recall at roughly 0.65 against about 0.96 for a
-hybrid regex + NER pipeline, so a regex-only control misses on the order of a third of what it
-targets. That is the measured form of the limit `docs/redaction-policy.md` already describes in
-prose. It is the reason redaction cannot be the primary control.
+This is a documented limitation of rule-based detection generally, not a defect in our rules.
+Pattern-matching systems — Microsoft Presidio being the widely used reference implementation —
+handle structured identifiers well and fail on contextually inferred entities: person names in
+free text, job titles embedded in prose, organisation names. Published evaluations record real
+recall failures of exactly that kind against rule-based detectors. The state of practice pairs
+regex with named-entity recognition rather than choosing between them.
+
+No quantified recall figure is given here deliberately. There is no standardised benchmark corpus
+for PII detection that permits rigorous cross-system comparison, so any single number would be
+citing one vendor's methodology as though it were settled. The qualitative finding is enough to
+decide this: regex cannot see prose, and prose is where member identity lives. That is the reason
+redaction cannot be the primary control.
 
 A publication-review gate cannot prevent disclosure to a model provider, because that disclosure
 has already occurred by the time output is reviewed.
@@ -94,12 +102,22 @@ INZBC must document the purpose, necessity, provider handling/retention/training
 controls and applicable Privacy Act 2020 obligations. That work is issue **#113** (preliminary
 privacy and data-flow assessment), which is open and unstarted; **#132** is its final counterpart.
 
-This matters beyond internal process. Placing personal information into an AI tool is a
-disclosure to the provider under IPP 12, requiring comparable safeguards, a contract, or express
-informed consent. The cloud-provider exemption covers an agent that does not use the data for its
-own purposes, which is a question about the provider's terms and has not been checked. The
-Privacy Commissioner's published expectations for agencies using AI include senior leadership
-approval and a Privacy Impact Assessment carried out *before* deployment.
+This matters beyond internal process, but the legal position is conditional rather than automatic
+and should not be stated as settled.
+
+Sending personal information to an offshore provider is **not** necessarily an IPP 12 disclosure.
+Where the provider acts purely as an agent — processing on INZBC's behalf and not using the
+information for its own purposes — the information is treated as held by INZBC rather than
+disclosed to a third party, and IPP 12 is not engaged. Where the provider does use the data for
+its own purposes, including retention for model training, it is a disclosure and IPP 12 requires
+comparable safeguards, a contract, or express informed consent.
+
+Which of those applies is a question about the provider's terms, and nobody has checked them.
+That check is the actionable obligation here, not an assumption in either direction.
+
+Independently of how that resolves, the Privacy Commissioner's published expectations for
+agencies using AI include senior leadership approval and a Privacy Impact Assessment carried out
+*before* deployment.
 
 This ADR does not treat an external AI provider as automatically authorised to receive personal
 data.
@@ -143,3 +161,5 @@ under the Privacy Act 2020, INZBC remains the agency regardless.
   https://www.privacy.org.nz/responsibilities/disclosing-personal-information-outside-new-zealand/
 - Microsoft Presidio, hybrid regex + NER reference implementation —
   https://microsoft.github.io/presidio/
+- Microsoft Presidio, PII detection evaluation — recall is weighted above precision for this class
+  of control — https://microsoft.github.io/presidio/evaluation/
