@@ -1,43 +1,60 @@
-import { useCallback, useEffect, useState } from 'react'
-import { listRuns, type RunOut, SipApiError } from '../api/runsClient'
+import { useCallback, useEffect, useId, useState } from 'react'
+import {
+  completeRun,
+  listRuns,
+  nextAction,
+  pauseRun,
+  resumeRun,
+  startRun,
+  type RunOut,
+  SipApiError,
+} from '../api/runsClient'
+import { stateBadgeClass } from '../lib/runState'
 
 interface Props {
+  /** UUID of the acting user (`database/schema.sql`: `initiated_by`/`actor_id` are real `users`
+   * foreign keys, no session auth exists to derive this from yet — see httpClient.ts's isUuid). */
+  actorId: string
   onSelectRun: (runId: string) => void
 }
 
 type LoadState = { kind: 'loading' } | { kind: 'error'; message: string } | { kind: 'loaded'; runs: RunOut[] }
 
-// Navy background = neutral/unstarted, matching the "pending" treatment elsewhere in this app
-// (QaReviewScreen's SECTION_CARD_CLASSES); forest = a healthy in-progress/closed state; tangerine
-// = needs attention (paused, awaiting a decision); crimson = stopped. Not exhaustive of all 18
-// RunState values (schemas/state-machine.md) — states this screen's four actions never produce
-// (Scanning, Report Drafted, etc.) fall back to the neutral badge rather than getting a bespoke
-// colour for a state this UI cannot reach.
-const STATE_BADGE_CLASSES: Record<string, string> = {
-  Draft: 'bg-slate-100 text-slate-700',
-  'Run Authorised': 'bg-inzbc-forest/10 text-inzbc-forest',
-  'Coverage Locked': 'bg-inzbc-forest/10 text-inzbc-forest',
-  'Awaiting CEO Decision': 'bg-inzbc-tangerine/20 text-inzbc-navy',
-  Paused: 'bg-inzbc-tangerine/20 text-inzbc-navy',
-  Stopped: 'bg-inzbc-crimson/10 text-inzbc-crimson',
-  Distributed: 'bg-inzbc-forest/10 text-inzbc-forest',
-  Closed: 'bg-slate-200 text-slate-700',
+type ActionState = { kind: 'idle' } | { kind: 'loading' } | { kind: 'error'; message: string }
+
+const ACTION_LABEL: Record<'start' | 'pause' | 'resume' | 'complete', string> = {
+  start: 'Start',
+  pause: 'Pause',
+  resume: 'Resume',
+  complete: 'Complete',
 }
 
-export function stateBadgeClass(state: string): string {
-  return STATE_BADGE_CLASSES[state] ?? 'bg-slate-100 text-slate-700'
+/** `pause` (Awaiting CEO Decision -> Paused) is the one transition RunRepository actually
+ * verifies `approval_ref` against a real `decision_records` row; `start`/`resume` only check it
+ * is non-empty (#227, run-level gates with no report_version to attach a decision to yet). */
+const APPROVAL_REF_LABEL: Record<'start' | 'pause' | 'resume', string> = {
+  start: 'Approval reference (required — not yet verified against a record, #227)',
+  resume: 'Approval reference (required — not yet verified against a record, #227)',
+  pause: 'Decision record ID (required — must match an existing decision_records row)',
 }
 
-/**
- * Runs list (#237). Fetches on mount and exposes `reload` so a caller that just changed a run's
- * state (e.g. via a lifecycle action) can refresh this list rather than it going stale — added in
- * a later commit alongside the action buttons themselves.
- */
-export function RunsListScreen({ onSelectRun }: Props) {
+
+/** Runs list (#237): fetches on mount, and every lifecycle action (start/pause/resume/complete). */
+export function RunsListScreen({ actorId, onSelectRun }: Props) {
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
+  // Only one run's action panel open at a time, mirroring QaReviewScreen's editingId pattern.
+  const [openRunId, setOpenRunId] = useState<string | null>(null)
+  const [reason, setReason] = useState('')
+  const [approvalRef, setApprovalRef] = useState('')
+  const [actionState, setActionState] = useState<ActionState>({ kind: 'idle' })
+  const formId = useId()
 
-  const load = useCallback((signal?: AbortSignal) => {
-    setState({ kind: 'loading' })
+  // Split from `reload` below so the mount effect never calls setState synchronously within its
+  // own body (react-hooks/set-state-in-effect) — the effect only starts the fetch; every state
+  // update happens inside the promise's .then/.catch, which is not "within the effect" for that
+  // rule's purposes. The initial `useState({kind: 'loading'})` above already covers the mount
+  // case, so nothing needs to set it again on first render.
+  const fetchRuns = useCallback((signal?: AbortSignal) => {
     listRuns({ signal })
       .then((runs) => setState({ kind: 'loaded', runs }))
       .catch((error: unknown) => {
@@ -51,9 +68,53 @@ export function RunsListScreen({ onSelectRun }: Props) {
 
   useEffect(() => {
     const controller = new AbortController()
-    load(controller.signal)
+    fetchRuns(controller.signal)
     return () => controller.abort()
-  }, [load])
+  }, [fetchRuns])
+
+  /** For the Refresh button and after a successful action — a real user event, not an effect, so
+   * setting the loading state synchronously here before re-fetching is fine. */
+  function reload() {
+    setState({ kind: 'loading' })
+    fetchRuns()
+  }
+
+  function openAction(runId: string) {
+    setOpenRunId(openRunId === runId ? null : runId)
+    setReason('')
+    setApprovalRef('')
+    setActionState({ kind: 'idle' })
+  }
+
+  async function confirmAction(run: RunOut, action: 'start' | 'pause' | 'resume' | 'complete') {
+    if (!reason.trim()) {
+      setActionState({ kind: 'error', message: 'A reason is required.' })
+      return
+    }
+    if (action !== 'complete' && !approvalRef.trim()) {
+      setActionState({ kind: 'error', message: `${APPROVAL_REF_LABEL[action]} is required.` })
+      return
+    }
+    setActionState({ kind: 'loading' })
+    const body = {
+      expected_version: run.version,
+      actor_id: actorId,
+      reason: reason.trim(),
+      approval_ref: action === 'complete' ? null : approvalRef.trim(),
+    }
+    try {
+      const fn = { start: startRun, pause: pauseRun, resume: resumeRun, complete: completeRun }[action]
+      await fn(run.id, body)
+      setOpenRunId(null)
+      setActionState({ kind: 'idle' })
+      reload()
+    } catch (error) {
+      setActionState({
+        kind: 'error',
+        message: error instanceof SipApiError ? error.message : 'Something went wrong. Please try again.',
+      })
+    }
+  }
 
   return (
     <section className="space-y-4" aria-labelledby="runs-list-heading">
@@ -69,7 +130,7 @@ export function RunsListScreen({ onSelectRun }: Props) {
         </div>
         <button
           type="button"
-          onClick={() => load()}
+          onClick={reload}
           className="min-h-11 rounded-md border border-inzbc-navy/20 px-3 py-2 text-sm font-medium text-inzbc-navy transition-colors hover:border-inzbc-navy/40"
         >
           Refresh
@@ -110,13 +171,88 @@ export function RunsListScreen({ onSelectRun }: Props) {
                   {run.state}
                 </span>
               </div>
-              <button
-                type="button"
-                onClick={() => onSelectRun(run.id)}
-                className="mt-2 min-h-11 rounded-md border border-inzbc-navy/20 px-3 py-2 text-sm font-medium text-inzbc-navy transition-colors hover:border-inzbc-navy/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue"
-              >
-                View run and candidates
-              </button>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => onSelectRun(run.id)}
+                  className="min-h-11 rounded-md border border-inzbc-navy/20 px-3 py-2 text-sm font-medium text-inzbc-navy transition-colors hover:border-inzbc-navy/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue"
+                >
+                  View run and candidates
+                </button>
+                {nextAction(run.state) ? (
+                  <button
+                    type="button"
+                    aria-expanded={openRunId === run.id}
+                    onClick={() => openAction(run.id)}
+                    className="min-h-11 rounded-md bg-inzbc-tangerine px-3 py-2 text-sm font-semibold text-inzbc-navy transition-colors hover:enabled:bg-inzbc-tangerine/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue"
+                  >
+                    {ACTION_LABEL[nextAction(run.state)!]}
+                  </button>
+                ) : null}
+              </div>
+
+              {openRunId === run.id && nextAction(run.state) ? (
+                (() => {
+                  const action = nextAction(run.state)!
+                  return (
+                    <form
+                      className="mt-3 space-y-2 rounded-md border border-inzbc-navy/10 bg-slate-50 p-3"
+                      onSubmit={(event) => {
+                        event.preventDefault()
+                        void confirmAction(run, action)
+                      }}
+                    >
+                      <div>
+                        <label htmlFor={`${formId}-reason-${run.id}`} className="text-xs font-medium text-inzbc-navy">
+                          Reason
+                        </label>
+                        <input
+                          id={`${formId}-reason-${run.id}`}
+                          type="text"
+                          value={reason}
+                          onChange={(event) => setReason(event.target.value)}
+                          className="mt-1 w-full rounded-md border border-inzbc-navy/20 p-2 text-sm transition-colors hover:border-inzbc-navy/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
+                        />
+                      </div>
+                      {action !== 'complete' ? (
+                        <div>
+                          <label htmlFor={`${formId}-approval-${run.id}`} className="text-xs font-medium text-inzbc-navy">
+                            {APPROVAL_REF_LABEL[action]}
+                          </label>
+                          <input
+                            id={`${formId}-approval-${run.id}`}
+                            type="text"
+                            value={approvalRef}
+                            onChange={(event) => setApprovalRef(event.target.value)}
+                            className="mt-1 w-full rounded-md border border-inzbc-navy/20 p-2 text-sm transition-colors hover:border-inzbc-navy/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
+                          />
+                        </div>
+                      ) : null}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="submit"
+                          disabled={actionState.kind === 'loading'}
+                          className="min-h-11 rounded-md bg-inzbc-tangerine px-3 py-2 text-sm font-semibold text-inzbc-navy disabled:cursor-progress disabled:opacity-60"
+                        >
+                          {actionState.kind === 'loading' ? 'Submitting…' : `Confirm ${ACTION_LABEL[action]}`}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openAction(run.id)}
+                          className="min-h-11 px-2 text-sm font-medium text-inzbc-blue underline"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                      {actionState.kind === 'error' ? (
+                        <p role="alert" className="text-sm text-inzbc-crimson">
+                          {actionState.message}
+                        </p>
+                      ) : null}
+                    </form>
+                  )
+                })()
+              ) : null}
             </li>
           ))}
         </ul>
