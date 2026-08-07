@@ -230,7 +230,7 @@ export function RunDetailScreen({ runId, actorId, onBack, onSelectCandidate }: P
             ) : null}
           </div>
 
-          <CandidatesListScreen runId={state.run.id} onSelectCandidate={onSelectCandidate} />
+          <CandidatesListScreen runId={state.run.id} actorId={actorId} onSelectCandidate={onSelectCandidate} />
         </>
       ) : null}
     </section>

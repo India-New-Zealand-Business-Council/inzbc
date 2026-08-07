@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { listCandidates, type CandidateOut, SipApiError } from '../api/candidatesClient'
+import { CandidateActionPanel } from '../components/CandidateActionPanel'
 import { signalBadgeClass, verificationBadgeClass } from '../lib/candidateState'
 
 interface Props {
   runId: string
+  /** UUID of the acting user — see RunsListScreen.tsx's Props doc for why this is caller-supplied. */
+  actorId: string
   onSelectCandidate: (candidateId: string) => void
 }
 
@@ -13,13 +16,24 @@ type LoadState =
   | { kind: 'loaded'; candidates: CandidateOut[] }
 
 /**
- * Candidates captured for one run (`GET /api/candidates?run=:id`, #242) — always scoped to a run,
- * since the endpoint requires the `run` query param; there is no global candidates list. Rendered
- * inside RunDetailScreen (next commit) rather than reachable on its own, but kept as its own
- * component/file so it's independently reusable and testable.
+ * Candidates captured for one run (`GET /api/candidates?run=:id`, #242) plus the four candidate
+ * commands (verify/score/route/merge, `CandidateActionPanel`) — always scoped to a run, since the
+ * endpoint requires the `run` query param; there is no global candidates list. Rendered inside
+ * RunDetailScreen rather than reachable on its own, but kept as its own component/file so it's
+ * independently reusable and testable.
  */
-export function CandidatesListScreen({ runId, onSelectCandidate }: Props) {
+export function CandidatesListScreen({ runId, actorId, onSelectCandidate }: Props) {
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
+
+  /** Replaces one candidate in place after a successful action, rather than re-fetching the whole
+   * list — the action's own response is already the authoritative updated record. */
+  function updateCandidate(updated: CandidateOut) {
+    setState((current) =>
+      current.kind === 'loaded'
+        ? { kind: 'loaded', candidates: current.candidates.map((c) => (c.id === updated.id ? updated : c)) }
+        : current,
+    )
+  }
 
   const fetchCandidates = useCallback(
     (signal?: AbortSignal) => {
@@ -108,6 +122,9 @@ export function CandidatesListScreen({ runId, onSelectCandidate }: Props) {
               >
                 View and review
               </button>
+              <div className="mt-3">
+                <CandidateActionPanel candidate={candidate} actorId={actorId} onUpdated={updateCandidate} />
+              </div>
             </li>
           ))}
         </ul>
