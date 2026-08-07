@@ -22,40 +22,30 @@ own PR flow; this lane is the integration that pulls its output into SIP.
 ## Depends on (Bhanu's contracts)
 DB schema, API contract, auth. Build against them; don't write to control-plane tables.
 
-**Lane note, 28 Jul 2026:** #117/#118/#120/#121/#122/#130 (persistence adapter, audit service,
-run + candidate endpoints, REQ-I-05 acceptance criteria, restart/rehydration test) were assigned
-to me as a **one-off delegation to balance Bhanu's workload, not a lane transfer** — confirmed
-with him directly. `/services/api`, `/database` and `/schemas` stay his lane; the delegation
-reverts once these six are done, and nothing else under those paths gets picked up without asking
-him first. Recording this so a later reader doesn't mistake the one-off for a standing change.
+**Lane note, 28 Jul 2026 — closed out 6 Aug.** #117/#118/#120/#121/#122/#130 (persistence adapter,
+audit service, run + candidate endpoints, REQ-I-05 acceptance criteria, restart/rehydration test)
+were assigned to me as a **one-off delegation to balance Bhanu's workload, not a lane transfer** —
+confirmed with him directly. All six are now done or in final review (below); `/services/api`,
+`/database` and `/schemas` revert to being his lane as of #130 merging — nothing further under
+those paths gets picked up without asking him first.
 
-Of the six, #122/#117/#118 are done (closed via PRs #154/#163, and #118 below); the remaining
-three (#120/#121/#130) now all have open PRs (below) — the delegation's scope is fully in review,
-none of it picked up further without asking Bhanu first.
+- #117, #118, #122: closed (PRs #163, #154, and #118's own PR).
+- #120 (PR #237) and #121 (PR #242): **merged 5 Aug.**
+- #130: **PR #248 auto-closed** when `feat/roshan/run-endpoints` was deleted on #237's merge — its
+  base branch vanished, not a rejection. Rebuilt clean against current `main` (same commit,
+  cherry-picked, re-verified) as **PR #255, CI green, awaiting review.**
+
+**#237's CI anomaly (4+ pushes, zero workflow runs, confirmed via the Actions API not just a stale
+`gh pr checks`) never got a root cause** — Bhanu approved and merged it anyway, on the strength of
+the local Postgres verification (114 passed) in the PR body. Worth a standup mention in case the
+same branch-level fault hits someone else's PR later; not otherwise unresolved.
 
 ## In review (opened, awaiting merge)
-- [ ] Run endpoints (#120, PR #237): `/api/runs` + start/pause/resume/complete, each mapped to one
-  exact `schemas/state-machine.md` edge. **CI is not running on this branch** — 4+ pushes (the
-  original PR, a Dockerfile fix for a missing `psycopg` in the runtime image, an empty retrigger,
-  and a Copilot-review test fix) have produced zero workflow runs, confirmed via the Actions API,
-  not just a stale `gh pr checks`. Other PRs get CI fine in the same window, so this looks like a
-  webhook/trigger fault specific to this branch — needs Bhanu or an admin to look at (re-auth the
-  branch, check Actions webhook deliveries, or close/reopen to force a fresh `synchronize` event).
-  All work is verified locally against a real Postgres (initdb, schema.sql applied): 114 passed.
-- [ ] Candidate command endpoints (#121, PR #242): `/verify` `/score` `/route` `/merge`, each
-  writing a named `audit_log` action instead of a blanket PATCH. Verification gate enforced
-  server-side in both directions (score refuses a High/Critical signal without verification;
-  verify refuses downgrading verification on an already-High/Critical candidate) — stronger than
-  the collector-side gate since this always reads a live row, so no `MissingCurrentSignalError`
-  case exists here. **CI green**, all 9 checks pass. Independent of #120 — branched off `main`
-  directly, either can merge first.
-- [ ] Backend restart/rehydration integration test (#130, PR #248): kills a real `uvicorn`
+- [ ] Backend restart/rehydration integration test (#130, PR #255): kills a real `uvicorn`
   subprocess mid-run and starts a fresh one on the same port, proving a run's state survives an
-  actual process restart, not just a fresh request. Stacked on `feat/roshan/run-endpoints` (base
-  branch, not `main`) since it drives the run through the real `/api/runs` endpoints — genuinely
-  depends on #120's code, unlike #121. CI fired fine for this one (confirms the #237 anomaly is
-  isolated to that specific branch, not something that propagates downstream). 118 passed against
-  a real local Postgres.
+  actual process restart, not just a fresh request. CI green (151 passed against a real local
+  Postgres running the actual merged `main` — both #120's and #121's routers, plus Bhanu's
+  hardening middleware).
 
 ## Next up
 - SHARED-OK: SIP-050 relevance/signal/confidence scoring moved to Bhanu's worklog — it runs
@@ -293,8 +283,9 @@ the practice PDR (Week 5) and final PDR.
 | 3.2 | Industry-standard PM tools, used professionally | 🟢 Done | Every PR closes/refs an issue; issue labels kept current (`stage:in-progress` on #120/#121/#130 as PRs opened); GitHub Projects board linked automatically via PR body | Board *Status* field stuck on "Todo" for #120/#121 — account lacks write permission on the board itself, flagged for Bhanu/admin, not something I can self-fix |
 | 3.3 | Documentation (technical + reflective) | 🟢 Done | Module docstrings, this worklog, PR evidence blocks, `apps/sip/collector/README.md` | Reflective report still owed before the PDR — separate from technical docs |
 
-**This week's real risk isn't 1.2 anymore — it's PR #237's stuck CI.** Flagged above; needs Bhanu
-or an admin, not more retries from this end.
+**This week's remaining risk is just 3.1** — everything else has real evidence now. #237's CI
+anomaly resolved itself (Bhanu merged on the strength of local verification) and isn't a live
+concern anymore.
 
 **Weekly hours target: 22-24h**, not just the assignment's 20h floor — the buffer absorbs a thin
 day (blocked review, a meeting running long) without dropping under the pass threshold. Tracked in
