@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useId, useState } from 'react'
+import { isUuid } from '../api/httpClient'
 import { getRun, nextAction, type RunOut, SipApiError } from '../api/runsClient'
 import { RUN_ACTION_LABEL as ACTION_LABEL, RUN_APPROVAL_REF_LABEL as APPROVAL_REF_LABEL, submitRunAction } from '../lib/runActions'
 import { stateBadgeClass } from '../lib/runState'
@@ -67,6 +68,10 @@ export function RunDetailScreen({ runId, actorId, onBack, onSelectCandidate }: P
   }
 
   async function confirmAction(run: RunOut, action: 'start' | 'pause' | 'resume' | 'complete') {
+    if (!isUuid(actorId)) {
+      setActionState({ kind: 'error', message: 'Enter a valid "Acting as" user id above before taking any action.' })
+      return
+    }
     if (!reason.trim()) {
       setActionState({ kind: 'error', message: 'A reason is required.' })
       return

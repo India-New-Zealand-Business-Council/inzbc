@@ -1,4 +1,5 @@
 import { useId, useState } from 'react'
+import { isUuid } from '../api/httpClient'
 import {
   mergeCandidate,
   routeCandidate,
@@ -80,6 +81,10 @@ export function CandidateActionPanel({ candidate, actorId, onUpdated }: Props) {
   }
 
   async function submit(action: ActionKind) {
+    if (!isUuid(actorId)) {
+      setPanelState({ kind: 'error', message: 'Enter a valid "Acting as" user id above before taking any action.' })
+      return
+    }
     if (!reason.trim()) {
       setPanelState({ kind: 'error', message: 'A reason is required.' })
       return
