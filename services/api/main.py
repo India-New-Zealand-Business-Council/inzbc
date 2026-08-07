@@ -1,8 +1,9 @@
 """INZBC API — FastAPI application.
 
 Implements `schemas/api-contract.md` over the domain modules: the FTA Explainer read path, the SIP
-run lifecycle endpoints (#120, `services/api/runs.py`) and the candidate command endpoints
-(#121, `services/api/candidates.py`).
+run lifecycle endpoints (#120, `services/api/runs.py`), the candidate command endpoints
+(#121, `services/api/candidates.py`), and the Comms Assistant draft endpoint (#53,
+`services/api/comms.py`).
 
 The response envelope is deliberately status-tagged rather than "a list that might be empty".
 `apps/fta/explainer` keeps `ExplainerAnswer` and `NoMatch` structurally distinct so escalation
@@ -22,6 +23,7 @@ from pydantic import BaseModel, ConfigDict, model_validator
 
 from apps.fta.explainer import ExplainerAnswer, NoMatch, answer_query, no_match
 from services.api.candidates import router as candidates_router
+from services.api.comms import router as comms_router
 from services.api.hardening import install as install_hardening
 from services.api.runs import router as runs_router
 
@@ -37,6 +39,7 @@ app.include_router(runs_router)
 # somebody remembering.
 install_hardening(app)
 app.include_router(candidates_router)
+app.include_router(comms_router)
 
 
 class AnswerOut(BaseModel):

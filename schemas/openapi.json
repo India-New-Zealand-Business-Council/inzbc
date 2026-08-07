@@ -661,6 +661,48 @@
         }
       }
     },
+    "/api/comms/draft": {
+      "post": {
+        "tags": [
+          "Comms Assistant"
+        ],
+        "summary": "Draft",
+        "description": "Generates a draft. Never sends or publishes anything - see `apps/comms/draft.py`'s module\ndocstring for why \"nothing publishable without a recorded reviewer\" holds by construction.\n\nFailure mapping is deliberately specific, not a blanket 500:\n- `GatewayNotConfiguredError` / `RedactionNotConfiguredError` -> 503. Deployment configuration\n  is missing (no API key, or - per ADR-0006 - no approved `REDACTION_POLICY_PATH`). Expected,\n  correct refusal in any environment that hasn't been configured yet, not a bug to alert on\n  the same way as a real failure.\n- `GatewayCallError` -> 502. The provider call itself failed after a retry - genuinely down,\n  distinct from \"not configured\".",
+        "operationId": "draft_api_comms_draft_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/fta/query": {
       "get": {
         "tags": [
@@ -1187,6 +1229,48 @@
           "initiated_by"
         ],
         "title": "CreateRunIn"
+      },
+      "DraftIn": {
+        "properties": {
+          "content_type": {
+            "type": "string",
+            "enum": [
+              "newsletter",
+              "linkedin_post",
+              "event_announcement",
+              "member_spotlight"
+            ],
+            "title": "Content Type"
+          },
+          "brief": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Brief"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "content_type",
+          "brief"
+        ],
+        "title": "DraftIn"
+      },
+      "DraftOut": {
+        "properties": {
+          "draft": {
+            "type": "string",
+            "title": "Draft"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "draft"
+        ],
+        "title": "DraftOut",
+        "description": "Matches `apps/comms/ui/src/api/client.ts`'s `isCommsDraftResult` guard exactly: one\nrequired non-empty `draft` string, nothing else the UI reads today."
       },
       "FtaQueryResponse": {
         "properties": {
