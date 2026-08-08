@@ -68,39 +68,54 @@ same branch-level fault hits someone else's PR later; not otherwise unresolved.
   `PromptSource` and a prompt built from member records must go through `minimise()` and declare
   `MINIMISED_RECORD`. The brief itself is `STAFF_AUTHORED`, which is a declaration rather than a
   guarantee the text is clean, so do not paste member details into one.
-- [ ] End-to-end pipeline run against the SIP-184 SOP (#55). **Progress 8 Aug 2026:** secrets are
-  confirmed set (`gh secret list` on both `inzbc` and `daily-india-nz-news-agent` matches
-  `docs/sip/README.md`'s table exactly, since 22-25 Jul) — that half of the old blocker is closed.
-  Investigating further surfaced the real remaining blockers, none of which are "waiting on
-  secrets":
-  1. **SIP-191 run authority has expired.** `docs/sip/launch/launch-config.md`'s window was
-     27-31 Jul 2026; SIP-184 step 1 and its fail-closed list both treat an out-of-window run as a
-     Critical stop, never downgradable to a warning. No real SIP-184 production run can happen
-     today without a fresh controlled decision — that's INZBC's call, not a code blocker.
-  2. **No orchestration ever existed.** `ingest_articles()`/`create_run` were only ever called
-     from tests; `daily.yml` in the agent repo runs `agent.py` standalone (fetch → email brief)
-     and never touches `services/api`. Built the missing glue:
-     `apps/sip/collector/run_dry_run.py` — creates a run stamped `DRYRUN-...` (never `RUN-...`,
-     so it can't be mistaken for an authorised row), locks the SIP-184 step-2 coverage window,
-     ingests articles via the existing `ingest_articles()`, and writes a JSON evidence record.
-     Explicitly logs that it is not a SIP-191 run. Tests in
-     `apps/sip/collector/tests/test_run_dry_run.py` (fake client, same pattern as
-     `test_pipeline_integration.py`).
-  3. **Two more gaps found in `services/api`/`database` — Bhanu's lane, flagging rather than
-     fixing:** `GET /api/source-library` is in `schemas/api-contract.md` but was never
-     implemented (grepped the whole module — not there), and `source_library`
-     (`database/schema.sql:235`) is deliberately unseeded. Without both, SIP-184 step 4
-     (mandatory-source outcome per source) cannot run at all — `run_dry_run.py` degrades
-     gracefully (logs a warning, skips source-check recording) rather than crashing, but a dry
-     run today cannot exercise that step. Raised at standup rather than touching his lane myself.
-  4. **No cross-repo wiring to the live agent yet.** `run_dry_run.py` consumes a fixture file
-     (`apps/sip/collector/data/dry_run_fixture_articles.json`, clearly labelled synthetic) rather
-     than a live `agent.py` fetch — pulling real output across repos in CI would need a new PAT
-     secret (an admin/infra decision), not something to add unilaterally.
-  **Next:** a `workflow_dispatch` CI job (Postgres service + real `services/api`, same pattern as
-  `ci.yml`'s `python` job) to actually execute `run_dry_run.py` and capture real evidence — still
-  to build. Once Bhanu's two pieces land, swap the fixture for a real run and this becomes the
-  real #55 evidence.
+- [ ] End-to-end pipeline run against the SIP-184 SOP (#55). **Progress 8 Aug 2026 — dry run now
+  runs clean, real bugs found and fixed by actually running it, not just testing against fakes:**
+  - Secrets confirmed set (`gh secret list` on both `inzbc` and `daily-india-nz-news-agent`
+    matches `docs/sip/README.md`'s table exactly, since 22-25 Jul).
+  - **SIP-191 run authority has expired** (`docs/sip/launch/launch-config.md`'s window was 27-31
+    Jul 2026; SIP-184's fail-closed list treats an out-of-window run as a Critical stop, never
+    downgradable to a warning). No real SIP-184 production run can happen today without a fresh
+    controlled decision — INZBC's call, not a code blocker. `apps/sip/collector/run_dry_run.py`
+    stamps every run `DRYRUN-...` (never `RUN-...`) so this can't be mistaken for an authorised
+    row.
+  - **Built the orchestration that never existed:** `ingest_articles()`/`create_run` had only ever
+    been called from tests before this. `run_dry_run.py` runs the real SIP-184 step-2/5 sequence
+    against a live `services/api` + Postgres.
+  - **Built the two `services/api` pieces this needed and #55 was actually blocked on** —
+    correcting what I told you 8 Aug earlier today: I'd misread `database/schema.sql:235`'s
+    "deliberately unseeded" comment as being about `source_library`; re-checking it, that comment
+    is on `distribution_configuration`, a different table entirely. `source_library` was just
+    genuinely never seeded, no policy reason, so building it was the right call:
+    `services/api/source_library.py` (`GET /api/source-library`),
+    `scripts/seed_source_library.py` (idempotent seed from the existing SIP-185 CSV loader),
+    `services/api/source_checks.py` (`POST`/`GET .../source-checks`, upserts on
+    `(run_id, source_id)`). Live-Postgres tests for all three. This crosses into Bhanu's
+    `services/api`/`database` lane — recorded here per the worklog's own SHARED-OK convention,
+    one-off, not a lane transfer; flag at standup if it should come back.
+  - **Three real contract bugs, found only by running against a live server, not by any fake-client
+    test:** `SipPipelineClient.create_run` sent `Run`'s full dump including `coverage_timezone`
+    (non-None default) → 422 against `CreateRunIn`'s `extra="forbid"`. `create_candidate` had no
+    way to send `actor_id` at all (`CaptureCandidateIn` requires it; `Candidate` doesn't carry it —
+    audit-only). `create_candidate` also leaked `Candidate.verification`'s `Unverified` default the
+    same way `create_run` leaked `coverage_timezone`. All three fixed in `client.py`, all three now
+    covered by `apps/sip/pipeline/tests/test_client.py` (didn't exist before either). Every fake
+    client in `test_ingest.py`/`test_pipeline_integration.py`/`test_run_dry_run.py` updated to
+    match the new `create_candidate(candidate, actor_id)` signature.
+  - **Deliberately not recording source-check outcomes for the real 112 mandatory sources in the
+    dry run**, even though the write path now exists: nobody actually checked them for a run with
+    no authority, and writing "Included"/"Excluded" against the real SIP-185 register for sources
+    never visited would be inventing data into a real system — the same rule `CLAUDE.md` states
+    for statistics and board names. Evidence honestly reports all 112 as missing.
+  - **Still not wired:** a live `agent.py` fetch. `run_dry_run.py` consumes a fixture file
+    (`apps/sip/collector/data/dry_run_fixture_articles.json`, clearly labelled synthetic) — pulling
+    real output across repos in CI needs a new PAT secret, an infra/admin decision, not something
+    to add unilaterally.
+  - Full local verification before pushing: real Postgres (not CI's — a local instance, schema
+    applied fresh), 392 passed, `ruff` clean, `pnpm` lint/typecheck clean, OpenAPI schema +
+    generated TS client regenerated and committed (new endpoints), and the dry run itself run
+    end-to-end against a live local `services/api`: run created, 2 fixture candidates captured,
+    exit 0. PR #264 (updated), plus `.github/workflows/sip-dry-run.yml` to reproduce this in CI
+    on demand.
 - [ ] Collection-engine reliability (#208, via `daily-india-nz-news-agent`'s own PR flow). Scoped
   into a 4-day plan, ~6h/day (logged on #208): `agent.py` is 1364 lines with zero test coverage,
   no retry/timeout on RSS fetches, no per-source freshness tracking, no shape-change detection.

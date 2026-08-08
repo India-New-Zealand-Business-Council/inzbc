@@ -38,6 +38,7 @@ from apps.sip.pipeline.client import SipApiError
 from apps.sip.pipeline.models import SignalStrength, SourceOutcome, VerificationState
 
 RUN_ID = "11111111-1111-1111-1111-111111111111"
+ACTOR_ID = "99999999-9999-9999-9999-999999999999"
 
 
 @dataclass
@@ -57,7 +58,10 @@ class FakeSipApi:
 
     # ---------- the subset of SipPipelineClient's surface this suite exercises ----------
 
-    def create_candidate(self, candidate) -> dict:  # noqa: ANN001 - duck-typed fake
+    def create_candidate(self, candidate, actor_id) -> dict:  # noqa: ANN001 - duck-typed fake
+        # actor_id is audit-only in the real API (never a candidates-table/CandidateOut field,
+        # see client.py's create_candidate docstring) - accepted here to match the real call
+        # shape, not stored, so the fake's records stay shaped like CandidateOut.
         payload = candidate.model_dump(mode="json", exclude_none=True)
         payload["id"] = self._new_id("cand")
         self.candidates[payload["id"]] = payload
@@ -101,13 +105,13 @@ def test_full_run_captures_then_flags_a_cross_run_duplicate_by_url() -> None:
     api = FakeSipApi()
 
     # A prior run already captured this story.
-    ingest_articles(api, RUN_ID, [_article(title="FTA talks continue")])
+    ingest_articles(api, RUN_ID, [_article(title="FTA talks continue")], ACTOR_ID)
     [existing] = api.list_candidates(RUN_ID)
 
     # Today's fetch turns up the same url again (a later run, same story recirculating).
     today_run = "22222222-2222-2222-2222-222222222222"
     todays_article = _article(title="FTA talks continue (updated)")
-    result = ingest_articles(api, today_run, [todays_article])
+    result = ingest_articles(api, today_run, [todays_article], ACTOR_ID)
     assert result.failed == []
     [new_candidate] = api.list_candidates(today_run)
 
@@ -128,7 +132,7 @@ def test_capture_resolves_source_id_via_a_real_source_name_lookup() -> None:
     api = FakeSipApi()
     name_lookup = SourceNameLookup({"RNZ Business": "source-library-db-id-42"})
 
-    result = ingest_articles(api, RUN_ID, [_article(source="RNZ Business")], name_lookup)
+    result = ingest_articles(api, RUN_ID, [_article(source="RNZ Business")], ACTOR_ID, name_lookup)
 
     assert result.failed == []
     [candidate] = api.list_candidates(RUN_ID)
@@ -139,7 +143,7 @@ def test_capture_leaves_source_id_unset_for_a_name_the_lookup_does_not_resolve()
     api = FakeSipApi()
     name_lookup = SourceNameLookup({"Some Other Source": "db-id"})
 
-    result = ingest_articles(api, RUN_ID, [_article(source="RNZ Business")], name_lookup)
+    result = ingest_articles(api, RUN_ID, [_article(source="RNZ Business")], ACTOR_ID, name_lookup)
 
     assert result.failed == []
     [candidate] = api.list_candidates(RUN_ID)
@@ -152,7 +156,7 @@ def test_a_malformed_article_does_not_block_capture_or_dedupe_of_the_rest() -> N
     del malformed["title"]  # Candidate.headline is required - this article can't map.
     articles = [_article(title="First"), malformed, _article(title="Second", url="")]
 
-    result = ingest_articles(api, RUN_ID, articles)
+    result = ingest_articles(api, RUN_ID, articles, ACTOR_ID)
 
     assert len(result.failed) == 1
     assert {c["headline"] for c in api.list_candidates(RUN_ID)} == {"First", "Second"}
@@ -163,7 +167,7 @@ def test_a_malformed_article_does_not_block_capture_or_dedupe_of_the_rest() -> N
 
 def test_verification_gate_blocks_an_unverified_high_signal_patch_end_to_end() -> None:
     api = FakeSipApi()
-    ingest_articles(api, RUN_ID, [_article()])
+    ingest_articles(api, RUN_ID, [_article()], ACTOR_ID)
     [candidate] = api.list_candidates(RUN_ID)
     before = dict(api.candidates[candidate["id"]])
 
@@ -182,7 +186,7 @@ def test_verification_gate_blocks_an_unverified_high_signal_patch_end_to_end() -
 
 def test_verification_gate_allows_a_verified_high_signal_patch_end_to_end() -> None:
     api = FakeSipApi()
-    ingest_articles(api, RUN_ID, [_article()])
+    ingest_articles(api, RUN_ID, [_article()], ACTOR_ID)
     [candidate] = api.list_candidates(RUN_ID)
 
     apply_candidate_assessment(
@@ -199,7 +203,7 @@ def test_verification_gate_allows_a_verified_high_signal_patch_end_to_end() -> N
 
 def test_verification_downgrade_on_an_already_high_candidate_is_blocked_end_to_end() -> None:
     api = FakeSipApi()
-    ingest_articles(api, RUN_ID, [_article()])
+    ingest_articles(api, RUN_ID, [_article()], ACTOR_ID)
     [candidate] = api.list_candidates(RUN_ID)
     apply_candidate_assessment(
         api,

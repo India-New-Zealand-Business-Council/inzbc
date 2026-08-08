@@ -40,6 +40,7 @@ def ingest_articles(
     client: SipPipelineClient,
     run_id: str,
     articles: list[dict],
+    actor_id: str,
     source_name_lookup: SourceNameLookup | None = None,
 ) -> IngestResult:
     """POSTs each of `articles` (daily-india-nz-news-agent's `clean_articles()` output) to
@@ -48,6 +49,9 @@ def ingest_articles(
     potentially relevant item, so one malformed article (e.g. a missing `title`) must not abort
     every later item in the batch; each article is mapped and sent inside its own try/except,
     not mapped eagerly for the whole batch up front.
+
+    `actor_id` is required, not optional: `CaptureCandidateIn` (`services/api/candidates.py`)
+    requires it in the body for every capture, so a caller here must supply the same thing.
     """
     result = IngestResult()
     for article in articles:
@@ -61,7 +65,7 @@ def ingest_articles(
             source_name = str(article.get("source", "")).strip()
             headline = str(article.get("title", ""))
             mapped = map_article(article, run_id, source_name_lookup)
-            result.created.append(client.create_candidate(mapped.candidate))
+            result.created.append(client.create_candidate(mapped.candidate, actor_id))
         except (SipApiError, ValidationError, KeyError, MalformedArticleError) as error:
             result.failed.append(
                 IngestFailure(source_name=source_name, headline=headline, error=str(error))

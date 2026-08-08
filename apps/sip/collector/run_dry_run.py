@@ -8,12 +8,17 @@ produce a record for the Production Run Register. `run_number` is stamped `DRYRU
 than `RUN-...` so a dry-run row can never be mistaken for an authorised one if it ever ends up in
 a real database.
 
-Known gap, not fixed here: `GET /api/source-library` is documented in `schemas/api-contract.md`
-but not implemented in `services/api` (grepped the module - it isn't there), and `source_library`
-is deliberately unseeded (`database/schema.sql:235`). Both are `services/api`/`database`, Bhanu's
-lane per CLAUDE.md. This script degrades gracefully when the endpoint 404s: it records nothing
-against `source_checks` (SIP-184 step 4) and says so loudly rather than pretending source coverage
-was exercised.
+`GET /api/source-library` (`services/api/source_library.py`), its seed step
+(`scripts/seed_source_library.py`), and `POST .../source-checks`
+(`services/api/source_checks.py`) are now all built. This script deliberately still does not call
+`record_source_check` for any of the 112 real mandatory sources: nobody actually checked them for
+this run, and writing "Included"/"Excluded" outcomes against the real SIP-185 register for sources
+that were never visited would be inventing data into a real, writable system - the same rule
+`CLAUDE.md` states for statistics and board names applies here. `source_checks` reports as
+`missing` for every mandatory source, which is the honest state. `apply_candidate_assessment`
+(SIP-184 steps 6-7 scoring) is left out for the same reason - no scoring framework exists to call
+here yet (see `README.md`'s "Known gap"), and hand-writing plausible-looking scores would be
+exactly the kind of invented content this codebase's non-negotiables rule out.
 
 Usage:
     python -m apps.sip.collector.run_dry_run \\
@@ -63,7 +68,12 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--base-url", required=True)
     parser.add_argument("--token", default="dry-run")
     parser.add_argument("--articles-file", required=True, type=Path)
-    parser.add_argument("--initiated-by", required=True)
+    parser.add_argument(
+        "--initiated-by",
+        required=True,
+        help="a real users.id (uuid) - runs.initiated_by is a NOT NULL FK to users, and the same "
+        "value is sent as actor_id on every candidate capture (CaptureCandidateIn requires it).",
+    )
     parser.add_argument("--evidence-out", type=Path, default=None)
     return parser.parse_args(argv)
 
@@ -105,7 +115,9 @@ def main(argv: list[str] | None = None) -> int:
             "implement this endpoint yet."
         )
 
-    ingest_result = ingest_articles(client, run_id, articles, source_name_lookup)
+    ingest_result = ingest_articles(
+        client, run_id, articles, args.initiated_by, source_name_lookup
+    )
 
     still_missing = (
         [s for s in missing_mandatory_outcomes(set())] if source_library_available else None

@@ -43,7 +43,7 @@ class _FakeClient:
             raise SipApiError(self.source_library_status, "not found")
         return []
 
-    def create_candidate(self, candidate) -> dict:  # noqa: ANN001
+    def create_candidate(self, candidate, actor_id) -> dict:  # noqa: ANN001
         payload = candidate.model_dump(mode="json", exclude_none=True)
         payload["id"] = self._new_id("cand")
         self.candidates[payload["id"]] = payload
