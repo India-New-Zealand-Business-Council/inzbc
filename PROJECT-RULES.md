@@ -49,8 +49,11 @@ Repo-specific rules. General workflow is in [CONTRIBUTING.md](./CONTRIBUTING.md)
 - Imperative commit subjects under ~60 chars. No AI attribution in commits, PRs, or code comments
   — matching [CONTRIBUTING.md](./CONTRIBUTING.md). The rule is about **authorship of delivered
   work**: a human is accountable for every change, so nothing credits a tool as its author.
-  It is not a ban on AI tooling, and `PROJECT-RULES.md`, `AGENTS.md` and `.claude/` are deliberately
-  tracked — configuration that makes the tooling behave consistently is the opposite of hiding it.
+  It is not a ban on AI tooling. `PROJECT-RULES.md` and `AGENTS.md` are deliberately tracked,
+  because the rules and the setup they describe belong to the project. Per-machine assistant
+  configuration under `.claude/` is gitignored — not to hide it, but because paths, hooks and skill
+  definitions differ between contributors and a shared copy fights them. The distinction is
+  project rules versus one person's local setup, not disclosed versus concealed.
 - Run a secret scan before pushing. Never commit `.env*` or credentials.
 
 ## Development workflow
