@@ -69,4 +69,5 @@ board-before-*.json
 # between contributors and a shared copy would fight them. Contributor rules that DO
 # belong to the project are in PROJECT-RULES.md and CONTRIBUTING.md, which are tracked.
 .claude/
+.agent-local/
 .remember/
