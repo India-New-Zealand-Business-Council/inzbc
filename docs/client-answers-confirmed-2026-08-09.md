@@ -45,7 +45,7 @@ Member Jungle for **API access and documentation** with an integration user. If 
 integrate, with Member Jungle staying the system of record; if not, we retain and link out as
 today.
 
-**This was the team's pre-existing recommendation** (`docs/sunil-decision-sheet.md`), not something
+**This was the team's pre-existing recommendation** (`docs/client-decision-pack.md`), not something
 Sunil proposed. Recording it as "agreed" in the first version of this document overstated what he
 said. He agreed to *retain*; the integration route is ours to put back to him.
 
@@ -143,9 +143,17 @@ was waiting for.
 - **Still open:** no deputy named. If Sunil is unavailable, approvals stall and nothing publishes.
   Worth returning to, but it does not block build.
 
-### SIP users: **Sunil plus one to two staff**
+### SIP users: Sunil plus one to two staff
 
-Enough for genuine separation of duties. Specific names not yet supplied.
+`CLIENT ANSWER` — Sunil expects one or two staff to use SIP alongside him.
+
+`OPEN` — **this does not establish separation of duties**, and an earlier version of this document
+said it did. Capture, review and approval are three roles; two people cannot hold three without one
+person doubling up. No names have been supplied, so no roles can be seeded.
+
+`REPO FACT` — `database/schema.sql` states decision-level role separation is not enforced by the
+schema, and that unrecorded self-approval is not yet refused. The control is designed, not
+operating. See the reopened #213.
 
 - Next action: get the names so roles can be seeded into the `users` table.
 
@@ -194,8 +202,9 @@ the corpus figure is later and sourced.
 
 Two corrections to the first version:
 
-- It cited `trade-stats.html`. **That file does not exist on `main`** — it lives in the studio-site
-  repository. Wrong path.
+- It cited `trade-stats.html` without a path. The file is at
+  `docs/wix-studio-snippets/trade-stats.html` and **does** exist on `main`. (A later correction
+  claiming it was absent was itself wrong — it was looked for at the repository root.)
 - `apps/site/content/home.md` and `trade.md` still say "NZ$3.95bn annually" **without the period**.
   The figure is for the year ended December 2025; "annually" is not the same claim. That wording
   still needs fixing.
@@ -278,10 +287,13 @@ INZBC specified, including usage percentages. The build now defaults to `purpleG
 except white on tangerine".
 
 The two quoted figures are right: white on tangerine **3.37:1** (fails), navy on tangerine
-**5.56:1** (passes). But "all other pairs pass" is false. Across white plus the six colours named,
-**11 of 21 pairs fail** the 4.5:1 normal-text threshold — white on lime is 1.33:1, white on lavender
-1.99:1, navy on purple 1.58:1, purple on tangerine 3.51:1, forest on tangerine 3.12:1, lime on
-lavender 1.50:1.
+**5.56:1** (passes). But "all other pairs pass" is false.
+
+Across white plus **all eight** palette colours, **20 of 36 pairs fail** the 4.5:1 normal-text
+threshold. (Restricted to white plus the six colours the earlier version named, it is 11 of 21 —
+the smaller figure quoted before, which understated the problem by leaving blue and crimson out.)
+Examples: white on lime 1.33:1, white on lavender 1.99:1, navy on purple 1.58:1, purple on tangerine
+3.51:1, forest on tangerine 3.12:1, lime on lavender 1.50:1.
 
 That does not mean the palette is unusable — those are pairs nobody would set body text in. It
 means **the safe pairings have to be stated explicitly** rather than assumed. Correct statement:
