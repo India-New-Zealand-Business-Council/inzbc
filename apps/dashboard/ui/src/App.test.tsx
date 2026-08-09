@@ -11,5 +11,6 @@ describe('App', () => {
     render(<App />)
     expect(screen.getByRole('heading', { level: 1, name: /executive dashboard/i })).toBeInTheDocument()
     expect(await screen.findByText('No SIP runs recorded yet.')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Coming soon' })).toBeInTheDocument()
   })
 })

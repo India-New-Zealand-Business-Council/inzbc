@@ -1,3 +1,4 @@
+import { ComingSoon } from './components/ComingSoon'
 import { Footer } from './components/Footer'
 import { Header } from './components/Header'
 import { SipOverview } from './components/SipOverview'
@@ -14,12 +15,11 @@ export function App() {
               Executive Dashboard
             </h1>
             <p className="mt-2 text-slate-700">
-              SIP-only first slice (docs/modules/dashboards.md). Membership, Trade/FTA and
-              Sponsors sections are not shown yet — the dashboards data layer (issue #47) hasn't
-              been built.
+              SIP-only first slice (docs/modules/dashboards.md), covering issues #61 and #47.
             </p>
           </div>
           <SipOverview />
+          <ComingSoon />
         </div>
       </main>
       <Footer />
