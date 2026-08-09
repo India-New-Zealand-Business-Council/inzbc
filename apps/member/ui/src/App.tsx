@@ -25,7 +25,7 @@ export function App() {
           {/* Per docs/modules/member-portal-spec.md's build gate: membership status, renewal,
               invoices, directory and login stay on Member Jungle until the retain/integrate/
               replace assessment is approved. This portal links out to Member Jungle for those
-              rather than duplicating them — see CLAUDE.md's "one system of record" rule. */}
+              rather than duplicating them — see PROJECT-RULES.md's "one system of record" rule. */}
           <p className="mt-2 text-slate-700">
             Membership, billing and the member directory are managed on Member Jungle. This portal
             links out to Member Jungle for those rather than holding membership data itself.

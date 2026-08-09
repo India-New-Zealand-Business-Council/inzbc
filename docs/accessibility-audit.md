@@ -20,7 +20,7 @@ assistive-technology testing.** Criteria that require a rendered viewport, compu
 or real keyboard/screen-reader interaction (contrast, reflow, non-text contrast, keyboard
 operation, focus visibility, target size) are marked **Not verified** below rather than
 guessed — a static fetch cannot responsibly answer them, and this repo's rule is to flag
-what's unconfirmed rather than assume (`CLAUDE.md`).
+what's unconfirmed rather than assume (`PROJECT-RULES.md`).
 
 ## Page mapping
 

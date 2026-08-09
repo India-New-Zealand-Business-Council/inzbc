@@ -18,7 +18,7 @@ Two conventions hold across this tree:
 2. [`inzbc-ai-operating-system.md`](inzbc-ai-operating-system.md) — what INZBC is building and why.
 3. [`architecture.md`](architecture.md) — system diagrams: context, components, run state machine,
    fail-closed controls, data model.
-4. [`../CONTRIBUTING.md`](../CONTRIBUTING.md) and [`../CLAUDE.md`](../CLAUDE.md) — how work lands
+4. [`../CONTRIBUTING.md`](../CONTRIBUTING.md) and [`../PROJECT-RULES.md`](../PROJECT-RULES.md) — how work lands
    here: branch, PR, review, evidence block.
 5. [`workstreams/README.md`](workstreams/README.md) — how the lanes are divided and who owns what.
 

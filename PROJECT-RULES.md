@@ -1,4 +1,4 @@
-# Claude / contributor guidelines — INZBC platform
+# Contributor guidelines — INZBC platform
 
 Repo-specific rules. General workflow is in [CONTRIBUTING.md](./CONTRIBUTING.md).
 
@@ -49,7 +49,7 @@ Repo-specific rules. General workflow is in [CONTRIBUTING.md](./CONTRIBUTING.md)
 - Imperative commit subjects under ~60 chars. No AI attribution in commits, PRs, or code comments
   — matching [CONTRIBUTING.md](./CONTRIBUTING.md). The rule is about **authorship of delivered
   work**: a human is accountable for every change, so nothing credits a tool as its author.
-  It is not a ban on AI tooling, and `CLAUDE.md`, `AGENTS.md` and `.claude/` are deliberately
+  It is not a ban on AI tooling, and `PROJECT-RULES.md`, `AGENTS.md` and `.claude/` are deliberately
   tracked — configuration that makes the tooling behave consistently is the opposite of hiding it.
 - Run a secret scan before pushing. Never commit `.env*` or credentials.
 

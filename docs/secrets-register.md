@@ -74,7 +74,7 @@ rotation event, not an administrative one.
 ## Rules
 
 - No value in the repository. Not in `.env.example`, not in a comment, not in a test.
-- A secret scan runs before pushing (`CLAUDE.md`). `gitleaks` is not currently installed on every
+- A secret scan runs before pushing (`PROJECT-RULES.md`). `gitleaks` is not currently installed on every
   machine, which is a gap worth closing.
 - Personal accounts hold nothing of record (`client-answers.md` A1). A secret that exists only in
   one person's local environment is an outage waiting for that person to be unavailable, which is

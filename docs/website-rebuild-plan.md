@@ -93,7 +93,7 @@ records it as signed 27 April 2026 and awaiting domestic ratification, and every
 answer already carries that status line. So the live site contradicts the verified corpus this team
 built.
 
-This is not an SEO issue or a design issue. It is the exact failure `CLAUDE.md` forbids: an FTA
+This is not an SEO issue or a design issue. It is the exact failure `PROJECT-RULES.md` forbids: an FTA
 detail stated without support, on the homepage of a body whose authority rests on FTA currency. A
 sceptical export head who checks MFAT finds the Council wrong about the agreement it exists to
 explain.

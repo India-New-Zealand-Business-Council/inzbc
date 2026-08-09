@@ -108,7 +108,7 @@ convention (not yet agreed with Bhanu — flagged below).
 > notice is actually needed.
 >
 > *One authoritative store.* The receiver persisting the full payload while Wix also keeps native
-> submissions gives two homes for the same enquiry PII. `CLAUDE.md` requires one system of record
+> submissions gives two homes for the same enquiry PII. `PROJECT-RULES.md` requires one system of record
 > per data type; it does not forbid an operational copy outright. So name which store is
 > authoritative, and make the other a minimal copy keyed by submission id with its own retention
 > and deletion policy. Calling Wix a "fallback of record" without deciding that is the problem.
@@ -177,7 +177,7 @@ correction.
 ## Privacy
 
 NZ Privacy Act 2020 applies to every form that collects personal information (per `trade.md`'s
-footer note and `CLAUDE.md`'s membership-data rule).
+footer note and `PROJECT-RULES.md`'s membership-data rule).
 
 A visible link is the minimum, and only sufficient if it leads to a complete collection notice.
 IPP 3 requires that notice to cover the purpose, the intended recipients, the agency collecting and

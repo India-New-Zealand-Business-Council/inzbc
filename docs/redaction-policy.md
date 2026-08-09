@@ -4,7 +4,7 @@ The mechanism is built and enforced. **The policy is not written, and until it i
 can be made at all.** That is deliberate.
 
 `docs/sip/README.md` makes redaction ahead of every external model call a non-negotiable. What
-counts as confidential is a business rule, and `CLAUDE.md` says not to fill an unresolved rule with
+counts as confidential is a business rule, and `PROJECT-RULES.md` says not to fill an unresolved rule with
 an assumption. So `services/api/redaction.py` ships the machinery and treats a missing policy as a
 refusal rather than as permission.
 
