@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 
-
 import pytest
 
 from services.api.model_gateway import (

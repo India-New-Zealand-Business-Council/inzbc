@@ -118,7 +118,11 @@ class ModelGateway:
                 )
             except GatewayNotConfiguredError:
                 raise
-            except Exception as error:  # provider/network errors vary by SDK version
+            # Deliberately broad. The retry loop has to survive whatever the
+            # provider SDK raises, and those types vary by SDK version, so naming them would
+            # make the retry silently stop working on an upgrade. GatewayNotConfiguredError is
+            # re-raised above so a configuration fault still fails loudly rather than retrying.
+            except Exception as error:  # noqa: BLE001
                 last_error = error
                 if attempt + 1 < _RETRYABLE_ATTEMPTS:
                     time.sleep(_RETRY_DELAY_SECONDS)

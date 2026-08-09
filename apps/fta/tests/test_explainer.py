@@ -4,7 +4,6 @@ from datetime import date
 
 from apps.fta import explainer
 from apps.fta.corpus import TariffOutcome
-
 from apps.fta.explainer import (
     DISCLAIMER,
     NO_MATCH_CONFIDENCE,

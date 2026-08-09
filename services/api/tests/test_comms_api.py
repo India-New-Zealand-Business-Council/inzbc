@@ -11,7 +11,11 @@ from fastapi.testclient import TestClient
 
 from services.api.comms import get_model_gateway
 from services.api.main import app
-from services.api.model_gateway import GatewayCallError, GatewayNotConfiguredError, GatewayResult
+from services.api.model_gateway import (
+    GatewayCallError,
+    GatewayNotConfiguredError,
+    GatewayResult,
+)
 from services.api.redaction import RedactionNotConfiguredError
 
 

@@ -16,7 +16,7 @@ is deterministically replayable from its audit log.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from types import MappingProxyType
 
 from apps.sip.pipeline.models import RunState
@@ -152,7 +152,7 @@ class Orchestrator:
     stops the casual `orch._Orchestrator__state = ...` write; it is a speed bump, not the boundary.
     """
 
-    __slots__ = ("_Orchestrator__state", "_Orchestrator__history", "_Orchestrator__sealed")
+    __slots__ = ("_Orchestrator__history", "_Orchestrator__sealed", "_Orchestrator__state")
 
     def __init__(self, state: RunState = RunState.DRAFT) -> None:
         object.__setattr__(self, "_Orchestrator__state", _as_state(state))
@@ -212,7 +212,7 @@ class Orchestrator:
             from_state=current,
             to_state=target,
             actor=actor,
-            at=datetime.now(timezone.utc),
+            at=datetime.now(UTC),
             human_decision=human_decision,
         )
         # __history is mutated in place (list.append), not reassigned, so the __setattr__ seal is

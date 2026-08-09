@@ -33,10 +33,13 @@ from dataclasses import dataclass
 import psycopg
 from psycopg.rows import dict_row
 
-from apps.sip.core.orchestrator import IllegalTransition, is_human_gated, is_legal_transition
+from apps.sip.core.orchestrator import (
+    IllegalTransition,
+    is_human_gated,
+    is_legal_transition,
+)
 from apps.sip.pipeline.models import RunState
 from services.api.audit import record_audit
-
 
 # The two human gates that happen before a report version exists, so ADR-0005's decision streams
 # (all keyed to `report_version_id`) cannot record them. Launch authority and resumption authority

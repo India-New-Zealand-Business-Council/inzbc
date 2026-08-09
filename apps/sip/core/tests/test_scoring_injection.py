@@ -14,7 +14,6 @@ Plus a small golden set that guards the JSON contract against drift.
 
 from __future__ import annotations
 
-
 import json
 
 import pytest
@@ -64,7 +63,7 @@ class _FakeResponses:
     def __init__(self, output: str) -> None:
         self._output = output
 
-    def create(self, **kwargs) -> _FakeResponse:  # noqa: ANN003 - duck-typed test double
+    def create(self, **kwargs) -> _FakeResponse:
         return _FakeResponse(self._output)
 
 
