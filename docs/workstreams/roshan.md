@@ -124,7 +124,7 @@ INZBC sector/disclaimer sign-off).
   expected output changed as a result. **Not done: bumping the CI pin.** The issue assumed only
   3 findings existed tree-wide; `apps/sip/core`, `scripts/board.py` and `services/api` now have 7
   more (subclass slots ordering, `datetime.UTC` alias, blind `except Exception`, `subprocess.run`
-  without `check`) — all outside my lane per the CLAUDE.md rule that `/services/api` changes go
+  without `check`) — all outside my lane per the PROJECT-RULES.md rule that `/services/api` changes go
   through Bhanu. Bumping the pin now would break CI tree-wide on code I don't own; pin stays at
   `0.15.22` until those are fixed too. Raising at standup rather than guessing at someone else's
   code.

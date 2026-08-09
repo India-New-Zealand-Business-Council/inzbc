@@ -88,7 +88,7 @@ Wix member roles, membership status, renewal dates, invoices, directory preferen
 seats.**
 
 This is what to build on staging now. It is **not** a resolution of the retain/integrate/replace
-question, which `CLAUDE.md` reserves to INZBC and which `member-portal-spec.md` still records as
+question, which `PROJECT-RULES.md` reserves to INZBC and which `member-portal-spec.md` still records as
 open along with authentication, SSO and directory integration. In particular, **do not apply the
 `/member-profile` redirect in production**: that route is member-gated today, and pointing it at a
 public page before the privacy and Member Jungle decisions are made would expose a members-only

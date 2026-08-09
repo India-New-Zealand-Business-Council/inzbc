@@ -1,6 +1,6 @@
 export const MEMBER_JUNGLE_URL = 'https://inzbc.memberjungle.club'
 
-// Placeholder rows only — CLAUDE.md: never invent statistics or FTA details. No sourced document
+// Placeholder rows only — PROJECT-RULES.md: never invent statistics or FTA details. No sourced document
 // lists actual trade-guide/FTA-document titles or file locations for this portal; the category
 // labels below (not the items) come from apps/site/content/members.md's "Member resources"
 // section: "Members-only reports, FTA sector briefings, event recordings, delegation

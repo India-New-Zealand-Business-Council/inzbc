@@ -37,7 +37,7 @@ These constrain every story and are drawn from the SIP non-negotiables and NZ la
 |---|---|---|---|
 | NFR-01 | All model calls happen server-side; provider keys never reach a browser | SIP spec non-negotiables | Done |
 | NFR-02 | Any Critical condition fails closed — it is never downgraded to a warning | SIP-184 fail-closed list | Done |
-| NFR-03 | No AI-drafted output publishes without a named human reviewer | CLAUDE.md, SIP-050 §26 | Done (enforced by gates) |
+| NFR-03 | No AI-drafted output publishes without a named human reviewer | PROJECT-RULES.md, SIP-050 §26 | Done (enforced by gates) |
 | NFR-04 | Member and personal data handled per the NZ Privacy Act 2020 | Legal | Planned (applies once member data is stored) |
 | NFR-05 | Automated, member, external and public distribution stay disabled until SIP-191 | launch-config | Done (flags default off) |
 | NFR-06 | Every significant technical decision is recorded as an ADR with alternatives | SCRUM contract | In progress (ADR-0001–0004 recorded; standing practice, not a one-off) |

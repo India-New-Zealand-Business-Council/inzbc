@@ -1,6 +1,6 @@
 export const MEMBER_JUNGLE_EVENTS_URL = 'https://inzbc.memberjungle.club'
 
-// Placeholder rows only — CLAUDE.md: never invent event names, dates or details. The one real,
+// Placeholder rows only — PROJECT-RULES.md: never invent event names, dates or details. The one real,
 // sourced event name in the repo is "INZBC Summit" (docs/client-answers.md D8 — "India Unplugged
 // Summit" appears in no sourced document and must not be used), but no sourced document gives it
 // a confirmed date, so even that name isn't used here as if it were a scheduled listing.

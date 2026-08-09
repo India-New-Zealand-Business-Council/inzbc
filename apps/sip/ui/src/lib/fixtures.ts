@@ -11,7 +11,7 @@
  * source_id, sip185Code: source_id, name}, filtered to mandatory=true.
  *
  * Every headline, judgement and signal elsewhere in this file is invented placeholder text for UI
- * development, per CLAUDE.md's "never invent statistics, member counts, board names, or FTA
+ * development, per PROJECT-RULES.md's "never invent statistics, member counts, board names, or FTA
  * details" — each is prefixed `[FIXTURE]` so it can never be mistaken for real output if this
  * ever renders somewhere unexpected.
  */
