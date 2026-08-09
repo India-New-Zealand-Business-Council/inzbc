@@ -223,6 +223,35 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/comms/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Draft
+         * @description Generates a draft. Never sends or publishes anything - see `apps/comms/draft.py`'s module
+         *     docstring for why "nothing publishable without a recorded reviewer" holds by construction.
+         *
+         *     Failure mapping is deliberately specific, not a blanket 500:
+         *     - `GatewayNotConfiguredError` / `RedactionNotConfiguredError` -> 503. Deployment configuration
+         *       is missing (no API key, or - per ADR-0006 - no approved `REDACTION_POLICY_PATH`). Expected,
+         *       correct refusal in any environment that hasn't been configured yet, not a bug to alert on
+         *       the same way as a real failure.
+         *     - `GatewayCallError` -> 502. The provider call itself failed after a retry - genuinely down,
+         *       distinct from "not configured".
+         */
+        post: operations["draft_api_comms_draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/fta/query": {
         parameters: {
             query?: never;
@@ -402,6 +431,25 @@ export interface components {
             coverage_end_utc: string;
             /** Initiated By */
             initiated_by: string;
+        };
+        /** DraftIn */
+        DraftIn: {
+            /**
+             * Content Type
+             * @enum {string}
+             */
+            content_type: "newsletter" | "linkedin_post" | "event_announcement" | "member_spotlight";
+            /** Brief */
+            brief: string;
+        };
+        /**
+         * DraftOut
+         * @description Matches `apps/comms/ui/src/api/client.ts`'s `isCommsDraftResult` guard exactly: one
+         *     required non-empty `draft` string, nothing else the UI reads today.
+         */
+        DraftOut: {
+            /** Draft */
+            draft: string;
         };
         /**
          * FtaQueryResponse
@@ -991,6 +1039,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CandidateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    draft_api_comms_draft_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DraftOut"];
                 };
             };
             /** @description Validation Error */
