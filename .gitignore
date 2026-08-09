@@ -54,7 +54,6 @@ docs/sip/sunil-update.md
 # DESIGN.local.md both described themselves as gitignored while being tracked and readable by
 # everyone with repo access. Anything genuinely shared gets a normal name instead.
 *.local.md
-.claude/settings.local.json
 
 # Render/preview artifacts
 *.png
