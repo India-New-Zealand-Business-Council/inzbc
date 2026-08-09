@@ -50,6 +50,12 @@ docs/sunil-requests.md
 docs/inzbc-talking-points.md
 docs/sip/sunil-update.md
 
+# The .local suffix now means what it says. It previously did not: AUDIT.local.md and
+# DESIGN.local.md both described themselves as gitignored while being tracked and readable by
+# everyone with repo access. Anything genuinely shared gets a normal name instead.
+*.local.md
+.claude/settings.local.json
+
 # Render/preview artifacts
 *.png
 .playwright-mcp/

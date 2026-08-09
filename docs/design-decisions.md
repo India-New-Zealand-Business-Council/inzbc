@@ -2,9 +2,9 @@
 
 Documents the design decisions behind the homepage and About page rebuild: what was
 specified by INZBC, what the team decided where sources conflicted, and what's still open.
-Not a style guide — the reusable design-token implementation is `DESIGN.local.md` (not yet
-created; see `docs/workstreams/paras.md` "Design system" item). This doc is the sourced
-input that system should be built from.
+Not a style guide — the design direction lives in `docs/design-direction.md`, and the reusable
+design-token implementation built from it does not exist yet (see `docs/workstreams/paras.md`
+"Design system" item). This doc is the sourced input that system should be built from.
 
 ## Sources
 - `INZBC_Website_Migration_Checklist.xlsx` — Sunil Kaushal, Drive, uploaded 20 Jul 2026.

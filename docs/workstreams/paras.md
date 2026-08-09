@@ -11,7 +11,7 @@ why if you skip one. Move finished items to **Done**.
 /apps/comms/ui/**
 /apps/fta/ui/**       (the Explainer's embedded UI; Roshan owns its service)
 ```
-Design: follow `DESIGN.local.md`. Do not invent a look; brand tokens come from INZBC's kit.
+Design: follow `docs/design-direction.md`. Do not invent a look; brand tokens come from INZBC's kit.
 
 ## Modules I own (see [docs/modules](../modules/README.md))
 [Public website](../modules/website.md) + [Member portal](../modules/member-portal.md) +
@@ -22,7 +22,8 @@ SIP review/approval UI + Comms Assistant UI + FTA Explainer embed.
 The shared API + auth for anything that reads/writes data. Roshan's FTA service for the Explainer UI.
 
 ## Next up
-- [ ] Design system from `DESIGN.local.md` (not yet created): token-driven component library on
+- [ ] Design system from `docs/design-direction.md` (the system is what's outstanding, not the
+      source doc): token-driven component library on
       the real brand tokens documented in `docs/design-decisions.md` (#155) (colours, typography,
       logo rules from the INZBC Brand Guidelines 2026 — no placeholder swap needed, kit already
       arrived), WCAG 2.2 AA behaviour — focus order, contrast, keyboard paths — built into each

@@ -7,7 +7,7 @@ These are content drafts, not the Wix build. They drop into the duplicate site's
 editor once Sunil creates it (`docs/discovery.md` OI-9). Not the live site. Wix account access is
 granted at team level, so manual build can proceed as soon as the duplicate exists; only
 *programmatic* build is blocked, on connecting the Wix MCP (`docs/discovery.md` OI-1). The brand
-kit blocks the visual restyle, not content work. The visual look comes from `DESIGN.local.md` +
+kit blocks the visual restyle, not content work. The visual look comes from `docs/design-direction.md` +
 INZBC's brand kit, not from this copy.
 
 This file stays the source of truth for page copy. When copy is changed in the Wix editor, update
