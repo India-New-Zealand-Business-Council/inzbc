@@ -206,21 +206,27 @@ class SessionRepository:
                 failure = NotAuthorisedError("this account is no longer active")
 
             if failure is not None:
-                # The delete has to commit before the raise, in its own transaction. An earlier
-                # version deleted and raised inside one `conn.transaction()` block, so the
-                # exception rolled the delete straight back: the call was refused, but the row
-                # survived every time. The session was never actually destroyed, which is the
-                # property the refusal is supposed to carry - a re-activated account would have
-                # silently revived its old session.
-                with conn.transaction():
-                    conn.execute("delete from sessions where id = %s", (stored_id,))
+                # `conn.commit()`, not a `conn.transaction()` block, and not simply raising.
+                #
+                # Two earlier versions of this got it wrong in the same way. The connection is not
+                # in autocommit, so the SELECT above has already opened a transaction; a
+                # `conn.transaction()` block here is therefore a nested one, and committing it
+                # only releases a savepoint. The raise then propagates out of the connection
+                # context, which rolls the outer transaction back and takes the delete with it.
+                #
+                # The visible effect was that every expiry path refused the call and left the row
+                # in place, so the session was never actually destroyed and a re-activated account
+                # would have revived its old session. Committing outright is what makes the
+                # deletion survive the exception.
+                conn.execute("delete from sessions where id = %s", (stored_id,))
+                conn.commit()
                 raise failure
 
-            with conn.transaction():
-                conn.execute(
-                    "update sessions set last_seen_at = %s where id = %s", (now, stored_id)
-                )
-                roles = self._roles_for(conn, row["user_id"])
+            conn.execute(
+                "update sessions set last_seen_at = %s where id = %s", (now, stored_id)
+            )
+            roles = self._roles_for(conn, row["user_id"])
+            conn.commit()
 
         return Principal(
             user_id=str(row["user_id"]),
