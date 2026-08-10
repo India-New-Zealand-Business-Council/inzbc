@@ -1,0 +1,1712 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/gnmp4jqx",
+    "id": "gnmp4jqx",
+    "slide": 7,
+    "layoutId": "/ppt/slideLayouts/slideLayout1.xml",
+    "layoutName": "DEFAULT",
+    "masterLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "Office",
+    "colors": {
+      "accent1": "#4472C4",
+      "accent2": "#ED7D31",
+      "accent3": "#A5A5A5",
+      "accent4": "#FFC000",
+      "accent5": "#5B9BD5",
+      "accent6": "#70AD47",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#44546A",
+      "lt2": "#E7E6E6",
+      "hlink": "#0563C1",
+      "folHlink": "#954F72"
+    },
+    "fontScheme": {
+      "name": "Office",
+      "majorFont": {
+        "latinTypeface": "Calibri Light"
+      },
+      "minorFont": {
+        "latinTypeface": "Calibri"
+      }
+    },
+    "typefaces": [
+      "Calibri",
+      "Calibri Light",
+      "Cambria"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "/ppt/slideLayouts/slideLayout1.xml",
+      "name": "DEFAULT",
+      "parentLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "/ppt/slideMasters/slideMaster1.xml",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/cb2tkvap",
+      "id": "2",
+      "name": "Shape 0",
+      "bbox": [
+        57.6,
+        44.16,
+        16.32,
+        44.16
+      ],
+      "geometry": "roundRect",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": ""
+          }
+        ]
+      },
+      "fillColor": "#D98A2B",
+      "lineColor": "#D98A2B",
+      "lineWidth": 1.33
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/dcbud0ra",
+      "id": "3",
+      "name": "Text 1",
+      "bbox": [
+        90.24,
+        38.4,
+        1132.13,
+        55.68
+      ],
+      "geometry": "rect",
+      "text": "Challenges and Obstacles Encountered",
+      "textPreview": "Challenges and Obstacles Encountered",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Challenges and Obstacles Encountered"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Challenges and Obstacles Encountered",
+          "resolvedTextStyle": {
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Challenges and Obstacles Encountered",
+              "fontSize": 36,
+              "typeface": "Cambria",
+              "color": "#1F3A5F",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ydkbm5sv",
+      "id": "4",
+      "name": "Text 2",
+      "bbox": [
+        90.24,
+        94.08,
+        1132.13,
+        24.96
+      ],
+      "geometry": "rect",
+      "text": "What went wrong, how it was found, and what closed it",
+      "textPreview": "What went wrong, how it was found, and what closed it",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "What went wrong, how it was found, and what closed it"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "What went wrong, how it was found, and what closed it",
+          "resolvedTextStyle": {
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "What went wrong, how it was found, and what closed it",
+              "fontSize": 15.33,
+              "typeface": "Calibri",
+              "color": "#5A6B7F"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/zedcfa9g",
+      "id": "5",
+      "name": "Text 3",
+      "bbox": [
+        57.6,
+        673.92,
+        768,
+        26.88
+      ],
+      "geometry": "rect",
+      "text": "Week 3 Progress Report  ·  Bhanu Gupta  ·  Studio 5 B3 2026",
+      "textPreview": "Week 3 Progress Report  ·  Bhanu Gupta  ·  Studio 5 B3 2026",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Week 3 Progress Report  ·  Bhanu Gupta  ·  Studio 5 B3 2026"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Week 3 Progress Report  ·  Bhanu Gupta  ·  Studio 5 B3 2026",
+          "resolvedTextStyle": {
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Week 3 Progress Report  ·  Bhanu Gupta  ·  Studio 5 B3 2026",
+              "fontSize": 12,
+              "typeface": "Calibri",
+              "color": "#93A3B5"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/kzmdova1",
+      "id": "6",
+      "name": "Text 4",
+      "bbox": [
+        1107.17,
+        673.92,
+        115.2,
+        26.88
+      ],
+      "geometry": "rect",
+      "text": "7",
+      "textPreview": "7",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "7"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "7",
+          "resolvedTextStyle": {
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "7",
+              "fontSize": 12.67,
+              "typeface": "Calibri",
+              "color": "#5A6B7F",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/l0vuh0rm",
+      "id": "7",
+      "name": "Shape 5",
+      "bbox": [
+        57.6,
+        144,
+        1164.77,
+        99.63
+      ],
+      "geometry": "roundRect",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": ""
+          }
+        ]
+      },
+      "fillColor": "#FFFFFF",
+      "lineColor": "#DCE4EE",
+      "lineWidth": 1.33
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/eh0ba1sr",
+      "id": "8",
+      "name": "Shape 6",
+      "bbox": [
+        78.72,
+        160.32,
+        32.64,
+        32.64
+      ],
+      "geometry": "ellipse",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": ""
+          }
+        ]
+      },
+      "fillColor": "#1F3A5F",
+      "lineColor": "#1F3A5F",
+      "lineWidth": 1.33
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/fi9c369c",
+      "id": "9",
+      "name": "Text 7",
+      "bbox": [
+        78.72,
+        160.32,
+        32.64,
+        32.64
+      ],
+      "geometry": "rect",
+      "text": "1",
+      "textPreview": "1",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "1"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "1",
+          "resolvedTextStyle": {
+            "alignment": "center"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "1",
+              "fontSize": 15.33,
+              "typeface": "Calibri",
+              "color": "#FFFFFF",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/baxkjqlk",
+      "id": "10",
+      "name": "Text 8",
+      "bbox": [
+        124.8,
+        159.36,
+        336,
+        68.91
+      ],
+      "geometry": "rect",
+      "text": "A concurrency control that serialised writers but never detected a conflict.",
+      "textPreview": "A concurrency control that serialised writers but never detected a conflict.",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "A concurrency control that serialised writers but"
+          },
+          {
+            "index": 2,
+            "text": "never detected a conflict."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "A concurrency control that serialised writers but never detected a conflict.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "A concurrency control that serialised writers but never detected a conflict.",
+              "fontSize": 15.33,
+              "typeface": "Calibri",
+              "color": "#1F3A5F",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 10,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/a9ojq5kz",
+      "id": "11",
+      "name": "Text 9",
+      "bbox": [
+        489.6,
+        159.36,
+        730.85,
+        68.91
+      ],
+      "geometry": "rect",
+      "text": "The decision repository locked the stream row with SELECT ... FOR UPDATE and re-read the head. That makes writers take turns; it does not make them disagree. The second writer read the head the first had just written and committed over it, so two contradictory decisions both landed and the loser was never told. Found by a test I wrote to fail, before release. Fixed by making the caller pass back the revision it read, so a stale decision is refused with the reason (#125).",
+      "textPreview": "The decision repository locked the stream row with SELECT ... FOR UPDATE and re-read the head. That makes writers take turns; it does not...",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 4,
+        "lines": [
+          {
+            "index": 1,
+            "text": "The decision repository locked the stream row with SELECT ... FOR UPDATE and re-read the head. That makes writers take turns; it does"
+          },
+          {
+            "index": 2,
+            "text": "not make them disagree. The second writer read the head the first had just written and committed over it, so two contradictory"
+          },
+          {
+            "index": 3,
+            "text": "decisions both landed and the loser was never told. Found by a test I wrote to fail, before release. Fixed by making the caller pass back"
+          },
+          {
+            "index": 4,
+            "text": "the revision it read, so a stale decision is refused with the reason (#125)."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "The decision repository locked the stream row with SELECT ... FOR UPDATE and re-read the head. That makes writers take turns; it does not make them disagree. The second writer read the head the first had just written and committed over it, so two contradictory decisions both landed and the loser was never told. Found by a test I wrote to fail, before release. Fixed by making the caller pass back the revision it read, so a stale decision is refused with the reason (#125).",
+          "runs": [
+            {
+              "index": 1,
+              "text": "The decision repository locked the stream row with SELECT ... FOR UPDATE and re-read the head. That makes writers take turns; it does not make them disagree. The second writer read the head the first had just written and committed over it, so two contradictory decisions both landed and the loser was never told. Found by a test I wrote to fail, before release. Fixed by making the caller pass back the revision it read, so a stale decision is refused with the reason (#125).",
+              "fontSize": 13.33,
+              "typeface": "Calibri",
+              "color": "#1A2430"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 11,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/xcz2l03q",
+      "id": "12",
+      "name": "Shape 10",
+      "bbox": [
+        57.6,
+        258.99,
+        1164.77,
+        99.63
+      ],
+      "geometry": "roundRect",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": ""
+          }
+        ]
+      },
+      "fillColor": "#F3F6FA",
+      "lineColor": "#DCE4EE",
+      "lineWidth": 1.33
+    },
+    {
+      "order": 12,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/cbq1sv25",
+      "id": "13",
+      "name": "Shape 11",
+      "bbox": [
+        78.72,
+        275.31,
+        32.64,
+        32.64
+      ],
+      "geometry": "ellipse",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": ""
+          }
+        ]
+      },
+      "fillColor": "#1F3A5F",
+      "lineColor": "#1F3A5F",
+      "lineWidth": 1.33
+    },
+    {
+      "order": 13,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/n6x0fqlo",
+      "id": "14",
+      "name": "Text 12",
+      "bbox": [
+        78.72,
+        275.31,
+        32.64,
+        32.64
+      ],
+      "geometry": "rect",
+      "text": "2",
+      "textPreview": "2",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "2"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "2",
+          "resolvedTextStyle": {
+            "alignment": "center"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "2",
+              "fontSize": 15.33,
+              "typeface": "Calibri",
+              "color": "#FFFFFF",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 14,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/25ojml43",
+      "id": "15",
+      "name": "Text 13",
+      "bbox": [
+        124.8,
+        274.35,
+        336,
+        68.91
+      ],
+      "geometry": "rect",
+      "text": "The redaction layer reported a successful redaction over an unredacted payload.",
+      "textPreview": "The redaction layer reported a successful redaction over an unredacted payload.",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "The redaction layer reported a successful redaction"
+          },
+          {
+            "index": 2,
+            "text": "over an unredacted payload."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "The redaction layer reported a successful redaction over an unredacted payload.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "The redaction layer reported a successful redaction over an unredacted payload.",
+              "fontSize": 15.33,
+              "typeface": "Calibri",
+              "color": "#1F3A5F",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 15,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/p8fih03e",
+      "id": "16",
+      "name": "Text 14",
+      "bbox": [
+        489.6,
+        274.35,
+        730.85,
+        68.91
+      ],
+      "geometry": "rect",
+      "text": "A policy rule may specify its replacement text, and Python expands a backreference in it. A rule that captured an email and replaced it with the capture emitted the original address and counted one redaction. An audit trail asserting the data was masked, over data that was not, is worse than no redaction at all. That plus three more high-severity findings were all reproduced by execution and closed (#180).",
+      "textPreview": "A policy rule may specify its replacement text, and Python expands a backreference in it. A rule that captured an email and replaced it w...",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 4,
+        "lines": [
+          {
+            "index": 1,
+            "text": "A policy rule may specify its replacement text, and Python expands a backreference in it. A rule that captured an email and replaced it"
+          },
+          {
+            "index": 2,
+            "text": "with the capture emitted the original address and counted one redaction. An audit trail asserting the data was masked, over data that"
+          },
+          {
+            "index": 3,
+            "text": "was not, is worse than no redaction at all. That plus three more high-severity findings were all reproduced by execution and closed"
+          },
+          {
+            "index": 4,
+            "text": "(#180)."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "A policy rule may specify its replacement text, and Python expands a backreference in it. A rule that captured an email and replaced it with the capture emitted the original address and counted one redaction. An audit trail asserting the data was masked, over data that was not, is worse than no redaction at all. That plus three more high-severity findings were all reproduced by execution and closed (#180).",
+          "runs": [
+            {
+              "index": 1,
+              "text": "A policy rule may specify its replacement text, and Python expands a backreference in it. A rule that captured an email and replaced it with the capture emitted the original address and counted one redaction. An audit trail asserting the data was masked, over data that was not, is worse than no redaction at all. That plus three more high-severity findings were all reproduced by execution and closed (#180).",
+              "fontSize": 13.33,
+              "typeface": "Calibri",
+              "color": "#1A2430"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 16,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/o761ov2t",
+      "id": "17",
+      "name": "Shape 15",
+      "bbox": [
+        57.6,
+        373.97,
+        1164.77,
+        83.36
+      ],
+      "geometry": "roundRect",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": ""
+          }
+        ]
+      },
+      "fillColor": "#FFFFFF",
+      "lineColor": "#DCE4EE",
+      "lineWidth": 1.33
+    },
+    {
+      "order": 17,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/f2d0b6lc",
+      "id": "18",
+      "name": "Shape 16",
+      "bbox": [
+        78.72,
+        390.29,
+        32.64,
+        32.64
+      ],
+      "geometry": "ellipse",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": ""
+          }
+        ]
+      },
+      "fillColor": "#1F3A5F",
+      "lineColor": "#1F3A5F",
+      "lineWidth": 1.33
+    },
+    {
+      "order": 18,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/eh4jil4r",
+      "id": "19",
+      "name": "Text 17",
+      "bbox": [
+        78.72,
+        390.29,
+        32.64,
+        32.64
+      ],
+      "geometry": "rect",
+      "text": "3",
+      "textPreview": "3",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "3"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "3",
+          "resolvedTextStyle": {
+            "alignment": "center"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "3",
+              "fontSize": 15.33,
+              "typeface": "Calibri",
+              "color": "#FFFFFF",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 19,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/id4ju1oz",
+      "id": "20",
+      "name": "Text 18",
+      "bbox": [
+        124.8,
+        389.33,
+        336,
+        52.64
+      ],
+      "geometry": "rect",
+      "text": "I rebuilt work a teammate had already finished.",
+      "textPreview": "I rebuilt work a teammate had already finished.",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "I rebuilt work a teammate had already finished."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "I rebuilt work a teammate had already finished.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "I rebuilt work a teammate had already finished.",
+              "fontSize": 15.33,
+              "typeface": "Calibri",
+              "color": "#1F3A5F",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 20,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/jedkn654",
+      "id": "21",
+      "name": "Text 19",
+      "bbox": [
+        489.6,
+        389.33,
+        730.85,
+        52.64
+      ],
+      "geometry": "rect",
+      "text": "I branched from a stale reference and reimplemented all three blocker fixes on the SIP review UI. The push was rejected as 46 commits behind, which is the only reason his work survived. I discarded mine and reviewed his. The fix is procedural, not technical: fetch before branching, and read the branch before assuming it is empty.",
+      "textPreview": "I branched from a stale reference and reimplemented all three blocker fixes on the SIP review UI. The push was rejected as 46 commits beh...",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "I branched from a stale reference and reimplemented all three blocker fixes on the SIP review UI. The push was rejected as 46 commits"
+          },
+          {
+            "index": 2,
+            "text": "behind, which is the only reason his work survived. I discarded mine and reviewed his. The fix is procedural, not technical: fetch before"
+          },
+          {
+            "index": 3,
+            "text": "branching, and read the branch before assuming it is empty."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "I branched from a stale reference and reimplemented all three blocker fixes on the SIP review UI. The push was rejected as 46 commits behind, which is the only reason his work survived. I discarded mine and reviewed his. The fix is procedural, not technical: fetch before branching, and read the branch before assuming it is empty.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "I branched from a stale reference and reimplemented all three blocker fixes on the SIP review UI. The push was rejected as 46 commits behind, which is the only reason his work survived. I discarded mine and reviewed his. The fix is procedural, not technical: fetch before branching, and read the branch before assuming it is empty.",
+              "fontSize": 13.33,
+              "typeface": "Calibri",
+              "color": "#1A2430"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 21,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/4fm1wb6p",
+      "id": "22",
+      "name": "Shape 20",
+      "bbox": [
+        57.6,
+        472.69,
+        1164.77,
+        82.56
+      ],
+      "geometry": "roundRect",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": ""
+          }
+        ]
+      },
+      "fillColor": "#F3F6FA",
+      "lineColor": "#DCE4EE",
+      "lineWidth": 1.33
+    },
+    {
+      "order": 22,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/50v2pgna",
+      "id": "23",
+      "name": "Shape 21",
+      "bbox": [
+        78.72,
+        489.01,
+        32.64,
+        32.64
+      ],
+      "geometry": "ellipse",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": ""
+          }
+        ]
+      },
+      "fillColor": "#1F3A5F",
+      "lineColor": "#1F3A5F",
+      "lineWidth": 1.33
+    },
+    {
+      "order": 23,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/q143ylov",
+      "id": "24",
+      "name": "Text 22",
+      "bbox": [
+        78.72,
+        489.01,
+        32.64,
+        32.64
+      ],
+      "geometry": "rect",
+      "text": "4",
+      "textPreview": "4",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "4"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "4",
+          "resolvedTextStyle": {
+            "alignment": "center"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "4",
+              "fontSize": 15.33,
+              "typeface": "Calibri",
+              "color": "#FFFFFF",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 24,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/r2dkrq5g",
+      "id": "25",
+      "name": "Text 23",
+      "bbox": [
+        124.8,
+        488.05,
+        336,
+        51.84
+      ],
+      "geometry": "rect",
+      "text": "I annotated contradictions instead of resolving them.",
+      "textPreview": "I annotated contradictions instead of resolving them.",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "I annotated contradictions instead of resolving"
+          },
+          {
+            "index": 2,
+            "text": "them."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "I annotated contradictions instead of resolving them.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "I annotated contradictions instead of resolving them.",
+              "fontSize": 15.33,
+              "typeface": "Calibri",
+              "color": "#1F3A5F",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 25,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/s3ml0v61",
+      "id": "26",
+      "name": "Text 24",
+      "bbox": [
+        489.6,
+        488.05,
+        730.85,
+        51.84
+      ],
+      "geometry": "rect",
+      "text": "On three pull requests I added a note saying a section was superseded while leaving the superseded instruction in place for the next reader to follow. External review caught the same pattern in my own work. A specification that warns it is wrong is still wrong; the correction now edits the operative text.",
+      "textPreview": "On three pull requests I added a note saying a section was superseded while leaving the superseded instruction in place for the next read...",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "On three pull requests I added a note saying a section was superseded while leaving the superseded instruction in place for the next"
+          },
+          {
+            "index": 2,
+            "text": "reader to follow. External review caught the same pattern in my own work. A specification that warns it is wrong is still wrong; the"
+          },
+          {
+            "index": 3,
+            "text": "correction now edits the operative text."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "On three pull requests I added a note saying a section was superseded while leaving the superseded instruction in place for the next reader to follow. External review caught the same pattern in my own work. A specification that warns it is wrong is still wrong; the correction now edits the operative text.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "On three pull requests I added a note saying a section was superseded while leaving the superseded instruction in place for the next reader to follow. External review caught the same pattern in my own work. A specification that warns it is wrong is still wrong; the correction now edits the operative text.",
+              "fontSize": 13.33,
+              "typeface": "Calibri",
+              "color": "#1A2430"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 26,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/d4f2t0nm",
+      "id": "27",
+      "name": "Shape 25",
+      "bbox": [
+        57.6,
+        570.61,
+        1164.77,
+        83.36
+      ],
+      "geometry": "roundRect",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": ""
+          }
+        ]
+      },
+      "fillColor": "#FFFFFF",
+      "lineColor": "#DCE4EE",
+      "lineWidth": 1.33
+    },
+    {
+      "order": 27,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/e5o32lor",
+      "id": "28",
+      "name": "Shape 26",
+      "bbox": [
+        78.72,
+        586.93,
+        32.64,
+        32.64
+      ],
+      "geometry": "ellipse",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": ""
+          }
+        ]
+      },
+      "fillColor": "#1F3A5F",
+      "lineColor": "#1F3A5F",
+      "lineWidth": 1.33
+    },
+    {
+      "order": 28,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/f6xkvq5c",
+      "id": "29",
+      "name": "Text 27",
+      "bbox": [
+        78.72,
+        586.93,
+        32.64,
+        32.64
+      ],
+      "geometry": "rect",
+      "text": "5",
+      "textPreview": "5",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "5"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "5",
+          "resolvedTextStyle": {
+            "alignment": "center"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "5",
+              "fontSize": 15.33,
+              "typeface": "Calibri",
+              "color": "#FFFFFF",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 29,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/p0zmlk7u",
+      "id": "30",
+      "name": "Text 28",
+      "bbox": [
+        124.8,
+        585.97,
+        336,
+        52.64
+      ],
+      "geometry": "rect",
+      "text": "A statistic nearly went out with the wrong denominator.",
+      "textPreview": "A statistic nearly went out with the wrong denominator.",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "A statistic nearly went out with the wrong"
+          },
+          {
+            "index": 2,
+            "text": "denominator."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "A statistic nearly went out with the wrong denominator.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "A statistic nearly went out with the wrong denominator.",
+              "fontSize": 15.33,
+              "typeface": "Calibri",
+              "color": "#1F3A5F",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 30,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ozq5szq9",
+      "id": "31",
+      "name": "Text 29",
+      "bbox": [
+        489.6,
+        585.97,
+        730.85,
+        52.64
+      ],
+      "geometry": "rect",
+      "text": "A draft read '95% of NZ exports' where the sourced corpus says 95% of New Zealand's exports to India. On a public homepage that is a materially different and false claim. Caught in review against the source rather than against memory, which is the only check that would have caught it.",
+      "textPreview": "A draft read '95% of NZ exports' where the sourced corpus says 95% of New Zealand's exports to India. On a public homepage that is a mate...",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "A draft read '95% of NZ exports' where the sourced corpus says 95% of New Zealand's exports to India. On a public homepage that is a"
+          },
+          {
+            "index": 2,
+            "text": "materially different and false claim. Caught in review against the source rather than against memory, which is the only check that would"
+          },
+          {
+            "index": 3,
+            "text": "have caught it."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "A draft read '95% of NZ exports' where the sourced corpus says 95% of New Zealand's exports to India. On a public homepage that is a materially different and false claim. Caught in review against the source rather than against memory, which is the only check that would have caught it.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "A draft read '95% of NZ exports' where the sourced corpus says 95% of New Zealand's exports to India. On a public homepage that is a materially different and false claim. Caught in review against the source rather than against memory, which is the only check that would have caught it.",
+              "fontSize": 13.33,
+              "typeface": "Calibri",
+              "color": "#1A2430"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    }
+  ],
+  "composeRuns": []
+}

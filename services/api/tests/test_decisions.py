@@ -77,13 +77,30 @@ def seeded() -> dict:
             (f"RUN-DEC-{uuid.uuid4().hex[:10]}", "2026-07-29T00:00Z", "2026-07-30T00:00Z",
              "SIP-050 v1.1", user["id"]),
         ).fetchone()
+        # A second person authors the report version. Separation of duties (#42, BR8) refuses a
+        # decision by whoever created the version being decided on, so a fixture where one user
+        # is both author and decider cannot record any decision at all - and, before that rule
+        # was enforced, was silently exercising exactly the self-approval the control forbids.
+        author = conn.execute(
+            "insert into users (name, email) values (%s, %s) returning id",
+            (f"Analyst {uuid.uuid4()}", f"{uuid.uuid4()}@example.test"),
+        ).fetchone()
+        conn.execute(
+            "insert into user_roles (user_id, role_id) values (%s, %s) "
+            "on conflict (user_id, role_id) do update set enabled = true",
+            (author["id"], SIP_OWNER_ROLE),
+        )
         version = conn.execute(
             "insert into report_versions (run_id, version_number, created_by, created_by_role_id, "
             "content_sha256, created_at) values (%s, 1, %s, %s, %s, now()) returning id",
-            (run["id"], user["id"], SIP_OWNER_ROLE, "a" * 64),
+            (run["id"], author["id"], SIP_OWNER_ROLE, "a" * 64),
         ).fetchone()
         conn.commit()
-    return {"user_id": str(user["id"]), "report_version_id": str(version["id"])}
+    return {
+        "user_id": str(user["id"]),
+        "author_id": str(author["id"]),
+        "report_version_id": str(version["id"]),
+    }
 
 
 def _kwargs(seeded: dict, **overrides) -> dict:
@@ -296,3 +313,29 @@ def test_current_pairs_each_value_with_the_revision_it_was_read_at(repo, seeded)
     second = repo.current(seeded["report_version_id"])
     assert second.ceo_ruling == "Pause"
     assert second.revisions[CEO_RULING] == 2
+
+
+def test_the_author_of_a_version_cannot_decide_on_it(
+    repo: DecisionRepository, seeded: dict
+) -> None:
+    """Separation of duties on the write path itself (#42, BR8, ADR-0005).
+
+    Holding the role is necessary and not sufficient. The seeded author holds SIP Owner, so the
+    permission check passes and only the separation rule stands between them and approving their
+    own report version. Before this was enforced, it did not.
+    """
+    with pytest.raises(DecisionNotPermittedError, match="created report version"):
+        repo.record(
+            **_kwargs(
+                seeded,
+                kind=REPORT_APPROVAL,
+                actor_id=seeded["author_id"],
+                value="Approved",
+            )
+        )
+
+
+def test_a_different_person_may_decide_on_it(repo: DecisionRepository, seeded: dict) -> None:
+    """The other half of the rule: separation refuses self-approval, not approval."""
+    record = repo.record(**_kwargs(seeded, kind=REPORT_APPROVAL, value="Approved"))
+    assert record.value == "Approved"

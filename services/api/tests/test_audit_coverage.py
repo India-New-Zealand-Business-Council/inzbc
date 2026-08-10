@@ -145,24 +145,32 @@ def test_every_write_path_is_audited(module: str, func: str, node: ast.FunctionD
 
     tables = _written_tables(_string_constants(node))
 
-    # `sessions` and `users.last_login_at` are authentication bookkeeping rather than business
-    # state. Auditing every session touch would write a row per request and bury the decisions
-    # the log exists to make findable.
-    protected = append_only_tables() | {"sessions", "users"}
-
-    # A method that inserts into an append-only table in the same transaction is audited by that
-    # insert. `DecisionRepository.record` is the live case: it moves the CAS pointer in
-    # `decision_streams` and inserts the immutable `decision_records` row that justifies the move,
-    # and that row carries actor, reason and evidence_ref. The pointer is derivable from it.
-    if tables & append_only_tables():
+    # Narrow, named exemptions. An earlier version returned as soon as *any* written table was
+    # append-only, which an adversarial review correctly called a bypass: a method could insert
+    # into `decision_records` and update any mutable table it liked in the same breath, and the
+    # non-empty intersection let the whole method through unchecked. Each exemption below names
+    # the exact set it covers, so a method that writes anything else still has to be audited.
+    exact_exemptions = {
+        # `DecisionRepository.record` moves the CAS pointer in `decision_streams` and inserts the
+        # immutable `decision_records` row that justifies the move. That row carries actor,
+        # reason and evidence_ref, and the pointer is derivable from it.
+        frozenset({"decision_records", "decision_streams"}),
+        # Session issue, refresh and sign-out. Authentication bookkeeping, not business state:
+        # auditing every session touch writes a row per request and buries the decisions the log
+        # exists to make findable. `users` appears here only for `last_login_at`.
+        frozenset({"sessions"}),
+        frozenset({"sessions", "users"}),
+    }
+    if frozenset(tables) in exact_exemptions:
         return
 
-    unprotected = tables - protected
+    unprotected = tables - append_only_tables()
 
     assert not unprotected, (
         f"{module}:{func} writes {sorted(unprotected)} without calling record_audit, and those "
-        f"tables are not append-only. Either record an audit row in the same transaction, or "
-        f"add an append-only trigger in schema.sql."
+        f"tables are neither append-only nor covered by a named exemption. Either record an "
+        f"audit row in the same transaction, add an append-only trigger in schema.sql, or add an "
+        f"exact exemption here naming the full set of tables the method writes."
     )
 
 

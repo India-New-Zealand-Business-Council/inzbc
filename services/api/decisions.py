@@ -198,6 +198,28 @@ class DecisionRepository:
                         "inactive. Absence is a refusal, not a gap to fill."
                     )
 
+                # Separation of duties (#42, BR8, ADR-0005): nobody decides on their own output.
+                # Holding the role is necessary and not sufficient, and the steady state after
+                # the placement is one person holding every role, so the role check above cannot
+                # carry this on its own. Checked inside the transaction against the version being
+                # decided, so it cannot be raced.
+                #
+                # This covers the case that needs no client input. The wider role-pair rule in
+                # `decision_sod_role_pairs` stays unenforced because that table is deliberately
+                # unseeded pending client-answers B8, and enforcing an empty rule set would
+                # refuse everything.
+                author = conn.execute(
+                    "select created_by from report_versions where id = %s",
+                    (report_version_id,),
+                ).fetchone()
+                if author is not None and str(author["created_by"]) == str(actor_id):
+                    raise DecisionNotPermittedError(
+                        f"{actor_id!r} created report version {report_version_id!r} and may not "
+                        f"also record a {kind!r} decision on it. Separation of duties is the "
+                        "control this record exists to evidence; a decision one person can take "
+                        "end to end does not evidence anything."
+                    )
+
                 stream = conn.execute(
                     "select id, current_record_id, head_revision from decision_streams "
                     "where report_version_id = %s and kind = %s for update",
