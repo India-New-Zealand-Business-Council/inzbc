@@ -28,6 +28,8 @@ import psycopg
 import pytest
 import requests
 
+from services.api.auth import Principal, SessionRepository
+
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 pytestmark = pytest.mark.skipif(
@@ -95,19 +97,26 @@ def _stop_server(proc: subprocess.Popen) -> None:
 
 
 @pytest.fixture
-def initiated_by() -> str:
-    """A real users.id, seeded directly - same pattern as test_persistence.py's fixture."""
+def session() -> Principal:
+    """A real user and a real session.
+
+    This test drives a live uvicorn process over HTTP, so FastAPI's dependency overrides do not
+    reach it: every request goes through the real authentication path (#42). That makes it the
+    only test here that proves the whole chain end to end, and it means the caller needs an
+    actual session rather than a caller-supplied actor id.
+    """
+    login = f"restart-{uuid.uuid4().hex[:12]}"
     with psycopg.connect(DATABASE_URL) as conn:
         conn.execute(
             "insert into roles (id, name) values (1, 'Analyst') on conflict do nothing"
         )
         row = conn.execute(
-            "insert into users (name, email) values (%s, %s) returning id",
-            (f"Test User {uuid.uuid4()}", f"{uuid.uuid4()}@example.com"),
+            "insert into users (name, email, github_login) values (%s, %s, %s) returning id",
+            (f"Test User {uuid.uuid4()}", f"{uuid.uuid4()}@example.com", login),
         ).fetchone()
         conn.execute("insert into user_roles (user_id, role_id) values (%s, 1)", (row[0],))
         conn.commit()
-    return str(row[0])
+    return SessionRepository(DATABASE_URL).establish_session(login)
 
 
 @pytest.fixture
@@ -119,10 +128,13 @@ def server_port() -> Iterator[int]:
 
 
 def test_run_state_survives_a_full_process_restart(
-    server_port: int, initiated_by: str
+    server_port: int, session: Principal
 ) -> None:
     proc = _start_server(server_port)
     base_url = f"http://127.0.0.1:{server_port}"
+    # The session cookie authenticates; the CSRF header is required on every write.
+    cookies = {"inzbc_session": session.session_id}
+    headers = {"X-CSRF-Token": session.csrf_token}
     try:
         created = requests.post(
             f"{base_url}/api/runs",
@@ -131,8 +143,9 @@ def test_run_state_survives_a_full_process_restart(
                 "prompt_version": "SIP-050 v1.1",
                 "coverage_start_utc": "2026-07-27T07:00:00+12:00",
                 "coverage_end_utc": "2026-07-28T07:00:00+12:00",
-                "initiated_by": initiated_by,
             },
+            cookies=cookies,
+            headers=headers,
             timeout=5,
         ).json()
         assert created["state"] == "Draft"
@@ -141,10 +154,11 @@ def test_run_state_survives_a_full_process_restart(
             f"{base_url}/api/runs/{created['id']}/start",
             json={
                 "expected_version": 0,
-                "actor_id": initiated_by,
                 "reason": "authorise run",
                 "approval_ref": "launch-authority-recorded",
             },
+            cookies=cookies,
+            headers=headers,
             timeout=5,
         ).json()
         assert transitioned["state"] == "Run Authorised"
@@ -158,7 +172,7 @@ def test_run_state_survives_a_full_process_restart(
     proc2 = _start_server(server_port)
     try:
         rehydrated = requests.get(
-            f"{base_url}/api/runs/{created['id']}", timeout=5
+            f"{base_url}/api/runs/{created['id']}", cookies=cookies, timeout=5
         ).json()
     finally:
         _stop_server(proc2)

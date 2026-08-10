@@ -42,8 +42,12 @@ IDLE_TIMEOUT = timedelta(minutes=60)
 _TOKEN_BYTES = 32
 
 
-def _digest(token: str) -> str:
-    """What gets stored for a session token.
+def storage_id(token: str) -> str:
+    """What gets stored for a session token, given the value the browser holds.
+
+    Public because tests and any future session-maintenance job need to address a row by the
+    same transformation the repository uses. A private helper would push callers into
+    re-implementing the hash, which is how the stored form and the lookup form drift apart.
 
     The cookie value itself is never written to the database. A read-only database snapshot, a
     backup, or SQL access would otherwise hand over live sessions: copy `sessions.id`, send it as
@@ -157,7 +161,7 @@ class SessionRepository:
             conn.execute(
                 "insert into sessions (id, user_id, csrf_token, created_at, last_seen_at, "
                 "expires_at) values (%s, %s, %s, %s, %s, %s)",
-                (_digest(session_id), user["id"], csrf_token, now, now, now + ABSOLUTE_LIFETIME),
+                (storage_id(session_id), user["id"], csrf_token, now, now, now + ABSOLUTE_LIFETIME),
             )
             conn.execute(
                 "update users set last_login_at = %s where id = %s", (now, user["id"])
@@ -180,7 +184,7 @@ class SessionRepository:
         `active = false` or disabling a role takes effect on the next call, with no session
         cleanup and no deploy.
         """
-        stored_id = _digest(session_id)
+        stored_id = storage_id(session_id)
         with psycopg.connect(self._database_url, row_factory=dict_row) as conn, conn.transaction():
             row = conn.execute(
                 "select s.id, s.user_id, s.csrf_token, s.last_seen_at, s.expires_at, "
@@ -222,7 +226,7 @@ class SessionRepository:
         """Signs out. Deleting the row is the whole mechanism, which is the point of opaque
         server-side sessions: there is no token still valid somewhere else."""
         with psycopg.connect(self._database_url) as conn, conn.transaction():
-            conn.execute("delete from sessions where id = %s", (_digest(session_id),))
+            conn.execute("delete from sessions where id = %s", (storage_id(session_id),))
 
     def purge_expired(self) -> int:
         """Deletes sessions past their absolute expiry or idle window. Returns how many.

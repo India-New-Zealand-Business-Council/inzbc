@@ -20,6 +20,7 @@ from services.api.auth import (
     AuthenticationError,
     NotAuthorisedError,
     SessionRepository,
+    storage_id,
 )
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -134,7 +135,7 @@ def test_an_expired_session_is_refused_and_destroyed(repo: SessionRepository) ->
     with psycopg.connect(DATABASE_URL) as conn:
         conn.execute(
             "update sessions set expires_at = %s where id = %s",
-            (datetime.now(UTC) - timedelta(seconds=1), session_id),
+            (datetime.now(UTC) - timedelta(seconds=1), storage_id(session_id)),
         )
         conn.commit()
 
@@ -142,7 +143,7 @@ def test_an_expired_session_is_refused_and_destroyed(repo: SessionRepository) ->
         repo.resolve(session_id)
     with psycopg.connect(DATABASE_URL) as conn:
         assert conn.execute(
-            "select count(*) from sessions where id = %s", (session_id,)
+            "select count(*) from sessions where id = %s", (storage_id(session_id),)
         ).fetchone()[0] == 0
 
 
@@ -154,7 +155,7 @@ def test_an_idle_session_is_refused(repo: SessionRepository) -> None:
     with psycopg.connect(DATABASE_URL) as conn:
         conn.execute(
             "update sessions set last_seen_at = %s where id = %s",
-            (datetime.now(UTC) - timedelta(hours=2), session_id),
+            (datetime.now(UTC) - timedelta(hours=2), storage_id(session_id)),
         )
         conn.commit()
 
@@ -170,11 +171,11 @@ def test_activity_extends_the_idle_window_but_not_the_absolute_one(
     with psycopg.connect(DATABASE_URL, row_factory=psycopg.rows.dict_row) as conn:
         before = conn.execute(
             "select last_seen_at, expires_at from sessions where id = %s",
-            (principal.session_id,),
+            (storage_id(principal.session_id),),
         ).fetchone()
         conn.execute(
             "update sessions set last_seen_at = %s where id = %s",
-            (datetime.now(UTC) - timedelta(minutes=30), principal.session_id),
+            (datetime.now(UTC) - timedelta(minutes=30), storage_id(principal.session_id)),
         )
         conn.commit()
 
@@ -183,7 +184,7 @@ def test_activity_extends_the_idle_window_but_not_the_absolute_one(
     with psycopg.connect(DATABASE_URL, row_factory=psycopg.rows.dict_row) as conn:
         after = conn.execute(
             "select last_seen_at, expires_at from sessions where id = %s",
-            (principal.session_id,),
+            (storage_id(principal.session_id),),
         ).fetchone()
     assert after["last_seen_at"] > datetime.now(UTC) - timedelta(minutes=1)
     assert after["expires_at"] == before["expires_at"]
@@ -238,3 +239,23 @@ def test_signing_in_records_the_login_time(repo: SessionRepository) -> None:
 def test_the_absolute_lifetime_is_twelve_hours() -> None:
     """Named in ADR-0004. Asserted so a change to it is a deliberate edit here, not a silent one."""
     assert ABSOLUTE_LIFETIME == timedelta(hours=12)
+
+
+def test_the_cookie_value_is_never_stored(repo: SessionRepository) -> None:
+    """A leaked database must not hand over live sessions.
+
+    Only the digest is written, so an attacker with a read-only snapshot, a backup or SQL access
+    cannot copy `sessions.id`, send it as the cookie and act as that user. This asserts the
+    property directly rather than trusting that every call site remembered to hash.
+    """
+    user = _make_user()
+    principal = repo.establish_session(user["github_login"])
+    with psycopg.connect(DATABASE_URL, row_factory=psycopg.rows.dict_row) as conn:
+        raw = conn.execute(
+            "select count(*) from sessions where id = %s", (principal.session_id,)
+        ).fetchone()
+        hashed = conn.execute(
+            "select count(*) from sessions where id = %s", (storage_id(principal.session_id),)
+        ).fetchone()
+    assert raw["count"] == 0, "the raw cookie value must never appear in the sessions table"
+    assert hashed["count"] == 1
