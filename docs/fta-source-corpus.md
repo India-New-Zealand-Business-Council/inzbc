@@ -82,6 +82,61 @@ every substantive claim traces to an official document below.
   by 2050. Useful context for an Explainer answer, not a tariff fact — keep separate from
   product-level citations.
 
+## Structured tariff data (#185) — verified against Tier 1, checked 10 Aug 2026
+The NIA's "Key Tariff Outcomes" infographic (p.13 of the PDF, immediately after §1.3 Benefits for
+Goods Exporters) gives the **current (pre-FTA) India tariff** for each named product, not just the
+outcome — the figure the corpus previously lacked entirely. Table columns: Product | Current
+tariff | path to the tariff at entry into force, 5/6/7/10 years. Read directly from the PDF, not
+transcribed from any summary:
+
+| Product | Current tariff | Entry into force → final |
+|---|---|---|
+| Forestry products | 5.5%–11% | Eliminated on almost all goods day 1; remainder phased over 5–7 years (§1.3 bullet) |
+| Wool | 2.75% | Eliminated day 1 |
+| Sheepmeat | 33% | Eliminated day 1 |
+| Fish & Seafood | 33% | Eliminated on most goods over 7 years |
+| Coal | 2.75% | Eliminated day 1 |
+| Apples | 50% | 50% reduction to 25% for 32,500t from day 1, growing to 45,000t over 6 years (quota — not full elimination) |
+| Kiwifruit | 33% | Eliminated within quota (6,250t → 15,900t over 6 years); 50% reduction outside quota (to 16.5%) from day 1 |
+| Mānuka honey | 66% | 75% reduction over 5 years to a final 16.5%, within a 200t quota |
+| Bulk infant formula & other dairy-based food preparations | 33% | Eliminated over 7 years |
+| Albumins | 22% | 50% reduction (to 11%) for 1,000t from day 1, growing to 3,000t over 5 years |
+| Cherries | 33% | Eliminated over 10 years |
+| Avocados | 33% | Eliminated over 10 years |
+| Wine | 150% | 66–83% reduction over 10 years to a final 25% or 50%, plus the auto-extension clause for better terms given to later FTA partners |
+
+**Not in this table — still no current-tariff baseline, do not invent one:**
+- **Blueberries and persimmons.** The NIA prose bundles them with cherries/avocados as "phased
+  tariff elimination," but the Key Tariff Outcomes table only breaks out Cherries and Avocados by
+  name. Corpus entries for blueberries/persimmons keep `confirmed=True` for the qualitative claim
+  (phased elimination is real and sourced) but carry no `current_tariff`/`final_tariff`/
+  `implementation_period` figures until a product-specific line is found.
+- **Peptones.** §1.3 prose says "peptones... phased out over seven years" alongside bulk infant
+  formula, but peptones has no own row in the table — the 33%/day-1 baseline shown for bulk infant
+  formula must not be assumed to apply to peptones too.
+- **Milk, cheese, butter (the core dairy exclusion).** Excluded products don't get a "current
+  tariff" callout in this table at all — nothing changes, so the table doesn't list a baseline for
+  it. Still `[[placeholder]]`.
+- **Iron & steel, industrial products.** The table does give these a current-tariff range (0%–22%,
+  0%–35%), but neither is a corpus topic today and neither is one of the ten sectors either client
+  document names (`project-charter.md` §6) — out of scope for this pass, not added.
+
+Iron & steel / industrial products aside, every one of the above numbers now backs a
+`TariffOutcome` entry in `apps/fta/corpus.py` with `current_tariff`/`fta_commencement_tariff`/
+`staged_reductions`/`final_tariff`/`implementation_period_years` fields (#185) — added because the
+Explainer "cannot answer a tariff question from prose" without them (#185's own wording): the old
+`treatment` free-text field stays for human-readable display, the new fields make the same fact
+queryable and let a "what's the current tariff on X" question actually resolve.
+
+Two existing corpus entries got split because they bundled products with genuinely different
+structured outcomes under one row — a single `current_tariff`/`final_tariff` pair can't honestly
+represent two different numbers:
+- **Kiwifruit and apples** (previously one entry): kiwifruit is 33%→eliminated-in-quota; apples is
+  50%→25%-in-quota (never fully eliminated). Split into two entries.
+- **Cherries/avocados/blueberries/persimmons** (previously one entry): cherries and avocados both
+  have a confirmed 33%→0%/10yr line; blueberries and persimmons don't have their own line at all
+  (see above). Split so the confirmed pair doesn't carry the unconfirmed pair's absence of data.
+
 ## Member-facing mapping (how a query becomes a sourced answer)
 Member selects sector/product → tool matches to the relevant tariff outcome in the schedule →
 returns: the agreed treatment, its in-force status, the citation, and a "next steps / talk to
