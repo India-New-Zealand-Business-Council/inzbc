@@ -26,6 +26,7 @@ from services.api.candidates import router as candidates_router
 from services.api.comms import router as comms_router
 from services.api.hardening import install as install_hardening
 from services.api.runs import router as runs_router
+from services.api.session import router as session_router
 
 app = FastAPI(
     title="INZBC API",
@@ -40,6 +41,7 @@ app.include_router(runs_router)
 install_hardening(app)
 app.include_router(candidates_router)
 app.include_router(comms_router)
+app.include_router(session_router)
 
 
 class AnswerOut(BaseModel):
