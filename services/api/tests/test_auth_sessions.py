@@ -29,7 +29,13 @@ pytestmark = pytest.mark.skipif(
     reason="DATABASE_URL not set - session tests need a real Postgres with schema.sql applied",
 )
 
-ANALYST_ROLE = 2
+# Role ids and names are shared across every database-backed suite in this directory, and
+# `roles.name` is unique. Claiming a name another suite already uses at a different id makes
+# `on conflict do nothing` silently skip the insert, so the id never exists and the following
+# `user_roles` insert fails a foreign key - in whichever suite happens to run second. Other
+# suites use id 1 for 'Analyst' and 'SIP Owner', so this one takes a name and id nobody else
+# claims.
+REVIEWER_ROLE = 3
 
 
 @pytest.fixture
@@ -49,7 +55,7 @@ def _make_user(*, active: bool = True, github_login: str | None = None, role: in
         ).fetchone()
         if role is not None:
             conn.execute(
-                "insert into roles (id, name) values (%s, 'Analyst') on conflict do nothing",
+                "insert into roles (id, name) values (%s, 'Reviewer') on conflict do nothing",
                 (role,),
             )
             conn.execute(
@@ -94,19 +100,19 @@ def test_two_sessions_never_share_an_id(repo: SessionRepository) -> None:
 
 
 def test_roles_come_from_user_roles(repo: SessionRepository) -> None:
-    user = _make_user(role=ANALYST_ROLE)
-    assert repo.establish_session(user["github_login"]).has_role("Analyst")
+    user = _make_user(role=REVIEWER_ROLE)
+    assert repo.establish_session(user["github_login"]).has_role("Reviewer")
 
 
 def test_a_disabled_role_grants_nothing(repo: SessionRepository) -> None:
     """`user_roles.enabled` exists so a role can be withdrawn without deleting the history."""
-    user = _make_user(role=ANALYST_ROLE)
+    user = _make_user(role=REVIEWER_ROLE)
     with psycopg.connect(DATABASE_URL) as conn:
         conn.execute(
             "update user_roles set enabled = false where user_id = %s", (user["id"],)
         )
         conn.commit()
-    assert not repo.establish_session(user["github_login"]).has_role("Analyst")
+    assert not repo.establish_session(user["github_login"]).has_role("Reviewer")
 
 
 def test_a_valid_session_resolves(repo: SessionRepository) -> None:
@@ -198,9 +204,9 @@ def test_deactivating_a_user_ends_an_existing_session(repo: SessionRepository) -
 
 def test_a_role_withdrawn_mid_session_stops_applying(repo: SessionRepository) -> None:
     """Roles are re-read per request rather than frozen into the session at sign-in."""
-    user = _make_user(role=ANALYST_ROLE)
+    user = _make_user(role=REVIEWER_ROLE)
     session_id = repo.establish_session(user["github_login"]).session_id
-    assert repo.resolve(session_id).has_role("Analyst")
+    assert repo.resolve(session_id).has_role("Reviewer")
 
     with psycopg.connect(DATABASE_URL) as conn:
         conn.execute(
@@ -208,7 +214,7 @@ def test_a_role_withdrawn_mid_session_stops_applying(repo: SessionRepository) ->
         )
         conn.commit()
 
-    assert not repo.resolve(session_id).has_role("Analyst")
+    assert not repo.resolve(session_id).has_role("Reviewer")
 
 
 def test_signing_out_ends_the_session(repo: SessionRepository) -> None:
