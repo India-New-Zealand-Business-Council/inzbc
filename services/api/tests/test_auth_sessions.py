@@ -259,3 +259,44 @@ def test_the_cookie_value_is_never_stored(repo: SessionRepository) -> None:
         ).fetchone()
     assert raw["count"] == 0, "the raw cookie value must never appear in the sessions table"
     assert hashed["count"] == 1
+
+
+def _session_rows(session_id: str) -> int:
+    with psycopg.connect(DATABASE_URL, row_factory=psycopg.rows.dict_row) as conn:
+        return conn.execute(
+            "select count(*) from sessions where id = %s", (storage_id(session_id),)
+        ).fetchone()["count"]
+
+
+def test_an_idle_session_is_destroyed_not_just_refused(repo: SessionRepository) -> None:
+    """Refusing and deleting are different guarantees, and only one was actually happening.
+
+    The delete used to sit inside the same transaction as the raise, so the exception rolled it
+    back: every expiry path refused the call and left the row in place. Asserting the row is gone
+    is what catches that; asserting only the exception does not.
+    """
+    user = _make_user()
+    session_id = repo.establish_session(user["github_login"]).session_id
+    with psycopg.connect(DATABASE_URL) as conn:
+        conn.execute(
+            "update sessions set last_seen_at = %s where id = %s",
+            (datetime.now(UTC) - timedelta(hours=2), storage_id(session_id)),
+        )
+        conn.commit()
+
+    with pytest.raises(AuthenticationError):
+        repo.resolve(session_id)
+    assert _session_rows(session_id) == 0
+
+
+def test_a_deactivated_account_has_its_session_destroyed(repo: SessionRepository) -> None:
+    """Otherwise re-activating the account silently revives whatever session was open."""
+    user = _make_user()
+    session_id = repo.establish_session(user["github_login"]).session_id
+    with psycopg.connect(DATABASE_URL) as conn:
+        conn.execute("update users set active = false where id = %s", (user["id"],))
+        conn.commit()
+
+    with pytest.raises(NotAuthorisedError):
+        repo.resolve(session_id)
+    assert _session_rows(session_id) == 0

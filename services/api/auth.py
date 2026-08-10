@@ -185,7 +185,7 @@ class SessionRepository:
         cleanup and no deploy.
         """
         stored_id = storage_id(session_id)
-        with psycopg.connect(self._database_url, row_factory=dict_row) as conn, conn.transaction():
+        with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
             row = conn.execute(
                 "select s.id, s.user_id, s.csrf_token, s.last_seen_at, s.expires_at, "
                 "u.name, u.active from sessions s join users u on u.id = s.user_id "
@@ -196,23 +196,31 @@ class SessionRepository:
                 raise AuthenticationError("no such session")
 
             now = _now()
+            failure: Exception | None = None
             if now >= row["expires_at"]:
-                conn.execute("delete from sessions where id = %s", (stored_id,))
-                raise AuthenticationError("session expired")
-            if now - row["last_seen_at"] >= IDLE_TIMEOUT:
-                conn.execute("delete from sessions where id = %s", (stored_id,))
-                raise AuthenticationError("session idle too long")
+                failure = AuthenticationError("session expired")
+            elif now - row["last_seen_at"] >= IDLE_TIMEOUT:
+                failure = AuthenticationError("session idle too long")
+            elif not row["active"]:
+                # An account deactivated after the session was issued.
+                failure = NotAuthorisedError("this account is no longer active")
 
-            # An account deactivated after the session was issued. The session is destroyed
-            # rather than merely refused, so a re-activation does not silently revive it.
-            if not row["active"]:
-                conn.execute("delete from sessions where id = %s", (stored_id,))
-                raise NotAuthorisedError("this account is no longer active")
+            if failure is not None:
+                # The delete has to commit before the raise, in its own transaction. An earlier
+                # version deleted and raised inside one `conn.transaction()` block, so the
+                # exception rolled the delete straight back: the call was refused, but the row
+                # survived every time. The session was never actually destroyed, which is the
+                # property the refusal is supposed to carry - a re-activated account would have
+                # silently revived its old session.
+                with conn.transaction():
+                    conn.execute("delete from sessions where id = %s", (stored_id,))
+                raise failure
 
-            conn.execute(
-                "update sessions set last_seen_at = %s where id = %s", (now, stored_id)
-            )
-            roles = self._roles_for(conn, row["user_id"])
+            with conn.transaction():
+                conn.execute(
+                    "update sessions set last_seen_at = %s where id = %s", (now, stored_id)
+                )
+                roles = self._roles_for(conn, row["user_id"])
 
         return Principal(
             user_id=str(row["user_id"]),
