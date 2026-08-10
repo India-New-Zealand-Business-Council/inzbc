@@ -133,7 +133,6 @@ def _capture(client: TestClient, run_id: str | None = None) -> dict:
         json={
             "run_id": run_id or str(uuid.uuid4()),
             "headline": "Test headline",
-            "actor_id": str(uuid.uuid4()),
         },
     )
     assert response.status_code == 201
@@ -167,7 +166,7 @@ def test_verify_sets_verification_state(client: TestClient) -> None:
     created = _capture(client)
     response = client.post(
         f"/api/candidates/{created['id']}/verify",
-        json={"verification": "Verified", "actor_id": str(uuid.uuid4()), "reason": "checked source"},
+        json={"verification": "Verified", "reason": "checked source"},
     )
     assert response.status_code == 200
     assert response.json()["verification"] == "Verified"
@@ -180,7 +179,7 @@ def test_verify_gate_failure_returns_403(
     fake_repo.next_error = UnverifiedHighSignalError("Critical signal requires verified source")
     response = client.post(
         f"/api/candidates/{created['id']}/verify",
-        json={"verification": "Unverified", "actor_id": str(uuid.uuid4()), "reason": "n/a"},
+        json={"verification": "Unverified", "reason": "n/a"},
     )
     assert response.status_code == 403
 
@@ -192,7 +191,7 @@ def test_score_gate_failure_returns_403(
     fake_repo.next_error = UnverifiedHighSignalError("Critical signal requires verified source")
     response = client.post(
         f"/api/candidates/{created['id']}/score",
-        json={"signal": "Critical", "actor_id": str(uuid.uuid4()), "reason": "n/a"},
+        json={"signal": "Critical", "reason": "n/a"},
     )
     assert response.status_code == 403
 
@@ -204,7 +203,6 @@ def test_route_sets_proposed_routing(client: TestClient) -> None:
         json={
             "proposed_routing": "Daily Intelligence",
             "included": True,
-            "actor_id": str(uuid.uuid4()),
             "reason": "relevant to member sector",
         },
     )
@@ -223,7 +221,6 @@ def test_merge_sets_duplicate_of_and_excludes(client: TestClient) -> None:
         f"/api/candidates/{duplicate['id']}/merge",
         json={
             "duplicate_of": original["id"],
-            "actor_id": str(uuid.uuid4()),
             "reason": "same story, later capture",
         },
     )
@@ -239,7 +236,6 @@ def test_capture_rejects_an_unknown_field(client: TestClient) -> None:
         json={
             "run_id": str(uuid.uuid4()),
             "headline": "x",
-            "actor_id": str(uuid.uuid4()),
             "not_a_real_field": "x",
         },
     )

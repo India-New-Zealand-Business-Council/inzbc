@@ -120,7 +120,6 @@ def _create(client: TestClient) -> dict:
             "prompt_version": "SIP-050 v1.1",
             "coverage_start_utc": "2026-07-27T07:00:00+12:00",
             "coverage_end_utc": "2026-07-28T07:00:00+12:00",
-            "initiated_by": str(uuid.uuid4()),
         },
     )
     assert response.status_code == 201
@@ -175,7 +174,6 @@ def test_each_lifecycle_route_maps_to_its_own_target_state(
         f"/api/runs/{created['id']}/{route}",
         json={
             "expected_version": 0,
-            "actor_id": str(uuid.uuid4()),
             "reason": f"{route} run",
             "approval_ref": "recorded-authority",
         },
@@ -192,7 +190,7 @@ def test_unknown_run_returns_404_on_every_lifecycle_route(
 ) -> None:
     response = client.post(
         f"/api/runs/{uuid.uuid4()}/{route}",
-        json={"expected_version": 0, "actor_id": str(uuid.uuid4()), "reason": "n/a"},
+        json={"expected_version": 0, "reason": "n/a"},
     )
     assert response.status_code == 404
 
@@ -204,7 +202,7 @@ def test_stale_version_returns_409(
     fake_repo.next_error = ConcurrentModificationError("stale")
     response = client.post(
         f"/api/runs/{created['id']}/start",
-        json={"expected_version": 0, "actor_id": str(uuid.uuid4()), "reason": "authorise run"},
+        json={"expected_version": 0, "reason": "authorise run"},
     )
     assert response.status_code == 409
 
@@ -216,7 +214,7 @@ def test_illegal_transition_returns_400(
     fake_repo.next_error = IllegalTransition("not reachable")
     response = client.post(
         f"/api/runs/{created['id']}/complete",
-        json={"expected_version": 0, "actor_id": str(uuid.uuid4()), "reason": "close run"},
+        json={"expected_version": 0, "reason": "close run"},
     )
     assert response.status_code == 400
 
@@ -228,7 +226,7 @@ def test_missing_human_gate_authority_returns_403(
     fake_repo.next_error = HumanGateNotSatisfied("needs approval_ref")
     response = client.post(
         f"/api/runs/{created['id']}/start",
-        json={"expected_version": 0, "actor_id": str(uuid.uuid4()), "reason": "authorise run"},
+        json={"expected_version": 0, "reason": "authorise run"},
     )
     assert response.status_code == 403
 
@@ -245,7 +243,6 @@ def test_create_run_rejects_an_unknown_field() -> None:
                 "prompt_version": "SIP-050 v1.1",
                 "coverage_start_utc": "2026-07-27T07:00:00+12:00",
                 "coverage_end_utc": "2026-07-28T07:00:00+12:00",
-                "initiated_by": str(uuid.uuid4()),
                 "not_a_real_field": "x",
             },
         )
@@ -257,7 +254,7 @@ def test_create_run_rejects_an_unknown_field() -> None:
 def test_the_caller_s_authority_reaches_the_repository(
     client: TestClient, fake_repo: FakeRunRepository
 ) -> None:
-    """The router must hand down what the caller sent, not something of its own.
+    """The router must hand down the authenticated identity, not something of its own.
 
     The 403 test above proves the error mapping by injecting the exception, so it never exercises
     the argument. Replacing `approval_ref=body.approval_ref` with a hardcoded string passed every
@@ -266,13 +263,11 @@ def test_the_caller_s_authority_reaches_the_repository(
     cannot be verified against `decision_records` (#227).
     """
     created = _create(client)
-    actor = str(uuid.uuid4())
 
     client.post(
         f"/api/runs/{created['id']}/start",
         json={
             "expected_version": 0,
-            "actor_id": actor,
             "reason": "authorise run",
             "approval_ref": "launch-authority-2026-08-05",
         },
@@ -281,5 +276,8 @@ def test_the_caller_s_authority_reaches_the_repository(
     handed_down = fake_repo.last_transition
     assert handed_down is not None
     assert handed_down["approval_ref"] == "launch-authority-2026-08-05"
-    assert handed_down["actor_id"] == actor
     assert handed_down["reason"] == "authorise run"
+    # The actor is the authenticated session's, not anything the request body could set. The
+    # body no longer has an actor_id field at all, so an impersonation attempt is a 422 rather
+    # than a silently accepted identity.
+    assert handed_down["actor_id"] == "00000000-0000-0000-0000-0000000000aa"

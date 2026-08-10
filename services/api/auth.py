@@ -23,7 +23,9 @@ or a fake identity provider.
 
 from __future__ import annotations
 
+import hashlib
 import secrets
+import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
@@ -38,6 +40,39 @@ IDLE_TIMEOUT = timedelta(minutes=60)
 # standing between an attacker and an authenticated session, so it is not derived from anything
 # guessable (user id, timestamp) and never logged.
 _TOKEN_BYTES = 32
+
+
+def _digest(token: str) -> str:
+    """What gets stored for a session token.
+
+    The cookie value itself is never written to the database. A read-only database snapshot, a
+    backup, or SQL access would otherwise hand over live sessions: copy `sessions.id`, send it as
+    the cookie, call `GET /api/session` for the CSRF token, and act as that user until expiry.
+    Storing only the digest makes a leaked table useless for replay.
+
+    Plain SHA-256 with no salt is correct here, unlike for passwords. The input is 32 random
+    bytes, so there is no dictionary to attack and nothing a per-row salt would defend against;
+    what matters is that the stored value cannot be replayed.
+    """
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def _canonical_actor(value: str | uuid.UUID | None) -> str | None:
+    """Normalises an actor id so comparisons cannot be defeated by formatting.
+
+    `'A1B2...'`, `'a1b2...'`, the unhyphenated form and a `uuid.UUID` object are all the same
+    principal. Comparing the raw strings would let an uppercase or unhyphenated id slip past the
+    self-review check, which is a silent authorisation bypass rather than an error.
+
+    Anything that is not a well-formed UUID returns `None`, so a malformed value can never
+    compare equal to a real one.
+    """
+    if value is None:
+        return None
+    try:
+        return str(uuid.UUID(str(value)))
+    except (ValueError, AttributeError, TypeError):
+        return None
 
 
 class AuthenticationError(Exception):
@@ -97,10 +132,17 @@ class SessionRepository:
         This is the allowlist: authentication having succeeded says nothing about whether this
         person may use the system.
         """
+        # GitHub logins are case-insensitive, so `Alice` and `alice` are one account. Matching on
+        # the raw string would let provisioning create two rows for the same person, with
+        # different roles, and which one you got would depend on how you typed it.
+        login = github_login.strip().lower()
+        if not login:
+            raise NotAuthorisedError("this GitHub account is not an active INZBC user")
+
         with psycopg.connect(self._database_url, row_factory=dict_row) as conn, conn.transaction():
             user = conn.execute(
-                "select id, name, active from users where github_login = %s",
-                (github_login,),
+                "select id, name, active from users where lower(github_login) = %s",
+                (login,),
             ).fetchone()
 
             # Same error for "no row" and "inactive", deliberately: distinguishing them tells an
@@ -111,10 +153,11 @@ class SessionRepository:
             session_id = secrets.token_urlsafe(_TOKEN_BYTES)
             csrf_token = secrets.token_urlsafe(_TOKEN_BYTES)
             now = _now()
+            # Only the digest is stored; `session_id` goes to the browser and nowhere else.
             conn.execute(
                 "insert into sessions (id, user_id, csrf_token, created_at, last_seen_at, "
                 "expires_at) values (%s, %s, %s, %s, %s, %s)",
-                (session_id, user["id"], csrf_token, now, now, now + ABSOLUTE_LIFETIME),
+                (_digest(session_id), user["id"], csrf_token, now, now, now + ABSOLUTE_LIFETIME),
             )
             conn.execute(
                 "update users set last_login_at = %s where id = %s", (now, user["id"])
@@ -137,32 +180,33 @@ class SessionRepository:
         `active = false` or disabling a role takes effect on the next call, with no session
         cleanup and no deploy.
         """
+        stored_id = _digest(session_id)
         with psycopg.connect(self._database_url, row_factory=dict_row) as conn, conn.transaction():
             row = conn.execute(
                 "select s.id, s.user_id, s.csrf_token, s.last_seen_at, s.expires_at, "
                 "u.name, u.active from sessions s join users u on u.id = s.user_id "
                 "where s.id = %s",
-                (session_id,),
+                (stored_id,),
             ).fetchone()
             if row is None:
                 raise AuthenticationError("no such session")
 
             now = _now()
             if now >= row["expires_at"]:
-                conn.execute("delete from sessions where id = %s", (session_id,))
+                conn.execute("delete from sessions where id = %s", (stored_id,))
                 raise AuthenticationError("session expired")
             if now - row["last_seen_at"] >= IDLE_TIMEOUT:
-                conn.execute("delete from sessions where id = %s", (session_id,))
+                conn.execute("delete from sessions where id = %s", (stored_id,))
                 raise AuthenticationError("session idle too long")
 
             # An account deactivated after the session was issued. The session is destroyed
             # rather than merely refused, so a re-activation does not silently revive it.
             if not row["active"]:
-                conn.execute("delete from sessions where id = %s", (session_id,))
+                conn.execute("delete from sessions where id = %s", (stored_id,))
                 raise NotAuthorisedError("this account is no longer active")
 
             conn.execute(
-                "update sessions set last_seen_at = %s where id = %s", (now, session_id)
+                "update sessions set last_seen_at = %s where id = %s", (now, stored_id)
             )
             roles = self._roles_for(conn, row["user_id"])
 
@@ -178,7 +222,21 @@ class SessionRepository:
         """Signs out. Deleting the row is the whole mechanism, which is the point of opaque
         server-side sessions: there is no token still valid somewhere else."""
         with psycopg.connect(self._database_url) as conn, conn.transaction():
-            conn.execute("delete from sessions where id = %s", (session_id,))
+            conn.execute("delete from sessions where id = %s", (_digest(session_id),))
+
+    def purge_expired(self) -> int:
+        """Deletes sessions past their absolute expiry or idle window. Returns how many.
+
+        Expired rows are otherwise only removed when that same token is presented again, so an
+        abandoned session lives forever. Nothing calls this on a schedule yet; it exists so the
+        cleanup is a function to invoke rather than a migration to write later.
+        """
+        with psycopg.connect(self._database_url) as conn, conn.transaction():
+            result = conn.execute(
+                "delete from sessions where expires_at <= %s or last_seen_at <= %s",
+                (_now(), _now() - IDLE_TIMEOUT),
+            )
+            return result.rowcount
 
     @staticmethod
     def _roles_for(conn: psycopg.Connection, user_id: str) -> frozenset[str]:
@@ -206,17 +264,28 @@ def require_roles(principal: Principal, *allowed: str) -> None:
         )
 
 
-def refuse_self_review(principal: Principal, subject_actor_id: str | None) -> None:
-    """Refuses when the principal is acting on their own work.
+def refuse_self_review(principal: Principal, subject_actor_id: str | uuid.UUID | None) -> None:
+    """Refuses when the principal is acting on their own work, or when authorship is unknown.
 
     BR8 and ADR-0005: a run's analyst may not be its reviewer, and nobody approves their own
     output. A control one person can execute end to end is not a control.
 
-    `subject_actor_id` is whoever produced the thing being acted on. `None` means the record has
-    no recorded author, which is not the same as "not the same person": it is permitted here so
-    that pre-existing rows do not become unreviewable, and the audit row still names who acted.
+    **Unknown authorship refuses.** An earlier version permitted `None`, reasoning that records
+    with no recorded author should not become unreviewable. That was fail-open: the check cannot
+    tell "nobody wrote this" from "we failed to read who wrote it", and anyone able to arrange a
+    null author would have been able to approve their own work. A record whose author cannot be
+    established needs its authorship backfilled, or a recorded `sod_exceptions` row, not a silent
+    pass.
+
+    Both ids are canonicalised before comparing, so an uppercase or unhyphenated UUID cannot slip
+    past. A malformed id canonicalises to `None` and is therefore refused, not permitted.
     """
-    if subject_actor_id is not None and subject_actor_id == principal.user_id:
+    subject = _canonical_actor(subject_actor_id)
+    if subject is None:
+        raise SelfApprovalError(
+            "cannot establish who produced this, so separation of duties cannot be checked"
+        )
+    if subject == _canonical_actor(principal.user_id):
         raise SelfApprovalError(
             "the person who produced this cannot also review or approve it"
         )

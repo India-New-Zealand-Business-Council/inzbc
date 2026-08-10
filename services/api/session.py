@@ -9,23 +9,21 @@ a caller-supplied `actor_id`. Until routers adopt it, the identity in an audit r
 claim; adopting it is a per-router change because each one's request model has to lose its
 `actor_id` field, and that is an API contract change rather than a drop-in.
 
-**Sign-in is deliberately incomplete.** `POST /api/session` takes an already-verified GitHub
-login, which is not something a browser may assert. The OAuth handshake that turns a GitHub
-redirect into a verified login is not built (#42 follow-up), so this endpoint is gated behind
-`SESSION_TRUSTED_SIGNIN` and refuses entirely unless it is set. That keeps the route usable for
-local development and integration tests without shipping an endpoint that would let anyone
-become anyone.
+**There is no sign-in route here, deliberately.** The OAuth handshake that turns a GitHub redirect
+into a verified login is not built yet, and an HTTP endpoint that takes a `github_login` on trust
+is account impersonation however carefully it is gated. Sessions are issued out of band by
+`scripts/dev_session.py`, which needs database access and cannot be reached over the network.
 """
 
 from __future__ import annotations
 
 import os
+import secrets
 
 from fastapi import APIRouter, Cookie, Depends, Header, HTTPException, Response, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from services.api.auth import (
-    ABSOLUTE_LIFETIME,
     AuthenticationError,
     NotAuthorisedError,
     Principal,
@@ -44,19 +42,22 @@ CSRF_HEADER = "X-CSRF-Token"
 UNSAFE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 
 
-def get_session_repository() -> SessionRepository:
-    """Overridden in tests, matching how the other routers take their repository."""
+def get_session_repository() -> SessionRepository | None:
+    """Overridden in tests, matching how the other routers take their repository.
+
+    Returns `None` rather than raising when `DATABASE_URL` is unset. FastAPI resolves
+    sub-dependencies before the function that declares them, so raising here answered an
+    anonymous, cookie-less request with 503 and told an unauthenticated caller whether the
+    database is configured. The 401 has to come first; the 503 is raised below, only once there
+    is a cookie worth resolving.
+    """
     database_url = os.getenv("DATABASE_URL")
-    if not database_url:
-        raise HTTPException(
-            status.HTTP_503_SERVICE_UNAVAILABLE, detail="DATABASE_URL is not configured"
-        )
-    return SessionRepository(database_url)
+    return SessionRepository(database_url) if database_url else None
 
 
 def require_principal(
     session_id: str | None = Cookie(default=None, alias=SESSION_COOKIE),
-    repository: SessionRepository = Depends(get_session_repository),
+    repository: SessionRepository | None = Depends(get_session_repository),
 ) -> Principal:
     """Resolves the session cookie, or refuses.
 
@@ -65,6 +66,10 @@ def require_principal(
     """
     if not session_id:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail="no session")
+    if repository is None:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE, detail="DATABASE_URL is not configured"
+        )
     try:
         return repository.resolve(session_id)
     except AuthenticationError as error:
@@ -88,15 +93,14 @@ def require_csrf(
     Returns the principal so a router can declare this instead of `require_principal` and get
     both checks in one dependency rather than remembering two.
     """
-    if not submitted or submitted != principal.csrf_token:
+    # `compare_digest` rather than `!=`. The timing leak here is not credibly exploitable (the
+    # database round trip above dwarfs it, and the token has 256 bits of entropy), but a
+    # constant-time compare on a secret costs nothing and removes the question.
+    if not submitted or not secrets.compare_digest(submitted, principal.csrf_token):
         raise HTTPException(
             status.HTTP_403_FORBIDDEN, detail="missing or invalid CSRF token"
         )
     return principal
-
-
-class SignInIn(BaseModel):
-    github_login: str = Field(min_length=1)
 
 
 class SessionOut(BaseModel):
@@ -116,40 +120,17 @@ def _to_out(principal: Principal) -> SessionOut:
     )
 
 
-@router.post("", response_model=SessionOut, status_code=status.HTTP_201_CREATED)
-def sign_in(
-    body: SignInIn,
-    response: Response,
-    repository: SessionRepository = Depends(get_session_repository),
-) -> SessionOut:
-    """Issues a session for a GitHub login.
-
-    Refuses unless `SESSION_TRUSTED_SIGNIN` is set, because without the OAuth handshake this
-    endpoint would take the caller's word for who they are. Fail-closed: the check is for the
-    variable being present and true, so an unset or empty value refuses.
-    """
-    if os.getenv("SESSION_TRUSTED_SIGNIN", "").lower() not in {"1", "true", "yes"}:
-        raise HTTPException(
-            status.HTTP_501_NOT_IMPLEMENTED,
-            detail=(
-                "GitHub OAuth sign-in is not implemented; this endpoint is available only "
-                "with SESSION_TRUSTED_SIGNIN set, for local development and tests"
-            ),
-        )
-    try:
-        principal = repository.establish_session(body.github_login)
-    except NotAuthorisedError as error:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, detail=str(error)) from error
-
-    response.set_cookie(
-        key=SESSION_COOKIE,
-        value=principal.session_id,
-        max_age=int(ABSOLUTE_LIFETIME.total_seconds()),
-        httponly=True,   # a script cannot read it, so an XSS cannot exfiltrate the session
-        secure=True,     # never sent over plain HTTP
-        samesite="lax",  # not "strict": a link from an email into the app should still work
-    )
-    return _to_out(principal)
+# There is deliberately no sign-in route.
+#
+# An earlier version had `POST /api/session` take a `github_login` and issue a session, gated
+# behind an environment variable. That is account impersonation one config line away: anyone who
+# copied the flag into a deployed environment would let an attacker post an allowlisted
+# approver's public GitHub username and receive that person's session. A gate whose failure mode
+# is "become the CEO" does not belong in a mounted router.
+#
+# Until the OAuth handshake exists, sessions are issued out of band by `scripts/dev_session.py`,
+# which requires database access and cannot be reached over HTTP. Tests override
+# `get_session_repository` and never needed the endpoint.
 
 
 @router.get("", response_model=SessionOut)
@@ -166,12 +147,13 @@ def whoami(principal: Principal = Depends(require_principal)) -> SessionOut:
 def sign_out(
     response: Response,
     principal: Principal = Depends(require_principal),
-    repository: SessionRepository = Depends(get_session_repository),
+    repository: SessionRepository | None = Depends(get_session_repository),
 ) -> None:
     """Ends the session server-side and clears the cookie.
 
     Deliberately not behind the CSRF check. A forged sign-out is a nuisance rather than a breach,
     and refusing to sign someone out because a token was missing is the worse failure.
     """
-    repository.end_session(principal.session_id)
+    if repository is not None:
+        repository.end_session(principal.session_id)
     response.delete_cookie(key=SESSION_COOKIE, httponly=True, secure=True, samesite="lax")

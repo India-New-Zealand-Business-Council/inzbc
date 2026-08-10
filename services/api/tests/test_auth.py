@@ -11,6 +11,7 @@ the implementation.
 
 from __future__ import annotations
 
+import uuid
 from dataclasses import FrozenInstanceError
 
 import pytest
@@ -84,13 +85,48 @@ def test_holding_the_reviewer_role_does_not_override_self_review() -> None:
 
 
 def test_a_different_author_may_be_reviewed() -> None:
-    refuse_self_review(principal("Reviewer", user_id="aaaa"), "bbbb")
+    refuse_self_review(
+        principal("Reviewer", user_id="44444444-4444-4444-4444-444444444444"),
+        "55555555-5555-5555-5555-555555555555",
+    )
 
 
-def test_an_unattributed_record_may_be_reviewed() -> None:
-    """`None` means the record has no recorded author, which is not the same as it being the
-    reviewer's own. Refusing here would make pre-existing rows permanently unreviewable."""
-    refuse_self_review(principal("Reviewer", user_id="aaaa"), None)
+def test_unknown_authorship_is_refused() -> None:
+    """Fail-closed, reversing an earlier decision.
+
+    The first version permitted `None`, reasoning that records with no recorded author should not
+    become unreviewable. An adversarial review pointed out the check cannot distinguish "nobody
+    wrote this" from "we failed to read who wrote it", so anyone able to arrange a null author
+    could approve their own work. Unreadable authorship now refuses; the fix for a legacy row is
+    to backfill it or record an explicit exception, not to wave it through.
+    """
+    with pytest.raises(SelfApprovalError):
+        refuse_self_review(principal("Reviewer"), None)
+
+
+def test_a_malformed_actor_id_is_refused_rather_than_permitted() -> None:
+    """A value that is not a UUID cannot be compared meaningfully, so it must not pass. Comparing
+    raw strings would have let `"not-a-uuid"` sail through as "not equal, therefore fine"."""
+    with pytest.raises(SelfApprovalError):
+        refuse_self_review(principal("Reviewer"), "not-a-uuid")
+
+
+@pytest.mark.parametrize(
+    "same_id",
+    [
+        "22222222-2222-2222-2222-222222222222",
+        "22222222-2222-2222-2222-222222222222".upper(),
+        "22222222222222222222222222222222",
+        uuid.UUID("22222222-2222-2222-2222-222222222222"),
+    ],
+    ids=["canonical", "uppercase", "unhyphenated", "uuid-object"],
+)
+def test_self_review_is_caught_whatever_the_uuid_formatting(same_id: object) -> None:
+    """The same principal written four ways. Comparing raw strings caught only the first, which
+    made the separation-of-duties check defeatable by changing case."""
+    actor = principal("Reviewer", user_id="22222222-2222-2222-2222-222222222222")
+    with pytest.raises(SelfApprovalError):
+        refuse_self_review(actor, same_id)  # type: ignore[arg-type]
 
 
 def test_self_approval_is_a_kind_of_authorisation_failure() -> None:

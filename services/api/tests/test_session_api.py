@@ -9,7 +9,6 @@ covers against real Postgres.
 
 from __future__ import annotations
 
-import pytest
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 
@@ -138,46 +137,22 @@ def test_whoami_returns_roles_and_the_csrf_token() -> None:
     assert body["csrf_token"] == PRINCIPAL.csrf_token
 
 
-def test_sign_in_is_refused_unless_explicitly_enabled(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Fail-closed. Without the OAuth handshake this endpoint would take the caller's word for
-    who they are, so an unset variable must refuse rather than permit."""
-    monkeypatch.delenv("SESSION_TRUSTED_SIGNIN", raising=False)
+def test_there_is_no_sign_in_route() -> None:
+    """The endpoint was removed rather than gated.
+
+    It took a `github_login` on trust, behind an environment variable. That is account
+    impersonation one config line away: a flag copied into a deployed environment would let
+    anyone post an allowlisted approver's public GitHub username and receive their session.
+    Sessions are now issued by `scripts/dev_session.py`, which needs database access and is not
+    reachable over HTTP. This test fails if anyone re-adds the route.
+    """
     response = build_client(FakeRepository()).post(
         "/api/session", json={"github_login": "someone"}
     )
-    assert response.status_code == 501
-
-
-@pytest.mark.parametrize("value", ["", "0", "false", "no", "maybe"])
-def test_only_an_affirmative_value_enables_sign_in(
-    monkeypatch: pytest.MonkeyPatch, value: str
-) -> None:
-    monkeypatch.setenv("SESSION_TRUSTED_SIGNIN", value)
-    response = build_client(FakeRepository()).post(
-        "/api/session", json={"github_login": "someone"}
+    assert response.status_code == 405, (
+        "POST /api/session should not exist; a sign-in route that trusts a supplied login is "
+        "account impersonation however it is gated"
     )
-    assert response.status_code == 501
-
-
-def test_sign_in_sets_a_hardened_cookie(monkeypatch: pytest.MonkeyPatch) -> None:
-    """HttpOnly so an XSS cannot read it, Secure so it never crosses plain HTTP, SameSite=Lax
-    so a cross-site form post does not carry it."""
-    monkeypatch.setenv("SESSION_TRUSTED_SIGNIN", "1")
-    response = build_client(FakeRepository()).post(
-        "/api/session", json={"github_login": "someone"}
-    )
-    assert response.status_code == 201
-    cookie = response.headers["set-cookie"].lower()
-    assert "httponly" in cookie
-    assert "secure" in cookie
-    assert "samesite=lax" in cookie
-
-
-def test_an_unknown_login_is_403_at_sign_in(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("SESSION_TRUSTED_SIGNIN", "1")
-    client = build_client(FakeRepository(establish_error=NotAuthorisedError("not an INZBC user")))
-    response = client.post("/api/session", json={"github_login": "stranger"})
-    assert response.status_code == 403
 
 
 def test_sign_out_ends_the_session_and_clears_the_cookie() -> None:

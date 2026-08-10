@@ -32,12 +32,14 @@ from pydantic import BaseModel, ConfigDict
 
 from apps.sip.core.orchestrator import IllegalTransition
 from apps.sip.pipeline.models import RunState
+from services.api.auth import Principal
 from services.api.persistence import (
     ConcurrentModificationError,
     HumanGateNotSatisfied,
     RunRecord,
     RunRepository,
 )
+from services.api.session import require_csrf, require_principal
 
 router = APIRouter(prefix="/api/runs", tags=["Runs"])
 
@@ -83,8 +85,6 @@ class CreateRunIn(BaseModel):
     prompt_version: str
     coverage_start_utc: str
     coverage_end_utc: str
-    # See module docstring: caller-supplied pending real session auth, not this endpoint's to fix.
-    initiated_by: str
 
 
 class TransitionIn(BaseModel):
@@ -97,7 +97,6 @@ class TransitionIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     expected_version: int
-    actor_id: str
     reason: str
     approval_ref: str | None = None
 
@@ -108,25 +107,34 @@ def _not_found(run_id: str) -> HTTPException:
 
 @router.post("", response_model=RunOut, status_code=status.HTTP_201_CREATED)
 def create_run(
-    body: CreateRunIn, repo: RunRepository = Depends(get_run_repository)
+    body: CreateRunIn,
+    principal: Principal = Depends(require_csrf),
+    repo: RunRepository = Depends(get_run_repository),
 ) -> RunOut:
     run = repo.create_run(
         run_number=body.run_number,
         prompt_version=body.prompt_version,
         coverage_start_utc=body.coverage_start_utc,
         coverage_end_utc=body.coverage_end_utc,
-        initiated_by=body.initiated_by,
+        initiated_by=principal.user_id,
     )
     return _run_out(run)
 
 
 @router.get("", response_model=list[RunOut])
-def list_runs(repo: RunRepository = Depends(get_run_repository)) -> list[RunOut]:
+def list_runs(
+    principal: Principal = Depends(require_principal),
+    repo: RunRepository = Depends(get_run_repository),
+) -> list[RunOut]:
     return [_run_out(run) for run in repo.list_runs()]
 
 
 @router.get("/{run_id}", response_model=RunOut)
-def get_run(run_id: str, repo: RunRepository = Depends(get_run_repository)) -> RunOut:
+def get_run(
+    run_id: str,
+    principal: Principal = Depends(require_principal),
+    repo: RunRepository = Depends(get_run_repository),
+) -> RunOut:
     try:
         return _run_out(repo.get_run(run_id))
     except KeyError as error:
@@ -134,7 +142,11 @@ def get_run(run_id: str, repo: RunRepository = Depends(get_run_repository)) -> R
 
 
 def _apply(
-    run_id: str, new_state: RunState, body: TransitionIn, repo: RunRepository
+    run_id: str,
+    new_state: RunState,
+    body: TransitionIn,
+    repo: RunRepository,
+    principal: Principal,
 ) -> RunOut:
     """Shared by all four lifecycle routes: call `apply_transition`, translate its exceptions to
     HTTP status codes. `RunRepository` already distinguishes each failure precisely (see its
@@ -147,7 +159,7 @@ def _apply(
             run_id,
             expected_version=body.expected_version,
             new_state=new_state,
-            actor_id=body.actor_id,
+            actor_id=principal.user_id,
             reason=body.reason,
             approval_ref=body.approval_ref,
         )
@@ -164,33 +176,45 @@ def _apply(
 
 @router.post("/{run_id}/start", response_model=RunOut)
 def start_run(
-    run_id: str, body: TransitionIn, repo: RunRepository = Depends(get_run_repository)
+    run_id: str,
+    body: TransitionIn,
+    principal: Principal = Depends(require_csrf),
+    repo: RunRepository = Depends(get_run_repository),
 ) -> RunOut:
     """Draft -> Run Authorised. Launch authority; human gated (run-level, #227)."""
-    return _apply(run_id, RunState.RUN_AUTHORISED, body, repo)
+    return _apply(run_id, RunState.RUN_AUTHORISED, body, repo, principal)
 
 
 @router.post("/{run_id}/pause", response_model=RunOut)
 def pause_run(
-    run_id: str, body: TransitionIn, repo: RunRepository = Depends(get_run_repository)
+    run_id: str,
+    body: TransitionIn,
+    principal: Principal = Depends(require_csrf),
+    repo: RunRepository = Depends(get_run_repository),
 ) -> RunOut:
     """Awaiting CEO Decision -> Paused. CEO decision; `approval_ref` must name a
     `decision_records` row.
     """
-    return _apply(run_id, RunState.PAUSED, body, repo)
+    return _apply(run_id, RunState.PAUSED, body, repo, principal)
 
 
 @router.post("/{run_id}/resume", response_model=RunOut)
 def resume_run(
-    run_id: str, body: TransitionIn, repo: RunRepository = Depends(get_run_repository)
+    run_id: str,
+    body: TransitionIn,
+    principal: Principal = Depends(require_csrf),
+    repo: RunRepository = Depends(get_run_repository),
 ) -> RunOut:
     """Paused -> Coverage Locked. Resumption authority; human gated (run-level, #227)."""
-    return _apply(run_id, RunState.COVERAGE_LOCKED, body, repo)
+    return _apply(run_id, RunState.COVERAGE_LOCKED, body, repo, principal)
 
 
 @router.post("/{run_id}/complete", response_model=RunOut)
 def complete_run(
-    run_id: str, body: TransitionIn, repo: RunRepository = Depends(get_run_repository)
+    run_id: str,
+    body: TransitionIn,
+    principal: Principal = Depends(require_csrf),
+    repo: RunRepository = Depends(get_run_repository),
 ) -> RunOut:
     """Distributed -> Closed. Mechanical closeout; not human gated."""
-    return _apply(run_id, RunState.CLOSED, body, repo)
+    return _apply(run_id, RunState.CLOSED, body, repo, principal)
