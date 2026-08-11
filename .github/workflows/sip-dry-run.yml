@@ -31,6 +31,11 @@ jobs:
           --health-retries 10
     env:
       DATABASE_URL: postgresql://inzbc:inzbc@localhost:5432/inzbc_dry_run
+      # runs.initiated_by is a NOT NULL FK to users(id) - a plain string like "gh-actions-dry-run"
+      # fails the first create_run call, and a random UUID isn't enough either since the FK needs
+      # a real row. This is a fixed, deterministic id for the CI-seeded dry-run user only - never
+      # used outside this ephemeral, per-run Postgres service container.
+      DRY_RUN_CI_USER_ID: 00000000-0000-0000-0000-000000000001
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -43,6 +48,20 @@ jobs:
           uv sync --locked --extra dev
       - name: Apply database schema
         run: psql -v ON_ERROR_STOP=1 --single-transaction "$DATABASE_URL" -f database/schema.sql
+      - name: Seed CI dry-run user
+        # create_run's initiated_by FK needs a real users row - nothing else in this workflow
+        # creates one, so the first create_run call would otherwise fail (see DRY_RUN_CI_USER_ID
+        # above).
+        run: |
+          psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -c "
+            insert into users (id, name, email)
+            values ('$DRY_RUN_CI_USER_ID', 'GitHub Actions dry run', 'gh-actions-dry-run@example.invalid')
+            on conflict (id) do nothing;
+          "
+      - name: Seed source library
+        # GET /api/source-library returns [] until source_library is populated - without this,
+        # the dry run's source_id resolution has nothing to resolve against.
+        run: uv run python scripts/seed_source_library.py
       - name: Start services/api
         run: |
           uv run uvicorn services.api.main:app --host 127.0.0.1 --port 8000 &
@@ -56,7 +75,7 @@ jobs:
           uv run python -m apps.sip.collector.run_dry_run \
             --base-url http://127.0.0.1:8000 \
             --articles-file apps/sip/collector/data/dry_run_fixture_articles.json \
-            --initiated-by "gh-actions-dry-run" \
+            --initiated-by "$DRY_RUN_CI_USER_ID" \
             --evidence-out dry_run_evidence.json
       - name: Upload evidence
         if: always()

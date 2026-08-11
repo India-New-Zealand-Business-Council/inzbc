@@ -12,6 +12,14 @@ re-checked after a fallback attempt.
 No `actor_id`/audit here, unlike `candidates.py`'s commands: `source_checks` has no owner-facing
 decision to audit - it is a mechanical record of what was tried, not a human call. If that
 changes, add it the same way `candidate_persistence.py`'s `capture()` does.
+
+**Decision on the upsert (raised in #264 review):** a re-check after a fallback attempt updates
+the existing `(run_id, source_id)` row rather than appending a new one, so only the *last* attempt
+survives - earlier fallback attempts are not individually retained. This is a deliberate choice,
+not an oversight: `record_source_outcome`'s `fallback_attempts` trail already folds the full
+attempt sequence into `notes` before this ever gets called, so the row's `notes` field carries
+that history even though the row itself doesn't. If per-attempt rows become required as separate
+audit evidence, that needs an append-only attempt table - not assumed here.
 """
 
 from __future__ import annotations
@@ -117,7 +125,7 @@ class SourceCheckOut(BaseModel):
     id: str
     run_id: str
     source_id: str
-    outcome: str
+    outcome: SourceOutcome
     checked_at: str
     method: str | None
     fallback_used: bool
@@ -130,7 +138,7 @@ def _out(record: SourceCheckRecord) -> SourceCheckOut:
         id=record.id,
         run_id=record.run_id,
         source_id=record.source_id,
-        outcome=record.outcome.value,
+        outcome=record.outcome,
         checked_at=record.checked_at,
         method=record.method,
         fallback_used=record.fallback_used,

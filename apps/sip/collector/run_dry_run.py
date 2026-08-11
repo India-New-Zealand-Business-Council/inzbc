@@ -24,7 +24,12 @@ Usage:
     python -m apps.sip.collector.run_dry_run \\
         --base-url http://localhost:8000 \\
         --articles-file apps/sip/collector/data/dry_run_fixture_articles.json \\
-        --initiated-by dry-run-ci
+        --initiated-by 00000000-0000-0000-0000-000000000001
+
+`--initiated-by` must be a real `users.id` (uuid) - `runs.initiated_by` is a NOT NULL FK, so a
+placeholder string fails the first `create_run` call. The CI workflow seeds a deterministic user
+row before running this script; do the same locally (or use an existing user's id) rather than
+inventing a value.
 
 `--articles-file` must hold a JSON list of `clean_articles()`-shaped dicts. There is no wiring
 from this repo to the live agent yet (cross-repo checkout in CI would need a new PAT secret -
