@@ -41,6 +41,17 @@ the local Postgres verification (114 passed) in the PR body. Worth a standup men
 same branch-level fault hits someone else's PR later; not otherwise unresolved.
 
 ## In review (opened, awaiting merge)
+- [ ] SIP-184 dry run (#55, PR #264): Bhanu's second review round found two real integration
+  gaps his first (approving) pass missed — the `workflow_dispatch` job never seeds a `users` row,
+  so `runs.initiated_by`'s NOT NULL FK fails the first `create_run` call; and
+  `scripts/seed_source_library.py` was added but never invoked, so `source_library` stayed empty.
+  Fixed both: a deterministic CI-only user seeded via `psql` before the run, real uuid passed to
+  `--initiated-by`; added the missing seed step. Also took his two non-blocking notes —
+  `SourceCheckOut.outcome` now typed `SourceOutcome` not `str`, and the upsert's fallback-attempt
+  overwrite behaviour now has an explicit documented decision instead of being silently assumed
+  fine. 344 passed, ruff clean. Hit the same CI-silently-didn't-trigger anomaly already on
+  #237/#242 (confirmed via the Actions API, not just `gh pr checks`) — retriggered with an empty
+  commit rather than guessing at a cause; worth a standup mention if it recurs a third time.
 - [ ] Backend restart/rehydration integration test (#130, PR #255): kills a real `uvicorn`
   subprocess mid-run and starts a fresh one on the same port, proving a run's state survives an
   actual process restart, not just a fresh request. CI green (151 passed against a real local
