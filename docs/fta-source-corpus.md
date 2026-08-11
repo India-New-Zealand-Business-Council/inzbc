@@ -139,13 +139,16 @@ represent two different numbers:
 
 ## Member-facing mapping (how a query becomes a sourced answer)
 Member selects sector/product → tool matches to the relevant tariff outcome in the schedule →
-returns: the agreed treatment, its in-force status, the citation, and a "next steps / talk to
-INZBC" prompt. Sector scope settled 9 Aug 2026 (#219, docs/client-answers-relayed-2026-08-09.md):
-build now on the goods sectors already sourced (agriculture, dairy, cross-sector aggregates,
-infrastructure — `apps/fta/corpus.py`'s `SECTORS_IN_SCOPE`); add next, once sourced from the
-agreement text, tourism/education/investment; defence and security, immigration and sports are
-named but not sourced and do not gate the build. Dairy's exclusion is handled explicitly rather
-than omitted.
+returns: the agreed treatment (prose), its in-force status, the citation, and a "next steps / talk
+to INZBC" prompt — plus, since #185, the structured fields themselves (direction,
+current/commencement/staged/final tariff, implementation period) so a "what's the current tariff
+on X" question resolves to a value, not just prose to re-parse; `None` on any of those means not
+yet sourced for that entry, per the "Not in this table" list above. Sector scope settled 9 Aug 2026
+(#219, docs/client-answers-relayed-2026-08-09.md): build now on the goods sectors already sourced
+(agriculture, dairy, cross-sector aggregates, infrastructure — `apps/fta/corpus.py`'s
+`SECTORS_IN_SCOPE`); add next, once sourced from the agreement text,
+tourism/education/investment; defence and security, immigration and sports are named but not
+sourced and do not gate the build. Dairy's exclusion is handled explicitly rather than omitted.
 
 ## Open items
 - **PIB / Dept of Commerce still blocked (checked again 22 Jul 2026).** Tried the press note
