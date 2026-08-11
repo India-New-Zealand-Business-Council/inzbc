@@ -1,6 +1,8 @@
 # Module — FTA Implementation Centre
 
-Owner: Roshan · Status: spec (source corpus started) · Public overview + member depth + the Explainer.
+Owner: Roshan · Status: building — corpus + Explainer + UI embed live, disclaimer approved, sector
+scope settled (#219); public/member/internal depth levels not yet split (#187) · Public overview +
+member depth + the Explainer.
 
 ## Purpose
 Turn the NZ–India FTA into exporter/importer decisions: a sourced knowledge base plus a guided
@@ -25,8 +27,9 @@ Each item: owner, source, version, approval status, effective date, review date,
 correction history.
 
 ## Dependencies
-Bhanu's API for the Explainer service; official source access; INZBC sectors-in-scope + disclaimer +
-legal/technical review process.
+Bhanu's API for the Explainer service; official source access. Sectors-in-scope (#219) and
+disclaimer wording resolved — see `docs/requirements.md`'s Known gaps. Legal/technical review
+process still open.
 
 ## Definition of done
 Source hierarchy implemented; citations + effective dates visible; stale-content detection;

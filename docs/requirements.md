@@ -195,16 +195,16 @@ Acceptance criteria:
 > As the **CEO**, I need each answer to carry the approved INZBC disclaimer and a confidence rating,
 > so members understand the standing of what they are reading.
 
-*Source: docs/information-standard.md (approved wording). Priority: Must. Status: Partly done — the
-answer path is complete; the no-match surface needs the UI.*
+*Source: docs/information-standard.md (approved wording). Priority: Must. Status: Done.*
 
 Acceptance criteria:
 - [x] The approved AI Information Standard text appears on every answer
 - [x] A confidence rating is derived from the cited source's tier
-- [ ] A no-match response is surfaced to the member as Action Required — `NO_MATCH_CONFIDENCE` is
-      defined and tested, but `answer_query` returns `[]` and it is the caller that must render the
-      Action Required state. No caller exists yet, so end to end this is not satisfied (blocked on
-      REQ-U-04, issue #59)
+- [x] A no-match response is surfaced to the member as Action Required — `answer_query` returns
+      `[]`, and `apps/fta/ui/src/components/FtaQuery.tsx` renders the resulting `NO_MATCH_CONFIDENCE`
+      state via `ActionRequired`, covered by `FtaQuery.test.tsx` (escalation state, no citation or
+      verified date shown, announced in a live region). Found stale during adversarial review of
+      the project charter (#215); closed as #218.
 
 ### 3.4 Review and approval interface (product and UX lane)
 
@@ -277,7 +277,7 @@ example `test_orchestrator.py`'s 19 functions run as 32 cases).
 | REQ-I-04 | Duplicate suppression | — | PR #23 | `apps/sip/collector/dedupe.py` | `test_dedupe.py` (7) |
 | REQ-I-05 | End-to-end live run | #55 | — | — | Blocked |
 | REQ-F-01 | Sourced answers only | — | PR #23, #32 | `apps/fta/explainer.py`, `corpus.py` | `test_explainer.py` (11), `test_corpus.py` (7) |
-| REQ-F-02 | Information Standard | #59 (no-match surface) | PR #32 | `apps/fta/standards.py` | `test_explainer.py` (11) — partly done, see story |
+| REQ-F-02 | Information Standard | — | PR #32, #218 | `apps/fta/standards.py`, `apps/fta/ui/src/components/FtaQuery.tsx` | `test_explainer.py` (11), `FtaQuery.test.tsx` |
 | REQ-U-01 | Review and QA interface | #57 | — | — | Planned |
 | REQ-U-02 | CEO decision screen | #57 | — | — | Planned |
 | REQ-U-03 | Accessible design system | #58 | — | — | Planned |
@@ -286,10 +286,9 @@ example `test_orchestrator.py`'s 19 functions run as 32 cases).
 | NFR-02 | Fail closed on Critical | — | PR #23, #34, #67 | across gates | `test_orchestrator.py`, `test_verification.py`, `test_scoring_injection.py` |
 | NFR-08 | Controlled docs single source | — | PR #72, agent PR #12 | `docs/sip/launch/` | Verified by diff; no automated test |
 
-**Coverage summary:** 18 requirements tracked. 12 are fully delivered — 11 of those with automated
-test coverage, plus NFR-08 which is verified by diff rather than by a test. REQ-F-02 is partly done
-(the answer path is complete; the no-match Action Required surface needs a caller). Five remain: four
-in the UX lane (planned, issues #57–59) and REQ-I-05 blocked on the platform backend.
+**Coverage summary:** 18 requirements tracked. 13 are fully delivered — 12 of those with automated
+test coverage, plus NFR-08 which is verified by diff rather than by a test. Five remain: four in the
+UX lane (planned, issues #57–59) and REQ-I-05 blocked on the platform backend.
 
 Every `[x]` in this document means the behaviour is implemented **and** exercised by a test. Where a
 criterion depends on a caller that does not exist yet, it is left unticked even if the supporting
@@ -303,7 +302,8 @@ Recorded rather than filled with assumptions:
 
 | Gap | Blocks | Owner |
 |---|---|---|
-| FTA sectors in scope and disclaimer wording | Final Explainer copy | INZBC |
+| ~~FTA sectors in scope~~ — resolved 9 Aug 2026 by scope, not a single list (#219, `docs/client-answers-relayed-2026-08-09.md`); goods sectors build now, tourism/education/investment sourced next | ~~Final Explainer copy~~ — unblocked | Team |
+| ~~FTA disclaimer wording~~ — approved by Sunil Kaushal (CEO), 24 Jul 2026; live in `apps/fta/standards.py`'s `AI_INFORMATION_STANDARD` | ~~Final Explainer copy~~ — unblocked | — |
 | ~~Internal platform hosting decision~~ — closed by ADR-0002, graduated to option B by ADR-0004 | ~~Database migrations, receiver service~~ — unblocked | Platform lane |
 | Redaction policy — what counts as member/Board/confidential | Redaction layer (issue #37) | INZBC, with platform lane |
 | SIP-191 launch authority | Any automated distribution | INZBC |

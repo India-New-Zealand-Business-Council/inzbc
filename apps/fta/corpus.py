@@ -18,14 +18,19 @@ FTA_STATUS_LINE = (
     "FTA enters into force, not current access."
 )
 
-# The sectors docs/fta-source-corpus.md names for first-pass coverage, taken from the About
-# page. Provisional: "INZBC to confirm which member sectors to prioritise in the first release"
-# is still an open item there - do not treat this list as final.
-PROVISIONAL_SECTORS_IN_SCOPE: tuple[str, ...] = (
+# Settled 9 Aug 2026 (#219, docs/client-answers-relayed-2026-08-09.md "FTA sectors: goods first,
+# services second"): the three previously-conflicting sector lists are resolved by scope, not by
+# picking one - Sunil's ten broad sectors and this corpus's tariff-outcome categories are
+# different kinds of thing. Build now on the goods sectors already sourced (these four category
+# values, used by CORPUS entries below). Add next, once sourced from the agreement text before
+# publication: tourism, education, investment. Defence and security, immigration and sports are
+# not dropped, but are not sourced and do not gate the build (BR2: nothing is written about a
+# sector until it has a source). No longer provisional/pending INZBC - this list will grow as
+# "add next" items get sourced, not on further confirmation.
+SECTORS_IN_SCOPE: tuple[str, ...] = (
     "Agriculture",
+    "Cross-sector",
     "Dairy",
-    "Education",
-    "Finance",
     "Infrastructure",
 )
 
