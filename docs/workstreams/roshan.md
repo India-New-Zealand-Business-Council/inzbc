@@ -41,18 +41,15 @@ the local Postgres verification (114 passed) in the PR body. Worth a standup men
 same branch-level fault hits someone else's PR later; not otherwise unresolved.
 
 ## In review (opened, awaiting merge)
-- [ ] Backend restart/rehydration integration test (#130, PR #255): kills a real `uvicorn`
-  subprocess mid-run and starts a fresh one on the same port, proving a run's state survives an
-  actual process restart, not just a fresh request. CI green (151 passed against a real local
-  Postgres running the actual merged `main` — both #120's and #121's routers, plus Bhanu's
-  hardening middleware).
-- [ ] Dashboard generated-types drift (#271, PR #274): found while chasing an unrelated `frontend`
-  CI failure on #273 — `apps/dashboard/ui/src/api/schema.ts` was a generation behind because #268
-  branched before #261 added `POST /api/comms/draft`, so `pnpm run codegen`'s drift check fails on
-  every PR that touches Python, including mine. Someone had already filed #271 with the exact
-  diagnosis and fix; ran `pnpm run codegen` on current `main` and committed just the one stale
-  file — no source change. `pnpm -r lint`/`typecheck` clean across all five UI workspaces, all 9
-  CI checks green. Once this merges, #273's `frontend` check clears on rebase too.
+- [ ] Central tariff database for the Explainer (#185, PR #273): `TariffOutcome` carries
+  direction/current/commencement/staged/final tariff + implementation period, sourced from the
+  NIA's Key Tariff Outcomes table. Second commit wires those fields into `ExplainerAnswer` itself
+  (`_to_answer()`) — the first commit only added them to the corpus, so a member query still
+  returned free-text `treatment` only; #185's own wording is the Explainer must answer a tariff
+  question "from" the data, not have it filed away unused. `apps/fta` + `apps/fta/tests` (37
+  passed) and `docs/fta-source-corpus.md`'s member-facing-mapping section updated to match. The
+  `frontend` check that was red here was the #271 generated-types drift, not this diff; #274 fixed
+  it on `main`, so the check clears on this rebase (13 Aug 2026).
 
 ## Next up
 - SHARED-OK: SIP-050 relevance/signal/confidence scoring moved to Bhanu's worklog — it runs
@@ -89,6 +86,16 @@ See Blocked / decisions needed for what's still open before any of this runs liv
 INZBC sector/disclaimer sign-off).
 
 ## Done
+- [x] Backend restart/rehydration integration test (#130, PR #255, merged 7 Aug 2026): kills a real
+  `uvicorn` subprocess mid-run and starts a fresh one on the same port, proving a run's state
+  survives an actual process restart, not just a fresh request. 151 passed against a real local
+  Postgres running the merged `main` — both #120's and #121's routers, plus Bhanu's hardening
+  middleware.
+- [x] Dashboard generated-types drift (#271, PR #274, merged 12 Aug 2026): found while chasing an
+  unrelated `frontend` CI failure on #273 — `apps/dashboard/ui/src/api/schema.ts` was a generation
+  behind because #268 branched before #261 added `POST /api/comms/draft`, so `pnpm run codegen`'s
+  drift check failed on every PR touching Python. #271 already had the exact diagnosis; ran
+  `pnpm run codegen` on current `main` and committed just the one stale file — no source change.
 - [x] FTA Explainer retrieval upgrade (#54): `answer_query` now ranks confirmed matches by
   weighted keyword relevance instead of returning an unordered keyword-overlap set. Self-contained
   TF-IDF-style scorer (`_relevance_score`) — no vector service, no new dependency: topic-keyword
