@@ -49,9 +49,19 @@ same branch-level fault hits someone else's PR later; not otherwise unresolved.
   `--initiated-by`; added the missing seed step. Also took his two non-blocking notes —
   `SourceCheckOut.outcome` now typed `SourceOutcome` not `str`, and the upsert's fallback-attempt
   overwrite behaviour now has an explicit documented decision instead of being silently assumed
-  fine. 344 passed, ruff clean. Hit the same CI-silently-didn't-trigger anomaly already on
-  #237/#242 (confirmed via the Actions API, not just `gh pr checks`) — retriggered with an empty
-  commit rather than guessing at a cause; worth a standup mention if it recurs a third time.
+  fine. Hit the same CI-silently-didn't-trigger anomaly already on file for #237/#242 (confirmed
+  via the Actions API, not just `gh pr checks`) — an empty-commit retrigger (the #237 precedent)
+  did **not** fix it this time, still zero runs afterward. Root cause turned out to be real:
+  the branch was several days stale and `mergeable` had flipped to `CONFLICTING` against `main`
+  (dashboard app, the `CLAUDE.md`→`PROJECT-RULES.md` rename, and more had landed since). Rebased
+  onto current `main` (conflicts in `conftest.py` — an identical rate-limiter fix independently
+  landed on both branches, kept the more detailed docstring; `services/api/main.py` — both
+  branches added a router the other didn't know about, kept both; generated files resolved by
+  regenerating fresh rather than hand-merging diffs), regenerated API types, reran the full suite
+  (364 passed) and `pnpm -r lint`/`typecheck` clean across all five UI workspaces before
+  force-pushing. CI triggered immediately after — so unlike #237 (still unexplained), this
+  instance's cause is now understood: a stale/conflicting branch state, not a genuine GitHub
+  Actions fault. Worth relaying that distinction so #237 isn't assumed to be the same thing.
 - [ ] Backend restart/rehydration integration test (#130, PR #255): kills a real `uvicorn`
   subprocess mid-run and starts a fresh one on the same port, proving a run's state survives an
   actual process restart, not just a fresh request. CI green (151 passed against a real local
