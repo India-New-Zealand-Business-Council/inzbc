@@ -62,3 +62,36 @@ def grant(conn: psycopg.Connection, user_id: str, *names: str) -> list[int]:
         )
         ids.append(rid)
     return ids
+
+
+def authorise_run(
+    conn: psycopg.Connection, run_id: str, actor_id: str, kind: str = "Launch"
+) -> str:
+    """Records a run authorisation and returns its id, for use as `approval_ref`.
+
+    Launch and resumption authority happen before any report version exists, so ADR-0005's decision
+    streams cannot record them and `apply_transition` checks them against `run_authorisations`
+    instead (#227). Before that table existed the suites passed strings like
+    `'launch-authority-recorded'` and `'AUTH-2026-07-27'`, which were accepted, so three suites were
+    documenting the hole while appearing to test the gate.
+
+    Shared rather than copied into each suite: the last thing three near-identical seed helpers
+    need is three chances to drift apart on what a valid authorisation looks like.
+
+    Grants the actor a role if they hold none, because the `(actor_id, actor_role_id)` foreign key
+    means an authorisation cannot be recorded by a principal with no role at all.
+    """
+    role = conn.execute(
+        "select role_id from user_roles where user_id = %s and enabled limit 1", (actor_id,)
+    ).fetchone()
+    role_key = (role[0] if not isinstance(role, dict) else role["role_id"]) if role else (
+        grant(conn, actor_id, "SIP Owner")[0]
+    )
+    row = conn.execute(
+        "insert into run_authorisations (run_id, kind, actor_id, actor_role_id, decided_at, "
+        "reason, evidence_ref) values (%s, %s, %s, %s, now(), %s, %s) returning id",
+        (run_id, kind, actor_id, role_key,
+         f"{kind.lower()} authorised for the controlled run", "SIP-184 run record"),
+    ).fetchone()
+    conn.commit()
+    return str(row[0] if not isinstance(row, dict) else row["id"])

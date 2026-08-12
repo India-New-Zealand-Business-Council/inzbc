@@ -25,6 +25,7 @@ from apps.sip.pipeline.models import RunState
 from services.api import persistence as persistence_module
 from services.api.audit import record_audit
 from services.api.persistence import RunRepository
+from services.api.tests.role_seed import authorise_run
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
@@ -154,13 +155,16 @@ def test_record_audit_writes_inside_the_callers_transaction_and_does_not_commit(
 def test_apply_transition_writes_a_matching_audit_row(
     repo: RunRepository, run_id: str, actor_id: str
 ) -> None:
+    with psycopg.connect(DATABASE_URL) as conn:
+        authorisation = authorise_run(conn, run_id, actor_id)
+
     repo.apply_transition(
         run_id,
         expected_version=0,
         new_state=RunState.RUN_AUTHORISED,
         actor_id=actor_id,
         reason="authorise the daily run",
-        approval_ref="AUTH-2026-07-27",
+        approval_ref=authorisation,
     )
 
     with psycopg.connect(DATABASE_URL) as conn:
@@ -180,7 +184,9 @@ def test_apply_transition_writes_a_matching_audit_row(
     assert old_value == RunState.DRAFT.value
     assert new_value == RunState.RUN_AUTHORISED.value
     assert reason == "authorise the daily run"
-    assert approval_ref == "AUTH-2026-07-27"
+    # The recorded reference is the authorisation's own id, which is the point: the audit row
+    # points at an append-only record rather than repeating a string somebody typed.
+    assert approval_ref == authorisation
 
 
 def test_a_failed_audit_write_rolls_back_the_state_change(
@@ -190,6 +196,9 @@ def test_a_failed_audit_write_rolls_back_the_state_change(
     to raise after the UPDATE and confirm the run is untouched and no audit row exists — the state
     change and its audit record commit together or not at all.
     """
+
+    with psycopg.connect(DATABASE_URL) as conn:
+        authorisation = authorise_run(conn, run_id, actor_id)
 
     def boom(*_args: object, **_kwargs: object) -> int:
         raise RuntimeError("audit write failed")
@@ -201,7 +210,7 @@ def test_a_failed_audit_write_rolls_back_the_state_change(
             run_id,
             expected_version=0,
             new_state=RunState.RUN_AUTHORISED,
-            approval_ref="launch-authority-recorded",
+            approval_ref=authorisation,
             actor_id=actor_id,
             reason="authorise the daily run",
         )

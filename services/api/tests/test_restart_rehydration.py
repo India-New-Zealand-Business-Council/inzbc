@@ -29,7 +29,7 @@ import pytest
 import requests
 
 from services.api.auth import Principal, SessionRepository
-from services.api.tests.role_seed import grant
+from services.api.tests.role_seed import authorise_run, grant
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
@@ -151,12 +151,17 @@ def test_run_state_survives_a_full_process_restart(
         ).json()
         assert created["state"] == "Draft"
 
+        # A recorded authorisation, not a string. The launch gate is checked against
+        # `run_authorisations` (#227), so free text is refused here the same as anywhere else.
+        with psycopg.connect(DATABASE_URL) as conn:
+            authorisation = authorise_run(conn, created["id"], session.user_id)
+
         transitioned = requests.post(
             f"{base_url}/api/runs/{created['id']}/start",
             json={
                 "expected_version": 0,
                 "reason": "authorise run",
-                "approval_ref": "launch-authority-recorded",
+                "approval_ref": authorisation,
             },
             cookies=cookies,
             headers=headers,
