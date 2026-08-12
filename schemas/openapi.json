@@ -1850,6 +1850,17 @@
           "reason": {
             "type": "string",
             "title": "Reason"
+          },
+          "sod_exception_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sod Exception Id"
           }
         },
         "additionalProperties": false,

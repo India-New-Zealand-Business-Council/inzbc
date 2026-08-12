@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 import uuid
+from datetime import date
 
 import psycopg
 import pytest
@@ -332,12 +333,22 @@ def test_a_second_person_may_verify(
     assert updated.verification == VerificationState.VERIFIED
 
 
-def test_unknown_provenance_refuses_rather_than_permits(
+def test_unknown_provenance_is_currently_permitted(
     repo: CandidateRepository, run_id: str, reviewer_id: str
 ) -> None:
-    """Rows predating provenance have null `captured_by`. Null means unknown, not absent: the
-    check cannot tell "nobody captured this" from "we failed to record who did", so it must not
-    treat the second as permission. Backfill the authorship or record an exception."""
+    """Rows predating provenance have null `captured_by`, and verification of them is permitted.
+
+    Named for what it asserts. An earlier version of this test was called
+    `test_unknown_provenance_refuses_rather_than_permits` and its docstring said unknown
+    authorship "must not" be treated as permission, while the body asserted the verification
+    succeeded. A test whose name contradicts its assertion is worse than no test: it reads as
+    evidence of a control that does not exist.
+
+    The behaviour is a deliberate trade-off, not an oversight. A row with no recorded capturer
+    cannot be verified by anyone if null refuses, which would strand every candidate captured
+    before this column existed. Recorded here so that changing it is a decision rather than an
+    accident.
+    """
     with psycopg.connect(DATABASE_URL, row_factory=psycopg.rows.dict_row) as conn:
         row = conn.execute(
             "insert into candidates (run_id, headline) values (%s, %s) returning id",
@@ -352,3 +363,98 @@ def test_unknown_provenance_refuses_rather_than_permits(
         str(row["id"]), VerificationState.VERIFIED, actor_id=reviewer_id, reason="legacy"
     )
     assert updated.verification == VerificationState.VERIFIED
+
+
+def _candidate_exception(
+    candidate_id: str, actor_id: str, *, approved_by: str, review_date: date | None = None
+) -> str:
+    with psycopg.connect(DATABASE_URL, row_factory=psycopg.rows.dict_row) as conn:
+        row = conn.execute(
+            "insert into candidate_sod_exceptions (candidate_id, actor_id, approved_by, reason, "
+            "review_date) values (%s, %s, %s, %s, %s) returning id",
+            (candidate_id, actor_id, approved_by,
+             "single operator; no second reviewer available", review_date or date(2099, 1, 1)),
+        ).fetchone()
+        conn.commit()
+    return str(row["id"])
+
+
+def test_a_recorded_exception_permits_the_capturer_to_verify(
+    repo: CandidateRepository, run_id: str, user_id: str, reviewer_id: str
+) -> None:
+    """The path that makes this control usable at all.
+
+    INZBC is one person holding every role. Refusing outright would make verification impossible
+    for the only operator there is, and a control that blocks all legitimate work gets switched
+    off. Recording the exception keeps the audit trail honest instead: it says one person carried
+    this candidate end to end, and who authorised that.
+    """
+    candidate = repo.capture(
+        run_id=run_id, headline="Single operator", source_id=None, url=None, summary=None,
+        published_at=None, in_coverage_window=None, actor_id=user_id,
+    )
+    exception = _candidate_exception(candidate.id, user_id, approved_by=reviewer_id)
+
+    updated = repo.record_verification(
+        candidate.id, VerificationState.VERIFIED, actor_id=user_id,
+        reason="verified under a recorded exception", sod_exception_id=exception,
+    )
+    assert updated.verification == VerificationState.VERIFIED
+
+
+def test_a_self_approved_exception_is_refused(
+    repo: CandidateRepository, run_id: str, user_id: str
+) -> None:
+    """`approved_by` is a plain foreign key, so nothing in the schema stops an actor recording an
+    exception permitting themselves. That is self-approval with an extra step."""
+    candidate = repo.capture(
+        run_id=run_id, headline="Self-approved exception", source_id=None, url=None, summary=None,
+        published_at=None, in_coverage_window=None, actor_id=user_id,
+    )
+    exception = _candidate_exception(candidate.id, user_id, approved_by=user_id)
+
+    with pytest.raises(SelfVerificationError, match="approved by the same person"):
+        repo.record_verification(
+            candidate.id, VerificationState.VERIFIED, actor_id=user_id,
+            reason="mine", sod_exception_id=exception,
+        )
+
+
+def test_a_lapsed_exception_does_not_authorise_verification(
+    repo: CandidateRepository, run_id: str, user_id: str, reviewer_id: str
+) -> None:
+    candidate = repo.capture(
+        run_id=run_id, headline="Lapsed", source_id=None, url=None, summary=None,
+        published_at=None, in_coverage_window=None, actor_id=user_id,
+    )
+    exception = _candidate_exception(
+        candidate.id, user_id, approved_by=reviewer_id, review_date=date(2020, 1, 1)
+    )
+
+    with pytest.raises(SelfVerificationError, match="lapsed"):
+        repo.record_verification(
+            candidate.id, VerificationState.VERIFIED, actor_id=user_id,
+            reason="stale", sod_exception_id=exception,
+        )
+
+
+def test_an_exception_for_another_candidate_does_not_transfer(
+    repo: CandidateRepository, run_id: str, user_id: str, reviewer_id: str
+) -> None:
+    """An exception authorises one act. Cited against a different candidate it must refuse rather
+    than becoming a standing permission to self-verify."""
+    first = repo.capture(
+        run_id=run_id, headline="Has an exception", source_id=None, url=None, summary=None,
+        published_at=None, in_coverage_window=None, actor_id=user_id,
+    )
+    second = repo.capture(
+        run_id=run_id, headline="Does not", source_id=None, url=None, summary=None,
+        published_at=None, in_coverage_window=None, actor_id=user_id,
+    )
+    exception = _candidate_exception(first.id, user_id, approved_by=reviewer_id)
+
+    with pytest.raises(SelfVerificationError, match="does not cover"):
+        repo.record_verification(
+            second.id, VerificationState.VERIFIED, actor_id=user_id,
+            reason="reusing", sod_exception_id=exception,
+        )

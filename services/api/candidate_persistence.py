@@ -175,6 +175,56 @@ class CandidateRepository:
             raise KeyError(f"no candidate {candidate_id!r}")
         return row
 
+    @staticmethod
+    def _require_candidate_exception(
+        conn: psycopg.Connection,
+        *,
+        sod_exception_id: str | None,
+        candidate_id: str,
+        actor_id: str,
+        act: str,
+    ) -> None:
+        """Permits a self-verification only against a recorded, still-valid exception.
+
+        Without this the control has no exception path at all, and INZBC is one person holding
+        every role. A rule that refuses outright would make verification impossible for the only
+        operator there is, and a control that blocks all legitimate work gets switched off, which
+        leaves the system worse than before. Recording the exception keeps the audit trail honest:
+        it says one person carried this candidate end to end, and who authorised that.
+
+        Checked inside the caller's transaction, under the same row lock, so an exception cannot
+        be inserted between the check and the update.
+        """
+        if sod_exception_id is None:
+            raise SelfVerificationError(
+                f"{actor_id!r} {act} this candidate and may not also verify it. Separation of "
+                "duties is what the verification record evidences; a candidate one person can "
+                "carry from capture to verified evidences nothing. Cite an approved "
+                "candidate_sod_exceptions row if a single operator is unavoidable."
+            )
+
+        exception = conn.execute(
+            "select approved_by, review_date < current_date as lapsed "
+            "from candidate_sod_exceptions "
+            "where id = %s and candidate_id = %s and actor_id = %s",
+            (sod_exception_id, candidate_id, actor_id),
+        ).fetchone()
+        if exception is None:
+            raise SelfVerificationError(
+                f"exception {sod_exception_id!r} does not cover {actor_id!r} verifying candidate "
+                f"{candidate_id!r}. An exception authorises one act, not a category."
+            )
+        if canonical_actor(exception["approved_by"]) == canonical_actor(actor_id):
+            raise SelfVerificationError(
+                f"exception {sod_exception_id!r} was approved by the same person it exempts. "
+                "A self-approved exception is self-approval with an extra step."
+            )
+        if exception["lapsed"]:
+            raise SelfVerificationError(
+                f"exception {sod_exception_id!r} has passed its review date and has lapsed. "
+                "A lapsed approval is not a current one."
+            )
+
     def record_verification(
         self,
         candidate_id: str,
@@ -182,6 +232,7 @@ class CandidateRepository:
         *,
         actor_id: str,
         reason: str,
+        sod_exception_id: str | None = None,
     ) -> CandidateRecord:
         """Sets `verification`. Refuses (via `enforce_verification_gate`) a downgrade away from
         Verified/Partially Verified on a candidate whose *current* signal is High/Critical - the
@@ -210,12 +261,14 @@ class CandidateRepository:
             for column, act in (("captured_by", "captured"), ("assessed_by", "assessed")):
                 performer = canonical_actor(provenance[column])
                 if performer is not None and performer == verifier:
-                    raise SelfVerificationError(
-                        f"{actor_id!r} {act} this candidate and may not also verify it. "
-                        "Separation of duties is what the verification record evidences; a "
-                        "candidate one person can carry from capture to verified evidences "
-                        "nothing."
+                    self._require_candidate_exception(
+                        conn,
+                        sod_exception_id=sod_exception_id,
+                        candidate_id=candidate_id,
+                        actor_id=actor_id,
+                        act=act,
                     )
+                    break
 
             row = conn.execute(
                 f"update candidates set verification = %s, verified_by = %s where id = %s "

@@ -609,6 +609,8 @@ export interface components {
             verification: components["schemas"]["VerificationState"];
             /** Reason */
             reason: string;
+            /** Sod Exception Id */
+            sod_exception_id?: string | null;
         };
     };
     responses: never;
