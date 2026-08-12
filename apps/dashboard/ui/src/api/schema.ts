@@ -100,6 +100,64 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/runs/{run_id}/fail-qa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Fail Qa
+         * @description QA in Progress -> QA Failed. The Quality Reviewer's stop.
+         *
+         *     REQ-U-01: "A Critical failure blocks progression to the CEO decision." This is that block,
+         *     and it is the reviewer's independent authority: it is the one lifecycle move they can make
+         *     without the SIP Owner, and it prevents a brief they consider unsound from reaching the CEO at
+         *     all. Without this route the reviewer could record findings and still had no way to stop the
+         *     run, which made the QA gate advisory.
+         *
+         *     Deliberately not `Stopped`. REQ-U-02 reserves Stop for the CEO decision screen, so a reviewer
+         *     who terminates the run outright would be taking a decision the requirements give to the CEO.
+         *     QA Failed routes back to Report Drafted for correction, which is the documented path.
+         */
+        post: operations["fail_qa_api_runs__run_id__fail_qa_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/runs/{run_id}/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stop Run
+         * @description Awaiting CEO Decision -> Stopped. Terminal, and the CEO's decision alone.
+         *
+         *     REQ-U-02 lists the CEO's four options as Continue, Continue with Correction, Pause and Stop.
+         *     Pause was mounted and Stop was not, so the only terminal refusal in the state machine had no
+         *     way to be exercised: a run the CEO wanted stopped could only be paused, which says something
+         *     different and leaves it resumable.
+         *
+         *     `Stopped` has no outbound transitions. Human gated, so `approval_ref` must name the
+         *     `decision_records` row carrying the decision.
+         */
+        post: operations["stop_run_api_runs__run_id__stop_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/runs/{run_id}/complete": {
         parameters: {
             query?: never;
@@ -846,6 +904,104 @@ export interface operations {
         };
     };
     resume_run_api_runs__run_id__resume_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransitionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    fail_qa_api_runs__run_id__fail_qa_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransitionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stop_run_api_runs__run_id__stop_post: {
         parameters: {
             query?: never;
             header?: never;

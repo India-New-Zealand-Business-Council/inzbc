@@ -281,3 +281,58 @@ def test_the_caller_s_authority_reaches_the_repository(
     # body no longer has an actor_id field at all, so an impersonation attempt is a 422 rather
     # than a silently accepted identity.
     assert handed_down["actor_id"] == "00000000-0000-0000-0000-0000000000aa"
+
+
+@pytest.mark.parametrize(
+    ("route", "expected_state"),
+    [("fail-qa", "QA Failed"), ("stop", "Stopped")],
+)
+def test_the_new_lifecycle_routes_map_to_their_own_states(
+    client: TestClient, route: str, expected_state: str
+) -> None:
+    """Neither route existed. The reviewer could record QA findings without being able to stop
+    the run, and the CEO's Stop decision had no way to be recorded at all: a run they wanted
+    stopped could only be paused, which says something different and leaves it resumable."""
+    created = _create(client)
+    response = client.post(
+        f"/api/runs/{created['id']}/{route}",
+        json={"expected_version": 0, "reason": f"{route} run",
+              "approval_ref": "recorded-authority"},
+    )
+    assert response.status_code == 200
+    assert response.json()["state"] == expected_state
+
+
+def test_fail_qa_is_the_reviewers_authority_and_stop_is_not() -> None:
+    """REQ-U-01 gives the reviewer a Critical failure that blocks progression to the CEO.
+    REQ-U-02 reserves Stop for the CEO decision screen.
+
+    A reviewer who could terminate the run outright would be taking a decision the requirements
+    give to the CEO, so the two routes carry different authority. Asserted against the dependency
+    graph rather than by calling them, because the roles are the point.
+    """
+    from fastapi.routing import APIRoute
+
+    from services.api.main import app
+
+    def walk(routes) -> list[APIRoute]:
+        found = []
+        for route in routes:
+            if isinstance(route, APIRoute):
+                found.append(route)
+            elif hasattr(route, "original_router"):
+                found.extend(walk(route.original_router.routes))
+        return found
+
+    def roles_for(path: str) -> set[str]:
+        route = next(r for r in walk(app.routes) if r.path == path)
+        names: set[str] = set()
+        for dependant in [route.dependant, *route.dependant.dependencies]:
+            for cell in getattr(dependant.call, "__closure__", None) or ():
+                contents = cell.cell_contents
+                if isinstance(contents, tuple) and all(isinstance(c, str) for c in contents):
+                    names.update(contents)
+        return names
+
+    assert "Reviewer" in roles_for("/api/runs/{run_id}/fail-qa")
+    assert "Reviewer" not in roles_for("/api/runs/{run_id}/stop")
