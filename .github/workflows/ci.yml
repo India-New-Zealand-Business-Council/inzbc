@@ -125,6 +125,12 @@ jobs:
         # only part of schema.sql actually applied. --single-transaction: all-or-nothing, so a
         # partial apply can't leave some tables present and others missing.
         run: psql -v ON_ERROR_STOP=1 --single-transaction "$DATABASE_URL" -f database/schema.sql
+      - name: Verify the restore checker against the freshly applied schema
+        # The CI database is a schema applied to an empty instance, which is structurally what a
+        # restore produces. So this both exercises the checker (a restore-verification script that
+        # has never run is the same unproven thing as a backup that has never been restored) and
+        # asserts the schema still carries every append-only guard it claims.
+        run: uv run python scripts/verify_restore.py "$DATABASE_URL"
       - name: Lint (ruff)
         # `uv run` so every step uses the locked environment, not whatever pip left on PATH.
         run: uv run ruff check apps services scripts

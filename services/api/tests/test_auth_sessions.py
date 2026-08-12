@@ -17,6 +17,7 @@ import pytest
 
 from services.api.auth import (
     ABSOLUTE_LIFETIME,
+    IDLE_TIMEOUT,
     AuthenticationError,
     NotAuthorisedError,
     SessionRepository,
@@ -300,3 +301,67 @@ def test_a_deactivated_account_has_its_session_destroyed(repo: SessionRepository
     with pytest.raises(NotAuthorisedError):
         repo.resolve(session_id)
     assert _session_rows(session_id) == 0
+
+
+def _age_session(session_id: str, *, expires_at: datetime | None = None,
+                 last_seen_at: datetime | None = None) -> None:
+    """Backdates a session row, so expiry can be tested without waiting twelve hours."""
+    with psycopg.connect(DATABASE_URL) as conn:
+        if expires_at is not None:
+            conn.execute(
+                "update sessions set expires_at = %s where id = %s",
+                (expires_at, storage_id(session_id)),
+            )
+        if last_seen_at is not None:
+            conn.execute(
+                "update sessions set last_seen_at = %s where id = %s",
+                (last_seen_at, storage_id(session_id)),
+            )
+        conn.commit()
+
+
+# `purge_expired` was written and left with no caller and no test. It is a bare DELETE with two
+# boundary conditions, which is the shape of code that silently does the wrong thing: too eager
+# and it signs out live users, too lax and expired rows accumulate personal data past their
+# purpose. The tests below assert on *named rows* rather than on the return count, because the
+# table is shared with every other session test and any count is whatever those left behind.
+
+
+def test_purge_removes_a_session_past_its_absolute_expiry(repo: SessionRepository) -> None:
+    session_id = repo.establish_session(_make_user()["github_login"]).session_id
+    _age_session(session_id, expires_at=datetime.now(UTC) - timedelta(minutes=1))
+
+    repo.purge_expired()
+
+    assert _session_rows(session_id) == 0
+
+
+def test_purge_removes_a_session_idle_past_the_timeout(repo: SessionRepository) -> None:
+    """Idle and absolute expiry are separate conditions; a row can hit either one first."""
+    session_id = repo.establish_session(_make_user()["github_login"]).session_id
+    _age_session(session_id, last_seen_at=datetime.now(UTC) - IDLE_TIMEOUT - timedelta(minutes=1))
+
+    repo.purge_expired()
+
+    assert _session_rows(session_id) == 0
+
+
+def test_purge_leaves_a_live_session_alone(repo: SessionRepository) -> None:
+    """The failure that would actually hurt. A purge one boundary too wide signs out everyone
+    currently working, and the two expiry tests above would still pass."""
+    session_id = repo.establish_session(_make_user()["github_login"]).session_id
+
+    repo.purge_expired()
+
+    assert _session_rows(session_id) == 1
+    assert repo.resolve(session_id).session_id == session_id
+
+
+def test_purge_reports_how_many_it_removed(repo: SessionRepository) -> None:
+    """Whatever else is in the table, purging two expired rows accounts for at least two."""
+    first = repo.establish_session(_make_user()["github_login"]).session_id
+    second = repo.establish_session(_make_user()["github_login"]).session_id
+    for session_id in (first, second):
+        _age_session(session_id, expires_at=datetime.now(UTC) - timedelta(minutes=1))
+
+    assert repo.purge_expired() >= 2

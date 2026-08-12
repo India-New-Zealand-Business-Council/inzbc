@@ -108,16 +108,17 @@ def test_no_append_only_table_can_be_emptied_in_one_statement() -> None:
     meeting any of them. The restricted application role has no such privilege, but the schema
     describes these triggers as catching a mistake by the table owner or a migration, and that is
     exactly who would run one. Only a statement-level trigger sees it.
+
+    The table list is **derived from the schema**, not written out here. It used to be a literal
+    tuple, and `candidate_sod_exceptions` was added afterwards with its row trigger and no
+    statement trigger: the test passed, because the table it did not know about was the one
+    missing its guard. A hardcoded list only ever checks the tables somebody remembered.
     """
     sql = _schema()
+    protected = set(re.findall(r"before update or delete on (\w+)", sql))
+    assert protected, "no append-only tables found; the pattern this test scans for has changed"
 
-    for table in (
-        "report_versions",
-        "sod_exceptions",
-        "decision_records",
-        "distribution_deliveries",
-        "audit_log",
-    ):
+    for table in sorted(protected):
         assert f"before truncate on {table}" in sql, (
             f"{table} can still be emptied in one statement without meeting its append-only guard"
         )

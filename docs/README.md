@@ -23,8 +23,12 @@ Two conventions hold across this tree:
 5. [`workstreams/README.md`](workstreams/README.md) — how the lanes are divided and who owns what.
 
 ## I am running SIP (analyst, reviewer or CEO)
-- [`sip/operator-guide.md`](sip/operator-guide.md) — **start here.** One full day, in order, in
-  plain language.
+- [`operator-guide.md`](operator-guide.md) — **running the platform.** Written for an operator with
+  no prior involvement, per BR12. What each refusal means and what to do about it, recording a
+  separation-of-duties exception when you are the only person available, rotating a credential, and
+  reading the audit trail. Ends with what it cannot yet tell you.
+- [`sip/operator-guide.md`](sip/operator-guide.md) — **the controlled launch**, which runs on the
+  workbook rather than the platform. One full day, in order, in plain language.
 - [`sip/launch/`](sip/launch/) — the launch pack. `SIP-184` is the daily-run procedure, but the
   pack is at **v0.9 review draft and is not approved**: the only approved controlling document is
   `SIP-050 Master Prompt v1.1`. Treat `SIP-184` as the working procedure for the controlled launch,
@@ -55,10 +59,41 @@ Two conventions hold across this tree:
   open items INZBC owns.
 
 ## I am handling data
+- [`privacy-assessment.md`](privacy-assessment.md) — the preliminary privacy and data-flow
+  assessment: what personal data can be captured, which fields are necessary, what happens on an
+  external model call, and the eight things that must happen before member data is stored. Three of
+  the eight are unbuilt engineering work rather than paperwork.
 - [`data/system-of-record-and-retention.md`](data/system-of-record-and-retention.md) — where each
   data type authoritatively lives, how it is classified, and how long it may be kept. Starts with
   the fact that the system holds no member data at all today, which is what makes the controls
   cheap to put in now and expensive to retrofit later.
+
+## I am checking a governance or security control
+- [`security-privacy-continuity-register.md`](security-privacy-continuity-register.md) — **start
+  here.** All fifteen controls the client's overview asks for, each with its owner and whether it is
+  actually done. It is an index, not a restatement, so it points at the documents below rather than
+  copying them. Two rows are unverified rather than done, and the register keeps that distinction
+  visible.
+- [`security/README.md`](security/README.md) — the security design: authentication architecture,
+  the route-level authorisation matrix, separation-of-duties rules, session and CSRF design, the
+  audit event catalogue and data classification. It ends with the known gaps, listed rather than
+  implied.
+- [`raci.md`](raci.md) — who is responsible, accountable, consulted and informed for each decision,
+  plus the governance document set tracker and the threat model.
+- [`incident-response.md`](incident-response.md) — what to do when something goes wrong, the
+  quarterly access review, and the joiners/movers/leavers process.
+- [`migration-and-rollback.md`](migration-and-rollback.md) — the cutover plan and what rollback can
+  and cannot recover.
+- [`secrets-register.md`](secrets-register.md) and
+  [`account-licence-register.md`](account-licence-register.md) — credentials by name, owner and
+  scope; and the accounts behind them.
+- [`backup-and-monitoring.md`](backup-and-monitoring.md) — what to watch and what to back up. The
+  two signals that matter most are absences: no run started today, and a run stalled in a human
+  gate. Neither looks like an error.
+- [`restore-procedure.md`](restore-procedure.md) — restoring the database and proving it worked,
+  including which claims have actually been tested and which have not.
+- [`environments.md`](environments.md) — development, test and production, the four rules that keep
+  them apart, and what has to be true before production is created.
 
 ## I need to know why something was decided
 - [`decisions/`](decisions/) — architecture decision records. Each states the context, the options
