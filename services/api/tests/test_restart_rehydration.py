@@ -29,6 +29,7 @@ import pytest
 import requests
 
 from services.api.auth import Principal, SessionRepository
+from services.api.tests.role_seed import grant
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
@@ -107,14 +108,14 @@ def session() -> Principal:
     """
     login = f"restart-{uuid.uuid4().hex[:12]}"
     with psycopg.connect(DATABASE_URL) as conn:
-        conn.execute(
-            "insert into roles (id, name) values (1, 'Analyst') on conflict do nothing"
-        )
         row = conn.execute(
             "insert into users (name, email, github_login) values (%s, %s, %s) returning id",
             (f"Test User {uuid.uuid4()}", f"{uuid.uuid4()}@example.com", login),
         ).fetchone()
-        conn.execute("insert into user_roles (user_id, role_id) values (%s, 1)", (row[0],))
+        # Analyst to create the run, SIP Owner to authorise it: `start` is launch authority and
+        # is deliberately restricted to the owner. Seeded by name, so this does not depend on
+        # which id another suite happened to claim first.
+        grant(conn, row[0], "Analyst", "SIP Owner")
         conn.commit()
     return SessionRepository(DATABASE_URL).establish_session(login)
 

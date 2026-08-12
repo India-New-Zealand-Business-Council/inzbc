@@ -16,6 +16,7 @@ import pytest
 from apps.sip.collector.verification import UnverifiedHighSignalError
 from apps.sip.pipeline.models import SignalStrength, VerificationState
 from services.api.candidate_persistence import CandidateRepository
+from services.api.tests.role_seed import grant
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
@@ -34,14 +35,11 @@ def repo() -> CandidateRepository:
 @pytest.fixture
 def user_id() -> str:
     with psycopg.connect(DATABASE_URL) as conn:
-        conn.execute(
-            "insert into roles (id, name) values (1, 'Analyst') on conflict do nothing"
-        )
         row = conn.execute(
             "insert into users (name, email) values (%s, %s) returning id",
             (f"Test User {uuid.uuid4()}", f"{uuid.uuid4()}@example.com"),
         ).fetchone()
-        conn.execute("insert into user_roles (user_id, role_id) values (%s, 1)", (row[0],))
+        grant(conn, row[0], "Analyst")
         conn.commit()
     return str(row[0])
 

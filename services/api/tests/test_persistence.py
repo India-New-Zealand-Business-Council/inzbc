@@ -24,6 +24,7 @@ from services.api.persistence import (
     HumanGateNotSatisfied,
     RunRepository,
 )
+from services.api.tests.role_seed import grant
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
@@ -44,18 +45,16 @@ def initiated_by() -> str:
     through any app code, since seeding a user isn't this adapter's concern.
     """
     with psycopg.connect(DATABASE_URL) as conn:
-        conn.execute(
-            "insert into roles (id, name) values (1, 'Analyst') on conflict do nothing"
-        )
         row = conn.execute(
             "insert into users (name, email) values (%s, %s) returning id",
             (f"Test User {uuid.uuid4()}", f"{uuid.uuid4()}@example.com"),
         ).fetchone()
         # ADR-0005 replaced users.role_id with user_roles: one principal may hold several roles,
         # because the steady state after the placement is one person holding every one of them.
-        conn.execute(
-            "insert into user_roles (user_id, role_id) values (%s, 1)", (row[0],)
-        )
+        # Seeded by name rather than by a hardcoded id: `roles.id` is not coordinated between the
+        # suites sharing this database, and role enforcement reads `roles.name` to decide
+        # authority, so a fixed id gives whichever name another suite claimed first.
+        grant(conn, row[0], "Analyst")
         conn.commit()
     return str(row[0])
 

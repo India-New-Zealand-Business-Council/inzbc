@@ -339,3 +339,25 @@ def test_a_different_person_may_decide_on_it(repo: DecisionRepository, seeded: d
     """The other half of the rule: separation refuses self-approval, not approval."""
     record = repo.record(**_kwargs(seeded, kind=REPORT_APPROVAL, value="Approved"))
     assert record.value == "Approved"
+
+
+@pytest.mark.parametrize(
+    "spelling",
+    [str.upper, lambda v: v.replace("-", "")],
+    ids=["uppercase", "unhyphenated"],
+)
+def test_self_approval_is_caught_whatever_the_uuid_spelling(
+    repo: DecisionRepository, seeded: dict, spelling
+) -> None:
+    """Postgres accepts an uppercase or unhyphenated UUID for the foreign key, so the permission
+    check passes on either spelling. A raw string comparison in the separation-of-duties check
+    would therefore not match, and the author would approve their own report version."""
+    with pytest.raises(DecisionNotPermittedError, match="created report version"):
+        repo.record(
+            **_kwargs(
+                seeded,
+                kind=REPORT_APPROVAL,
+                actor_id=spelling(seeded["author_id"]),
+                value="Approved",
+            )
+        )

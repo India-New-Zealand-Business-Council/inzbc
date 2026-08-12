@@ -24,9 +24,9 @@ from pydantic import BaseModel, ConfigDict
 
 from apps.sip.collector.verification import UnverifiedHighSignalError
 from apps.sip.pipeline.models import SignalStrength, SourceConfidence, VerificationState
-from services.api.auth import Principal
+from services.api.auth import ANALYST, REVIEWER, SIP_OWNER, STAFF_READ, Principal
 from services.api.candidate_persistence import CandidateRecord, CandidateRepository
-from services.api.session import require_csrf, require_principal
+from services.api.session import read_access, write_access
 
 router = APIRouter(prefix="/api/candidates", tags=["Candidates"])
 
@@ -138,7 +138,7 @@ def _not_found(candidate_id: str) -> HTTPException:
 @router.post("", response_model=CandidateOut, status_code=status.HTTP_201_CREATED)
 def capture_candidate(
     body: CaptureCandidateIn,
-    principal: Principal = Depends(require_csrf),
+    principal: Principal = Depends(write_access(ANALYST, SIP_OWNER)),
     repo: CandidateRepository = Depends(get_candidate_repository),
 ) -> CandidateOut:
     candidate = repo.capture(
@@ -157,7 +157,7 @@ def capture_candidate(
 @router.get("", response_model=list[CandidateOut])
 def list_candidates(
     run: str = Query(..., description="Run id to list candidates for."),
-    principal: Principal = Depends(require_principal),
+    principal: Principal = Depends(read_access(*STAFF_READ)),
     repo: CandidateRepository = Depends(get_candidate_repository),
 ) -> list[CandidateOut]:
     return [_candidate_out(c) for c in repo.list_for_run(run)]
@@ -166,7 +166,7 @@ def list_candidates(
 @router.get("/{candidate_id}", response_model=CandidateOut)
 def get_candidate(
     candidate_id: str,
-    principal: Principal = Depends(require_principal),
+    principal: Principal = Depends(read_access(*STAFF_READ)),
     repo: CandidateRepository = Depends(get_candidate_repository),
 ) -> CandidateOut:
     try:
@@ -179,7 +179,7 @@ def get_candidate(
 def verify_candidate(
     candidate_id: str,
     body: VerifyIn,
-    principal: Principal = Depends(require_csrf),
+    principal: Principal = Depends(write_access(REVIEWER, SIP_OWNER)),
     repo: CandidateRepository = Depends(get_candidate_repository),
 ) -> CandidateOut:
     try:
@@ -197,7 +197,7 @@ def verify_candidate(
 def score_candidate(
     candidate_id: str,
     body: ScoreIn,
-    principal: Principal = Depends(require_csrf),
+    principal: Principal = Depends(write_access(ANALYST, SIP_OWNER)),
     repo: CandidateRepository = Depends(get_candidate_repository),
 ) -> CandidateOut:
     try:
@@ -222,7 +222,7 @@ def score_candidate(
 def route_candidate(
     candidate_id: str,
     body: RouteIn,
-    principal: Principal = Depends(require_csrf),
+    principal: Principal = Depends(write_access(ANALYST, SIP_OWNER)),
     repo: CandidateRepository = Depends(get_candidate_repository),
 ) -> CandidateOut:
     try:
@@ -242,7 +242,7 @@ def route_candidate(
 def merge_candidate(
     candidate_id: str,
     body: MergeIn,
-    principal: Principal = Depends(require_csrf),
+    principal: Principal = Depends(write_access(ANALYST, SIP_OWNER)),
     repo: CandidateRepository = Depends(get_candidate_repository),
 ) -> CandidateOut:
     try:

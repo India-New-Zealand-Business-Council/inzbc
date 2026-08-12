@@ -32,6 +32,23 @@ from datetime import UTC, datetime, timedelta
 import psycopg
 from psycopg.rows import dict_row
 
+# The role vocabulary, exactly as `database/schema.sql` names it. Constants rather than string
+# literals at each call site, because a typo in a role name is a silent authorisation failure:
+# `require_roles` is fail-closed, so a misspelt role refuses everyone and looks like a permissions
+# bug rather than a typo.
+SIP_OWNER = "SIP Owner"
+ANALYST = "Analyst"
+REVIEWER = "Reviewer"
+SECRETARIAT = "Secretariat"
+ADMINISTRATOR = "Administrator"
+BOARD_VIEWER = "Board Viewer"
+AUDITOR = "Auditor"
+
+# Who may read SIP working data. Every staff role, because reading is how a reviewer, an auditor
+# or the board sees what the platform did; withholding it from them serves nobody. This is still
+# an allowlist: a user holding no role at all reads nothing.
+STAFF_READ = (SIP_OWNER, ANALYST, REVIEWER, SECRETARIAT, ADMINISTRATOR, BOARD_VIEWER, AUDITOR)
+
 # ADR-0004: absolute 12 hours, idle timeout 60 minutes, whichever comes first.
 ABSOLUTE_LIFETIME = timedelta(hours=12)
 IDLE_TIMEOUT = timedelta(minutes=60)
@@ -61,8 +78,12 @@ def storage_id(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
-def _canonical_actor(value: str | uuid.UUID | None) -> str | None:
+def canonical_actor(value: str | uuid.UUID | None) -> str | None:
     """Normalises an actor id so comparisons cannot be defeated by formatting.
+
+    Public because `decisions.py` needs the same normalisation for its separation-of-duties
+    check. It was private, so that module compared raw strings instead and an uppercase UUID
+    slipped past - the same shape of mistake as re-implementing a hash rather than sharing one.
 
     `'A1B2...'`, `'a1b2...'`, the unhyphenated form and a `uuid.UUID` object are all the same
     principal. Comparing the raw strings would let an uppercase or unhyphenated id slip past the
@@ -298,12 +319,12 @@ def refuse_self_review(principal: Principal, subject_actor_id: str | uuid.UUID |
     Both ids are canonicalised before comparing, so an uppercase or unhyphenated UUID cannot slip
     past. A malformed id canonicalises to `None` and is therefore refused, not permitted.
     """
-    subject = _canonical_actor(subject_actor_id)
+    subject = canonical_actor(subject_actor_id)
     if subject is None:
         raise SelfApprovalError(
             "cannot establish who produced this, so separation of duties cannot be checked"
         )
-    if subject == _canonical_actor(principal.user_id):
+    if subject == canonical_actor(principal.user_id):
         raise SelfApprovalError(
             "the person who produced this cannot also review or approve it"
         )
