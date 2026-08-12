@@ -45,13 +45,10 @@ class FakeReportRepository:
         self.role_error: Exception | None = None
         self.last_submit: dict | None = None
 
-    def role_id_for(self, actor_id: str, role_names: tuple[str, ...]) -> int:
-        if self.role_error is not None:
-            raise self.role_error
-        return 7
-
     def submit(self, **kwargs) -> ReportVersion:
         self.last_submit = kwargs
+        if self.role_error is not None:
+            raise self.role_error
         if self.next_error is not None:
             error, self.next_error = self.next_error, None
             raise error

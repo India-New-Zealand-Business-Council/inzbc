@@ -13,11 +13,24 @@ several roles, because the steady state after the placement is one person holdin
 them.
 
 Separation of duties is enforced server-side and binds to the **role held at the time of the act**,
-not to a person. The required-distinct pairs are configuration (`decision_sod_role_pairs`), so a
-staffing change is a data change. `runs.analyst_id <> runs.reviewer_id` is a database constraint and
-still holds. Where one principal necessarily holds both sides of a required-distinct pair, the
-decision still commits, but only against a recorded `sod_exceptions` row naming the approver, the
-reason and a review date. An unrecorded self-approval is refused.
+not to a person. `runs.analyst_id <> runs.reviewer_id` is a database constraint and still holds.
+Where one principal necessarily holds both sides, the decision still commits, but only against a
+recorded `sod_exceptions` row naming the approver, the reason and a review date. An unrecorded
+self-approval is refused.
+
+**Two halves, and only one of them is enforced today.** Saying otherwise would overstate the
+control, which is worse than the gap.
+
+*Enforced:* authorship. `DecisionRepository.record` reads `report_versions.created_by`,
+canonicalises both identities so a differently-spelled UUID cannot slip past, and refuses when the
+decider created the version being decided on. Candidate acts are checked the same way, against
+`captured_by` and `assessed_by` rather than against role membership.
+
+*Not enforced:* the role pairs. `decision_sod_role_pairs` is designed as configuration, so a
+staffing change would be a data change, but **nothing consults the table**. It is deliberately
+unseeded pending client answers B8, and enforcing an empty rule set would refuse every decision. So
+a conflict expressed as a role pair rather than as authorship is not currently caught, and will not
+be until the table is both seeded and read. ADR-0005 required follow-up 4.
 
 ## Pipeline (Roshan) — data in
 ```

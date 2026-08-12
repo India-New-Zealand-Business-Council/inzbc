@@ -427,7 +427,7 @@ class ReportRepository:
         run_id: str,
         content_sha256: str,
         actor_id: str,
-        actor_role_id: int,
+        role_names: tuple[str, ...],
         created_at: datetime,
     ) -> ReportVersion:
         """Appends the next version of a run's report, and returns it.
@@ -443,7 +443,12 @@ class ReportRepository:
         The schema requires `submitted_at >= created_at`, so a `created_at` in the future is
         refused rather than quietly accepted.
         """
-        with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
+        with psycopg.connect(self._database_url, row_factory=dict_row) as conn, conn.transaction():
+            # Resolved inside the same transaction as the insert, not before it. Two connections
+            # left a window: the composite foreign key proves the `user_roles` row exists, not that
+            # it is still enabled, so a role disabled between the lookup and the write would be
+            # recorded as the role the act was performed in.
+            actor_role_id = _role_id_for(conn, actor_id, role_names)
             try:
                 row = conn.execute(
                     "insert into report_versions "
@@ -460,7 +465,6 @@ class ReportRepository:
                     f"another version of run {run_id!r} was submitted at the same moment; "
                     "re-read and submit again"
                 ) from error
-            conn.commit()
         return _to_report_version(row)
 
     def get(self, report_version_id: str) -> ReportVersion:
@@ -477,28 +481,12 @@ class ReportRepository:
     def role_id_for(self, actor_id: str, role_names: tuple[str, ...]) -> int:
         """The actor's enabled role id for the first of `role_names` they actually hold.
 
-        `report_versions.created_by_role_id` records the role the act was performed in, and
-        `Principal` carries role *names* while the column takes an id. Resolving here rather than
-        in the router keeps the database's vocabulary out of the HTTP layer.
-
-        **Ordered, not arbitrary.** The caller passes the roles in precedence order, so a principal
-        holding several gets a deterministic answer rather than whichever the database returned
-        first. That matters for the steady state after this placement, where one person holds every
-        role and an arbitrary pick would make the recorded role meaningless.
+        Standalone form of the resolution `submit` performs inside its own transaction. Both go
+        through `_role_id_for`, so there is one answer to "which role was this act performed in"
+        rather than two that can disagree.
         """
         with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
-            rows = conn.execute(
-                "select r.name, ur.role_id from user_roles ur join roles r on r.id = ur.role_id "
-                "where ur.user_id = %s and ur.enabled",
-                (actor_id,),
-            ).fetchall()
-        held = {row["name"]: row["role_id"] for row in rows}
-        for name in role_names:
-            if name in held:
-                return held[name]
-        raise DecisionNotPermittedError(
-            f"actor {actor_id!r} holds none of {', '.join(role_names)}"
-        )
+            return _role_id_for(conn, actor_id, role_names)
 
 
 def _to_report_version(row: dict) -> ReportVersion:
@@ -511,3 +499,33 @@ def _to_report_version(row: dict) -> ReportVersion:
         created_at=row["created_at"].isoformat(),
         submitted_at=row["submitted_at"].isoformat(),
     )
+
+
+def _role_id_for(conn: psycopg.Connection, actor_id: str, role_names: tuple[str, ...]) -> int:
+    """The actor's enabled role id for the first of `role_names` they hold, on the caller's
+    connection.
+
+    `report_versions.created_by_role_id` records the role an act was performed in, and `Principal`
+    carries role *names* while the column takes an id. Resolving here rather than in the router
+    keeps the database's vocabulary out of the HTTP layer.
+
+    **Ordered, not arbitrary.** The caller passes the roles in precedence order, so a principal
+    holding several gets a deterministic answer rather than whichever the database returned first.
+    That matters for the steady state after this placement, where one person holds every role and
+    an arbitrary pick would make the recorded role meaningless.
+
+    **Takes a connection so the caller can resolve and write in one transaction.** The foreign key
+    proves the `user_roles` row exists, not that it is still enabled, so resolving on a separate
+    connection leaves a window where a role disabled in between is still recorded as the one the
+    act was performed in.
+    """
+    rows = conn.execute(
+        "select r.name, ur.role_id from user_roles ur join roles r on r.id = ur.role_id "
+        "where ur.user_id = %s and ur.enabled",
+        (actor_id,),
+    ).fetchall()
+    held = {row["name"]: row["role_id"] for row in rows}
+    for name in role_names:
+        if name in held:
+            return held[name]
+    raise DecisionNotPermittedError(f"actor {actor_id!r} holds none of {', '.join(role_names)}")

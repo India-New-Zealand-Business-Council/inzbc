@@ -8,7 +8,9 @@ malformed row. A fake proves none of them.
 from __future__ import annotations
 
 import os
+import threading
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 
 import psycopg
@@ -18,6 +20,7 @@ from services.api.decisions import (
     DecisionNotPermittedError,
     DecisionRepository,
     ReportRepository,
+    ReportVersionConflict,
 )
 from services.api.persistence import RunRepository
 from services.api.tests.role_seed import grant, role_id
@@ -45,12 +48,6 @@ def actor_id() -> str:
 
 
 @pytest.fixture
-def analyst_role_id(actor_id: str) -> int:
-    with psycopg.connect(DATABASE_URL) as conn:
-        return role_id(conn, "Analyst")
-
-
-@pytest.fixture
 def run_id(actor_id: str) -> str:
     run = RunRepository(DATABASE_URL).create_run(
         run_number=f"RUN-RPT-{uuid.uuid4().hex[:12]}",
@@ -62,28 +59,28 @@ def run_id(actor_id: str) -> str:
     return run.id
 
 
-def _submit(run_id: str, actor_id: str, role: int, *, sha: str = SHA):
+def _submit(run_id: str, actor_id: str, roles: tuple[str, ...] = ("Analyst",), *, sha: str = SHA):
     return ReportRepository(DATABASE_URL).submit(
         run_id=run_id,
         content_sha256=sha,
         actor_id=actor_id,
-        actor_role_id=role,
+        role_names=roles,
         created_at=datetime.now(UTC) - timedelta(minutes=5),
     )
 
 
-def test_the_first_version_of_a_run_is_one(run_id: str, actor_id: str, analyst_role_id: int):
-    version = _submit(run_id, actor_id, analyst_role_id)
+def test_the_first_version_of_a_run_is_one(run_id: str, actor_id: str):
+    version = _submit(run_id, actor_id)
 
     assert version.version_number == 1
     assert version.run_id == run_id
 
 
-def test_versions_number_upwards_per_run(run_id: str, actor_id: str, analyst_role_id: int):
+def test_versions_number_upwards_per_run(run_id: str, actor_id: str):
     """Assigned by the database, not the caller. Two runs must not share a sequence, and a second
     version of the same run must not reuse the first one's number."""
-    first = _submit(run_id, actor_id, analyst_role_id)
-    second = _submit(run_id, actor_id, analyst_role_id)
+    first = _submit(run_id, actor_id)
+    second = _submit(run_id, actor_id)
     other_run = RunRepository(DATABASE_URL).create_run(
         run_number=f"RUN-RPT-{uuid.uuid4().hex[:12]}",
         prompt_version="SIP-050 v1.1",
@@ -91,18 +88,18 @@ def test_versions_number_upwards_per_run(run_id: str, actor_id: str, analyst_rol
         coverage_end_utc="2026-08-13T07:00:00+12:00",
         initiated_by=actor_id,
     )
-    elsewhere = _submit(other_run.id, actor_id, analyst_role_id)
+    elsewhere = _submit(other_run.id, actor_id)
 
     assert (first.version_number, second.version_number) == (1, 2)
     assert elsewhere.version_number == 1, "the sequence is per run, not global"
 
 
 def test_submitting_opens_all_three_decision_streams(
-    run_id: str, actor_id: str, analyst_role_id: int
+    run_id: str, actor_id: str
 ):
     """The property that makes a submitted report decidable, and the reason there is no separate
     call to open the streams: a trigger does it, so it cannot be forgotten."""
-    version = _submit(run_id, actor_id, analyst_role_id)
+    version = _submit(run_id, actor_id)
 
     current = DecisionRepository(DATABASE_URL).current(version.id)
 
@@ -113,11 +110,11 @@ def test_submitting_opens_all_three_decision_streams(
 
 
 def test_a_freshly_submitted_version_has_no_decisions(
-    run_id: str, actor_id: str, analyst_role_id: int
+    run_id: str, actor_id: str
 ):
     """Undecided is null, not a default value. `Not Authorised` is a decision; the absence of one
     is a different fact, and collapsing them is what the mutable approvals row used to do."""
-    version = _submit(run_id, actor_id, analyst_role_id)
+    version = _submit(run_id, actor_id)
 
     current = DecisionRepository(DATABASE_URL).current(version.id)
 
@@ -126,8 +123,8 @@ def test_a_freshly_submitted_version_has_no_decisions(
     assert current.distribution_authority is None
 
 
-def test_reading_back_returns_what_was_submitted(run_id: str, actor_id: str, analyst_role_id: int):
-    version = _submit(run_id, actor_id, analyst_role_id)
+def test_reading_back_returns_what_was_submitted(run_id: str, actor_id: str):
+    version = _submit(run_id, actor_id)
 
     assert ReportRepository(DATABASE_URL).get(version.id) == version
 
@@ -138,15 +135,15 @@ def test_an_unknown_version_raises_key_error():
 
 
 def test_a_content_hash_that_is_not_a_sha256_is_refused(
-    run_id: str, actor_id: str, analyst_role_id: int
+    run_id: str, actor_id: str
 ):
     """The router validates the same shape. This proves the database refuses it too, so a caller
     reaching the repository directly cannot store a hash that is not one."""
     with pytest.raises(psycopg.errors.CheckViolation):
-        _submit(run_id, actor_id, analyst_role_id, sha="not-a-hash")
+        _submit(run_id, actor_id, sha="not-a-hash")
 
 
-def test_submission_cannot_predate_creation(run_id: str, actor_id: str, analyst_role_id: int):
+def test_submission_cannot_predate_creation(run_id: str, actor_id: str):
     """`submitted_at >= created_at` is a CHECK. A `created_at` in the future would mean the content
     was made after it was handed over, which is not a thing that happened."""
     with pytest.raises(psycopg.errors.CheckViolation):
@@ -154,22 +151,20 @@ def test_submission_cannot_predate_creation(run_id: str, actor_id: str, analyst_
             run_id=run_id,
             content_sha256=SHA,
             actor_id=actor_id,
-            actor_role_id=analyst_role_id,
+            role_names=("Analyst",),
             created_at=datetime.now(UTC) + timedelta(days=1),
         )
 
 
-def test_the_role_must_be_one_the_actor_actually_holds(
-    run_id: str, actor_id: str
-):
-    """`created_by_role_id` references `user_roles`, so a claimed role nobody granted is refused by
-    the database rather than recorded as fact."""
-    with psycopg.connect(DATABASE_URL) as conn:
-        unheld = role_id(conn, "Board Viewer")
-        conn.commit()
+def test_the_role_must_be_one_the_actor_actually_holds(run_id: str, actor_id: str):
+    """Refused before the insert, and the database would refuse it after.
 
-    with pytest.raises(psycopg.errors.ForeignKeyViolation):
-        _submit(run_id, actor_id, unheld)
+    `_role_id_for` finds no held role and raises, so the write never runs. Were it to run,
+    `created_by_role_id` references `user_roles`, so a claimed role nobody granted is refused by the
+    database rather than recorded as fact. Two layers, and the outer one gives the better message.
+    """
+    with pytest.raises(DecisionNotPermittedError):
+        _submit(run_id, actor_id, ("Board Viewer",))
 
 
 def test_role_resolution_prefers_the_first_role_the_actor_holds(actor_id: str):
@@ -190,3 +185,34 @@ def test_role_resolution_refuses_an_actor_holding_none_of_them(actor_id: str):
 
     with pytest.raises(DecisionNotPermittedError):
         repo.role_id_for(actor_id, ("Secretariat",))
+
+
+def test_two_concurrent_submissions_cannot_both_take_the_same_version(
+    run_id: str, actor_id: str
+):
+    """The conflict path, driven by real concurrency rather than a fake told to raise.
+
+    The version number is computed inside the insert, so under `READ COMMITTED` both callers can
+    read the same maximum. `unique (run_id, version_number)` is what actually prevents the
+    duplicate. Without a real race this path was only ever exercised by a fake configured to raise,
+    which would keep passing if the `except UniqueViolation` block were deleted outright.
+
+    Either both succeed with distinct numbers, or one is refused with `ReportVersionConflict`. What
+    must never happen is two rows claiming the same version, or an opaque database error reaching
+    the caller.
+    """
+    barrier = threading.Barrier(2)
+
+    def submit_once():
+        barrier.wait(timeout=10)
+        try:
+            return _submit(run_id, actor_id).version_number
+        except ReportVersionConflict:
+            return "conflict"
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        outcomes = [f.result() for f in [pool.submit(submit_once), pool.submit(submit_once)]]
+
+    numbers = [o for o in outcomes if o != "conflict"]
+    assert len(set(numbers)) == len(numbers), f"two rows took the same version: {outcomes}"
+    assert numbers, "both submissions were refused; at least one must succeed"

@@ -162,19 +162,20 @@ def submit_report(
     is a retry, and saying so is the difference between a caller that recovers and one that gives
     up.
     """
-    try:
-        role_id = repo.role_id_for(principal.user_id, _SUBMIT_ROLES)
-    except DecisionNotPermittedError as error:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, detail=str(error)) from error
-
+    # One call, so the role is resolved in the same transaction as the insert. Resolving first and
+    # writing after left a window where a role disabled in between was still recorded as the one
+    # the act was performed in, because the foreign key proves the assignment exists rather than
+    # that it is still enabled.
     try:
         version = repo.submit(
             run_id=body.run_id,
             content_sha256=body.content_sha256,
             actor_id=principal.user_id,
-            actor_role_id=role_id,
+            role_names=_SUBMIT_ROLES,
             created_at=body.created_at,
         )
+    except DecisionNotPermittedError as error:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail=str(error)) from error
     except ReportVersionConflict as error:
         raise HTTPException(status.HTTP_409_CONFLICT, detail=str(error)) from error
     return _version_out(version)
