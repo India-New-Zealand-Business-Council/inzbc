@@ -185,11 +185,17 @@ class DecisionRepository:
                 "evidence anything. Cite an approved sod_exceptions row if this is deliberate."
             )
 
+        # The approver is joined through `users` rather than merely read, so an exception
+        # naming a deactivated account cannot authorise anything. `approved_by` is a plain
+        # foreign key to `users`, so nothing in the schema stops an inactive or roleless account
+        # being named; an approval from someone who no longer works here is not an approval.
         exception = conn.execute(
-            "select approved_by, review_date, review_date < current_date as lapsed "
-            "from sod_exceptions "
-            "where id = %s and report_version_id = %s and kind = %s "
-            "  and actor_id = %s and actor_role_id = %s",
+            "select e.approved_by, e.review_date, "
+            "       e.review_date < current_date as lapsed, "
+            "       u.active as approver_active "
+            "from sod_exceptions e join users u on u.id = e.approved_by "
+            "where e.id = %s and e.report_version_id = %s and e.kind = %s "
+            "  and e.actor_id = %s and e.actor_role_id = %s",
             (sod_exception_id, report_version_id, kind, actor_id, actor_role_id),
         ).fetchone()
         if exception is None:
@@ -208,6 +214,12 @@ class DecisionRepository:
         # Compared against the database's clock, not the application server's: expiry is a
         # property of the record, and two app instances in different timezones must not disagree
         # about whether an approval has lapsed.
+        if not exception["approver_active"]:
+            raise DecisionNotPermittedError(
+                f"exception {sod_exception_id!r} was approved by an account that is no longer "
+                "active. An approval from someone who has left is not a current approval."
+            )
+
         if exception["lapsed"]:
             raise DecisionNotPermittedError(
                 f"exception {sod_exception_id!r} was to be reviewed by "
