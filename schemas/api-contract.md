@@ -13,11 +13,24 @@ several roles, because the steady state after the placement is one person holdin
 them.
 
 Separation of duties is enforced server-side and binds to the **role held at the time of the act**,
-not to a person. The required-distinct pairs are configuration (`decision_sod_role_pairs`), so a
-staffing change is a data change. `runs.analyst_id <> runs.reviewer_id` is a database constraint and
-still holds. Where one principal necessarily holds both sides of a required-distinct pair, the
-decision still commits, but only against a recorded `sod_exceptions` row naming the approver, the
-reason and a review date. An unrecorded self-approval is refused.
+not to a person. `runs.analyst_id <> runs.reviewer_id` is a database constraint and still holds.
+Where one principal necessarily holds both sides, the decision still commits, but only against a
+recorded `sod_exceptions` row naming the approver, the reason and a review date. An unrecorded
+self-approval is refused.
+
+**Two halves, and only one of them is enforced today.** Saying otherwise would overstate the
+control, which is worse than the gap.
+
+*Enforced:* authorship. `DecisionRepository.record` reads `report_versions.created_by`,
+canonicalises both identities so a differently-spelled UUID cannot slip past, and refuses when the
+decider created the version being decided on. Candidate acts are checked the same way, against
+`captured_by` and `assessed_by` rather than against role membership.
+
+*Not enforced:* the role pairs. `decision_sod_role_pairs` is designed as configuration, so a
+staffing change would be a data change, but **nothing consults the table**. It is deliberately
+unseeded pending client answers B8, and enforcing an empty rule set would refuse every decision. So
+a conflict expressed as a role pair rather than as authorship is not currently caught, and will not
+be until the table is both seeded and read. ADR-0005 required follow-up 4.
 
 ## Pipeline (Roshan) — data in
 ```
@@ -35,8 +48,9 @@ POST   /api/candidates/:id/verify | /score | /route | /merge
 
 ## Control (Paras) — data out + human gates
 ```
+POST   /api/reports                  submit a report version for a run  [BUILT]
+GET    /api/reports/:id              the version plus every current decision on it  [BUILT]
 POST   /api/reports/daily            build the SIP-186 brief from selected candidates
-GET    /api/reports/:id
 POST   /api/reports/:id/qa           record SIP-188 QA result (blocks release on Critical)
 POST   /api/reports/:id/submit
 POST   /api/reports/:id/approval     report-approval stream: Approved | Rejected |
@@ -92,6 +106,27 @@ what to work on.
 
 `extra="forbid"` on every model in the response, so a field added server-side cannot reach the UI
 unannounced.
+
+**What is built, and what the decision-writing endpoints are waiting on.**
+
+`POST /api/reports` and `GET /api/reports/:id` are mounted. Submitting a version is what makes a
+report decidable: a trigger opens the CEO Ruling, Report Approval and Distribution Authority
+streams on insert, so a decision can never arrive for a stream nobody created, and there is no
+separate call to forget. The version number is assigned by the database, because a caller-supplied
+number is a second opinion about the sequence and the one that disagreed would win.
+
+The read returns the version **and** its current decisions **and** the revision each was read at,
+in one response. A reviewer cannot act on a version without knowing what has already been decided,
+and a caller recording a decision has to pass back the revision it read. Two calls would let a
+decision commit in between, which is the race `DecisionRepository.current` closes in a single
+statement, so splitting them over HTTP would reopen it one layer up.
+
+`/approval`, `/ruling` and `/distribution` are **specified and deliberately not mounted**.
+`decision_role_permissions` is unseeded, and no row means nobody may act, so the repository refuses
+every decision by design. Mounting them now would ship three endpoints that answer 403 until INZBC
+decides who may approve what. That is a client decision (ADR-0005 required follow-up 4, client
+answers B8), not an engineering one, and an endpoint that looks built is worse than one that is
+honestly absent.
 
 **Why ruling and distribution are separate commands.** REQ-U-02 requires distribution authority to
 be captured as a separate action, and ADR-0005 records the three facts as independent immutable

@@ -365,6 +365,56 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit Report
+         * @description Submits the next version of a run's report.
+         *
+         *     The version number is assigned by the database, not by the caller. A caller-supplied number
+         *     would be a second opinion about the sequence, and the one that disagreed would win.
+         *
+         *     **409 on a concurrent submission**, not 500. Two submissions racing for the same version number
+         *     is a retry, and saying so is the difference between a caller that recovers and one that gives
+         *     up.
+         */
+        post: operations["submit_report_api_reports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/{report_version_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Report
+         * @description A report version and everything currently decided about it.
+         *
+         *     Every staff role may read it, for the same reason every staff role may read the audit trail: a
+         *     record only the decider can see is not evidence anyone else can rely on.
+         */
+        get: operations["read_report_api_reports__report_version_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/session": {
         parameters: {
             query?: never;
@@ -678,6 +728,31 @@ export interface components {
             /** Open Actions Truncated */
             open_actions_truncated: boolean;
         };
+        /**
+         * DecisionsOut
+         * @description The current decision on each stream, plus the revision each was read at.
+         *
+         *     A `null` value means undecided *after submission*, which is a different fact from an explicit
+         *     refusal: `Not Authorised` is a decision, `null` is the absence of one. Keeping them distinct is
+         *     the whole reason the mutable approvals row was replaced.
+         *
+         *     `revisions` is not decoration. A caller recording a decision passes back the revision it read,
+         *     and that is what makes a decision built on a superseded ruling detectable.
+         */
+        DecisionsOut: {
+            /** Ceo Ruling */
+            ceo_ruling: string | null;
+            /** Report Approval */
+            report_approval: string | null;
+            /** Distribution Authority */
+            distribution_authority: string | null;
+            /** Distribution Recipient */
+            distribution_recipient: string | null;
+            /** Revisions */
+            revisions: {
+                [key: string]: number;
+            };
+        };
         /** DraftIn */
         DraftIn: {
             /**
@@ -764,6 +839,28 @@ export interface components {
             /** Overdue */
             overdue: boolean;
         };
+        /** ReportOut */
+        ReportOut: {
+            report: components["schemas"]["ReportVersionOut"];
+            decisions: components["schemas"]["DecisionsOut"];
+        };
+        /** ReportVersionOut */
+        ReportVersionOut: {
+            /** Id */
+            id: string;
+            /** Run Id */
+            run_id: string;
+            /** Version Number */
+            version_number: number;
+            /** Created By */
+            created_by: string;
+            /** Content Sha256 */
+            content_sha256: string;
+            /** Created At */
+            created_at: string;
+            /** Submitted At */
+            submitted_at: string;
+        };
         /** RouteIn */
         RouteIn: {
             /** Proposed Routing */
@@ -826,6 +923,18 @@ export interface components {
          * @enum {string}
          */
         SourceConfidence: "High" | "Medium" | "Low" | "Unverified";
+        /** SubmitReportIn */
+        SubmitReportIn: {
+            /** Run Id */
+            run_id: string;
+            /** Content Sha256 */
+            content_sha256: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /**
          * TransitionIn
          * @description Body shared by all four lifecycle commands. `approval_ref` is optional at the schema level
@@ -1756,6 +1865,98 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    submit_report_api_reports_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitReportIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportVersionOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_report_api_reports__report_version_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

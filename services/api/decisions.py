@@ -382,3 +382,150 @@ class DecisionRepository:
             decided_at=inserted["decided_at"].isoformat(),
             reason=inserted["reason"],
         )
+
+
+class ReportVersionConflict(RuntimeError):
+    """Two submissions raced for the same version number on one run.
+
+    Its own type because the caller's move is to retry, not to change anything. `unique (run_id,
+    version_number)` is what catches it: the next number is computed in the insert, and under
+    `READ COMMITTED` two concurrent submissions can both read the same maximum.
+    """
+
+
+@dataclass(frozen=True)
+class ReportVersion:
+    """One submitted report version. Immutable, like the row: `report_versions` is append-only."""
+
+    id: str
+    run_id: str
+    version_number: int
+    created_by: str
+    content_sha256: str
+    created_at: str
+    submitted_at: str
+
+
+class ReportRepository:
+    """Submitting and reading report versions (#124).
+
+    Kept beside `DecisionRepository` rather than in `persistence.py` because the two are one
+    subject: submitting a version is what opens its three decision streams, and reading a version
+    without its current decisions tells a reviewer nothing they can act on.
+
+    **Submitting is the act that makes a report decidable.** A trigger on insert opens the CEO
+    Ruling, Report Approval and Distribution Authority streams, so a decision can never arrive for
+    a stream nobody created. That is why there is no separate "open the streams" call to forget.
+    """
+
+    def __init__(self, database_url: str | None = None) -> None:
+        self._database_url = database_url or os.environ["DATABASE_URL"]
+
+    def submit(
+        self,
+        *,
+        run_id: str,
+        content_sha256: str,
+        actor_id: str,
+        role_names: tuple[str, ...],
+        created_at: datetime,
+    ) -> ReportVersion:
+        """Appends the next version of a run's report, and returns it.
+
+        **The version number is computed in the insert**, not read and then written, so the value
+        and the row that uses it come from one statement. That still races: two concurrent
+        submissions can read the same maximum under `READ COMMITTED`. `unique (run_id,
+        version_number)` is what actually prevents the duplicate, and this raises
+        `ReportVersionConflict` so the caller retries rather than seeing an opaque database error.
+
+        **`created_at` is supplied by the caller, `submitted_at` by the database.** They are
+        different facts: when the content was produced, and when it was handed over for decision.
+        The schema requires `submitted_at >= created_at`, so a `created_at` in the future is
+        refused rather than quietly accepted.
+        """
+        with psycopg.connect(self._database_url, row_factory=dict_row) as conn, conn.transaction():
+            # Resolved inside the same transaction as the insert, not before it. Two connections
+            # left a window: the composite foreign key proves the `user_roles` row exists, not that
+            # it is still enabled, so a role disabled between the lookup and the write would be
+            # recorded as the role the act was performed in.
+            actor_role_id = _role_id_for(conn, actor_id, role_names)
+            try:
+                row = conn.execute(
+                    "insert into report_versions "
+                    "(run_id, version_number, created_by, created_by_role_id, content_sha256, "
+                    " created_at) "
+                    "values (%s, (select coalesce(max(version_number), 0) + 1 from report_versions "
+                    "             where run_id = %s), %s, %s, %s, %s) "
+                    "returning id, run_id, version_number, created_by, content_sha256, "
+                    "          created_at, submitted_at",
+                    (run_id, run_id, actor_id, actor_role_id, content_sha256, created_at),
+                ).fetchone()
+            except psycopg.errors.UniqueViolation as error:
+                raise ReportVersionConflict(
+                    f"another version of run {run_id!r} was submitted at the same moment; "
+                    "re-read and submit again"
+                ) from error
+        return _to_report_version(row)
+
+    def get(self, report_version_id: str) -> ReportVersion:
+        with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
+            row = conn.execute(
+                "select id, run_id, version_number, created_by, content_sha256, created_at, "
+                "       submitted_at from report_versions where id = %s",
+                (report_version_id,),
+            ).fetchone()
+        if row is None:
+            raise KeyError(f"no report version {report_version_id!r}")
+        return _to_report_version(row)
+
+    def role_id_for(self, actor_id: str, role_names: tuple[str, ...]) -> int:
+        """The actor's enabled role id for the first of `role_names` they actually hold.
+
+        Standalone form of the resolution `submit` performs inside its own transaction. Both go
+        through `_role_id_for`, so there is one answer to "which role was this act performed in"
+        rather than two that can disagree.
+        """
+        with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
+            return _role_id_for(conn, actor_id, role_names)
+
+
+def _to_report_version(row: dict) -> ReportVersion:
+    return ReportVersion(
+        id=str(row["id"]),
+        run_id=str(row["run_id"]),
+        version_number=row["version_number"],
+        created_by=str(row["created_by"]),
+        content_sha256=row["content_sha256"],
+        created_at=row["created_at"].isoformat(),
+        submitted_at=row["submitted_at"].isoformat(),
+    )
+
+
+def _role_id_for(conn: psycopg.Connection, actor_id: str, role_names: tuple[str, ...]) -> int:
+    """The actor's enabled role id for the first of `role_names` they hold, on the caller's
+    connection.
+
+    `report_versions.created_by_role_id` records the role an act was performed in, and `Principal`
+    carries role *names* while the column takes an id. Resolving here rather than in the router
+    keeps the database's vocabulary out of the HTTP layer.
+
+    **Ordered, not arbitrary.** The caller passes the roles in precedence order, so a principal
+    holding several gets a deterministic answer rather than whichever the database returned first.
+    That matters for the steady state after this placement, where one person holds every role and
+    an arbitrary pick would make the recorded role meaningless.
+
+    **Takes a connection so the caller can resolve and write in one transaction.** The foreign key
+    proves the `user_roles` row exists, not that it is still enabled, so resolving on a separate
+    connection leaves a window where a role disabled in between is still recorded as the one the
+    act was performed in.
+    """
+    rows = conn.execute(
+        "select r.name, ur.role_id from user_roles ur join roles r on r.id = ur.role_id "
+        "where ur.user_id = %s and ur.enabled",
+        (actor_id,),
+    ).fetchall()
+    held = {row["name"]: row["role_id"] for row in rows}
+    for name in role_names:
+        if name in held:
+            return held[name]
+    raise DecisionNotPermittedError(f"actor {actor_id!r} holds none of {', '.join(role_names)}")
