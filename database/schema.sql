@@ -151,6 +151,19 @@ create table candidates (
   summary            text,
   published_at       timestamptz,
   captured_at        timestamptz not null default now(),
+  -- Who performed each act, so separation of duties can be checked against the acts themselves
+  -- rather than against role membership. Holding the Reviewer role says a person may review
+  -- something; it cannot say whether they are reviewing their own work, and BR8 is about the
+  -- latter. Without these columns one principal could capture, score, route and verify the same
+  -- candidate end to end while passing every role check, because `require_roles` is an OR over
+  -- the roles held and the steady state after the placement is one person holding all of them.
+  --
+  -- Nullable because rows predating this cannot have their authorship reconstructed. A null
+  -- means "unknown", which the verification check treats as a refusal rather than a pass: an
+  -- unattributable candidate needs its provenance backfilled, not waving through.
+  captured_by        uuid references users(id),
+  assessed_by        uuid references users(id),
+  verified_by        uuid references users(id),
   in_coverage_window boolean,
   nz_relevance       smallint,   -- 0..5 scores
   india_relevance    smallint,
