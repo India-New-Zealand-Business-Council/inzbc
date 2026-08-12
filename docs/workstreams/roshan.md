@@ -64,7 +64,10 @@ same branch-level fault hits someone else's PR later; not otherwise unresolved.
   The gateway still refuses every call wherever `REDACTION_POLICY_PATH` is unset, which is the
   intended default, so a live call needs that set in the environment as well. Non-negotiable per
   `comms-assistant.md`'s "drafts only, adversarially tested" promise: the named-reviewer gate is
-  not optional, and #223 (refusing member prose at the boundary) still bounds what may be sent.
+  not optional. Boundary refusal has since landed too, so every model call declares a
+  `PromptSource` and a prompt built from member records must go through `minimise()` and declare
+  `MINIMISED_RECORD`. The brief itself is `STAFF_AUTHORED`, which is a declaration rather than a
+  guarantee the text is clean, so do not paste member details into one.
 - [ ] End-to-end pipeline run once org-repo secrets land (Bhanu's item): collector → capture →
   assessment live against the SIP-184 SOP; fix what breaks; record the run.
 - [ ] Collection-engine reliability (#208, via `daily-india-nz-news-agent`'s own PR flow). Scoped

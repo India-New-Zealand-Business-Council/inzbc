@@ -128,6 +128,24 @@ Executive, Koru Exports Ltd` passes through untouched. **Do not paste member det
 and rely on redaction.** Reviewing the output afterwards does not help either, because the text
 already reached the provider.
 
+### "may not be sent to an external model"
+
+**What happened.** The call declared a prohibited origin: a member record, a CRM note, Board
+material or a private message. It was refused before a policy was read or a key was looked up, so
+nothing left the process.
+
+**Why configuring redaction does not fix it.** This is the refusal working. The policy matches
+formatted identifiers and cannot catch a name or job title in prose, so for that data the answer
+is not to send it at all.
+
+**What to do.** Build the prompt from an explicit list of the fields you actually need, and send
+that instead of the whole record. If you cannot do the task without the prohibited fields, the
+task needs a decision from the Executive Sponsor, not a workaround.
+
+**The one case with no automatic protection** is the Comms Assistant brief, because you type it
+yourself and nothing can tell a member's name from any other words. That is why the warning above
+matters: there is no refusal waiting to catch that one.
+
 ### 401 "no session" / "session expired" / "session idle too long"
 
 Sign in again. Nothing is wrong.

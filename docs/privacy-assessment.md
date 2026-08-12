@@ -127,10 +127,19 @@ in ordinary prose.
 
     Delegation lead: Priya Sharma, Chief Executive, Koru Exports Ltd
 
-That passes through untouched. The control for prose is **not to send it** — prohibited inputs and
-structured-field removal, so a brief's member fields are dropped before assembly rather than masked
-afterwards. Tracked as #223, and until it exists this layer must not be described as making it safe
-to send member data to a model.
+That passes through untouched. The control for prose is **not to send it**, and it now exists
+(`services/api/prompt_boundary.py`). Every model call names where its text came from, and a member
+record, CRM note, Board paper or private message is refused before a policy is even read. Prompts
+built from structured records go through `minimise()`, which keeps only allowlisted fields and
+refuses a nested container that survives the allowlist, so member fields are dropped before
+assembly rather than masked afterwards.
+
+**That does not promote the redaction layer**, which remains defence in depth for formatted
+identifiers and must still not be described as making it safe to send member data to a model.
+
+**One path keeps no structural control**: the Comms Assistant brief is prose a staff member typed,
+so there is no record to minimise. What bounds it is the operator being told not to paste member
+details and told why.
 
 **Review before publication is not the fallback.** Review happens after the payload has already
 reached the provider. Publication review cannot undo a disclosure. The earlier version of the
@@ -217,7 +226,8 @@ The gate, in one list:
 2. Collection notices written and published at the point of collection.
 3. Retention decided per field, not per table.
 4. Row-level visibility designed (§4).
-5. #223 landed — prohibited inputs refused at the boundary (§3).
+5. Every module that touches member records builds its prompts through `minimise()` and declares
+   `MINIMISED_RECORD`. The mechanism exists (§3); using it is per-module work.
 6. #205 landed — environments separated, production data staying in production (§6).
 7. A restore proven, not assumed (#290).
 8. Principle 10 squared: reusing INZBC's existing membership register for a new purpose.

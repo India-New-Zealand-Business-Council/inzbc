@@ -297,15 +297,31 @@ Ordered by how likely they are here, not by how alarming they sound.
 | A leaked database backup is used to resume live sessions | Only the SHA-256 digest is stored |
 | A cross-site form POST performs a state change | Double-submit CSRF token; `SameSite=Lax` alone does not stop this |
 | A departed person's session keeps working | `active` and roles re-read every request |
-| Member-identifying prose reaches an external model | BR4 redaction, refusal when no policy exists. Prose is the weak case — #223 |
+| Member-identifying prose reaches an external model | Boundary refusal by declared `PromptSource`, plus `minimise()` on structured records. BR4 redaction as defence in depth |
 | An audit row is edited to hide an action | Append-only trigger plus an INSERT/SELECT-only role |
 | A session id is guessed | 32 random bytes |
 
-The second-to-last row is the one to watch: no set of regexes catches a person's name in ordinary
-prose. `Delegation lead: Priya Sharma, Chief Executive, Koru Exports Ltd` passes redaction
-untouched. The control for prose is not to send it, which is what #223 is for — and review before
-publication is *not* the fallback, because review happens after the payload has already reached
-the provider.
+The prose row is the one to understand properly, because it is the one where the obvious control is
+the wrong one. No set of regexes catches a person's name in ordinary prose:
+`Delegation lead: Priya Sharma, Chief Executive, Koru Exports Ltd` passes redaction untouched. And
+review before publication is *not* the fallback, because review happens after the payload has
+already reached the provider.
+
+So the control is not to send it (`services/api/prompt_boundary.py`). Two halves, and they are
+worth keeping distinct:
+
+**`minimise()` is enforcement.** A caller names the fields it needs, everything else is dropped
+before assembly, and a nested container that survives the allowlist is refused rather than passed
+through. A field nobody named cannot reach the text, at any depth.
+
+**`PromptSource` is a declaration.** The gateway receives a string, so nothing about it reveals its
+origin and a caller naming the wrong source is not caught. It is keyword-only with no default, so a
+new call site cannot be written without answering the question and the answer shows up in review.
+That is weaker than verification and much stronger than nothing.
+
+**One path has no structural control**: the Comms Assistant brief is prose a staff member typed, so
+there is no record to minimise. What bounds it is the operator being told not to paste member
+details, with redaction catching the identifiers it can match.
 
 ## 8. Known gaps
 
@@ -315,7 +331,7 @@ marketing document.
 | Gap | Issue |
 |---|---|
 | OAuth handshake not merged; sessions issued out of band | #99 |
-| Prose carrying member data is refused nowhere at the boundary | #223 |
+| A hollowed-out prompt is sent rather than refused | ADR-0006 §5, threshold is INZBC's to set |
 | Session establishment and sign-out are not audited | this document, §5 |
 | Candidate provenance is nullable, so a null-author row skips the SoD check | #297 |
 | `users.mfa_enabled` exists but nothing reads or enforces it | this document, §1 |
