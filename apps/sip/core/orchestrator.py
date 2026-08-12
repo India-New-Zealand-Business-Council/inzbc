@@ -9,12 +9,20 @@ stopped run.
 
 This first slice is the transition engine + audit trail. The LLM tool-use loop (scan, score,
 verify) layers on top: each tool runs, then the agent proposes a transition that this engine
-accepts or refuses. Every accepted transition appends an immutable `TransitionRecord`, so a run
-is deterministically replayable from its audit log.
+accepts or refuses. Every accepted transition appends an immutable `TransitionRecord`, and
+`from_history` rebuilds a run by replaying them through the same checks.
+
+**Replay validates; it does not authenticate.** It proves the stored trail describes a journey the
+run could legally have made, and it cannot prove the trail is a true account of what happened:
+`audit_log` is append-only rather than append-*validated*, so a row no legitimate path would write
+can exist. Replay refuses such a row where it can tell (a gated transition naming no authority, a
+chain that does not join up) and cannot where it cannot. The database grants, not this module, are
+what keep the trail honest in the first place.
 """
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from types import MappingProxyType
@@ -125,6 +133,47 @@ def _require_non_blank(decision: HumanDecision) -> None:
         raise ValueError("HumanDecision requires a non-blank decision")
 
 
+def _check_transition(
+    current: RunState, target: RunState, human_decision: HumanDecision | None
+) -> None:
+    """Every rule a transition must satisfy, in one place.
+
+    Shared by `advance` and `from_history` deliberately. Replay that re-implemented these checks
+    would be a second opinion about the state machine, and the two would drift: a history could
+    then be accepted on resume that `advance` would have refused live, which is precisely the hole
+    rehydration must not open.
+    """
+    if human_decision is not None:
+        # A gate is satisfied by presence, so presence must mean a real, validated decision.
+        # Exact-type (not isinstance): a subclass could override __post_init__ to skip the
+        # blank-field validation and still pass the gate.
+        if type(human_decision) is not HumanDecision:
+            raise TypeError("human_decision must be a HumanDecision")
+        # Re-validate the fields at the point of use, not just at construction: a decision built
+        # by bypassing __init__ (object.__new__ + object.__setattr__) would carry blank fields;
+        # checking here means a blank decision is refused however it was made.
+        _require_non_blank(human_decision)
+    allowed = _LEGAL.get(current, frozenset())
+    if not allowed:
+        raise RunTerminated(f"{current.value} is terminal; no transition to {target.value}")
+    if target not in allowed:
+        raise IllegalTransition(f"{current.value} -> {target.value} is not an allowed transition")
+    if (current, target) in _HUMAN_GATED and human_decision is None:
+        raise HumanGateRequired(
+            f"{current.value} -> {target.value} requires a recorded human decision"
+        )
+
+
+class CorruptHistory(RuntimeError):
+    """A persisted history could not be replayed, so the run's state cannot be established.
+
+    Its own type because the caller's options differ from a live transition failure. An
+    `IllegalTransition` during normal operation means the caller asked for the wrong thing and can
+    ask again; this means the stored record of what happened does not describe a run that could
+    have happened, and no retry fixes that.
+    """
+
+
 @dataclass(frozen=True)
 class TransitionRecord:
     """One immutable audit entry. The ordered list of these is the run's replayable history."""
@@ -152,12 +201,88 @@ class Orchestrator:
     stops the casual `orch._Orchestrator__state = ...` write; it is a speed bump, not the boundary.
     """
 
-    __slots__ = ("_Orchestrator__state", "_Orchestrator__history", "_Orchestrator__sealed")
+    __slots__ = (
+        "_Orchestrator__history",
+        "_Orchestrator__run_id",
+        "_Orchestrator__sealed",
+        "_Orchestrator__state",
+    )
 
-    def __init__(self, state: RunState = RunState.DRAFT) -> None:
+    def __init__(self, state: RunState = RunState.DRAFT, *, run_id: str | None = None) -> None:
         object.__setattr__(self, "_Orchestrator__state", _as_state(state))
         object.__setattr__(self, "_Orchestrator__history", [])
+        object.__setattr__(self, "_Orchestrator__run_id", run_id)
         object.__setattr__(self, "_Orchestrator__sealed", True)
+
+    @classmethod
+    def from_history(
+        cls, records: Iterable[TransitionRecord], *, run_id: str | None = None
+    ) -> Orchestrator:
+        """Rebuilds a run from its persisted transitions, or refuses (#116).
+
+        **Why this is not `Orchestrator(state=X)`.** That constructor drops the run at a state with
+        no evidence it legally arrived there, which is fine for a test fixture and wrong for
+        resuming a real run: a process restart would otherwise be a way to place a run in any state
+        at all, gates included. Replay is the check. The class docstring already promised "resume
+        by replaying recorded transitions" and nothing implemented it.
+
+        **The original records are kept, not re-derived.** Replaying through `advance` would work
+        and would stamp `datetime.now()` on every entry, silently rewriting when each transition
+        happened, so a restart would relabel the whole trail as having occurred at boot. Actors and
+        human decisions carry across for the same reason: the history is evidence, and evidence
+        that changes on reload is not evidence.
+
+        **What it refuses**, each raising `CorruptHistory`:
+
+        - A chain that does not join up. Every record's `from_state` must equal the state its
+          predecessor left the run in, which is what catches a reordered or missing entry.
+        - A first record that does not start at `Draft`. Every run begins there, so a history
+          starting anywhere else is missing its beginning rather than describing a different run.
+        - Any transition the state machine would refuse live, including a gated one with no
+          recorded decision. The rules come from `_check_transition`, the same function `advance`
+          uses, so a history cannot be accepted on resume that would have been refused at the time.
+        """
+        orchestrator = cls(run_id=run_id)
+        for index, record in enumerate(records):
+            if type(record) is not TransitionRecord:
+                raise CorruptHistory(
+                    f"history entry {index} is a {type(record).__name__}, not a TransitionRecord"
+                )
+            # `TransitionRecord` is a dataclass, so its annotations are documentation rather than
+            # enforcement: `TransitionRecord(from_state="Draft", ...)` constructs happily. Without
+            # this check the mismatch surfaced as an `AttributeError` on `.value` while building
+            # the refusal message, so a corrupt history raised the wrong type from the wrong line.
+            if not isinstance(record.from_state, RunState) or not isinstance(
+                record.to_state, RunState
+            ):
+                raise CorruptHistory(
+                    f"history entry {index} names states as "
+                    f"{type(record.from_state).__name__}/{type(record.to_state).__name__} rather "
+                    "than RunState, so it did not come from a recorded transition."
+                )
+            current = orchestrator.state
+            if record.from_state is not current:
+                raise CorruptHistory(
+                    f"history entry {index} starts at {record.from_state.value!r} but the run is "
+                    f"at {current.value!r}. The chain does not join up, so the record is missing "
+                    "an entry or its entries are out of order."
+                )
+            try:
+                _check_transition(current, record.to_state, record.human_decision)
+            except (IllegalTransition, HumanGateRequired, RunTerminated, TypeError) as error:
+                raise CorruptHistory(
+                    f"history entry {index} ({record.from_state.value} -> "
+                    f"{record.to_state.value}) is not a transition this run could have made: "
+                    f"{error}"
+                ) from error
+            orchestrator.__history.append(record)
+            object.__setattr__(orchestrator, "_Orchestrator__state", record.to_state)
+        return orchestrator
+
+    @property
+    def run_id(self) -> str | None:
+        """Which run this is, when it was rehydrated from one. `None` for a fresh in-memory run."""
+        return self.__run_id
 
     def __setattr__(self, name: str, value: object) -> None:
         raise AttributeError(
@@ -185,28 +310,8 @@ class Orchestrator:
         `RunState`; an unknown value raises `IllegalTransition`, never a stray type error.
         """
         target = _as_state(target)
-        if human_decision is not None:
-            # A gate is satisfied by presence, so presence must mean a real, validated decision.
-            # Exact-type (not isinstance): a subclass could override __post_init__ to skip the
-            # blank-field validation and still pass the gate.
-            if type(human_decision) is not HumanDecision:
-                raise TypeError("human_decision must be a HumanDecision")
-            # Re-validate the fields at the point of use, not just at construction: a decision
-            # built by bypassing __init__ (object.__new__ + object.__setattr__) would carry blank
-            # fields; checking here means a blank decision is refused however it was made.
-            _require_non_blank(human_decision)
         current = self.__state
-        allowed = _LEGAL.get(current, frozenset())
-        if not allowed:
-            raise RunTerminated(f"{current.value} is terminal; no transition to {target.value}")
-        if target not in allowed:
-            raise IllegalTransition(
-                f"{current.value} -> {target.value} is not an allowed transition"
-            )
-        if (current, target) in _HUMAN_GATED and human_decision is None:
-            raise HumanGateRequired(
-                f"{current.value} -> {target.value} requires a recorded human decision"
-            )
+        _check_transition(current, target, human_decision)
 
         record = TransitionRecord(
             from_state=current,

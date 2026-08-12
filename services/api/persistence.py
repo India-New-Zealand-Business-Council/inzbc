@@ -33,7 +33,15 @@ from dataclasses import dataclass
 import psycopg
 from psycopg.rows import dict_row
 
-from apps.sip.core.orchestrator import IllegalTransition, is_human_gated, is_legal_transition
+from apps.sip.core.orchestrator import (
+    CorruptHistory,
+    HumanDecision,
+    IllegalTransition,
+    Orchestrator,
+    TransitionRecord,
+    is_human_gated,
+    is_legal_transition,
+)
 from apps.sip.pipeline.models import RunState
 from services.api.audit import record_audit
 
@@ -422,3 +430,84 @@ class AuditRepository:
             )
             for row in rows
         ]
+
+    def rehydrate(self, run_id: str) -> Orchestrator:
+        """Rebuilds the run's orchestrator from its stored transitions (#116).
+
+        This is what makes `Orchestrator.from_history` reachable rather than a function with no
+        caller. The database is the source of truth; the orchestrator is the in-memory view of it,
+        and a restart should reconstruct that view from the record rather than trusting
+        `runs.state`.
+
+        **Why not read `runs.state` and construct at it.** That column says where the run *is*,
+        with no evidence it legally arrived. Replaying the transitions checks every step against
+        the same rules `advance` enforces live, so a run whose stored trail does not describe a
+        journey it could have made is refused rather than resumed. That is the difference between
+        restoring a state and restoring a *run*.
+
+        **The gate decisions are not reconstructed, and this is a real limit.** `approval_ref`
+        names where the decision lives; it does not carry who approved what, and this method does
+        not follow it. A gated row missing it is refused rather than replayed, so the reference is
+        checked for presence and not for meaning: nothing here confirms it still resolves to a live
+        row in `decision_records` or `run_authorisations`, only that `apply_transition` verified it
+        when the transition was made. Rebuilding a faithful `HumanDecision` means joining those
+        tables per transition. Until that exists, a gated transition replays with a decision
+        carrying the recorded actor and the approval reference, which is
+        enough to satisfy the gate and honest about being a summary of the real record rather than
+        the record itself.
+
+        Ordered oldest first, because replay runs forwards. Raises `KeyError` for an unknown run,
+        matching `get_run`, and `CorruptHistory` when the stored trail does not describe a journey
+        the run could have made.
+        """
+        with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
+            # The run has to exist before its history means anything. Without this, an unknown id
+            # replayed to an empty history and came back as a perfectly valid Draft orchestrator,
+            # so a typo produced a run rather than an error. `create_run` writes the row and its
+            # `run.create` audit entry in one transaction, so a run that exists always has one.
+            known = conn.execute(
+                "select 1 from runs where id = %s", (run_id,)
+            ).fetchone()
+            if known is None:
+                raise KeyError(f"no run {run_id!r}")
+            rows = conn.execute(
+                "select user_id, at, old_value, new_value, reason, approval_ref from audit_log "
+                "where record_type = 'runs' and record_id = %s and action = 'run.transition' "
+                "order by id asc",
+                (run_id,),
+            ).fetchall()
+
+        records = []
+        for row in rows:
+            from_state = RunState(row["old_value"])
+            to_state = RunState(row["new_value"])
+            decision = None
+            if is_human_gated(from_state, to_state):
+                # Refuse rather than fabricate. `apply_transition` will not commit a gated
+                # transition without an `approval_ref` it has verified against `decision_records`
+                # or `run_authorisations`, so a stored row missing one was not written by that
+                # path. Filling the gap with a placeholder would manufacture the decision the gate
+                # exists to require, and replay would then wave through exactly the history that
+                # proves something went wrong.
+                if not row["approval_ref"] or not row["user_id"]:
+                    raise CorruptHistory(
+                        f"the recorded {from_state.value} -> {to_state.value} transition on run "
+                        f"{run_id!r} is human gated but names no approval reference or actor. A "
+                        "gated transition cannot be replayed from a row that does not say who "
+                        "authorised it."
+                    )
+                decision = HumanDecision(
+                    approver=str(row["user_id"]),
+                    decision=str(row["approval_ref"]),
+                    note=row["reason"],
+                )
+            records.append(
+                TransitionRecord(
+                    from_state=from_state,
+                    to_state=to_state,
+                    actor=str(row["user_id"]) if row["user_id"] else "unknown",
+                    at=row["at"],
+                    human_decision=decision,
+                )
+            )
+        return Orchestrator.from_history(records, run_id=run_id)
