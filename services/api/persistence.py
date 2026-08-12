@@ -511,3 +511,122 @@ class AuditRepository:
                 )
             )
         return Orchestrator.from_history(records, run_id=run_id)
+
+
+@dataclass(frozen=True)
+class OpenAction:
+    """One `action_register` row the dashboard shows. Read-only, like everything on that screen."""
+
+    action_code: str
+    title: str
+    owner: str | None
+    priority: str | None
+    due_date: str | None
+    status: str
+    overdue: bool
+
+
+@dataclass(frozen=True)
+class DashboardSummary:
+    """Everything the executive dashboard reads, in one shape (#47).
+
+    `run` is `None` when no run exists, which is a real state the UI renders rather than an error.
+
+    `by_verification` always carries every verification state, including the ones at zero. A state
+    absent from the map would force the UI to know the full enum to render the panel, which is the
+    coupling this endpoint exists to remove.
+    """
+
+    run: RunRecord | None
+    total_candidates: int
+    included_candidates: int
+    by_verification: dict[str, int]
+    open_actions: list[OpenAction]
+
+
+# Every verification state, from `database/schema.sql`. Listed so a state with no candidates is
+# reported as 0 rather than omitted: `GROUP BY` returns no row for a value nothing matches, and a
+# missing key and a zero mean different things to the panel reading them.
+VERIFICATION_STATES = (
+    "Verified",
+    "Partially Verified",
+    "Unverified",
+    "Not Required",
+    "Rejected",
+)
+
+
+class DashboardRepository:
+    """Read-only aggregate for the executive dashboard. No write method, by design."""
+
+    def __init__(self, database_url: str | None = None):
+        self._database_url = database_url or os.environ["DATABASE_URL"]
+
+    def summary(self) -> DashboardSummary:
+        """The current run, its candidate coverage, and the open actions.
+
+        **Counted in SQL rather than in Python.** The dashboard already did this client-side by
+        fetching every candidate over HTTP and tallying them; doing the same thing server-side
+        would move the waste rather than remove it. A run with two thousand candidates should cost
+        one aggregate, not two thousand rows.
+
+        **The current run is the most recently created**, matching `list_runs`. That is a
+        convention rather than a fact about the domain: there is no `is_current` column, and if two
+        runs are ever open at once this picks one of them silently. Worth a real answer before the
+        dashboard is used to make a decision.
+
+        **Overdue is computed by the database**, not by the caller, so a client with a wrong clock
+        cannot make an action look on time.
+        """
+        with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
+            run_row = conn.execute(
+                f"select {_SELECT_COLUMNS} from runs order by created_at desc limit 1"
+            ).fetchone()
+
+            counts = {state: 0 for state in VERIFICATION_STATES}
+            total = 0
+            included = 0
+            if run_row is not None:
+                for row in conn.execute(
+                    "select verification::text as verification, count(*) as n, "
+                    "count(*) filter (where included) as included "
+                    "from candidates where run_id = %s group by verification",
+                    (run_row["id"],),
+                ).fetchall():
+                    # A verification value outside the enum cannot occur (the column is the enum
+                    # type), so an unexpected key here would mean the enum changed without this
+                    # list. Recorded rather than silently dropped.
+                    counts[row["verification"]] = row["n"]
+                    total += row["n"]
+                    included += row["included"]
+
+            action_rows = conn.execute(
+                "select a.action_code, a.title, a.priority, a.due_date, a.status, "
+                "       coalesce(u.name, a.owner_text) as owner, "
+                "       (a.due_date is not null and a.due_date < current_date) as overdue "
+                "from action_register a left join users u on u.id = a.owner_id "
+                "where a.closed_at is null "
+                # Overdue first, then by due date, nulls last: an action with no due date is not
+                # more urgent than one that is late, and ordering by due_date alone puts nulls
+                # first in Postgres.
+                "order by overdue desc, a.due_date asc nulls last, a.action_code asc"
+            ).fetchall()
+
+        return DashboardSummary(
+            run=_row_to_record(run_row) if run_row is not None else None,
+            total_candidates=total,
+            included_candidates=included,
+            by_verification=counts,
+            open_actions=[
+                OpenAction(
+                    action_code=row["action_code"],
+                    title=row["title"],
+                    owner=row["owner"],
+                    priority=row["priority"],
+                    due_date=row["due_date"].isoformat() if row["due_date"] else None,
+                    status=row["status"],
+                    overdue=row["overdue"],
+                )
+                for row in action_rows
+            ],
+        )

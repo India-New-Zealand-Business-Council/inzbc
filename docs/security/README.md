@@ -126,6 +126,7 @@ platform did. It is still an allowlist: a user holding no role reads nothing.
 | `POST /api/candidates/{id}/merge` | Analyst, SIP Owner |
 | `POST /api/candidates/{id}/verify` | **Reviewer**, SIP Owner |
 | `POST /api/comms/draft` | Secretariat, SIP Owner |
+| `GET /api/dashboard` | all staff roles |
 
 Four rows are deliberate rather than obvious.
 

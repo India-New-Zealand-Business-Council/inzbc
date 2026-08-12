@@ -1092,6 +1092,39 @@
         ]
       }
     },
+    "/api/dashboard": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Read Dashboard",
+        "description": "Current run, candidate coverage, and open actions.\n\n**200 with `run: null` when no run exists**, rather than 404. \"No run yet\" is a state the\ndashboard renders, not an error: a 404 would make an empty system indistinguishable from a\nbroken one, and the open-actions panel is still worth showing.",
+        "operationId": "read_dashboard_api_dashboard_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ]
+      }
+    },
     "/api/session": {
       "get": {
         "tags": [
@@ -1857,6 +1890,34 @@
         ],
         "title": "CaptureCandidateIn"
       },
+      "CoverageOut": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "included": {
+            "type": "integer",
+            "title": "Included"
+          },
+          "by_verification": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "By Verification"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "total",
+          "included",
+          "by_verification"
+        ],
+        "title": "CoverageOut",
+        "description": "Candidate coverage for the current run.\n\n`by_verification` carries every state, including zeros, so the panel can render from this\nalone without knowing the enum."
+      },
       "CreateRunIn": {
         "properties": {
           "run_number": {
@@ -1885,6 +1946,38 @@
           "coverage_end_utc"
         ],
         "title": "CreateRunIn"
+      },
+      "DashboardOut": {
+        "properties": {
+          "run": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RunOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/CoverageOut"
+          },
+          "open_actions": {
+            "items": {
+              "$ref": "#/components/schemas/OpenActionOut"
+            },
+            "type": "array",
+            "title": "Open Actions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "run",
+          "coverage",
+          "open_actions"
+        ],
+        "title": "DashboardOut"
       },
       "DraftIn": {
         "properties": {
@@ -2001,6 +2094,71 @@
           "reason"
         ],
         "title": "MergeIn"
+      },
+      "OpenActionOut": {
+        "properties": {
+          "action_code": {
+            "type": "string",
+            "title": "Action Code"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "owner": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "overdue": {
+            "type": "boolean",
+            "title": "Overdue"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "action_code",
+          "title",
+          "owner",
+          "priority",
+          "due_date",
+          "status",
+          "overdue"
+        ],
+        "title": "OpenActionOut"
       },
       "RouteIn": {
         "properties": {
