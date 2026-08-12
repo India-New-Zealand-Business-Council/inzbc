@@ -176,11 +176,28 @@ past the self-review check — a silent authorisation bypass rather than an erro
 is shared rather than reimplemented, which is how the two call sites drifted apart in the first
 place.
 
-**Unknown authorship refuses.** An earlier version permitted a null author, reasoning that records
-with no recorded author should not become unreviewable. That was fail-open: the check cannot
-distinguish "nobody wrote this" from "we failed to read who wrote it", and anyone able to arrange a
-null author could approve their own work. A record whose author cannot be established needs a
-backfill or a recorded exception, not a silent pass.
+**Unknown authorship refuses — on the decision path.** `refuse_self_review`, used by
+`decisions.py`, treats a null author as a refusal. An earlier version permitted it, reasoning that
+records with no recorded author should not become unreviewable. That was fail-open: the check
+cannot distinguish "nobody wrote this" from "we failed to read who wrote it", and anyone able to
+arrange a null author could approve their own work.
+
+**The candidate path does the opposite, and this is an inconsistency rather than a design.**
+`record_verification` checks `performer is not None and performer == verifier`, so a candidate with
+null `captured_by` and `assessed_by` can be verified by anyone, including whoever actually captured
+it. The schema states the reason: the provenance columns are nullable because rows predating them
+cannot have their authorship reconstructed, and refusing all of them would strand every candidate
+captured before the column existed. The schema comment is honest that this is "a stated trade-off
+rather than a control".
+
+The exposure is narrow but real. Every candidate written through the API records its capturer, so
+a null can only come from a legacy row or a direct SQL insert — but a direct SQL insert is exactly
+the route someone would take to defeat the check, and it costs one `insert` with the column
+omitted. Two paths applying opposite rules to the same question is also the shape of mistake that
+survives review, because each one reads as reasonable on its own.
+
+**The fix is a backfill then `NOT NULL`**, which turns the trade-off into a control and lets both
+paths refuse alike. Tracked in §8.
 
 **The sole-operator exception.** INZBC is one person, so a strict BR8 would block all work.
 `candidate_sod_exceptions` permits it — but the exception is a row: it names an approver, it
@@ -283,6 +300,8 @@ marketing document.
 | Launch and resumption authority have nowhere to be recorded | #227 |
 | Prose carrying member data is refused nowhere at the boundary | #223 |
 | Session establishment and sign-out are not audited | this document, §5 |
+| Candidate provenance is nullable, so a null-author row skips the SoD check | this document, §4 |
+| `users.mfa_enabled` exists but nothing reads or enforces it | this document, §1 |
 | MFA on owned accounts unverified | register §3 |
 | Backup never restored into an empty database | #290 |
 | Semgrep SAST runs report-only, not blocking | #70 |
