@@ -17,6 +17,9 @@ the run.
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
 import pytest
 from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
@@ -40,13 +43,14 @@ PUBLIC_PREFIXES = ("/health", "/api/fta", "/docs", "/openapi.json", "/redoc", "/
 # Session management itself cannot require a session to *end*, and `GET /api/session` is how a
 # caller discovers whether it has one. Both still resolve the cookie; they simply must not be in
 # the enumeration below, which asserts a 401 for anonymous callers.
+REPO_ROOT = Path(__file__).resolve().parents[3]
+
 SESSION_PREFIX = "/api/session"
 
 # The sign-in handshake itself. `/api/auth/github` and its callback are how an anonymous caller
 # becomes an authenticated one, so requiring a session to reach them would be circular. They are
 # not unprotected: the callback is guarded by the OAuth `state` cookie against handshake CSRF,
-# and by the allowlist in `establish_session`, which refuses any GitHub login without an active
-# `users` row. Covered by `test_oauth.py` rather than by the role enumeration below.
+# and by the allowlist in `establish_session`. Covered by `test_oauth.py`.
 OAUTH_PREFIX = "/api/auth"
 
 
@@ -328,4 +332,56 @@ def test_every_route_carries_exactly_the_authority_it_should(method: str, path: 
         f"{method} {path} carries {sorted(actual)}, expected "
         f"{sorted(EXPECTED_ROLES[(method, path)])}. If this change is intended, update "
         f"EXPECTED_ROLES and say why in the pull request."
+    )
+
+
+def test_the_runtime_image_installs_everything_the_api_imports() -> None:
+    """The Dockerfile hand-lists its dependencies, so it drifts silently.
+
+    It installs a named set rather than the project, deliberately: installing the whole project
+    would pull in the collector's dependencies, which this service does not run. The cost is that
+    adding an import to `services/api/` does not add it to the image, and nothing notices until
+    the container will not start.
+
+    That is not hypothetical. `services/api/oauth.py` imported `httpx`, which was present locally
+    as a test dependency and absent from the image, so every check passed except the container
+    smoke test. This asserts the two agree.
+    """
+    import ast
+    import re
+
+    dockerfile = (REPO_ROOT / "Dockerfile").read_text(encoding="utf-8")
+
+    # Arrive as dependencies of a package the Dockerfile already installs, so naming them again
+    # would be noise. `starlette` ships with fastapi.
+    transitive = {"starlette", "click"}
+    stdlib = set(sys.stdlib_module_names)
+
+    # Module-level imports only. An import inside a function does not run at startup, so it
+    # cannot stop the container: `model_gateway.py` imports `openai` lazily precisely so a
+    # deployment with no model configured still serves the FTA path.
+    imported: set[str] = set()
+    for path in (REPO_ROOT / "services" / "api").glob("*.py"):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in tree.body:
+            if isinstance(node, ast.Import):
+                imported.update(alias.name.split(".")[0] for alias in node.names)
+            elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+                imported.add(node.module.split(".")[0])
+
+    third_party = {
+        name for name in imported
+        if name not in stdlib
+        and name not in {"services", "apps", "__future__"}
+        and name not in transitive
+    }
+    # Matched as a quoted requirement rather than a substring: a plain `in` check passes on
+    # `"httpx-something-else"`, which is exactly the false negative that would let this test
+    # report success while the container still fails.
+    installed = set(re.findall(r'"([A-Za-z0-9_.-]+)(?:\[[^\]]*\])?[><=!~]', dockerfile))
+    missing = third_party - installed
+
+    assert not missing, (
+        f"{sorted(missing)} imported at module level by services/api and not installed in the "
+        f"Dockerfile. The API will start locally and the container will not."
     )
