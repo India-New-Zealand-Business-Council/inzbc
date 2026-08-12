@@ -25,12 +25,24 @@ def role_id(conn: psycopg.Connection, name: str) -> int:
     `returning` clause when the row already exists and hands back `None`. The update is a no-op
     write whose only job is to make the existing row's id available.
     """
-    row = conn.execute(
-        "insert into roles (id, name) values "
-        "((select coalesce(max(id), 0) + 1 from roles), %s) "
-        "on conflict (name) do update set name = excluded.name returning id",
-        (name,),
-    ).fetchone()
+    # `max(id) + 1` computed in the same statement as the insert, so two suites creating
+    # different role names concurrently cannot both read the same maximum and pick the same
+    # primary key. The retry covers the remaining window: if another connection commits the
+    # same id between this statement's snapshot and its write, the unique violation is a lost
+    # race rather than a real conflict, and re-reading resolves it.
+    for attempt in range(3):
+        try:
+            row = conn.execute(
+                "insert into roles (id, name) values "
+                "((select coalesce(max(id), 0) + 1 from roles), %s) "
+                "on conflict (name) do update set name = excluded.name returning id",
+                (name,),
+            ).fetchone()
+            break
+        except psycopg.errors.UniqueViolation:
+            if attempt == 2:
+                raise
+            conn.rollback()
     return row[0] if not isinstance(row, dict) else row["id"]
 
 

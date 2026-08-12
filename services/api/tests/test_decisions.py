@@ -11,7 +11,7 @@ import os
 import threading
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 import psycopg
 import pytest
@@ -25,6 +25,7 @@ from services.api.decisions import (
     DecisionRejected,
     DecisionRepository,
 )
+from services.api.tests.role_seed import role_id
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
@@ -33,7 +34,16 @@ pytestmark = pytest.mark.skipif(
     reason="DATABASE_URL not set - decision tests need a real Postgres with schema.sql applied",
 )
 
-SIP_OWNER_ROLE = 1
+def _sip_owner_role(conn) -> int:
+    """The SIP Owner role id, resolved by name.
+
+    This was hardcoded to 1, which held only while no other suite claimed that id or that name.
+    `roles.name` is unique, so once another suite created 'SIP Owner' at a different id, this
+    file's `insert ... values (1, 'SIP Owner') on conflict do nothing` became a silent no-op:
+    id 1 was never created and every `user_roles` insert here failed a foreign key. Resolving by
+    name removes the assumption entirely.
+    """
+    return role_id(conn, "SIP Owner")
 
 
 @pytest.fixture
@@ -49,10 +59,7 @@ def seeded() -> dict:
     building it through other modules would couple these tests to their bugs.
     """
     with psycopg.connect(DATABASE_URL, row_factory=psycopg.rows.dict_row) as conn:
-        conn.execute(
-            "insert into roles (id, name) values (%s, 'SIP Owner') on conflict do nothing",
-            (SIP_OWNER_ROLE,),
-        )
+        sip_owner = _sip_owner_role(conn)
         user = conn.execute(
             "insert into users (name, email) values (%s, %s) returning id",
             (f"CEO {uuid.uuid4()}", f"{uuid.uuid4()}@example.test"),
@@ -60,7 +67,7 @@ def seeded() -> dict:
         conn.execute(
             "insert into user_roles (user_id, role_id) values (%s, %s) "
             "on conflict (user_id, role_id) do update set enabled = true",
-            (user["id"], SIP_OWNER_ROLE),
+            (user["id"], sip_owner),
         )
         # No row here means nobody may decide, so every kind needs one. Fail-closed by design.
         for kind in (CEO_RULING, REPORT_APPROVAL, DISTRIBUTION_AUTHORITY):
@@ -69,7 +76,7 @@ def seeded() -> dict:
             conn.execute(
                 "insert into decision_role_permissions (kind, actor_role_id) values (%s, %s) "
                 "on conflict (kind, actor_role_id) do update set enabled = true",
-                (kind, SIP_OWNER_ROLE),
+                (kind, sip_owner),
             )
         run = conn.execute(
             "insert into runs (run_number, coverage_start_utc, coverage_end_utc, prompt_version, "
@@ -88,15 +95,16 @@ def seeded() -> dict:
         conn.execute(
             "insert into user_roles (user_id, role_id) values (%s, %s) "
             "on conflict (user_id, role_id) do update set enabled = true",
-            (author["id"], SIP_OWNER_ROLE),
+            (author["id"], sip_owner),
         )
         version = conn.execute(
             "insert into report_versions (run_id, version_number, created_by, created_by_role_id, "
             "content_sha256, created_at) values (%s, 1, %s, %s, %s, now()) returning id",
-            (run["id"], author["id"], SIP_OWNER_ROLE, "a" * 64),
+            (run["id"], author["id"], sip_owner, "a" * 64),
         ).fetchone()
         conn.commit()
     return {
+        "role_id": sip_owner,
         "user_id": str(user["id"]),
         "author_id": str(author["id"]),
         "report_version_id": str(version["id"]),
@@ -107,12 +115,12 @@ def _kwargs(seeded: dict, **overrides) -> dict:
     base = dict(
         report_version_id=seeded["report_version_id"],
         actor_id=seeded["user_id"],
-        actor_role_id=SIP_OWNER_ROLE,
+        actor_role_id=seeded["role_id"],
         reason="recorded by the integration test",
         evidence_ref="SIP-184 s12",
         owner_id=seeded["user_id"],
         next_review=date(2026, 9, 1),
-        decided_at=datetime.now(timezone.utc),
+        decided_at=datetime.now(UTC),
         idempotency_key=uuid.uuid4(),
         expected_head_revision=0,
     )
@@ -257,7 +265,7 @@ def test_a_disabled_permission_refuses_the_decision(repo, seeded) -> None:
         conn.execute(
             "update decision_role_permissions set enabled = false "
             "where kind = %s and actor_role_id = %s",
-            (CEO_RULING, SIP_OWNER_ROLE),
+            (CEO_RULING, seeded["role_id"]),
         )
         conn.commit()
 
@@ -271,7 +279,7 @@ def test_a_disabled_role_assignment_refuses_the_decision(repo, seeded) -> None:
     with psycopg.connect(DATABASE_URL) as conn:
         conn.execute(
             "update user_roles set enabled = false where user_id = %s and role_id = %s",
-            (seeded["user_id"], SIP_OWNER_ROLE),
+            (seeded["user_id"], seeded["role_id"]),
         )
         conn.commit()
 
@@ -375,7 +383,7 @@ def _exception(
                 seeded["report_version_id"],
                 REPORT_APPROVAL,
                 seeded["author_id"],
-                SIP_OWNER_ROLE,
+                seeded["role_id"],
                 approved_by or seeded["user_id"],
                 "single approver during the placement",
                 review_date or date(2099, 1, 1),
