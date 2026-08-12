@@ -2,16 +2,25 @@
 
 Prepared 6 August 2026 for Sunil Kaushal, Executive Sponsor.
 
-**Why now.** Build runs to **13 September 2026** (week 9); weeks 10–16 are refinement, not new
-work. That leaves **5.4 weeks of build**. Nine items below are waiting on a decision only INZBC can
-make. Each one blocks work that is otherwise ready to start.
+> ## Status, 13 August 2026: eight of the nine are settled
+>
+> **Only item 2 is still open, and only part of it: who owns the platform after the placement
+> ends (#97).** Everything else on this sheet was answered between 9 and 12 August.
+>
+> The sections below are kept as the record of what was asked and why, not as a list of
+> outstanding questions. **Nothing on this page needs a fresh decision except #97.** Re-reading it
+> as a request would be asking INZBC to answer things it has already answered, which costs more
+> than the sheet ever saved.
+>
+> The summary table at the bottom carries the current state of each item.
 
-Most are a single line of reply. Two need a conversation. One should be fixed today regardless of
-everything else.
+**Why this was written.** Build runs to **13 September 2026** (week 9); weeks 10–16 are refinement,
+not new work. That left **5.4 weeks of build**, and nine items were waiting on a decision only INZBC
+could make, each blocking work that was otherwise ready to start.
 
-**If a decision is not made by the date shown**, the team will treat that module as *specified and
-handed over* rather than built, and record it as such. That is a worse outcome than deciding, but a
-better one than discovering it in week 9.
+**If a decision had not been made by the date shown**, the team would have treated that module as
+*specified and handed over* rather than built, and recorded it as such. That did not happen: the
+answers arrived.
 
 ---
 
@@ -122,29 +131,29 @@ release. Also outstanding: confirmation of the FTA Explainer's disclaimer wordin
 
 ---
 
-## 6. FTA sector coverage — three lists disagree
+## 6. FTA sector coverage — settled, no decision needed
 
-**Issue #219. Blocks the FTA Explainer, INZBC's own priority module. Decide by 15 August — the
-tightest deadline on this sheet.**
+**Issue #219. Settled 9 August 2026. Nothing is asked of INZBC here.**
 
-Three different sector lists exist and none is marked settled:
+This section previously asked the Council to pick between three disagreeing sector lists, and it was
+the highest-risk item on the sheet. It was answered on 9 August and the answer stood; the section
+stayed open afterwards, which is a fault in this document rather than a question still outstanding.
 
-| Source | Content |
+**How it was resolved: by scope, not by choosing one of the three lists.** A sector is built when it
+has a source, per BR2, so the list grows as material is sourced rather than on further confirmation.
+
+| State | Sectors |
 |---|---|
-| INZBC Digital System Overview, 3 Aug 2026 | Ten sectors: wool, wine, seafood, primary industries, tourism, education, defence and security, investment, immigration, sports |
-| `client-answers.md` D19 | A different set and order — status PROPOSED |
-| `requirements.md` and `fta-source-corpus.md` | Both record it as awaiting INZBC |
+| Built now (`SECTORS_IN_SCOPE`) | Agriculture, Cross-sector, Dairy, Infrastructure |
+| Sourced next, from the agreement text | Tourism, education, investment |
+| Not dropped, not sourced, not gating the build | Defence and security, immigration, sports |
 
-A builder cannot tell which specification governs, and the corpus research is sized differently
-depending on the answer — ten sectors is roughly double the work of five.
+The ten sectors in the Digital System Overview are not contradicted by that. Nothing is written
+about a sector until it has a source, so the shorter list is what is currently *supported*, not a
+narrower ambition.
 
-**Needed: pick one list.** The ten from the Digital System Overview is the obvious default since
-INZBC wrote it. If the true priority is narrower, say so — a well-built five is worth more than a
-thin ten.
-
-**This is the highest-risk item on the sheet.** The FTA Explainer is one of the four modules INZBC
-selected. Every week this stays open is a week the corpus cannot be built, and it is the one item
-where delay directly costs a committed deliverable.
+**If INZBC wants a different priority order for the "sourced next" group, that is worth saying.** It
+changes what gets built first. It is not a blocking decision, and no one should treat it as one.
 
 ---
 
@@ -200,18 +209,26 @@ should be aware of, both from Wix's own documentation:
 
 ## Summary
 
-| # | Decision | Issue | Blocks | By |
-|---|---|---|---|---|
-| 1 | Correct the FTA claim on the live homepage | #234 | Nothing — it is simply wrong today | **Today** |
-| 6 | FTA sector list — pick one of three | #219 | FTA Explainer, a committed module | **15 Aug** |
-| 7 | Password-protect staging | #229 | The rebuild starting | This week |
-| 2 | Budget, billing owner, post-capstone owner | #214, #93, #97 | All deployment | 20 Aug |
-| 3 | Member Jungle: retain / integrate / replace | #95 | Modules 2 and 3 | 20 Aug |
-| 4 | Identity and login model | #213 | Every login surface, SIP roles | 20 Aug |
-| 5 | Name the AI-output reviewer | #96 | Publishing any AI output | 20 Aug |
-| 8 | Name Finance and Privacy Owners | #211 | Phase 1 gate | 20 Aug |
-| 9 | Confirm Wix Studio and one-way cutover | #233 | — | 20 Aug |
+Every issue below was checked against the tracker on 13 August rather than from memory.
 
-**Fastest path:** items 1 and 7 are actions Sunil can take today without a meeting. Items 3, 4, 5
-and 8 are each a one-line answer. Item 6 needs ten minutes. Item 2 is the only one likely to need a
-real conversation.
+| # | Decision | Issue | Status |
+|---|---|---|---|
+| 1 | Correct the FTA claim on the live homepage | #234 | Settled |
+| 2 | Budget and billing owner | #214, #93 | Settled |
+| 2 | **Post-capstone platform owner** | **#97** | **Open — the only one** |
+| 3 | Member Jungle: retain / integrate / replace | #95 | Settled: retain, link out, no integration |
+| 4 | Identity and login model | #213 | Settled |
+| 5 | Name the AI-output reviewer | #96 | Settled |
+| 6 | FTA sector list | #219 | Settled 9 Aug, by scope rather than by picking a list |
+| 7 | Password-protect staging | #229 | Settled |
+| 8 | Name Finance and Privacy Owners | #211 | Settled: the Executive Sponsor holds every owner role |
+| 9 | Confirm Wix Studio and one-way cutover | #233 | Settled |
+
+**What is actually left.** One question: who owns the platform after the placement ends (#97). Who
+holds the cloud account, who holds the repository and can merge, and whether INZBC registers its own
+OAuth application rather than depending on one tied to an individual.
+
+That one does need a conversation, and it is the only item here that does. The default if nobody is
+named is that the infrastructure is torn down at handover and the system reverts to a manual
+process. That default is deliberate rather than an oversight, and it is probably not what INZBC
+wants, which is the reason to decide it rather than let it happen.

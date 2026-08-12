@@ -49,9 +49,12 @@ Two conventions hold across this tree:
   [`architecture.md`](architecture.md).
 
 ## I am waiting on a client decision
-- [`client-decision-pack.md`](client-decision-pack.md) — **start here.** The six decisions that
-  belong to INZBC, in one place, each with what it costs to leave open. Between them they hold up
-  17 tracked items.
+- [`sunil-decision-sheet.md`](sunil-decision-sheet.md) — **start here.** Eight of its nine items are
+  settled. The one client decision still open is who owns the platform after the placement ends
+  (#97).
+- [`client-decision-pack.md`](client-decision-pack.md) — the six decisions that belonged to INZBC,
+  each with the options and what it cost to leave it open. **All six are settled**; kept as the
+  record of how each answer was reached, not as a list of questions.
 - [`membership/member-jungle-assessment.md`](membership/member-jungle-assessment.md) — foundation
   decision F1: retain, integrate or replace Member Jungle. Blocks modules 2, 3 and 4, which is the
   largest block of unstarted work in the programme.
