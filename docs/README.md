@@ -23,8 +23,12 @@ Two conventions hold across this tree:
 5. [`workstreams/README.md`](workstreams/README.md) — how the lanes are divided and who owns what.
 
 ## I am running SIP (analyst, reviewer or CEO)
-- [`sip/operator-guide.md`](sip/operator-guide.md) — **start here.** One full day, in order, in
-  plain language.
+- [`operator-guide.md`](operator-guide.md) — **running the platform.** Written for an operator with
+  no prior involvement, per BR12. What each refusal means and what to do about it, recording a
+  separation-of-duties exception when you are the only person available, rotating a credential, and
+  reading the audit trail. Ends with what it cannot yet tell you.
+- [`sip/operator-guide.md`](sip/operator-guide.md) — **the controlled launch**, which runs on the
+  workbook rather than the platform. One full day, in order, in plain language.
 - [`sip/launch/`](sip/launch/) — the launch pack. `SIP-184` is the daily-run procedure, but the
   pack is at **v0.9 review draft and is not approved**: the only approved controlling document is
   `SIP-050 Master Prompt v1.1`. Treat `SIP-184` as the working procedure for the controlled launch,
