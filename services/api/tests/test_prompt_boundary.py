@@ -64,6 +64,27 @@ def test_the_refusal_says_what_to_do_instead() -> None:
         check_source(PromptSource.MEMBER_RECORD)
 
 
+@pytest.mark.parametrize(
+    "raw",
+    ["public_source", "member_record", "not_a_source", 42, None],
+    ids=["permitted-spelling", "prohibited-spelling", "invented", "int", "none"],
+)
+def test_a_bare_value_is_refused_however_it_is_spelled(raw: object) -> None:
+    """`PromptSource` subclasses `str`, and that has a sharp edge this pins down.
+
+    Two failures, one root cause. `"public_source" in PERMITTED_SOURCES` is `True` by string
+    equality, so a bare string satisfied the membership test and skipped the closed set entirely.
+    A bare *prohibited* string was worse: it failed on `source.value` with an `AttributeError`,
+    which no caller catching `ProhibitedInputError` would see, so a refusal surfaced as a crash.
+
+    The permitted-spelling case is the one worth keeping. It is not a bypass on its own, because a
+    caller willing to write `"public_source"` could write the enum member instead. What it defeats
+    is the guarantee that every value passing this check is one somebody classified.
+    """
+    with pytest.raises(ProhibitedInputError):
+        check_source(raw)  # type: ignore[arg-type]
+
+
 # ---------- minimise ----------
 
 
@@ -106,6 +127,38 @@ def test_naming_a_field_the_record_does_not_have_is_not_an_error() -> None:
     """The allowlist says what may be sent, not what must be present. A record legitimately
     missing an optional field should not fail the call."""
     assert minimise({"sector": "dairy"}, ["sector", "region"]) == {"sector": "dairy"}
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        {"contact": "Priya Sharma", "title": "Chief Executive"},
+        ["dairy", "Priya Sharma"],
+        ("dairy", "Priya Sharma"),
+        {"Priya Sharma"},
+    ],
+    ids=["dict", "list", "tuple", "set"],
+)
+def test_a_nested_container_is_refused_rather_than_passed_through(value: object) -> None:
+    """The first version's real hole: the filter was one level deep.
+
+    Allowlisting `sector` kept `{"sector": {"contact": "Priya Sharma, Chief Executive"}}` whole,
+    so the promise that a field nobody named cannot reach the prompt was false. Naming a key says
+    nothing about what is underneath it, and the subtree is exactly where prose lives.
+    """
+    with pytest.raises(ProhibitedInputError, match="nested"):
+        minimise({"sector": value}, ["sector"])
+
+
+def test_a_nested_field_nobody_allowlisted_is_simply_dropped() -> None:
+    """Refusing must not become the common case.
+
+    Only a nested value that survived the allowlist is a problem. One that was never asked for is
+    dropped like any other field, so a record full of structure does not become unusable because
+    of a subtree the caller had no interest in.
+    """
+    record = {"profile": {"contact": "Priya Sharma"}, "region": "Auckland"}
+    assert minimise(record, ["region"]) == {"region": "Auckland"}
 
 
 def test_minimise_does_not_mutate_the_original() -> None:

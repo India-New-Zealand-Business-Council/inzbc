@@ -16,8 +16,9 @@ provider, so publication review cannot undo a disclosure. The control for prose 
 then the structure is gone, and no inspection of that string can recover where it came from. So
 there are two halves, and they are enforceable to different degrees:
 
-- `minimise()` is real enforcement. A caller names the fields it needs, and everything else is
-  dropped before assembly. A field nobody named cannot reach the text, whatever it contains.
+- `minimise()` is real enforcement. A caller names the fields it needs, everything else is dropped
+  before assembly, and a nested container that survives the allowlist is refused rather than passed
+  through. So a field nobody named cannot reach the text, at any depth.
 - `PromptSource` is a **declaration**, not a verification. A caller states where its text came
   from, and prohibited origins are refused. A caller that declares the wrong thing is not caught.
 
@@ -93,7 +94,20 @@ def check_source(source: PromptSource) -> None:
 
     Called by the gateway before anything else, so a refusal costs no provider call, no API key and
     no redaction pass.
+
+    **The type is checked, not assumed.** `PromptSource` subclasses `str` so its members are usable
+    as plain values, and that has a sharp edge: `"public_source" in PERMITTED_SOURCES` is `True` by
+    string equality, so a bare string would satisfy the membership test and skip the closed set
+    entirely. A prohibited bare string was worse still, failing on `source.value` with an
+    `AttributeError` that no caller catching `ProhibitedInputError` would see. Both are the same
+    root cause: the set was trusted to enforce a type it does not enforce.
     """
+    if not isinstance(source, PromptSource):
+        raise ProhibitedInputError(
+            f"source must be a PromptSource, not {type(source).__name__}. The set of origins is "
+            "deliberately closed: a bare string would let a caller name a category nobody has "
+            "classified, and one that happens to spell a permitted value would pass unexamined."
+        )
     if source not in PERMITTED_SOURCES:
         raise ProhibitedInputError(
             f"{source.value} may not be sent to an external model (ADR-0006 §1). Configuring a "
@@ -120,6 +134,17 @@ def minimise(
     **A field named but absent is not an error.** The allowlist states what *may* be sent, not what
     must be present; a record legitimately missing an optional field should not fail the call.
 
+    **A nested container is refused, not passed through.** This was the first version's real hole:
+    the filter is one level deep, so allowlisting `sector` on
+    `{"sector": {"name": "dairy", "contact": "Priya Sharma, Chief Executive"}}` kept the whole
+    subtree, and the claim that a field nobody named cannot reach the prompt was false. Naming a
+    key says nothing about what is underneath it.
+
+    Refusing rather than recursing is deliberate. Filtering a subtree needs a nested allowlist, and
+    inventing one here would be guessing at a shape the caller knows and this function does not.
+    Flattening silently would be worse: it would keep the data and lose the audit of what was kept.
+    The caller flattens and names the leaf fields it wants, which is what ADR-0006 §2 asks for.
+
     Returns a new dict. The input is never mutated, so a caller cannot minimise a record and then
     accidentally read the trimmed original from the same variable.
     """
@@ -130,4 +155,15 @@ def minimise(
             "that forgot to name its fields, and treating it as 'send everything' turns that slip "
             "into a disclosure."
         )
-    return {key: value for key, value in record.items() if key in permitted}
+
+    kept = {key: value for key, value in record.items() if key in permitted}
+    nested = sorted(
+        key for key, value in kept.items() if isinstance(value, (Mapping, list, tuple, set))
+    )
+    if nested:
+        raise ProhibitedInputError(
+            f"cannot minimise nested field(s): {', '.join(nested)}. Allowlisting a key says "
+            "nothing about what is underneath it, so keeping the subtree would send fields nobody "
+            "named. Flatten the record and name the leaf fields you actually need."
+        )
+    return kept
