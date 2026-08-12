@@ -15,9 +15,15 @@ mutable singleton nothing references, so "the recipient has not changed since au
 unprovable. `schemas/api-contract.md` records both as follow-up. Anything calling `authorise` must
 therefore still enforce that predicate itself, and this docstring is the warning that it must.
 
-Separation of duties is likewise not enforced here. `decision_sod_role_pairs` is configuration that
-nothing consults, so an unrecorded self-approval is refused only by the FK to `sod_exceptions` when
-one is cited, not by comparing actors across records. That is ADR-0005 required follow-up 4.
+**Separation of duties, and what is and is not enforced.** `record` refuses when the actor created
+the report version being decided on, unless they cite an approved, unexpired `sod_exceptions` row
+that covers exactly this act and was approved by someone else. That is the case needing no client
+input, and it is enforced inside the transaction.
+
+`decision_sod_role_pairs` remains unconsulted, so conflicts expressed as role pairs rather than
+authorship are not caught. The table is deliberately unseeded pending client-answers B8, and
+enforcing an empty rule set would refuse every decision. That part of ADR-0005 required follow-up 4
+is still open, and this docstring is the warning that it is.
 """
 
 from __future__ import annotations
@@ -141,6 +147,74 @@ class DecisionRepository:
             revisions=dict(row["revisions"] or {}),
         )
 
+    @staticmethod
+    def _require_valid_exception(
+        conn: psycopg.Connection,
+        *,
+        sod_exception_id: str | None,
+        report_version_id: str,
+        kind: str,
+        actor_id: str,
+        actor_role_id: int,
+    ) -> None:
+        """Refuses a self-approval unless a recorded, still-valid exception permits this one.
+
+        `sod_exceptions` existed and `decision_records.sod_exception_id` was written, but nothing
+        ever read either: the self-approval check refused unconditionally, so the exception could
+        never be exercised, and no other path required one. The column was recording a citation
+        nobody had checked.
+
+        The composite foreign key already binds a cited exception to this exact report version,
+        kind, actor and role, and `unique (sod_exception_id)` stops one being reused. Both fire at
+        insert time as constraint violations. Checking here instead means the refusal is the
+        control saying no, with a reason, rather than the database rejecting a malformed row.
+
+        Two things the schema does not express and this does:
+
+        - **An expired exception does not authorise.** `review_date` is the date the exception was
+          to be revisited; past it, it is a lapsed approval rather than a current one.
+        - **Nobody approves their own exception.** `approved_by` is a plain FK to `users`, so
+          without this an actor could record an exception permitting themselves and then cite it.
+          That is self-approval with an extra step, and it would have looked like a control.
+        """
+        if sod_exception_id is None:
+            raise DecisionNotPermittedError(
+                f"{actor_id!r} created report version {report_version_id!r} and may not also "
+                f"record a {kind!r} decision on it. Separation of duties is the control this "
+                "record exists to evidence; a decision one person can take end to end does not "
+                "evidence anything. Cite an approved sod_exceptions row if this is deliberate."
+            )
+
+        exception = conn.execute(
+            "select approved_by, review_date, review_date < current_date as lapsed "
+            "from sod_exceptions "
+            "where id = %s and report_version_id = %s and kind = %s "
+            "  and actor_id = %s and actor_role_id = %s",
+            (sod_exception_id, report_version_id, kind, actor_id, actor_role_id),
+        ).fetchone()
+        if exception is None:
+            raise DecisionNotPermittedError(
+                f"exception {sod_exception_id!r} does not cover {actor_id!r} recording a "
+                f"{kind!r} decision as role {actor_role_id} on report version "
+                f"{report_version_id!r}. An exception authorises one act, not a category."
+            )
+
+        if canonical_actor(exception["approved_by"]) == canonical_actor(actor_id):
+            raise DecisionNotPermittedError(
+                f"exception {sod_exception_id!r} was approved by the same person it exempts. "
+                "A self-approved exception is self-approval with an extra step."
+            )
+
+        # Compared against the database's clock, not the application server's: expiry is a
+        # property of the record, and two app instances in different timezones must not disagree
+        # about whether an approval has lapsed.
+        if exception["lapsed"]:
+            raise DecisionNotPermittedError(
+                f"exception {sod_exception_id!r} was to be reviewed by "
+                f"{exception['review_date'].isoformat()} and has lapsed. A lapsed approval is "
+                "not a current one."
+            )
+
     def record(
         self,
         *,
@@ -221,11 +295,13 @@ class DecisionRepository:
                 # and then not used here, which is the bug this line fixes.
                 author_id = canonical_actor(author["created_by"]) if author else None
                 if author_id is not None and author_id == canonical_actor(actor_id):
-                    raise DecisionNotPermittedError(
-                        f"{actor_id!r} created report version {report_version_id!r} and may not "
-                        f"also record a {kind!r} decision on it. Separation of duties is the "
-                        "control this record exists to evidence; a decision one person can take "
-                        "end to end does not evidence anything."
+                    self._require_valid_exception(
+                        conn,
+                        sod_exception_id=sod_exception_id,
+                        report_version_id=report_version_id,
+                        kind=kind,
+                        actor_id=actor_id,
+                        actor_role_id=actor_role_id,
                     )
 
                 stream = conn.execute(
