@@ -22,10 +22,26 @@ The policy document previously pointed at review-before-publication as the remai
 this. That is wrong, and the error mattered: review happens after the payload has already reached
 the provider. Publication review cannot undo a disclosure.
 
-The control for prose is not to send it. Prohibited inputs and structured-field removal, so that a
-brief's member fields are dropped before assembly rather than masked afterwards, are tracked as
-**#223**. Until that exists, this layer must not be described as making it safe to send member data
-to a model, and approving the policy does not make it so.
+The control for prose is not to send it, and the mechanism now exists:
+`services/api/prompt_boundary.py` (#223). Every model call names where its text came from, and a
+member record, CRM note, Board paper or private message is refused at the gateway before a policy
+is read. That part is live on every call today.
+
+The other half is available rather than applied. A prompt built from a structured record **must**
+go through `minimise()`, which keeps only allowlisted fields and refuses a non-scalar value, so a
+name or job title is dropped by never being asked for rather than by being recognised. **No module
+does this yet**, because no module handles member records yet. It is the rule the first one has to
+follow, not a control already running.
+
+**That does not promote this layer.** Redaction remains defence in depth for formatted identifiers,
+and it must still not be described as making it safe to send member data to a model. Approving the
+policy does not make it so.
+
+**One case has no structural control**, and it is worth knowing which: the Comms Assistant brief is
+free text a staff member types, so there is no record to minimise. What bounds it is the operator
+being told not to paste member details and told why, with redaction catching the identifiers it can
+match. That is weaker than the structured path, and it is the reason the operator guide says so
+plainly.
 
 Two evasions are defended because they are cheap to defend: a full-width `＠` homoglyph, and a
 number split across a line break. Others are not. Policy authorship remains a trusted operation.

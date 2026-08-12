@@ -333,10 +333,8 @@ def test_a_second_person_may_verify(
     assert updated.verification == VerificationState.VERIFIED
 
 
-def test_unknown_provenance_is_currently_permitted(
-    repo: CandidateRepository, run_id: str, reviewer_id: str
-) -> None:
-    """Rows predating provenance have null `captured_by`, and verification of them is permitted.
+def test_a_candidate_with_no_recorded_capturer_cannot_be_created(run_id: str) -> None:
+    """The database refuses it, so the separation-of-duties check cannot be skipped by omission.
 
     Named for what it asserts. An earlier version of this test was called
     `test_unknown_provenance_refuses_rather_than_permits` and its docstring said unknown
@@ -344,25 +342,24 @@ def test_unknown_provenance_is_currently_permitted(
     succeeded. A test whose name contradicts its assertion is worse than no test: it reads as
     evidence of a control that does not exist.
 
-    The behaviour is a deliberate trade-off, not an oversight. A row with no recorded capturer
-    cannot be verified by anyone if null refuses, which would strand every candidate captured
-    before this column existed. Recorded here so that changing it is a decision rather than an
-    accident.
-    """
-    with psycopg.connect(DATABASE_URL, row_factory=psycopg.rows.dict_row) as conn:
-        row = conn.execute(
-            "insert into candidates (run_id, headline) values (%s, %s) returning id",
-            (run_id, "Legacy row with no recorded capturer"),
-        ).fetchone()
-        conn.commit()
+    The trade-off it documented is gone, and the database now refuses the row outright.
 
-    # Permitted today: a null capturer is not equal to the verifier, so this is the documented
-    # current behaviour rather than a claim that unknown provenance is safe. Recorded here so a
-    # change to it is deliberate.
-    updated = repo.record_verification(
-        str(row["id"]), VerificationState.VERIFIED, actor_id=reviewer_id, reason="legacy"
-    )
-    assert updated.verification == VerificationState.VERIFIED
+    The old behaviour was that `record_verification` tests `performer is not None`, so a candidate
+    with no recorded capturer passed the separation-of-duties check unconditionally: whoever
+    captured it could verify it by arranging for the column to be empty, and one INSERT omitting
+    the column did that. The justification for allowing it was legacy rows, and that turned out to
+    be hypothetical, because no production database exists yet.
+
+    So the fix is at the column, not in the check. `captured_by` is NOT NULL, and the case this
+    test used to permit can no longer be created.
+    """
+    with psycopg.connect(DATABASE_URL, row_factory=psycopg.rows.dict_row) as conn, pytest.raises(
+        psycopg.errors.NotNullViolation
+    ):
+        conn.execute(
+            "insert into candidates (run_id, headline) values (%s, %s) returning id",
+            (run_id, "A row with no recorded capturer"),
+        )
 
 
 def _candidate_exception(

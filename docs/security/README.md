@@ -187,22 +187,21 @@ records with no recorded author should not become unreviewable. That was fail-op
 cannot distinguish "nobody wrote this" from "we failed to read who wrote it", and anyone able to
 arrange a null author could approve their own work.
 
-**The candidate path does the opposite, and this is an inconsistency rather than a design.**
+**The candidate path answers a different question, and the fix was at the column.**
 `record_verification` checks `performer is not None and performer == verifier`, so a candidate with
-null `captured_by` and `assessed_by` can be verified by anyone, including whoever actually captured
-it. The schema states the reason: the provenance columns are nullable because rows predating them
-cannot have their authorship reconstructed, and refusing all of them would strand every candidate
-captured before the column existed. The schema comment is honest that this is "a stated trade-off
-rather than a control".
+a null `captured_by` used to pass unconditionally: whoever captured it could verify it by arranging
+for the column to be empty, which cost one `insert` omitting it. The schema justified the null with
+legacy rows, and that turned out to be hypothetical, because no production database exists yet.
 
-The exposure is narrow but real. Every candidate written through the API records its capturer, so
-a null can only come from a legacy row or a direct SQL insert — but a direct SQL insert is exactly
-the route someone would take to defeat the check, and it costs one `insert` with the column
-omitted. Two paths applying opposite rules to the same question is also the shape of mistake that
-survives review, because each one reads as reasonable on its own.
+So `captured_by` is now `NOT NULL`. The case cannot be created, and the check cannot be skipped by
+omission. Fixing it at the column rather than in the check matters: a guard in
+`record_verification` would still leave the bad row in the table for every other reader.
 
-**The fix is a backfill then `NOT NULL`**, which turns the trade-off into a control and lets both
-paths refuse alike. Tracked as #297.
+**`assessed_by` and `verified_by` stay nullable, and that is not the same compromise.** A candidate
+that has not been scored genuinely has no assessor; a candidate not yet verified has no verifier.
+Null there means "this has not happened", not "we failed to record it", so there is no act to
+conflict with and `is not None` is the correct test. The two paths were never applying opposite
+rules to the same question, which is what the original finding (#297) claimed.
 
 **The sole-operator exception.** INZBC is one person, so a strict BR8 would block all work.
 `candidate_sod_exceptions` permits it — but the exception is a row: it names an approver, it
@@ -302,15 +301,39 @@ Ordered by how likely they are here, not by how alarming they sound.
 | A leaked database backup is used to resume live sessions | Only the SHA-256 digest is stored |
 | A cross-site form POST performs a state change | Double-submit CSRF token; `SameSite=Lax` alone does not stop this |
 | A departed person's session keeps working | `active` and roles re-read every request |
-| Member-identifying prose reaches an external model | BR4 redaction, refusal when no policy exists. Prose is the weak case — #223 |
+| Member-identifying prose reaches an external model | Boundary refusal by declared `PromptSource`, live on every call. `minimise()` exists for structured records but no module calls it yet. BR4 redaction as defence in depth |
 | An audit row is edited to hide an action | Append-only trigger plus an INSERT/SELECT-only role |
 | A session id is guessed | 32 random bytes |
 
-The second-to-last row is the one to watch: no set of regexes catches a person's name in ordinary
-prose. `Delegation lead: Priya Sharma, Chief Executive, Koru Exports Ltd` passes redaction
-untouched. The control for prose is not to send it, which is what #223 is for — and review before
-publication is *not* the fallback, because review happens after the payload has already reached
-the provider.
+The prose row is the one to understand properly, because it is the one where the obvious control is
+the wrong one. No set of regexes catches a person's name in ordinary prose:
+`Delegation lead: Priya Sharma, Chief Executive, Koru Exports Ltd` passes redaction untouched. And
+review before publication is *not* the fallback, because review happens after the payload has
+already reached the provider.
+
+So the control is not to send it (`services/api/prompt_boundary.py`). Two halves, and they are
+worth keeping distinct:
+
+**`minimise()` is enforcement, and it is available rather than applied.** A caller names the fields
+it needs, everything else is dropped before assembly, and a value that is not a scalar is refused
+rather than passed through, so a field nobody named cannot reach the text. **No module calls it
+yet**, because none handles member records yet. It is the rule the first one must follow, not a
+control running today, and this table would be misleading if it implied otherwise.
+
+**`PromptSource` is a declaration.** The gateway receives a string, so nothing about it reveals its
+origin and a caller naming the wrong source is not caught. It is keyword-only with no default, so a
+new call site cannot be written without answering the question and the answer shows up in review.
+That is weaker than verification and much stronger than nothing.
+
+**One path has no structural control**, and it is the only one reaching a model with staff text
+today: the Comms Assistant brief is prose a staff member typed, so there is no record to minimise
+and nothing can tell a member's name from any other words. A brief reading `Board minutes: Priya
+Sharma, Chief Executive at Koru Exports, opposed the offer` satisfies `check_source`, survives
+redaction untouched, and violates ADR-0006 §1 and §3 while every automated control reports success.
+
+What bounds it is the operator being told not to. That is a procedure, not a boundary, and
+procedures are what #223 existed to replace. Closing it means the request carrying named fields
+instead of prose, so there is something to minimise. Tracked as #303.
 
 ## 8. Known gaps
 
@@ -320,10 +343,17 @@ marketing document.
 | Gap | Issue |
 |---|---|
 | OAuth handshake not merged; sessions issued out of band | #99 |
-| Prose carrying member data is refused nowhere at the boundary | #223 |
+| No module builds prompts through `minimise()` yet | ADR-0006 §2 |
+| The Comms brief is free prose, so refusal cannot bound it; procedure only | #303 |
+| A hollowed-out prompt is sent rather than refused | ADR-0006 §5, threshold is INZBC's to set |
 | Session establishment and sign-out are not audited | this document, §5 |
-| Candidate provenance is nullable, so a null-author row skips the SoD check | #297 |
 | `users.mfa_enabled` exists but nothing reads or enforces it | this document, §1 |
 | MFA on owned accounts unverified | register §3 |
 | Backup never restored into an empty database | #290 |
 | Semgrep SAST runs report-only, not blocking | #70 |
+
+**One caveat that applies to every schema-level control above.** There is no migration mechanism
+yet (#44): editing `schema.sql` changes freshly-provisioned databases only. Nothing is stale today,
+because no production database exists (#99) and CI applies the schema from scratch on every run.
+But a constraint added here is a guarantee about new databases, not about one already running, and
+that stops being a technicality the moment there is a database to migrate.

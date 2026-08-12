@@ -13,6 +13,7 @@ import re
 import pytest
 
 from services.api.model_gateway import ModelGateway
+from services.api.prompt_boundary import PromptSource
 from services.api.redaction import (
     MAX_PAYLOAD_CHARS,
     POLICY_PATH_ENV,
@@ -242,7 +243,10 @@ def test_gateway_sends_the_redacted_prompt_not_the_original(monkeypatch, tmp_pat
     client = _RecordingClient()
     gateway = ModelGateway(client=client)
 
-    result = gateway.complete("score this: member sunil@example.test asked about dairy")
+    result = gateway.complete(
+        "score this: member sunil@example.test asked about dairy",
+        source=PromptSource.PUBLIC_SOURCE,
+    )
 
     assert client.seen, "the provider was never called"
     sent = client.seen[0]
@@ -259,7 +263,7 @@ def test_gateway_refuses_the_call_when_no_policy_is_configured(monkeypatch):
     gateway = ModelGateway(client=client)
 
     with pytest.raises(RedactionNotConfiguredError):
-        gateway.complete("member sunil@example.test")
+        gateway.complete("member sunil@example.test", source=PromptSource.PUBLIC_SOURCE)
 
     assert client.seen == [], "a payload reached the provider despite no redaction policy"
 
@@ -273,7 +277,7 @@ def test_a_policy_declaring_no_rules_is_refused(monkeypatch, tmp_path):
     gateway = ModelGateway(client=client)
 
     with pytest.raises(RedactionPolicyError):
-        gateway.complete("member sunil@example.test")
+        gateway.complete("member sunil@example.test", source=PromptSource.PUBLIC_SOURCE)
 
     assert client.seen == []
 
@@ -285,4 +289,6 @@ def test_redaction_happens_before_the_api_key_is_needed(monkeypatch):
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
 
     with pytest.raises(RedactionNotConfiguredError):
-        ModelGateway().complete("member sunil@example.test")
+        ModelGateway().complete(
+            "member sunil@example.test", source=PromptSource.PUBLIC_SOURCE
+        )

@@ -12,6 +12,7 @@ import pytest
 
 from apps.comms.draft import BlankBriefError, build_prompt, generate_draft
 from services.api.model_gateway import GatewayResult
+from services.api.prompt_boundary import PromptSource
 
 
 class FakeGateway:
@@ -20,9 +21,11 @@ class FakeGateway:
     def __init__(self, text: str = "a generated draft") -> None:
         self.text = text
         self.last_prompt: str | None = None
+        self.last_source: PromptSource | None = None
 
-    def complete(self, prompt: str) -> GatewayResult:
+    def complete(self, prompt: str, *, source: PromptSource) -> GatewayResult:
         self.last_prompt = prompt
+        self.last_source = source
         return GatewayResult(text=self.text, model="fake-model", duration_seconds=0.0)
 
 
@@ -77,8 +80,20 @@ def test_generate_draft_refuses_a_blank_brief(blank_brief: str) -> None:
 
 def test_generate_draft_propagates_gateway_errors_unchanged() -> None:
     class RaisingGateway:
-        def complete(self, prompt: str) -> GatewayResult:
+        def complete(self, prompt: str, *, source: PromptSource) -> GatewayResult:
             raise RuntimeError("provider is down")
 
     with pytest.raises(RuntimeError, match="provider is down"):
         generate_draft(RaisingGateway(), "newsletter", "a brief")
+
+
+def test_the_draft_flow_declares_staff_authored_text() -> None:
+    """The declaration is a decision, so it is asserted rather than left to the call site.
+
+    A brief is prose a staff member typed, and #223's boundary refusal turns on which source a
+    caller names. Quietly changing this to a permitted-but-wrong value, or to one that would be
+    refused, should fail here rather than in production.
+    """
+    gateway = FakeGateway()
+    generate_draft(gateway, "newsletter", "announce the FTA explainer")
+    assert gateway.last_source is PromptSource.STAFF_AUTHORED

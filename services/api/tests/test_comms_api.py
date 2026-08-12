@@ -16,6 +16,7 @@ from services.api.model_gateway import (
     GatewayNotConfiguredError,
     GatewayResult,
 )
+from services.api.prompt_boundary import PromptSource
 from services.api.redaction import RedactionNotConfiguredError
 
 
@@ -23,8 +24,10 @@ class FakeGateway:
     def __init__(self) -> None:
         self.next_error: Exception | None = None
         self.next_text = "a generated draft"
+        self.last_source: PromptSource | None = None
 
-    def complete(self, prompt: str) -> GatewayResult:
+    def complete(self, prompt: str, *, source: PromptSource) -> GatewayResult:
+        self.last_source = source
         if self.next_error is not None:
             error, self.next_error = self.next_error, None
             raise error
