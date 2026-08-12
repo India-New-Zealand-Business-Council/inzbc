@@ -197,7 +197,7 @@ omitted. Two paths applying opposite rules to the same question is also the shap
 survives review, because each one reads as reasonable on its own.
 
 **The fix is a backfill then `NOT NULL`**, which turns the trade-off into a control and lets both
-paths refuse alike. Tracked in §8.
+paths refuse alike. Tracked as #297.
 
 **The sole-operator exception.** INZBC is one person, so a strict BR8 would block all work.
 `candidate_sod_exceptions` permits it — but the exception is a row: it names an approver, it
@@ -300,7 +300,7 @@ marketing document.
 | Launch and resumption authority have nowhere to be recorded | #227 |
 | Prose carrying member data is refused nowhere at the boundary | #223 |
 | Session establishment and sign-out are not audited | this document, §5 |
-| Candidate provenance is nullable, so a null-author row skips the SoD check | this document, §4 |
+| Candidate provenance is nullable, so a null-author row skips the SoD check | #297 |
 | `users.mfa_enabled` exists but nothing reads or enforces it | this document, §1 |
 | MFA on owned accounts unverified | register §3 |
 | Backup never restored into an empty database | #290 |

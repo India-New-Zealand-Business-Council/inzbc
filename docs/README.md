@@ -55,6 +55,10 @@ Two conventions hold across this tree:
   open items INZBC owns.
 
 ## I am handling data
+- [`privacy-assessment.md`](privacy-assessment.md) — the preliminary privacy and data-flow
+  assessment: what personal data can be captured, which fields are necessary, what happens on an
+  external model call, and the eight things that must happen before member data is stored. Three of
+  the eight are unbuilt engineering work rather than paperwork.
 - [`data/system-of-record-and-retention.md`](data/system-of-record-and-retention.md) — where each
   data type authoritatively lives, how it is classified, and how long it may be kept. Starts with
   the fact that the system holds no member data at all today, which is what makes the controls
