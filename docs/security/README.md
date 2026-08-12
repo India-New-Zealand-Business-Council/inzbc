@@ -339,3 +339,9 @@ marketing document.
 | MFA on owned accounts unverified | register §3 |
 | Backup never restored into an empty database | #290 |
 | Semgrep SAST runs report-only, not blocking | #70 |
+
+**One caveat that applies to every schema-level control above.** There is no migration mechanism
+yet (#44): editing `schema.sql` changes freshly-provisioned databases only. Nothing is stale today,
+because no production database exists (#99) and CI applies the schema from scratch on every run.
+But a constraint added here is a guarantee about new databases, not about one already running, and
+that stops being a technicality the moment there is a database to migrate.
