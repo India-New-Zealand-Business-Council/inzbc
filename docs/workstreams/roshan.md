@@ -58,14 +58,13 @@ same branch-level fault hits someone else's PR later; not otherwise unresolved.
 - SHARED-OK: SIP-050 relevance/signal/confidence scoring moved to Bhanu's worklog — it runs
   through the model gateway he owns. `assessment.py` stays the validation/carry layer here.
 - [ ] Comms Assistant service side (`apps/comms`): draft-generation flow with the named-reviewer
-  gate, per [docs/modules/comms-assistant.md](../modules/comms-assistant.md). **Still blocked, but
-  progress landed 3 Aug (PR #221, closes #220):** a proposed redaction policy now exists at
-  `config/redaction-policy.proposed.json`, and the gateway refuses every model call until a policy
-  is loaded (`REDACTION_POLICY_PATH` unset) — but a proposed file isn't a decision. INZBC still has
-  to approve it, copy it to a deployment path without `proposed` in the name, and record who
-  approved it (`docs/redaction-policy.md`). Non-negotiable per `comms-assistant.md`'s "drafts only,
-  adversarially tested" promise — no request may reach the model gateway from this flow until
-  that's done. Not starting this until it is.
+  gate, per [docs/modules/comms-assistant.md](../modules/comms-assistant.md). **Unblocked as of
+  12 Aug:** the Executive Sponsor approved the redaction policy on 9 August, and it is committed at
+  `config/redaction-policy.json` (`docs/redaction-policy.md`). The service side can now be built.
+  The gateway still refuses every call wherever `REDACTION_POLICY_PATH` is unset, which is the
+  intended default, so a live call needs that set in the environment as well. Non-negotiable per
+  `comms-assistant.md`'s "drafts only, adversarially tested" promise: the named-reviewer gate is
+  not optional, and #223 (refusing member prose at the boundary) still bounds what may be sent.
 - [ ] End-to-end pipeline run once org-repo secrets land (Bhanu's item): collector → capture →
   assessment live against the SIP-184 SOP; fix what breaks; record the run.
 - [ ] Collection-engine reliability (#208, via `daily-india-nz-news-agent`'s own PR flow). Scoped
