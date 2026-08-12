@@ -23,7 +23,12 @@ from fastapi.testclient import TestClient
 
 from services.api.auth import STAFF_READ
 from services.api.main import app
-from services.api.session import require_csrf, require_principal
+from services.api.session import (
+    CSRF_HEADER,
+    SESSION_COOKIE,
+    require_csrf,
+    require_principal,
+)
 
 # Every role name the platform recognises, per database/schema.sql.
 ALL_ROLES = STAFF_READ
@@ -197,4 +202,55 @@ def test_every_write_route_keeps_its_csrf_check(method: str, path: str) -> None:
     route = next(r for r in _walk(app.routes) if r.path == path and method in r.methods)
     assert "require_csrf" in _dependency_names(route), (
         f"{method} {path} is a write route without require_csrf in its dependency graph."
+    )
+
+
+def test_the_contract_declares_the_session_cookie_and_csrf_token() -> None:
+    """A published contract that omits how to authenticate is a contract a client cannot use.
+
+    Before this, `schemas/openapi.json` carried no security schemes at all, so the generated
+    TypeScript clients had no way to know a cookie was required and `apps/sip/pipeline/client.py`
+    went on sending a bearer token the server ignores.
+    """
+    schemes = app.openapi()["components"]["securitySchemes"]
+    assert schemes["SessionCookie"] == {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": SESSION_COOKIE,
+        "description": schemes["SessionCookie"]["description"],
+    }
+    assert schemes["CsrfToken"]["in"] == "header"
+    assert schemes["CsrfToken"]["name"] == CSRF_HEADER
+
+
+@pytest.mark.parametrize(
+    ("method", "path"),
+    [(m, p) for m, p in business_routes() if m in {"POST", "PUT", "PATCH", "DELETE"}],
+    ids=[f"{m} {p}" for m, p in business_routes() if m in {"POST", "PUT", "PATCH", "DELETE"}],
+)
+def test_write_routes_require_both_schemes_not_either(method: str, path: str) -> None:
+    """A list of security requirements is OR in OpenAPI; one object with both keys is AND.
+
+    FastAPI emits one entry per dependency, which published `[{cookie}, {csrf}]` and told every
+    client that whichever it had would do. The server requires both, so the contract was
+    describing an API more permissive than the one that exists.
+    """
+    operation = app.openapi()["paths"][path][method.lower()]
+    security = operation["security"]
+    assert len(security) == 1, f"{method} {path} publishes alternatives, not a conjunction"
+    assert set(security[0]) == {"SessionCookie", "CsrfToken"}
+
+
+@pytest.mark.parametrize(
+    ("method", "path"),
+    business_routes(),
+    ids=[f"{m} {p}" for m, p in business_routes()],
+)
+def test_every_business_route_documents_refusal(method: str, path: str) -> None:
+    """401 and 403 are the two outcomes an unauthenticated or under-privileged caller sees most
+    often. A contract advertising only 200 and 422 gives a generated client no reason to handle
+    either."""
+    responses = app.openapi()["paths"][path][method.lower()]["responses"]
+    assert "401" in responses and "403" in responses, (
+        f"{method} {path} does not document 401/403; attach AUTH_RESPONSES to its router."
     )

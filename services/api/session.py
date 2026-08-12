@@ -20,7 +20,8 @@ from __future__ import annotations
 import os
 import secrets
 
-from fastapi import APIRouter, Cookie, Depends, Header, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi.security import APIKeyCookie, APIKeyHeader
 from pydantic import BaseModel
 
 from services.api.auth import (
@@ -42,6 +43,49 @@ CSRF_HEADER = "X-CSRF-Token"
 # a CSRF token on a read would train callers to send it everywhere.
 UNSAFE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 
+# Declared through FastAPI's security classes rather than as a bare Cookie/Header parameter, so the
+# published contract carries them as security schemes and every protected route is marked as
+# requiring them. Written by hand into `schemas/openapi.json` they would drift; generated from the
+# same objects the dependencies use, they cannot.
+#
+# `auto_error=False` on both: FastAPI's own refusal is a bare 403 with no body, and the distinction
+# between 401 (no session, sign in) and 403 (known and refused) is one this API makes deliberately.
+# The checks below raise instead.
+session_cookie_scheme = APIKeyCookie(
+    name=SESSION_COOKIE,
+    scheme_name="SessionCookie",
+    description=(
+        "Opaque server-side session, issued out of band. HttpOnly, Secure, SameSite=Lax and "
+        "host-only, so it is not readable by script and does not cross an origin. Only its "
+        "SHA-256 digest is stored."
+    ),
+    auto_error=False,
+)
+
+csrf_header_scheme = APIKeyHeader(
+    name=CSRF_HEADER,
+    scheme_name="CsrfToken",
+    description=(
+        "Double-submit token, returned by GET /api/session. Required on every state-changing "
+        "request: SameSite=Lax still permits a top-level cross-site POST, which is the shape of "
+        "a form-submission CSRF."
+    ),
+    auto_error=False,
+)
+
+# Attached to the protected routers so the contract documents what a caller actually gets back.
+# Without these the spec advertised only 200 and 422, so a generated client had no reason to
+# handle the two outcomes an unauthenticated or under-privileged caller will most often see.
+AUTH_RESPONSES: dict[int | str, dict] = {
+    401: {"description": "No session, or the session has expired or been idle too long."},
+    403: {
+        "description": (
+            "Authenticated and refused: the CSRF token is missing or wrong, the account is no "
+            "longer active, or the caller does not hold a role permitted this operation."
+        )
+    },
+}
+
 
 def get_session_repository() -> SessionRepository | None:
     """Overridden in tests, matching how the other routers take their repository.
@@ -57,7 +101,7 @@ def get_session_repository() -> SessionRepository | None:
 
 
 def require_principal(
-    session_id: str | None = Cookie(default=None, alias=SESSION_COOKIE),
+    session_id: str | None = Depends(session_cookie_scheme),
     repository: SessionRepository | None = Depends(get_session_repository),
 ) -> Principal:
     """Resolves the session cookie, or refuses.
@@ -82,7 +126,7 @@ def require_principal(
 
 def require_csrf(
     principal: Principal = Depends(require_principal),
-    submitted: str | None = Header(default=None, alias=CSRF_HEADER),
+    submitted: str | None = Depends(csrf_header_scheme),
 ) -> Principal:
     """Double-submit check for state-changing requests, per ADR-0004.
 
