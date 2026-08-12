@@ -33,7 +33,14 @@ from dataclasses import dataclass
 import psycopg
 from psycopg.rows import dict_row
 
-from apps.sip.core.orchestrator import IllegalTransition, is_human_gated, is_legal_transition
+from apps.sip.core.orchestrator import (
+    HumanDecision,
+    IllegalTransition,
+    Orchestrator,
+    TransitionRecord,
+    is_human_gated,
+    is_legal_transition,
+)
 from apps.sip.pipeline.models import RunState
 from services.api.audit import record_audit
 
@@ -422,3 +429,57 @@ class AuditRepository:
             )
             for row in rows
         ]
+
+    def rehydrate(self, run_id: str) -> Orchestrator:
+        """Rebuilds the run's orchestrator from its stored transitions (#116).
+
+        This is what makes `Orchestrator.from_history` reachable rather than a function with no
+        caller. The database is the source of truth; the orchestrator is the in-memory view of it,
+        and a restart should reconstruct that view from the record rather than trusting
+        `runs.state`.
+
+        **Why not read `runs.state` and construct at it.** That column says where the run *is*,
+        with no evidence it legally arrived. Replaying the transitions checks every step against
+        the same rules `advance` enforces live, so a run whose stored trail does not describe a
+        journey it could have made is refused rather than resumed. That is the difference between
+        restoring a state and restoring a *run*.
+
+        **The gate decisions are not reconstructed, and this is a real limit.** `audit_log` records
+        `approval_ref` and `reason`, which say a decision exists and where it lives, not who
+        approved what. Rebuilding a faithful `HumanDecision` means reading `decision_records` and
+        `run_authorisations` and joining them per transition. Until that exists, a gated transition
+        replays with a decision carrying the recorded actor and the approval reference, which is
+        enough to satisfy the gate and honest about being a summary of the real record rather than
+        the record itself.
+
+        Ordered oldest first, because replay runs forwards.
+        """
+        with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
+            rows = conn.execute(
+                "select user_id, at, old_value, new_value, reason, approval_ref from audit_log "
+                "where record_type = 'runs' and record_id = %s and action = 'run.transition' "
+                "order by id asc",
+                (run_id,),
+            ).fetchall()
+
+        records = []
+        for row in rows:
+            from_state = RunState(row["old_value"])
+            to_state = RunState(row["new_value"])
+            decision = None
+            if is_human_gated(from_state, to_state):
+                decision = HumanDecision(
+                    approver=str(row["user_id"]) if row["user_id"] else "unknown",
+                    decision=row["approval_ref"] or "recorded",
+                    note=row["reason"],
+                )
+            records.append(
+                TransitionRecord(
+                    from_state=from_state,
+                    to_state=to_state,
+                    actor=str(row["user_id"]) if row["user_id"] else "unknown",
+                    at=row["at"],
+                    human_decision=decision,
+                )
+            )
+        return Orchestrator.from_history(records, run_id=run_id)

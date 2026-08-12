@@ -303,3 +303,66 @@ def test_an_unreasonable_limit_is_clamped_not_obeyed(
 
     assert len(audit.for_run(run_id, limit=10_000)) <= 500
     assert audit.for_run(run_id, limit=0), "a nonsense limit must not return nothing"
+
+
+def test_rehydrate_rebuilds_the_run_from_its_stored_transitions(
+    repo: RunRepository, run_id: str, actor_id: str
+) -> None:
+    """The whole point of #116: the database is the source of truth after a restart.
+
+    Written against real rows rather than a fake, because the thing under test is that what
+    `apply_transition` *wrote* is what `from_history` can *read*. A fake would only prove the two
+    halves of my own assumption agree.
+    """
+    with psycopg.connect(DATABASE_URL) as conn:
+        authorisation = authorise_run(conn, run_id, actor_id)
+    repo.apply_transition(
+        run_id, expected_version=0, new_state=RunState.RUN_AUTHORISED,
+        actor_id=actor_id, reason="authorise", approval_ref=authorisation,
+    )
+    repo.apply_transition(
+        run_id, expected_version=1, new_state=RunState.COVERAGE_LOCKED,
+        actor_id=actor_id, reason="lock coverage",
+    )
+
+    resumed = AuditRepository(DATABASE_URL).rehydrate(run_id)
+
+    assert resumed.state is RunState.COVERAGE_LOCKED
+    assert resumed.run_id == run_id
+    assert [r.to_state for r in resumed.history] == [
+        RunState.RUN_AUTHORISED, RunState.COVERAGE_LOCKED
+    ]
+
+
+def test_rehydrate_preserves_when_each_transition_happened(
+    repo: RunRepository, run_id: str, actor_id: str
+) -> None:
+    """A trail whose timestamps move to boot time on every restart is not a trail."""
+    with psycopg.connect(DATABASE_URL) as conn:
+        authorisation = authorise_run(conn, run_id, actor_id)
+    repo.apply_transition(
+        run_id, expected_version=0, new_state=RunState.RUN_AUTHORISED,
+        actor_id=actor_id, reason="authorise", approval_ref=authorisation,
+    )
+
+    with psycopg.connect(DATABASE_URL) as conn:
+        stored_at = conn.execute(
+            "select at from audit_log where record_id = %s and action = 'run.transition'",
+            (run_id,),
+        ).fetchone()[0]
+
+    resumed = AuditRepository(DATABASE_URL).rehydrate(run_id)
+
+    assert resumed.history[0].at == stored_at
+    assert str(resumed.history[0].actor) == actor_id
+
+
+def test_rehydrating_a_run_that_never_moved_gives_a_draft(
+    repo: RunRepository, run_id: str
+) -> None:
+    """A created run has a `run.create` row and no transitions. Refusing that would make the first
+    resume after creation fail, which is the most common case of all."""
+    resumed = AuditRepository(DATABASE_URL).rehydrate(run_id)
+
+    assert resumed.state is RunState.DRAFT
+    assert resumed.history == ()
