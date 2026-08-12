@@ -110,6 +110,7 @@ platform did. It is still an allowlist: a user holding no role reads nothing.
 |---|---|
 | `POST /api/runs` | Analyst, SIP Owner |
 | `GET /api/runs`, `GET /api/runs/{id}` | all staff roles |
+| `GET /api/runs/{id}/audit` | all staff roles |
 | `POST /api/runs/{id}/start` | SIP Owner |
 | `POST /api/runs/{id}/pause` | SIP Owner |
 | `POST /api/runs/{id}/resume` | SIP Owner |
@@ -124,7 +125,7 @@ platform did. It is still an allowlist: a user holding no role reads nothing.
 | `POST /api/candidates/{id}/verify` | **Reviewer**, SIP Owner |
 | `POST /api/comms/draft` | Secretariat, SIP Owner |
 
-Three rows are deliberate rather than obvious.
+Four rows are deliberate rather than obvious.
 
 **`fail-qa` includes Reviewer, and that is the point.** REQ-U-01 gives the reviewer an independent
 stop. A quality gate that only the owner can pull is not independent of the owner.
@@ -132,6 +133,10 @@ stop. A quality gate that only the owner can pull is not independent of the owne
 **`verify` is the reviewer's job, and role membership is not sufficient** — see §4.
 
 **`comms/draft` is narrower than the other writes** because it spends money per call.
+
+**`{id}/audit` is readable by every staff role**, including Auditor and Board Viewer, which exist
+for precisely this. Narrowing it to the owner would mean the person most likely to be audited
+controls who sees the record, and an audit trail nobody can read is not an audit trail.
 
 **How this is enforced, and how it stays enforced.** `read_access(*roles)` and
 `write_access(*roles)` are dependency factories, so a route declares its authority *in its own

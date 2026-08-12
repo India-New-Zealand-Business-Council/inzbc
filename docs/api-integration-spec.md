@@ -85,7 +85,10 @@ Full endpoint list from `schemas/api-contract.md` (v0.1 draft — shapes may sti
 `POST /api/reports/:id/{approve,request-changes}`, `POST /api/reports/:id/decision`,
 `GET /api/registers/:name`, `POST /api/registers/:name`, `GET /api/dashboard`.
 
-**Cross-cutting:** `GET /api/audit` (append-only, read), `GET /api/config` (server-side flags,
+**Cross-cutting:** `GET /api/audit` (append-only, read; **built as
+`GET /api/runs/{run_id}/audit`**, scoped to one run with keyset pagination, because an unscoped
+read of an append-only table grows without bound and the question people actually ask is what
+happened on a given run), `GET /api/config` (server-side flags,
 read).
 
 > **Superseded, 31 July 2026.** The control list above is the v0.1 contract. ADR-0005 replaced it
