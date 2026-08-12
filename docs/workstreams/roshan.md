@@ -87,6 +87,26 @@ same branch-level fault hits someone else's PR later; not otherwise unresolved.
   his own review comments are the spec here; flagged for his re-review before merge, not treated
   as settled. Pushed and CI came back 9/9 green (docker, frontend, linked-issue, links, python,
   sast, security, validate, workflows) - branch is `MERGEABLE` again. Awaiting Bhanu's re-review.
+  **13 Aug — rebased again, and this time the rebase was not just mechanical.** 19 commits landed
+  on `main` while the PR waited, including #294 (every business route states its authority twice:
+  once as a dependency, once in `test_router_auth.py`'s `EXPECTED_ROLES`) and #306 (semgrep now
+  blocking). The three routes this branch adds were written before that map existed, so they had
+  correct dependencies and no map entries, and
+  `test_the_expected_role_map_covers_every_business_route` failed on rebase — exactly what that
+  test is for. Added the entries with the reasoning it asks for: `GET /api/source-library` and
+  `GET /api/runs/{run_id}/source-checks` at `STAFF_READ` (an auditor checks a run against the
+  register; restricting it to the role being audited defeats the point, same argument as
+  `/audit`), and `POST /api/runs/{run_id}/source-checks` at Analyst/SIP Owner — the same authority
+  as capture, because it is the same act. Deliberately not the Reviewer's: a per-source outcome is
+  evidence to be verified, not the verification. Conflicts elsewhere were the usual ones —
+  `services/api/main.py` (both sides added a router: kept `oauth_router` *and* the two new ones),
+  and the generated files (`schemas/openapi.json`, both UI `schema.ts`) resolved by regenerating
+  rather than hand-merging. Re-verified against a real local Postgres: **740 passed, zero skipped**
+  (the 117 normally-skipped live-DB tests actually ran), ruff clean, `pnpm -r lint`/`typecheck`
+  clean across all 5 workspaces, no codegen drift, and the dry run itself re-run end to end —
+  `DRYRUN-20260812230100` created, 2 fixture candidates captured, source library resolving against
+  176 seeded rows, all 112 mandatory-source outcomes still honestly reported missing, exit 0.
+  Semgrep not runnable locally (the job runs it in Docker; no Docker on this machine) — left to CI.
 - [ ] Backend restart/rehydration integration test (#130, PR #255): kills a real `uvicorn`
   subprocess mid-run and starts a fresh one on the same port, proving a run's state survives an
   actual process restart, not just a fresh request. CI green (151 passed against a real local
