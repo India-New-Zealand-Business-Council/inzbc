@@ -27,9 +27,9 @@ from services.api.model_gateway import (
     ModelGateway,
 )
 from services.api.redaction import RedactionNotConfiguredError
-from services.api.session import write_access
+from services.api.session import AUTH_RESPONSES, write_access
 
-router = APIRouter(prefix="/api/comms", tags=["Comms Assistant"])
+router = APIRouter(prefix="/api/comms", tags=["Comms Assistant"], responses=AUTH_RESPONSES)
 
 
 def get_model_gateway() -> ModelGateway:

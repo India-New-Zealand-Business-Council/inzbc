@@ -39,9 +39,9 @@ from services.api.persistence import (
     RunRecord,
     RunRepository,
 )
-from services.api.session import read_access, write_access
+from services.api.session import AUTH_RESPONSES, read_access, write_access
 
-router = APIRouter(prefix="/api/runs", tags=["Runs"])
+router = APIRouter(prefix="/api/runs", tags=["Runs"], responses=AUTH_RESPONSES)
 
 
 def get_run_repository() -> RunRepository:

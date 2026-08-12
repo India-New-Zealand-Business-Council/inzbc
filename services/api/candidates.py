@@ -26,9 +26,9 @@ from apps.sip.collector.verification import UnverifiedHighSignalError
 from apps.sip.pipeline.models import SignalStrength, SourceConfidence, VerificationState
 from services.api.auth import ANALYST, REVIEWER, SIP_OWNER, STAFF_READ, Principal
 from services.api.candidate_persistence import CandidateRecord, CandidateRepository
-from services.api.session import read_access, write_access
+from services.api.session import AUTH_RESPONSES, read_access, write_access
 
-router = APIRouter(prefix="/api/candidates", tags=["Candidates"])
+router = APIRouter(prefix="/api/candidates", tags=["Candidates"], responses=AUTH_RESPONSES)
 
 
 def get_candidate_repository() -> CandidateRepository:

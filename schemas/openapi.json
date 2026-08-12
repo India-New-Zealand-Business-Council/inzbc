@@ -7,55 +7,55 @@
   },
   "paths": {
     "/api/runs": {
+      "get": {
+        "tags": [
+          "Runs"
+        ],
+        "summary": "List Runs",
+        "operationId": "list_runs_api_runs_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RunOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Runs Api Runs Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ]
+      },
       "post": {
         "tags": [
           "Runs"
         ],
         "summary": "Create Run",
         "operationId": "create_run_api_runs_post",
-        "parameters": [
-          {
-            "name": "X-CSRF-Token",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Csrf-Token"
-            }
-          },
-          {
-            "name": "inzbc_session",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Inzbc Session"
-            }
-          }
-        ],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CreateRunIn"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "201": {
@@ -68,56 +68,11 @@
               }
             }
           },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "tags": [
-          "Runs"
-        ],
-        "summary": "List Runs",
-        "operationId": "list_runs_api_runs_get",
-        "parameters": [
-          {
-            "name": "inzbc_session",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Inzbc Session"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/RunOut"
-                  },
-                  "title": "Response List Runs Api Runs Get"
-                }
-              }
-            }
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
           },
           "422": {
             "description": "Validation Error",
@@ -129,7 +84,13 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ]
       }
     },
     "/api/runs/{run_id}": {
@@ -139,6 +100,11 @@
         ],
         "summary": "Get Run",
         "operationId": "get_run_api_runs__run_id__get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
         "parameters": [
           {
             "name": "run_id",
@@ -147,22 +113,6 @@
             "schema": {
               "type": "string",
               "title": "Run Id"
-            }
-          },
-          {
-            "name": "inzbc_session",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Inzbc Session"
             }
           }
         ],
@@ -176,6 +126,12 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
           },
           "422": {
             "description": "Validation Error",
@@ -198,6 +154,12 @@
         "summary": "Start Run",
         "description": "Draft -> Run Authorised. Launch authority; human gated (run-level, #227).",
         "operationId": "start_run_api_runs__run_id__start_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
         "parameters": [
           {
             "name": "run_id",
@@ -206,38 +168,6 @@
             "schema": {
               "type": "string",
               "title": "Run Id"
-            }
-          },
-          {
-            "name": "X-CSRF-Token",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Csrf-Token"
-            }
-          },
-          {
-            "name": "inzbc_session",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Inzbc Session"
             }
           }
         ],
@@ -261,6 +191,12 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
           },
           "422": {
             "description": "Validation Error",
@@ -283,6 +219,12 @@
         "summary": "Pause Run",
         "description": "Awaiting CEO Decision -> Paused. CEO decision; `approval_ref` must name a\n`decision_records` row.",
         "operationId": "pause_run_api_runs__run_id__pause_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
         "parameters": [
           {
             "name": "run_id",
@@ -291,38 +233,6 @@
             "schema": {
               "type": "string",
               "title": "Run Id"
-            }
-          },
-          {
-            "name": "X-CSRF-Token",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Csrf-Token"
-            }
-          },
-          {
-            "name": "inzbc_session",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Inzbc Session"
             }
           }
         ],
@@ -346,6 +256,12 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
           },
           "422": {
             "description": "Validation Error",
@@ -368,6 +284,12 @@
         "summary": "Resume Run",
         "description": "Paused -> Coverage Locked. Resumption authority; human gated (run-level, #227).",
         "operationId": "resume_run_api_runs__run_id__resume_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
         "parameters": [
           {
             "name": "run_id",
@@ -376,38 +298,6 @@
             "schema": {
               "type": "string",
               "title": "Run Id"
-            }
-          },
-          {
-            "name": "X-CSRF-Token",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Csrf-Token"
-            }
-          },
-          {
-            "name": "inzbc_session",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Inzbc Session"
             }
           }
         ],
@@ -431,6 +321,12 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
           },
           "422": {
             "description": "Validation Error",
@@ -453,6 +349,12 @@
         "summary": "Complete Run",
         "description": "Distributed -> Closed. Mechanical closeout; not human gated.",
         "operationId": "complete_run_api_runs__run_id__complete_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
         "parameters": [
           {
             "name": "run_id",
@@ -461,38 +363,6 @@
             "schema": {
               "type": "string",
               "title": "Run Id"
-            }
-          },
-          {
-            "name": "X-CSRF-Token",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Csrf-Token"
-            }
-          },
-          {
-            "name": "inzbc_session",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Inzbc Session"
             }
           }
         ],
@@ -517,6 +387,12 @@
               }
             }
           },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -537,38 +413,10 @@
         ],
         "summary": "Capture Candidate",
         "operationId": "capture_candidate_api_candidates_post",
-        "parameters": [
+        "security": [
           {
-            "name": "X-CSRF-Token",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Csrf-Token"
-            }
-          },
-          {
-            "name": "inzbc_session",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Inzbc Session"
-            }
+            "SessionCookie": [],
+            "CsrfToken": []
           }
         ],
         "requestBody": {
@@ -592,6 +440,12 @@
               }
             }
           },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -610,6 +464,11 @@
         ],
         "summary": "List Candidates",
         "operationId": "list_candidates_api_candidates_get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
         "parameters": [
           {
             "name": "run",
@@ -621,22 +480,6 @@
               "title": "Run"
             },
             "description": "Run id to list candidates for."
-          },
-          {
-            "name": "inzbc_session",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Inzbc Session"
-            }
           }
         ],
         "responses": {
@@ -653,6 +496,12 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
           },
           "422": {
             "description": "Validation Error",
@@ -674,6 +523,11 @@
         ],
         "summary": "Get Candidate",
         "operationId": "get_candidate_api_candidates__candidate_id__get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
         "parameters": [
           {
             "name": "candidate_id",
@@ -682,22 +536,6 @@
             "schema": {
               "type": "string",
               "title": "Candidate Id"
-            }
-          },
-          {
-            "name": "inzbc_session",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Inzbc Session"
             }
           }
         ],
@@ -711,6 +549,12 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
           },
           "422": {
             "description": "Validation Error",
@@ -732,6 +576,12 @@
         ],
         "summary": "Verify Candidate",
         "operationId": "verify_candidate_api_candidates__candidate_id__verify_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
         "parameters": [
           {
             "name": "candidate_id",
@@ -740,38 +590,6 @@
             "schema": {
               "type": "string",
               "title": "Candidate Id"
-            }
-          },
-          {
-            "name": "X-CSRF-Token",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Csrf-Token"
-            }
-          },
-          {
-            "name": "inzbc_session",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Inzbc Session"
             }
           }
         ],
@@ -796,6 +614,12 @@
               }
             }
           },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -816,6 +640,12 @@
         ],
         "summary": "Score Candidate",
         "operationId": "score_candidate_api_candidates__candidate_id__score_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
         "parameters": [
           {
             "name": "candidate_id",
@@ -824,38 +654,6 @@
             "schema": {
               "type": "string",
               "title": "Candidate Id"
-            }
-          },
-          {
-            "name": "X-CSRF-Token",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Csrf-Token"
-            }
-          },
-          {
-            "name": "inzbc_session",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Inzbc Session"
             }
           }
         ],
@@ -880,6 +678,12 @@
               }
             }
           },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -900,6 +704,12 @@
         ],
         "summary": "Route Candidate",
         "operationId": "route_candidate_api_candidates__candidate_id__route_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
         "parameters": [
           {
             "name": "candidate_id",
@@ -908,38 +718,6 @@
             "schema": {
               "type": "string",
               "title": "Candidate Id"
-            }
-          },
-          {
-            "name": "X-CSRF-Token",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Csrf-Token"
-            }
-          },
-          {
-            "name": "inzbc_session",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Inzbc Session"
             }
           }
         ],
@@ -964,6 +742,12 @@
               }
             }
           },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -984,6 +768,12 @@
         ],
         "summary": "Merge Candidate",
         "operationId": "merge_candidate_api_candidates__candidate_id__merge_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
         "parameters": [
           {
             "name": "candidate_id",
@@ -992,38 +782,6 @@
             "schema": {
               "type": "string",
               "title": "Candidate Id"
-            }
-          },
-          {
-            "name": "X-CSRF-Token",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Csrf-Token"
-            }
-          },
-          {
-            "name": "inzbc_session",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Inzbc Session"
             }
           }
         ],
@@ -1048,6 +806,12 @@
               }
             }
           },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -1069,49 +833,15 @@
         "summary": "Draft",
         "description": "Generates a draft. Never sends or publishes anything - see `apps/comms/draft.py`'s module\ndocstring for why \"nothing publishable without a recorded reviewer\" holds by construction.\n\nFailure mapping is deliberately specific, not a blanket 500:\n- `GatewayNotConfiguredError` / `RedactionNotConfiguredError` -> 503. Deployment configuration\n  is missing (no API key, or - per ADR-0006 - no approved `REDACTION_POLICY_PATH`). Expected,\n  correct refusal in any environment that hasn't been configured yet, not a bug to alert on\n  the same way as a real failure.\n- `GatewayCallError` -> 502. The provider call itself failed after a retry - genuinely down,\n  distinct from \"not configured\".",
         "operationId": "draft_api_comms_draft_post",
-        "parameters": [
-          {
-            "name": "X-CSRF-Token",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Csrf-Token"
-            }
-          },
-          {
-            "name": "inzbc_session",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Inzbc Session"
-            }
-          }
-        ],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/DraftIn"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
@@ -1124,6 +854,12 @@
               }
             }
           },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -1134,7 +870,13 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ]
       }
     },
     "/api/session": {
@@ -1145,24 +887,6 @@
         "summary": "Whoami",
         "description": "Who the current session belongs to, and the CSRF token to send with writes.\n\nA UI needs this to know which controls to show. It is not the authorisation check: the server\nre-checks on every write, because a hidden button is a hint and not a control.",
         "operationId": "whoami_api_session_get",
-        "parameters": [
-          {
-            "name": "inzbc_session",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Inzbc Session"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -1173,18 +897,13 @@
                 }
               }
             }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
           }
-        }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ]
       },
       "delete": {
         "tags": [
@@ -1193,39 +912,16 @@
         "summary": "Sign Out",
         "description": "Ends the session server-side and clears the cookie.\n\nDeliberately not behind the CSRF check. A forged sign-out is a nuisance rather than a breach,\nand refusing to sign someone out because a token was missing is the worse failure.",
         "operationId": "sign_out_api_session_delete",
-        "parameters": [
-          {
-            "name": "inzbc_session",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Inzbc Session"
-            }
-          }
-        ],
         "responses": {
           "204": {
             "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
           }
-        }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ]
       }
     },
     "/api/fta/query": {
@@ -2163,6 +1859,20 @@
           "reason"
         ],
         "title": "VerifyIn"
+      }
+    },
+    "securitySchemes": {
+      "SessionCookie": {
+        "type": "apiKey",
+        "description": "Opaque server-side session, issued out of band. HttpOnly, Secure, SameSite=Lax and host-only, so it is not readable by script and does not cross an origin. Only its SHA-256 digest is stored.",
+        "in": "cookie",
+        "name": "inzbc_session"
+      },
+      "CsrfToken": {
+        "type": "apiKey",
+        "description": "Double-submit token, returned by GET /api/session. Required on every state-changing request: SameSite=Lax still permits a top-level cross-site POST, which is the shape of a form-submission CSRF.",
+        "in": "header",
+        "name": "X-CSRF-Token"
       }
     }
   }

@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Literal
 
 from fastapi import FastAPI, Query
+from fastapi.openapi.utils import get_openapi
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, model_validator
 
@@ -188,3 +189,44 @@ _STATIC = Path(__file__).resolve().parents[2] / "static"
 if _STATIC.is_dir():
     # html=True makes unknown paths fall back to index.html, which a client-side router needs.
     app.mount("/", StaticFiles(directory=_STATIC, html=True), name="ui")
+
+
+def _require_both_schemes(spec: dict) -> dict:
+    """Rewrites write routes to require the session cookie *and* the CSRF token, not either.
+
+    FastAPI emits one entry per security dependency, and a list of entries is OR in OpenAPI:
+    `[{"SessionCookie": []}, {"CsrfToken": []}]` reads as "whichever you have". The server
+    requires both, so the published contract was describing something more permissive than the
+    API actually is, and a generated client had grounds to send only the cookie and then be
+    surprised by a 403.
+
+    Merging them into a single object makes it AND. Done here, over the generated document,
+    rather than by hand-editing `schemas/openapi.json`: the spec is regenerated on every change,
+    so anything written into the file directly is lost the next time codegen runs.
+    """
+    for operations in spec.get("paths", {}).values():
+        for operation in operations.values():
+            if not isinstance(operation, dict):
+                continue
+            security = operation.get("security")
+            if not security or len(security) < 2:
+                continue
+            merged: dict[str, list] = {}
+            for requirement in security:
+                merged.update(requirement)
+            operation["security"] = [merged]
+    return spec
+
+
+def custom_openapi() -> dict:
+    if app.openapi_schema is None:
+        app.openapi_schema = _require_both_schemes(get_openapi(
+            title=app.title,
+            version=app.version,
+            summary=app.summary,
+            routes=app.routes,
+        ))
+    return app.openapi_schema
+
+
+app.openapi = custom_openapi

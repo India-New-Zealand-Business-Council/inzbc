@@ -624,9 +624,7 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: {
-                inzbc_session?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -639,27 +637,28 @@ export interface operations {
                     "application/json": components["schemas"]["RunOut"][];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
                 };
+                content?: never;
             };
         };
     };
     create_run_api_runs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-CSRF-Token"?: string | null;
-            };
+            header?: never;
             path?: never;
-            cookie?: {
-                inzbc_session?: string | null;
-            };
+            cookie?: never;
         };
         requestBody: {
             content: {
@@ -675,6 +674,20 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["RunOut"];
                 };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -694,9 +707,7 @@ export interface operations {
             path: {
                 run_id: string;
             };
-            cookie?: {
-                inzbc_session?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -708,6 +719,20 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["RunOut"];
                 };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -723,15 +748,11 @@ export interface operations {
     start_run_api_runs__run_id__start_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-CSRF-Token"?: string | null;
-            };
+            header?: never;
             path: {
                 run_id: string;
             };
-            cookie?: {
-                inzbc_session?: string | null;
-            };
+            cookie?: never;
         };
         requestBody: {
             content: {
@@ -747,6 +768,20 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["RunOut"];
                 };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -762,15 +797,11 @@ export interface operations {
     pause_run_api_runs__run_id__pause_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-CSRF-Token"?: string | null;
-            };
+            header?: never;
             path: {
                 run_id: string;
             };
-            cookie?: {
-                inzbc_session?: string | null;
-            };
+            cookie?: never;
         };
         requestBody: {
             content: {
@@ -786,6 +817,20 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["RunOut"];
                 };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -801,15 +846,11 @@ export interface operations {
     resume_run_api_runs__run_id__resume_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-CSRF-Token"?: string | null;
-            };
+            header?: never;
             path: {
                 run_id: string;
             };
-            cookie?: {
-                inzbc_session?: string | null;
-            };
+            cookie?: never;
         };
         requestBody: {
             content: {
@@ -825,6 +866,20 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["RunOut"];
                 };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -840,15 +895,11 @@ export interface operations {
     complete_run_api_runs__run_id__complete_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-CSRF-Token"?: string | null;
-            };
+            header?: never;
             path: {
                 run_id: string;
             };
-            cookie?: {
-                inzbc_session?: string | null;
-            };
+            cookie?: never;
         };
         requestBody: {
             content: {
@@ -864,6 +915,20 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["RunOut"];
                 };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -884,9 +949,7 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: {
-                inzbc_session?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -898,6 +961,20 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CandidateOut"][];
                 };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -913,13 +990,9 @@ export interface operations {
     capture_candidate_api_candidates_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-CSRF-Token"?: string | null;
-            };
+            header?: never;
             path?: never;
-            cookie?: {
-                inzbc_session?: string | null;
-            };
+            cookie?: never;
         };
         requestBody: {
             content: {
@@ -935,6 +1008,20 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CandidateOut"];
                 };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -954,9 +1041,7 @@ export interface operations {
             path: {
                 candidate_id: string;
             };
-            cookie?: {
-                inzbc_session?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -968,6 +1053,20 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CandidateOut"];
                 };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -983,15 +1082,11 @@ export interface operations {
     verify_candidate_api_candidates__candidate_id__verify_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-CSRF-Token"?: string | null;
-            };
+            header?: never;
             path: {
                 candidate_id: string;
             };
-            cookie?: {
-                inzbc_session?: string | null;
-            };
+            cookie?: never;
         };
         requestBody: {
             content: {
@@ -1008,6 +1103,20 @@ export interface operations {
                     "application/json": components["schemas"]["CandidateOut"];
                 };
             };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -1022,15 +1131,11 @@ export interface operations {
     score_candidate_api_candidates__candidate_id__score_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-CSRF-Token"?: string | null;
-            };
+            header?: never;
             path: {
                 candidate_id: string;
             };
-            cookie?: {
-                inzbc_session?: string | null;
-            };
+            cookie?: never;
         };
         requestBody: {
             content: {
@@ -1047,6 +1152,20 @@ export interface operations {
                     "application/json": components["schemas"]["CandidateOut"];
                 };
             };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -1061,15 +1180,11 @@ export interface operations {
     route_candidate_api_candidates__candidate_id__route_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-CSRF-Token"?: string | null;
-            };
+            header?: never;
             path: {
                 candidate_id: string;
             };
-            cookie?: {
-                inzbc_session?: string | null;
-            };
+            cookie?: never;
         };
         requestBody: {
             content: {
@@ -1086,6 +1201,20 @@ export interface operations {
                     "application/json": components["schemas"]["CandidateOut"];
                 };
             };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -1100,15 +1229,11 @@ export interface operations {
     merge_candidate_api_candidates__candidate_id__merge_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-CSRF-Token"?: string | null;
-            };
+            header?: never;
             path: {
                 candidate_id: string;
             };
-            cookie?: {
-                inzbc_session?: string | null;
-            };
+            cookie?: never;
         };
         requestBody: {
             content: {
@@ -1125,6 +1250,20 @@ export interface operations {
                     "application/json": components["schemas"]["CandidateOut"];
                 };
             };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -1139,13 +1278,9 @@ export interface operations {
     draft_api_comms_draft_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-CSRF-Token"?: string | null;
-            };
+            header?: never;
             path?: never;
-            cookie?: {
-                inzbc_session?: string | null;
-            };
+            cookie?: never;
         };
         requestBody: {
             content: {
@@ -1161,6 +1296,20 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["DraftOut"];
                 };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -1178,9 +1327,7 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: {
-                inzbc_session?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -1193,15 +1340,6 @@ export interface operations {
                     "application/json": components["schemas"]["SessionOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     sign_out_api_session_delete: {
@@ -1209,9 +1347,7 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: {
-                inzbc_session?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -1221,15 +1357,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
             };
         };
     };
