@@ -9,8 +9,15 @@ stopped run.
 
 This first slice is the transition engine + audit trail. The LLM tool-use loop (scan, score,
 verify) layers on top: each tool runs, then the agent proposes a transition that this engine
-accepts or refuses. Every accepted transition appends an immutable `TransitionRecord`, so a run
-is deterministically replayable from its audit log.
+accepts or refuses. Every accepted transition appends an immutable `TransitionRecord`, and
+`from_history` rebuilds a run by replaying them through the same checks.
+
+**Replay validates; it does not authenticate.** It proves the stored trail describes a journey the
+run could legally have made, and it cannot prove the trail is a true account of what happened:
+`audit_log` is append-only rather than append-*validated*, so a row no legitimate path would write
+can exist. Replay refuses such a row where it can tell (a gated transition naming no authority, a
+chain that does not join up) and cannot where it cannot. The database grants, not this module, are
+what keep the trail honest in the first place.
 """
 
 from __future__ import annotations
@@ -240,6 +247,18 @@ class Orchestrator:
             if type(record) is not TransitionRecord:
                 raise CorruptHistory(
                     f"history entry {index} is a {type(record).__name__}, not a TransitionRecord"
+                )
+            # `TransitionRecord` is a dataclass, so its annotations are documentation rather than
+            # enforcement: `TransitionRecord(from_state="Draft", ...)` constructs happily. Without
+            # this check the mismatch surfaced as an `AttributeError` on `.value` while building
+            # the refusal message, so a corrupt history raised the wrong type from the wrong line.
+            if not isinstance(record.from_state, RunState) or not isinstance(
+                record.to_state, RunState
+            ):
+                raise CorruptHistory(
+                    f"history entry {index} names states as "
+                    f"{type(record.from_state).__name__}/{type(record.to_state).__name__} rather "
+                    "than RunState, so it did not come from a recorded transition."
                 )
             current = orchestrator.state
             if record.from_state is not current:

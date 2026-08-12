@@ -445,17 +445,31 @@ class AuditRepository:
         journey it could have made is refused rather than resumed. That is the difference between
         restoring a state and restoring a *run*.
 
-        **The gate decisions are not reconstructed, and this is a real limit.** `audit_log` records
-        `approval_ref` and `reason`, which say a decision exists and where it lives, not who
-        approved what. Rebuilding a faithful `HumanDecision` means reading `decision_records` and
-        `run_authorisations` and joining them per transition. Until that exists, a gated transition
-        replays with a decision carrying the recorded actor and the approval reference, which is
+        **The gate decisions are not reconstructed, and this is a real limit.** `approval_ref`
+        names where the decision lives; it does not carry who approved what, and this method does
+        not follow it. A gated row missing it is refused rather than replayed, so the reference is
+        checked for presence and not for meaning: nothing here confirms it still resolves to a live
+        row in `decision_records` or `run_authorisations`, only that `apply_transition` verified it
+        when the transition was made. Rebuilding a faithful `HumanDecision` means joining those
+        tables per transition. Until that exists, a gated transition replays with a decision
+        carrying the recorded actor and the approval reference, which is
         enough to satisfy the gate and honest about being a summary of the real record rather than
         the record itself.
 
-        Ordered oldest first, because replay runs forwards.
+        Ordered oldest first, because replay runs forwards. Raises `KeyError` for an unknown run,
+        matching `get_run`, and `CorruptHistory` when the stored trail does not describe a journey
+        the run could have made.
         """
         with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
+            # The run has to exist before its history means anything. Without this, an unknown id
+            # replayed to an empty history and came back as a perfectly valid Draft orchestrator,
+            # so a typo produced a run rather than an error. `create_run` writes the row and its
+            # `run.create` audit entry in one transaction, so a run that exists always has one.
+            known = conn.execute(
+                "select 1 from runs where id = %s", (run_id,)
+            ).fetchone()
+            if known is None:
+                raise KeyError(f"no run {run_id!r}")
             rows = conn.execute(
                 "select user_id, at, old_value, new_value, reason, approval_ref from audit_log "
                 "where record_type = 'runs' and record_id = %s and action = 'run.transition' "

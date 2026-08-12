@@ -396,3 +396,11 @@ def test_rehydrate_refuses_a_gated_transition_with_no_recorded_authority(
 
     with pytest.raises(CorruptHistory, match="no approval reference"):
         AuditRepository(DATABASE_URL).rehydrate(run_id)
+
+
+def test_rehydrate_refuses_a_run_that_does_not_exist(repo: RunRepository) -> None:
+    """An unknown id used to replay to an empty history and come back as a valid Draft run, so a
+    typo produced a run rather than an error. `create_run` writes the row and its audit entry in
+    one transaction, so a run that exists always has one."""
+    with pytest.raises(KeyError):
+        AuditRepository(DATABASE_URL).rehydrate(str(uuid.uuid4()))

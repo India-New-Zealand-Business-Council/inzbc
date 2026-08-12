@@ -389,3 +389,22 @@ def test_a_rehydrated_run_can_still_advance() -> None:
 
     assert resumed.state is RunState.SCANNING
     assert len(resumed.history) == 3
+
+
+def test_from_history_refuses_a_record_whose_states_are_not_run_states() -> None:
+    """`TransitionRecord` is a dataclass, so its annotations do not enforce anything.
+
+    `TransitionRecord(from_state="Draft", ...)` constructs happily. Before this check the mismatch
+    surfaced as an `AttributeError` on `.value` while building the refusal message, so a corrupt
+    history raised the wrong exception type from the wrong line.
+    """
+    stringly = TransitionRecord(
+        from_state="Draft",
+        to_state="Run Authorised",
+        actor="agent",
+        at=datetime(2026, 8, 13, tzinfo=timezone.utc),
+        human_decision=None,
+    )
+
+    with pytest.raises(CorruptHistory, match="rather than RunState"):
+        Orchestrator.from_history([stringly])
