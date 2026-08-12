@@ -350,7 +350,7 @@ marketing document.
 | `users.mfa_enabled` exists but nothing reads or enforces it | this document, §1 |
 | MFA on owned accounts unverified | register §3 |
 | Backup never restored into an empty database | #290 |
-| Semgrep SAST runs report-only, not blocking | #70 |
+| Semgrep rule sets are fetched at scan time, so an upstream rule change can fail an unrelated PR | CI `sast` job |
 
 **One caveat that applies to every schema-level control above.** There is no migration mechanism
 yet (#44): editing `schema.sql` changes freshly-provisioned databases only. Nothing is stale today,
