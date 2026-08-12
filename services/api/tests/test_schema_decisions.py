@@ -122,3 +122,19 @@ def test_no_append_only_table_can_be_emptied_in_one_statement() -> None:
         assert f"before truncate on {table}" in sql, (
             f"{table} can still be emptied in one statement without meeting its append-only guard"
         )
+
+
+def test_the_dashboard_verification_list_matches_the_schema_enum() -> None:
+    """`VERIFICATION_STATES` is a hand-written copy of a schema enum, and this is the third time
+    that shape of list has drifted in this repository.
+
+    The dashboard aggregate zero-fills from it and then assigns `counts[row["verification"]]`.
+    A value added to the enum and not to the list would `KeyError` at request time; a value
+    removed would report a state that cannot occur. Deriving the expectation from `schema.sql`
+    means the enum cannot change without this failing first.
+
+    Text-level, so it runs in every CI job rather than skipping without a database.
+    """
+    from services.api.persistence import VERIFICATION_STATES
+
+    assert _enum_values(_schema(), "verification_state") == list(VERIFICATION_STATES)

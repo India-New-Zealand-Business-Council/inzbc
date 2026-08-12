@@ -341,6 +341,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Dashboard
+         * @description Current run, candidate coverage, and open actions.
+         *
+         *     **200 with `run: null` when no run exists**, rather than 404. "No run yet" is a state the
+         *     dashboard renders, not an error: a 404 would make an empty system indistinguishable from a
+         *     broken one, and the open-actions panel is still worth showing.
+         */
+        get: operations["read_dashboard_api_dashboard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/session": {
         parameters: {
             query?: never;
@@ -616,6 +640,23 @@ export interface components {
             /** In Coverage Window */
             in_coverage_window?: boolean | null;
         };
+        /**
+         * CoverageOut
+         * @description Candidate coverage for the current run.
+         *
+         *     `by_verification` carries every state, including zeros, so the panel can render from this
+         *     alone without knowing the enum.
+         */
+        CoverageOut: {
+            /** Total */
+            total: number;
+            /** Included */
+            included: number;
+            /** By Verification */
+            by_verification: {
+                [key: string]: number;
+            };
+        };
         /** CreateRunIn */
         CreateRunIn: {
             /** Run Number */
@@ -626,6 +667,16 @@ export interface components {
             coverage_start_utc: string;
             /** Coverage End Utc */
             coverage_end_utc: string;
+        };
+        /** DashboardOut */
+        DashboardOut: {
+            run: components["schemas"]["RunOut"] | null;
+            gates: components["schemas"]["GateStatusOut"];
+            coverage: components["schemas"]["CoverageOut"];
+            /** Open Actions */
+            open_actions: components["schemas"]["OpenActionOut"][];
+            /** Open Actions Truncated */
+            open_actions_truncated: boolean;
         };
         /** DraftIn */
         DraftIn: {
@@ -666,6 +717,24 @@ export interface components {
             answers: components["schemas"]["AnswerOut"][];
             action_required?: components["schemas"]["ActionRequiredOut"] | null;
         };
+        /**
+         * GateStatusOut
+         * @description QA and release status for the current run.
+         *
+         *     Every field is nullable, and null means "not reached yet" rather than "unknown". The two
+         *     decision values are keyed to a report version (ADR-0005), so they stay null until the run has
+         *     one.
+         */
+        GateStatusOut: {
+            /** Qa Status */
+            qa_status: string | null;
+            /** Report Approval */
+            report_approval: string | null;
+            /** Distribution Authority */
+            distribution_authority: string | null;
+            /** Distribution Recipient */
+            distribution_recipient: string | null;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -677,6 +746,23 @@ export interface components {
             duplicate_of: string;
             /** Reason */
             reason: string;
+        };
+        /** OpenActionOut */
+        OpenActionOut: {
+            /** Action Code */
+            action_code: string;
+            /** Title */
+            title: string;
+            /** Owner */
+            owner: string | null;
+            /** Priority */
+            priority: string | null;
+            /** Due Date */
+            due_date: string | null;
+            /** Status */
+            status: string;
+            /** Overdue */
+            overdue: boolean;
         };
         /** RouteIn */
         RouteIn: {
@@ -1636,6 +1722,40 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    read_dashboard_api_dashboard_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

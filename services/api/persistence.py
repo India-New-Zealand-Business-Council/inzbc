@@ -511,3 +511,178 @@ class AuditRepository:
                 )
             )
         return Orchestrator.from_history(records, run_id=run_id)
+
+
+@dataclass(frozen=True)
+class OpenAction:
+    """One `action_register` row the dashboard shows. Read-only, like everything on that screen."""
+
+    action_code: str
+    title: str
+    owner: str | None
+    priority: str | None
+    due_date: str | None
+    status: str
+    overdue: bool
+
+
+@dataclass(frozen=True)
+class GateStatus:
+    """Where the current run stands at its two quality and release gates.
+
+    Every field is nullable, and null means "not reached yet" rather than "unknown". A run that has
+    not been QA'd has no QA status; one with no report version has no approval and no distribution
+    authority, because those decisions are keyed to a report version that does not exist.
+    """
+
+    qa_status: str | None
+    report_approval: str | None
+    distribution_authority: str | None
+    distribution_recipient: str | None
+
+
+@dataclass(frozen=True)
+class DashboardSummary:
+    """Everything the executive dashboard reads, in one shape (#47).
+
+    `run` is `None` when no run exists, which is a real state the UI renders rather than an error.
+
+    `by_verification` always carries every verification state, including the ones at zero. A state
+    absent from the map would force the UI to know the full enum to render the panel, which is the
+    coupling this endpoint exists to remove.
+    """
+
+    run: RunRecord | None
+    gates: GateStatus
+    total_candidates: int
+    included_candidates: int
+    by_verification: dict[str, int]
+    open_actions: list[OpenAction]
+    open_actions_truncated: bool
+
+
+# Every verification state, from `database/schema.sql`. Listed so a state with no candidates is
+# reported as 0 rather than omitted: `GROUP BY` returns no row for a value nothing matches, and a
+# missing key and a zero mean different things to the panel reading them.
+VERIFICATION_STATES = (
+    "Verified",
+    "Partially Verified",
+    "Unverified",
+    "Not Required",
+    "Rejected",
+)
+
+
+# The dashboard shows open actions to be worked, not an archive. A page beyond this is a register
+# that needs triage rather than a screen that needs scrolling, and the caller is told when it was
+# cut rather than left to infer it.
+_OPEN_ACTION_LIMIT = 200
+
+
+class DashboardRepository:
+    """Read-only aggregate for the executive dashboard. No write method, by design."""
+
+    def __init__(self, database_url: str | None = None):
+        self._database_url = database_url or os.environ["DATABASE_URL"]
+
+    def summary(self) -> DashboardSummary:
+        """The current run, its candidate coverage, and the open actions.
+
+        **Counted in SQL rather than in Python.** The dashboard already did this client-side by
+        fetching every candidate over HTTP and tallying them; doing the same thing server-side
+        would move the waste rather than remove it. A run with two thousand candidates should cost
+        one aggregate, not two thousand rows.
+
+        **The current run is the most recently created**, matching `list_runs`. That is a
+        convention rather than a fact about the domain: there is no `is_current` column, and if two
+        runs are ever open at once this picks one of them silently. Worth a real answer before the
+        dashboard is used to make a decision.
+
+        **Overdue is computed by the database**, not by the caller, so a client with a wrong clock
+        cannot make an action look on time.
+        """
+        with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
+            run_row = conn.execute(
+                f"select {_SELECT_COLUMNS} from runs order by created_at desc limit 1"
+            ).fetchone()
+
+            counts = {state: 0 for state in VERIFICATION_STATES}
+            total = 0
+            included = 0
+            if run_row is not None:
+                for row in conn.execute(
+                    "select verification::text as verification, count(*) as n, "
+                    "count(*) filter (where included) as included "
+                    "from candidates where run_id = %s group by verification",
+                    (run_row["id"],),
+                ).fetchall():
+                    # A verification value outside the enum cannot occur (the column is the enum
+                    # type), so an unexpected key here would mean the enum changed without this
+                    # list. Recorded rather than silently dropped.
+                    counts[row["verification"]] = row["n"]
+                    total += row["n"]
+                    included += row["included"]
+
+            # QA and distribution status, which #47 asks for by name. `qa_status` lives on the
+            # run; the two decision values live on the run's newest report version, because
+            # ADR-0005 keys those streams to a report version. Both are null before the run
+            # reaches them, and null here means "not reached yet" rather than "unknown".
+            gates = GateStatus(None, None, None, None)
+            if run_row is not None:
+                qa = conn.execute(
+                    "select qa_status from runs where id = %s", (run_row["id"],)
+                ).fetchone()
+                decision = conn.execute(
+                    "select report_approval, distribution_authority, distribution_recipient "
+                    "from current_report_decisions where run_id = %s "
+                    "order by version_number desc limit 1",
+                    (run_row["id"],),
+                ).fetchone()
+                gates = GateStatus(
+                    qa_status=qa["qa_status"] if qa else None,
+                    report_approval=decision["report_approval"] if decision else None,
+                    distribution_authority=decision["distribution_authority"] if decision else None,
+                    distribution_recipient=decision["distribution_recipient"] if decision else None,
+                )
+
+            action_rows = conn.execute(
+                "select a.action_code, a.title, a.priority, a.due_date, a.status, "
+                "       coalesce(u.name, a.owner_text) as owner, "
+                "       (a.due_date is not null and a.due_date < current_date) as overdue "
+                "from action_register a left join users u on u.id = a.owner_id "
+                "where a.closed_at is null "
+                # Overdue first, then by due date, nulls last: an action with no due date is not
+                # more urgent than one that is late, and ordering by due_date alone puts nulls
+                # first in Postgres.
+                "order by overdue desc, a.due_date asc nulls last, a.action_code asc "
+                # Bounded, like every other read here. `action_register` has no retention rule, so
+                # nothing in the schema stops it growing, and an unbounded read on a dashboard
+                # someone opens all day is the wrong place to find that out. One extra row is
+                # fetched so the caller can be told the list was cut rather than silently seeing
+                # a short one.
+                "limit %s",
+                (_OPEN_ACTION_LIMIT + 1,),
+            ).fetchall()
+            truncated = len(action_rows) > _OPEN_ACTION_LIMIT
+            action_rows = action_rows[:_OPEN_ACTION_LIMIT]
+
+        return DashboardSummary(
+            run=_row_to_record(run_row) if run_row is not None else None,
+            gates=gates,
+            total_candidates=total,
+            included_candidates=included,
+            by_verification=counts,
+            open_actions=[
+                OpenAction(
+                    action_code=row["action_code"],
+                    title=row["title"],
+                    owner=row["owner"],
+                    priority=row["priority"],
+                    due_date=row["due_date"].isoformat() if row["due_date"] else None,
+                    status=row["status"],
+                    overdue=row["overdue"],
+                )
+                for row in action_rows
+            ],
+            open_actions_truncated=truncated,
+        )

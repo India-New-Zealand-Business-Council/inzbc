@@ -1092,6 +1092,39 @@
         ]
       }
     },
+    "/api/dashboard": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Read Dashboard",
+        "description": "Current run, candidate coverage, and open actions.\n\n**200 with `run: null` when no run exists**, rather than 404. \"No run yet\" is a state the\ndashboard renders, not an error: a 404 would make an empty system indistinguishable from a\nbroken one, and the open-actions panel is still worth showing.",
+        "operationId": "read_dashboard_api_dashboard_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ]
+      }
+    },
     "/api/session": {
       "get": {
         "tags": [
@@ -1857,6 +1890,34 @@
         ],
         "title": "CaptureCandidateIn"
       },
+      "CoverageOut": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "included": {
+            "type": "integer",
+            "title": "Included"
+          },
+          "by_verification": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "By Verification"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "total",
+          "included",
+          "by_verification"
+        ],
+        "title": "CoverageOut",
+        "description": "Candidate coverage for the current run.\n\n`by_verification` carries every state, including zeros, so the panel can render from this\nalone without knowing the enum."
+      },
       "CreateRunIn": {
         "properties": {
           "run_number": {
@@ -1885,6 +1946,47 @@
           "coverage_end_utc"
         ],
         "title": "CreateRunIn"
+      },
+      "DashboardOut": {
+        "properties": {
+          "run": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RunOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "gates": {
+            "$ref": "#/components/schemas/GateStatusOut"
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/CoverageOut"
+          },
+          "open_actions": {
+            "items": {
+              "$ref": "#/components/schemas/OpenActionOut"
+            },
+            "type": "array",
+            "title": "Open Actions"
+          },
+          "open_actions_truncated": {
+            "type": "boolean",
+            "title": "Open Actions Truncated"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "run",
+          "gates",
+          "coverage",
+          "open_actions",
+          "open_actions_truncated"
+        ],
+        "title": "DashboardOut"
       },
       "DraftIn": {
         "properties": {
@@ -1970,6 +2072,64 @@
         "title": "FtaQueryResponse",
         "description": "`status` is the field a client branches on \u2014 not the length of `answers`.\n\nA client that only checked `answers` would render an empty results list for a no-match and\nsilently drop the escalation path, which is the outcome docs/modules/fta-centre.md exists to\nprevent."
       },
+      "GateStatusOut": {
+        "properties": {
+          "qa_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qa Status"
+          },
+          "report_approval": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Approval"
+          },
+          "distribution_authority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distribution Authority"
+          },
+          "distribution_recipient": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distribution Recipient"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "qa_status",
+          "report_approval",
+          "distribution_authority",
+          "distribution_recipient"
+        ],
+        "title": "GateStatusOut",
+        "description": "QA and release status for the current run.\n\nEvery field is nullable, and null means \"not reached yet\" rather than \"unknown\". The two\ndecision values are keyed to a report version (ADR-0005), so they stay null until the run has\none."
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -2001,6 +2161,71 @@
           "reason"
         ],
         "title": "MergeIn"
+      },
+      "OpenActionOut": {
+        "properties": {
+          "action_code": {
+            "type": "string",
+            "title": "Action Code"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "owner": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "overdue": {
+            "type": "boolean",
+            "title": "Overdue"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "action_code",
+          "title",
+          "owner",
+          "priority",
+          "due_date",
+          "status",
+          "overdue"
+        ],
+        "title": "OpenActionOut"
       },
       "RouteIn": {
         "properties": {

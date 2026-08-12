@@ -47,8 +47,51 @@ POST   /api/reports/:id/distribution distribution authority only: Authorised | N
 POST   /api/reports/:id/delivery     records an actual send against a current Authorised decision
 GET    /api/registers/:name          action | watch | opportunities | threats | exceptions
 POST   /api/registers/:name
-GET    /api/dashboard                control state, open actions, QA/distribution status
+GET    /api/dashboard                control state, open actions, QA/distribution status  [BUILT]
 ```
+
+**`GET /api/dashboard` shape**, built for #47:
+
+```json
+{
+  "run": { "id": "...", "run_number": "RUN-20260813-01", "state": "Candidate Review",
+           "version": 3, "prompt_version": "...", "coverage_start_utc": "...",
+           "coverage_end_utc": "...", "initiated_by": "..." },
+  "gates": { "qa_status": "Passed", "report_approval": "Approved",
+             "distribution_authority": "Authorised", "distribution_recipient": "..." },
+  "coverage": { "total": 7, "included": 2,
+                "by_verification": { "Verified": 5, "Partially Verified": 0,
+                                     "Unverified": 2, "Not Required": 0, "Rejected": 0 } },
+  "open_actions": [ { "action_code": "ACT-016", "title": "...", "owner": "Executive Sponsor",
+                      "priority": "High", "due_date": "2026-08-01", "status": "Open",
+                      "overdue": true } ],
+  "open_actions_truncated": false
+}
+```
+
+Three guarantees the UI may rely on, each of which is a rule the client would otherwise own:
+
+**`by_verification` always carries every verification state**, including the ones at zero. A state
+absent from the map would force the caller to know the full enum to render the panel.
+
+**`run` is `null` when no run exists, and the status is still 200.** "No run yet" is a state the
+dashboard renders, not an error, and the open-actions panel is worth showing regardless.
+
+**`overdue` is computed by the database**, so a client with a wrong clock cannot make a late action
+look on time. Actions are ordered overdue first, then by due date with nulls last.
+
+**Every `gates` field is nullable, and null means "not reached yet" rather than "unknown".**
+`qa_status` comes from the run; `report_approval` and `distribution_authority` come from the run's
+newest report version, because ADR-0005 keys those decision streams to a report version, so they
+stay null until one exists.
+
+**Open actions are capped at 200, and `open_actions_truncated` says when the cap bit.**
+`action_register` has no retention rule, so nothing in the schema stops it growing. A silently cut
+list would read as "these are all the open actions", which is wrong for a screen used to decide
+what to work on.
+
+`extra="forbid"` on every model in the response, so a field added server-side cannot reach the UI
+unannounced.
 
 **Why ruling and distribution are separate commands.** REQ-U-02 requires distribution authority to
 be captured as a separate action, and ADR-0005 records the three facts as independent immutable

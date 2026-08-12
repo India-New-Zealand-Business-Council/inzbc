@@ -306,6 +306,8 @@ EXPECTED_ROLES: dict[tuple[str, str], set[str]] = {
     ("POST", "/api/candidates/{candidate_id}/verify"): {"Reviewer", "SIP Owner"},
     # Spends money per call, so narrower than the other writes.
     ("POST", "/api/comms/draft"): {"Secretariat", "SIP Owner"},
+    # Every staff role. A dashboard the board cannot open is not an executive dashboard.
+    ("GET", "/api/dashboard"): set(STAFF_READ),
 }
 
 

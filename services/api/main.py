@@ -25,6 +25,7 @@ from pydantic import BaseModel, ConfigDict, model_validator
 from apps.fta.explainer import ExplainerAnswer, NoMatch, answer_query, no_match
 from services.api.candidates import router as candidates_router
 from services.api.comms import router as comms_router
+from services.api.dashboard import router as dashboard_router
 from services.api.hardening import install as install_hardening
 from services.api.oauth import router as oauth_router
 from services.api.runs import router as runs_router
@@ -43,6 +44,7 @@ app.include_router(runs_router)
 install_hardening(app)
 app.include_router(candidates_router)
 app.include_router(comms_router)
+app.include_router(dashboard_router)
 app.include_router(session_router)
 app.include_router(oauth_router)
 
