@@ -68,7 +68,17 @@ same branch-level fault hits someone else's PR later; not otherwise unresolved.
   that's done. Not starting this until it is.
 - [ ] End-to-end pipeline run once org-repo secrets land (Bhanu's item): collector → capture →
   assessment live against the SIP-184 SOP; fix what breaks; record the run.
-- [ ] Collection-engine improvements in `daily-india-nz-news-agent` (via its own PR flow).
+- [ ] Collection-engine reliability (#208, via `daily-india-nz-news-agent`'s own PR flow). Scoped
+  into a 4-day plan, ~6h/day (logged on #208): `agent.py` is 1364 lines with zero test coverage,
+  no retry/timeout on RSS fetches, no per-source freshness tracking, no shape-change detection.
+  Day 1 — test harness: `daily-india-nz-news-agent#13`, 49 characterization tests on the
+  deterministic logic (freshness/date handling, relevance/sector scoring, `clean_articles`).
+  First CI run failed (`ModuleNotFoundError: No module named 'agent'` — `tests/` has no
+  `__init__.py`, so plain `pytest` inserts `tests/` into `sys.path` rather than the repo root;
+  local verification had used `python -m pytest`, which adds cwd for free and hid the gap).
+  Fixed in `tests/conftest.py`, reverified against CI's exact invocation. Day 2 (source freshness
+  enforcement), Day 3 (recovery on source-shape-change), Day 4 (fail-closed gate hardening +
+  wrap-up) not started yet.
 - [ ] Bump the CI ruff pin to 0.16.0 (#31): the collector/FTA findings are fixed and merged (PR
   #152), but the pin itself is still 0.15.22 pending `apps/sip/core`, `scripts/board.py` and
   `services/api` (Bhanu's lane) going clean under 0.16.0 too.
