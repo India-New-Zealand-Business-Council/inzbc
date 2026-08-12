@@ -183,12 +183,18 @@ Nothing is written about a sector until it has a source, per BR2.
 
 - Unblocks: #185, #186, #187, #194.
 
-**#219 stays open and has been reopened.** This scope decision does not close it, because #219 asked
-for the three conflicting lists to be *reconciled in the same change*. `REPO FACT`: they still
-disagree — `apps/fta/corpus.py` names its list `PROVISIONAL_SECTORS_IN_SCOPE` pending INZBC
-confirmation, and `docs/fta-source-corpus.md` and `docs/requirements.md` both still record it as
-awaiting INZBC. Adding a fourth statement of scope without updating those three is the exact failure
-#219 exists to prevent.
+**#219 stayed open after this decision, and has since been reconciled.** The scope decision alone
+did not close it, because #219 asked for the three conflicting lists to be *reconciled in the same
+change* — and at the time of writing they still disagreed: `apps/fta/corpus.py` named its list
+`PROVISIONAL_SECTORS_IN_SCOPE` pending INZBC confirmation, and `docs/fta-source-corpus.md` and
+`docs/requirements.md` both still recorded the scope as awaiting INZBC. Adding a fourth statement of
+scope without updating those three is the exact failure #219 exists to prevent.
+
+`REPO FACT`, re-checked 13 Aug 2026 — all three now agree with this document: `corpus.py` names the
+list `SECTORS_IN_SCOPE` (no longer provisional), `apps/fta/README.md:11` and
+`docs/fta-source-corpus.md`'s member-facing mapping both cite it as settled 9 Aug 2026 under #219,
+and `docs/requirements.md:305` strikes the open question through as resolved by scope rather than by
+a single list. Nothing in the tree still describes the sector list as awaiting INZBC.
 
 `REPO FACT` — the corpus product list checks out. All named entries exist in `apps/fta/corpus.py`,
 are `confirmed=True`, and carry MFAT National Interest Analysis citations. Note the code spells it
