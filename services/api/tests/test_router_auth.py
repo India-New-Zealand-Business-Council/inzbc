@@ -271,6 +271,10 @@ EXPECTED_ROLES: dict[tuple[str, str], set[str]] = {
     ("POST", "/api/runs"): {"Analyst", "SIP Owner"},
     ("GET", "/api/runs"): set(STAFF_READ),
     ("GET", "/api/runs/{run_id}"): set(STAFF_READ),
+    # Every staff role, and deliberately so: the Auditor and Board Viewer roles exist to read
+    # this. Restricting it to the owner would let the person most likely to be audited decide
+    # who sees the record.
+    ("GET", "/api/runs/{run_id}/audit"): set(STAFF_READ),
     # Launch, CEO and resumption authority. Owner only.
     ("POST", "/api/runs/{run_id}/start"): {"SIP Owner"},
     ("POST", "/api/runs/{run_id}/pause"): {"SIP Owner"},

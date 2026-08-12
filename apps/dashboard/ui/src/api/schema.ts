@@ -178,6 +178,37 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/runs/{run_id}/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Run Audit
+         * @description The run's audit trail, newest first. Every staff role may read it.
+         *
+         *     **Readable by all seven roles deliberately.** An audit trail nobody can read is not an audit
+         *     trail, and the Auditor and Board Viewer roles exist precisely to read it. Restricting it to the
+         *     owner would mean the person most likely to be audited controls who sees the record.
+         *
+         *     **404 for an unknown run, not an empty page.** A run with no audit rows cannot exist, because
+         *     `create_run` writes one in the same transaction, so an empty result means the run id is wrong
+         *     and saying so is more useful than returning `[]`. The run is looked up first for that reason.
+         *
+         *     Ordered by `id`, so rows written in one transaction keep their real order: `at` is transaction
+         *     start time and would tie.
+         */
+        get: operations["read_run_audit_api_runs__run_id__audit_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/candidates": {
         parameters: {
             query?: never;
@@ -446,6 +477,42 @@ export interface components {
             confidence_meaning: string;
             /** Notes */
             notes?: string | null;
+        };
+        /** AuditEntryOut */
+        AuditEntryOut: {
+            /** Id */
+            id: number;
+            /** At */
+            at: string;
+            /** User Id */
+            user_id: string | null;
+            /** Action */
+            action: string;
+            /** Record Type */
+            record_type: string | null;
+            /** Record Id */
+            record_id: string | null;
+            /** Old Value */
+            old_value: string | null;
+            /** New Value */
+            new_value: string | null;
+            /** Reason */
+            reason: string | null;
+            /** Approval Ref */
+            approval_ref: string | null;
+        };
+        /**
+         * AuditPageOut
+         * @description A page of audit entries plus the cursor for the next one.
+         *
+         *     `next_before_id` rather than a page number, so a caller pages by passing back what it was
+         *     given instead of computing an offset. `null` means this is the last page.
+         */
+        AuditPageOut: {
+            /** Entries */
+            entries: components["schemas"]["AuditEntryOut"][];
+            /** Next Before Id */
+            next_before_id: number | null;
         };
         /** CandidateOut */
         CandidateOut: {
@@ -1072,6 +1139,54 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RunOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_run_audit_api_runs__run_id__audit_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                before_id?: number | null;
+            };
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditPageOut"];
                 };
             };
             /** @description No session, or the session has expired or been idle too long. */
