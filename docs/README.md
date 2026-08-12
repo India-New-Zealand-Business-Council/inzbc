@@ -66,6 +66,10 @@ Two conventions hold across this tree:
   actually done. It is an index, not a restatement, so it points at the documents below rather than
   copying them. Two rows are unverified rather than done, and the register keeps that distinction
   visible.
+- [`security/README.md`](security/README.md) — the security design: authentication architecture,
+  the route-level authorisation matrix, separation-of-duties rules, session and CSRF design, the
+  audit event catalogue and data classification. It ends with the known gaps, listed rather than
+  implied.
 - [`raci.md`](raci.md) — who is responsible, accountable, consulted and informed for each decision,
   plus the governance document set tracker and the threat model.
 - [`incident-response.md`](incident-response.md) — what to do when something goes wrong, the

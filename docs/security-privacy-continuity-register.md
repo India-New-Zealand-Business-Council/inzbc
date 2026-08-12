@@ -62,14 +62,18 @@ mitigate it — a second approver, a separate reviewer — cannot be assumed to 
 
 ## 2. Role-based access
 
-Four roles, defined in `database/schema.sql` and enforced in `services/api/auth.py`:
+Seven roles, defined in `database/schema.sql` and enforced in `services/api/auth.py`. The full
+route-level matrix is in [`security/README.md`](./security/README.md) §3.
 
 | Role | May |
 |---|---|
-| Analyst | Capture and assess candidates |
-| Quality Reviewer | Check sources and classification, stop a run |
-| SIP Owner | Approve release |
-| Secretariat | Configure, but not approve their own output |
+| Analyst | Capture, score, route and merge candidates; create and complete runs |
+| Reviewer | Verify candidates, and stop a run independently of the owner |
+| SIP Owner | Launch, pause, resume and stop a run; approve release |
+| Secretariat | Draft comms |
+| Administrator | Configure, but not approve their own output |
+| Board Viewer | Read only |
+| Auditor | Read only |
 
 Three things about how this is enforced, because each one is a place small systems usually get it
 wrong.
