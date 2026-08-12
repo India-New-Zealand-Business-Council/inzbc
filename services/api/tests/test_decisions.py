@@ -361,3 +361,95 @@ def test_self_approval_is_caught_whatever_the_uuid_spelling(
                 value="Approved",
             )
         )
+
+
+def _exception(
+    seeded: dict, *, approved_by: str | None = None, review_date: date | None = None
+) -> str:
+    """Records an approved separation-of-duties exception covering the author."""
+    with psycopg.connect(DATABASE_URL, row_factory=psycopg.rows.dict_row) as conn:
+        row = conn.execute(
+            "insert into sod_exceptions (report_version_id, kind, actor_id, actor_role_id, "
+            "approved_by, reason, review_date) values (%s, %s, %s, %s, %s, %s, %s) returning id",
+            (
+                seeded["report_version_id"],
+                REPORT_APPROVAL,
+                seeded["author_id"],
+                SIP_OWNER_ROLE,
+                approved_by or seeded["user_id"],
+                "single approver during the placement",
+                review_date or date(2099, 1, 1),
+            ),
+        ).fetchone()
+        conn.commit()
+    return str(row["id"])
+
+
+def test_a_valid_exception_permits_the_author_to_decide(
+    repo: DecisionRepository, seeded: dict
+) -> None:
+    """The exception mechanism existed and could never be exercised: the self-approval check
+    refused unconditionally, so `sod_exceptions` and `decision_records.sod_exception_id` recorded
+    a citation nothing ever read."""
+    record = repo.record(
+        **_kwargs(
+            seeded,
+            kind=REPORT_APPROVAL,
+            actor_id=seeded["author_id"],
+            value="Approved",
+            sod_exception_id=_exception(seeded),
+        )
+    )
+    assert record.value == "Approved"
+
+
+def test_an_exception_approved_by_the_actor_is_refused(
+    repo: DecisionRepository, seeded: dict
+) -> None:
+    """`approved_by` is a plain foreign key to `users`, so nothing in the schema stops an actor
+    recording an exception that permits themselves. That is self-approval with an extra step, and
+    it would have looked like a control."""
+    with pytest.raises(DecisionNotPermittedError, match="approved by the same person"):
+        repo.record(
+            **_kwargs(
+                seeded,
+                kind=REPORT_APPROVAL,
+                actor_id=seeded["author_id"],
+                value="Approved",
+                sod_exception_id=_exception(seeded, approved_by=seeded["author_id"]),
+            )
+        )
+
+
+def test_a_lapsed_exception_does_not_authorise(
+    repo: DecisionRepository, seeded: dict
+) -> None:
+    """`review_date` is the date the exception was to be revisited. Past it, it is a lapsed
+    approval rather than a current one."""
+    with pytest.raises(DecisionNotPermittedError, match="lapsed"):
+        repo.record(
+            **_kwargs(
+                seeded,
+                kind=REPORT_APPROVAL,
+                actor_id=seeded["author_id"],
+                value="Approved",
+                sod_exception_id=_exception(seeded, review_date=date(2020, 1, 1)),
+            )
+        )
+
+
+def test_an_exception_for_another_decision_kind_does_not_transfer(
+    repo: DecisionRepository, seeded: dict
+) -> None:
+    """An exception authorises one act, not a category. Cited against a different stream it must
+    refuse rather than quietly permitting a decision nobody approved."""
+    with pytest.raises(DecisionNotPermittedError, match="does not cover"):
+        repo.record(
+            **_kwargs(
+                seeded,
+                kind=CEO_RULING,
+                actor_id=seeded["author_id"],
+                value="Continue",
+                sod_exception_id=_exception(seeded),
+            )
+        )
