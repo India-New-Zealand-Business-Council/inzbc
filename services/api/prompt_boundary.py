@@ -16,9 +16,11 @@ provider, so publication review cannot undo a disclosure. The control for prose 
 then the structure is gone, and no inspection of that string can recover where it came from. So
 there are two halves, and they are enforceable to different degrees:
 
-- `minimise()` is real enforcement. A caller names the fields it needs, everything else is dropped
-  before assembly, and a nested container that survives the allowlist is refused rather than passed
-  through. So a field nobody named cannot reach the text, at any depth.
+- `minimise()` is real enforcement, and **nothing calls it yet**. A caller names the fields it
+  needs, everything else is dropped before assembly, and a value that is not a scalar is refused
+  rather than passed through. So a field nobody named cannot reach the text. No module handles
+  member records today, so this is the rule the first one must follow rather than a control
+  currently running.
 - `PromptSource` is a **declaration**, not a verification. A caller states where its text came
   from, and prohibited origins are refused. A caller that declares the wrong thing is not caught.
 
@@ -31,6 +33,8 @@ weaker guarantee than verification and a much stronger one than nothing.
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
+from datetime import date, datetime
+from decimal import Decimal
 from enum import Enum
 from typing import Any
 
@@ -89,6 +93,20 @@ PERMITTED_SOURCES = frozenset(
 )
 
 
+# What a minimised field may be: a scalar the caller can read and vouch for at a glance.
+#
+# An allowlist, for the same reason `PERMITTED_SOURCES` is one, and the first version got this
+# wrong in a way worth recording. It listed the *composite* types to refuse — Mapping, list, tuple,
+# set — which is a denylist, so the failure mode of forgetting a type was disclosure rather than
+# refusal. Four types slipped straight through with a member's name inside them: a pydantic model,
+# a dataclass, `bytes`, and `frozenset` (not a subclass of `set`). This repository is pydantic
+# throughout, so a dict of models is the likely record shape rather than a contrived one.
+#
+# Dates are here because a record legitimately carries them and a caller should not have to
+# stringify a date to send it. Everything else is refused until someone decides otherwise.
+_LEAF_TYPES = (str, int, float, bool, type(None), Decimal, date, datetime)
+
+
 def check_source(source: PromptSource) -> None:
     """Refuses a prohibited origin. Raises `ProhibitedInputError`, or returns.
 
@@ -134,16 +152,21 @@ def minimise(
     **A field named but absent is not an error.** The allowlist states what *may* be sent, not what
     must be present; a record legitimately missing an optional field should not fail the call.
 
-    **A nested container is refused, not passed through.** This was the first version's real hole:
-    the filter is one level deep, so allowlisting `sector` on
+    **A non-scalar value is refused, not passed through.** This was the first version's real hole:
+    the filter was one level deep, so allowlisting `sector` on
     `{"sector": {"name": "dairy", "contact": "Priya Sharma, Chief Executive"}}` kept the whole
     subtree, and the claim that a field nobody named cannot reach the prompt was false. Naming a
     key says nothing about what is underneath it.
 
     Refusing rather than recursing is deliberate. Filtering a subtree needs a nested allowlist, and
     inventing one here would be guessing at a shape the caller knows and this function does not.
-    Flattening silently would be worse: it would keep the data and lose the audit of what was kept.
-    The caller flattens and names the leaf fields it wants, which is what ADR-0006 §2 asks for.
+    Flattening silently would be worse: it would keep the data and lose the record of what was
+    kept. The caller flattens and names the leaf fields it wants, which is what ADR-0006 §2 asks
+    for.
+
+    The check is an allowlist of scalar types (`_LEAF_TYPES`) rather than a list of containers to
+    refuse. The first fix for this got that backwards and let a pydantic model, a dataclass,
+    `bytes` and a `frozenset` through with a name inside.
 
     Returns a new dict. The input is never mutated, so a caller cannot minimise a record and then
     accidentally read the trimmed original from the same variable.
@@ -157,13 +180,11 @@ def minimise(
         )
 
     kept = {key: value for key, value in record.items() if key in permitted}
-    nested = sorted(
-        key for key, value in kept.items() if isinstance(value, (Mapping, list, tuple, set))
-    )
-    if nested:
+    composite = sorted(key for key, value in kept.items() if not isinstance(value, _LEAF_TYPES))
+    if composite:
         raise ProhibitedInputError(
-            f"cannot minimise nested field(s): {', '.join(nested)}. Allowlisting a key says "
-            "nothing about what is underneath it, so keeping the subtree would send fields nobody "
+            f"cannot minimise non-scalar field(s): {', '.join(composite)}. Allowlisting a key says "
+            "nothing about what is underneath it, so keeping the value would send fields nobody "
             "named. Flatten the record and name the leaf fields you actually need."
         )
     return kept

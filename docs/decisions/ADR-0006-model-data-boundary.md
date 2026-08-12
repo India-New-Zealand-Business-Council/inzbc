@@ -69,10 +69,20 @@ Callers that construct prompts from structured records MUST use an explicit allo
 needed for the model task. Prohibited fields are dropped before text assembly. Do not assemble a
 full record and depend on regex to remove sensitive fields afterwards.
 
-**Implemented** as `minimise(record, allowed)`. This is the enforceable half: a field nobody named
-cannot reach the prompt, whatever it contains and whatever shape it is in, which is the property
-regex redaction cannot offer. An empty allowlist refuses rather than passing everything, because
-the likeliest cause is a caller that forgot to name its fields.
+**Available** as `minimise(record, allowed)`, and **not yet applied by any module**, because none
+handles member records yet. It is the rule the first one must follow rather than a control running
+today, and this ADR would be misleading if it implied otherwise.
+
+This is the enforceable half: a field nobody named cannot reach the prompt, which is the property
+regex redaction cannot offer. Two refusals rather than silent behaviour, each closing a way the
+guarantee had already been broken once:
+
+- **An empty allowlist refuses**, because the likeliest cause is a caller that forgot to name its
+  fields, and reading that as "send everything" turns a slip into a disclosure.
+- **A value that is not a scalar refuses.** Naming a key says nothing about what is underneath it,
+  so keeping a composite value would send fields nobody named. The permitted types are an
+  allowlist: an earlier version listed the container types to *refuse*, and a pydantic model, a
+  dataclass, `bytes` and a `frozenset` all walked through it carrying a name.
 
 For trade-intelligence tasks, preferred external-model inputs are public-source content and
 non-identifying facts such as source URL, publication date, sector, HS code, tariff/rule text,

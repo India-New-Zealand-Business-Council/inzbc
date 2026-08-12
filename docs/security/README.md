@@ -296,7 +296,7 @@ Ordered by how likely they are here, not by how alarming they sound.
 | A leaked database backup is used to resume live sessions | Only the SHA-256 digest is stored |
 | A cross-site form POST performs a state change | Double-submit CSRF token; `SameSite=Lax` alone does not stop this |
 | A departed person's session keeps working | `active` and roles re-read every request |
-| Member-identifying prose reaches an external model | Boundary refusal by declared `PromptSource`, plus `minimise()` on structured records. BR4 redaction as defence in depth |
+| Member-identifying prose reaches an external model | Boundary refusal by declared `PromptSource`, live on every call. `minimise()` exists for structured records but no module calls it yet. BR4 redaction as defence in depth |
 | An audit row is edited to hide an action | Append-only trigger plus an INSERT/SELECT-only role |
 | A session id is guessed | 32 random bytes |
 
@@ -309,9 +309,11 @@ already reached the provider.
 So the control is not to send it (`services/api/prompt_boundary.py`). Two halves, and they are
 worth keeping distinct:
 
-**`minimise()` is enforcement.** A caller names the fields it needs, everything else is dropped
-before assembly, and a nested container that survives the allowlist is refused rather than passed
-through. A field nobody named cannot reach the text, at any depth.
+**`minimise()` is enforcement, and it is available rather than applied.** A caller names the fields
+it needs, everything else is dropped before assembly, and a value that is not a scalar is refused
+rather than passed through, so a field nobody named cannot reach the text. **No module calls it
+yet**, because none handles member records yet. It is the rule the first one must follow, not a
+control running today, and this table would be misleading if it implied otherwise.
 
 **`PromptSource` is a declaration.** The gateway receives a string, so nothing about it reveals its
 origin and a caller naming the wrong source is not caught. It is keyword-only with no default, so a
@@ -330,6 +332,7 @@ marketing document.
 | Gap | Issue |
 |---|---|
 | OAuth handshake not merged; sessions issued out of band | #99 |
+| No module builds prompts through `minimise()` yet; the Comms brief has no structural control | ADR-0006 §2 |
 | A hollowed-out prompt is sent rather than refused | ADR-0006 §5, threshold is INZBC's to set |
 | Session establishment and sign-out are not audited | this document, §5 |
 | `users.mfa_enabled` exists but nothing reads or enforces it | this document, §1 |

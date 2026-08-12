@@ -11,8 +11,12 @@ platform unusable and someone routes around it, which is the same outcome by a s
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
+from datetime import date
+from decimal import Decimal
 
 import pytest
+from pydantic import BaseModel
 
 from services.api.model_gateway import ModelGateway
 from services.api.prompt_boundary import (
@@ -129,6 +133,16 @@ def test_naming_a_field_the_record_does_not_have_is_not_an_error() -> None:
     assert minimise({"sector": "dairy"}, ["sector", "region"]) == {"sector": "dairy"}
 
 
+class _MemberModel(BaseModel):
+    name: str
+    job_title: str
+
+
+@dataclass
+class _MemberDataclass:
+    name: str
+
+
 @pytest.mark.parametrize(
     "value",
     [
@@ -136,18 +150,44 @@ def test_naming_a_field_the_record_does_not_have_is_not_an_error() -> None:
         ["dairy", "Priya Sharma"],
         ("dairy", "Priya Sharma"),
         {"Priya Sharma"},
+        frozenset({"Priya Sharma"}),
+        b"Priya Sharma",
+        bytearray(b"Priya Sharma"),
+        _MemberModel(name="Priya Sharma", job_title="Chief Executive"),
+        _MemberDataclass(name="Priya Sharma"),
     ],
-    ids=["dict", "list", "tuple", "set"],
+    ids=["dict", "list", "tuple", "set", "frozenset", "bytes", "bytearray", "pydantic",
+         "dataclass"],
 )
-def test_a_nested_container_is_refused_rather_than_passed_through(value: object) -> None:
-    """The first version's real hole: the filter was one level deep.
+def test_a_non_scalar_value_is_refused_rather_than_passed_through(value: object) -> None:
+    """The first version's real hole, and the first fix's.
 
-    Allowlisting `sector` kept `{"sector": {"contact": "Priya Sharma, Chief Executive"}}` whole,
-    so the promise that a field nobody named cannot reach the prompt was false. Naming a key says
-    nothing about what is underneath it, and the subtree is exactly where prose lives.
+    Version one filtered one level deep, so allowlisting `sector` kept
+    `{"sector": {"contact": "Priya Sharma, Chief Executive"}}` whole.
+
+    Version two refused a list of container types, which is a denylist in a module that argues for
+    allowlists five lines earlier. The last five cases here are what walked through it: `frozenset`
+    is not a subclass of `set`, `bytes` is not a container by that test, and a pydantic model or a
+    dataclass is neither. This repository is pydantic throughout, so a record holding a model is
+    the likely shape rather than a contrived one.
+
+    The check is now an allowlist of scalar types, so a type nobody thought about is refused.
     """
-    with pytest.raises(ProhibitedInputError, match="nested"):
+    with pytest.raises(ProhibitedInputError, match="non-scalar"):
         minimise({"sector": value}, ["sector"])
+
+
+def test_the_scalar_types_a_record_actually_carries_still_pass() -> None:
+    """Refusing must not become the common case, or callers route around it.
+
+    Dates and decimals are here because a record legitimately carries them and requiring a caller
+    to stringify a date first would be friction with no safety in return.
+    """
+    record = {
+        "sector": "dairy", "count": 5, "share": 1.5, "active": True,
+        "note": None, "value": Decimal("1.5"), "signed": date(2026, 8, 13),
+    }
+    assert minimise(record, list(record)) == record
 
 
 def test_a_nested_field_nobody_allowlisted_is_simply_dropped() -> None:

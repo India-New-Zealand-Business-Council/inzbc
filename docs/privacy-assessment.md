@@ -127,12 +127,17 @@ in ordinary prose.
 
     Delegation lead: Priya Sharma, Chief Executive, Koru Exports Ltd
 
-That passes through untouched. The control for prose is **not to send it**, and it now exists
-(`services/api/prompt_boundary.py`). Every model call names where its text came from, and a member
-record, CRM note, Board paper or private message is refused before a policy is even read. Prompts
-built from structured records go through `minimise()`, which keeps only allowlisted fields and
-refuses a nested container that survives the allowlist, so member fields are dropped before
-assembly rather than masked afterwards.
+That passes through untouched. The control for prose is **not to send it**, and the mechanism now
+exists (`services/api/prompt_boundary.py`).
+
+**Live on every call today:** each one names where its text came from, and a member record, CRM
+note, Board paper or private message is refused before a policy is even read.
+
+**Available but not yet applied:** a prompt built from a structured record must go through
+`minimise()`, which keeps only allowlisted fields and refuses a non-scalar value, so member fields
+are dropped before assembly rather than masked afterwards. No module does this yet, because no
+module handles member records yet. It is the rule the first one has to follow, and §8 item 5 is
+where that obligation sits.
 
 **That does not promote the redaction layer**, which remains defence in depth for formatted
 identifiers and must still not be described as making it safe to send member data to a model.

@@ -22,12 +22,16 @@ The policy document previously pointed at review-before-publication as the remai
 this. That is wrong, and the error mattered: review happens after the payload has already reached
 the provider. Publication review cannot undo a disclosure.
 
-The control for prose is not to send it, and that control now exists:
+The control for prose is not to send it, and the mechanism now exists:
 `services/api/prompt_boundary.py` (#223). Every model call names where its text came from, and a
 member record, CRM note, Board paper or private message is refused at the gateway before a policy
-is read. Prompts built from structured records go through `minimise()`, which keeps only
-allowlisted fields, so a name or job title is dropped by never being asked for rather than by being
-recognised.
+is read. That part is live on every call today.
+
+The other half is available rather than applied. A prompt built from a structured record **must**
+go through `minimise()`, which keeps only allowlisted fields and refuses a non-scalar value, so a
+name or job title is dropped by never being asked for rather than by being recognised. **No module
+does this yet**, because no module handles member records yet. It is the rule the first one has to
+follow, not a control already running.
 
 **That does not promote this layer.** Redaction remains defence in depth for formatted identifiers,
 and it must still not be described as making it safe to send member data to a model. Approving the
