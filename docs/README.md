@@ -83,6 +83,11 @@ Two conventions hold across this tree:
 - [`secrets-register.md`](secrets-register.md) and
   [`account-licence-register.md`](account-licence-register.md) — credentials by name, owner and
   scope; and the accounts behind them.
+- [`backup-and-monitoring.md`](backup-and-monitoring.md) — what to watch and what to back up. The
+  two signals that matter most are absences: no run started today, and a run stalled in a human
+  gate. Neither looks like an error.
+- [`environments.md`](environments.md) — development, test and production, the four rules that keep
+  them apart, and what has to be true before production is created.
 
 ## I need to know why something was decided
 - [`decisions/`](decisions/) — architecture decision records. Each states the context, the options
