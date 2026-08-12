@@ -252,6 +252,36 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Whoami
+         * @description Who the current session belongs to, and the CSRF token to send with writes.
+         *
+         *     A UI needs this to know which controls to show. It is not the authorisation check: the server
+         *     re-checks on every write, because a hidden button is a hint and not a control.
+         */
+        get: operations["whoami_api_session_get"];
+        put?: never;
+        post?: never;
+        /**
+         * Sign Out
+         * @description Ends the session server-side and clears the cookie.
+         *
+         *     Deliberately not behind the CSRF check. A forged sign-out is a nuisance rather than a breach,
+         *     and refusing to sign someone out because a token was missing is the worse failure.
+         */
+        delete: operations["sign_out_api_session_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/fta/query": {
         parameters: {
             query?: never;
@@ -416,8 +446,6 @@ export interface components {
             published_at?: string | null;
             /** In Coverage Window */
             in_coverage_window?: boolean | null;
-            /** Actor Id */
-            actor_id: string;
         };
         /** CreateRunIn */
         CreateRunIn: {
@@ -429,8 +457,6 @@ export interface components {
             coverage_start_utc: string;
             /** Coverage End Utc */
             coverage_end_utc: string;
-            /** Initiated By */
-            initiated_by: string;
         };
         /** DraftIn */
         DraftIn: {
@@ -480,8 +506,6 @@ export interface components {
         MergeIn: {
             /** Duplicate Of */
             duplicate_of: string;
-            /** Actor Id */
-            actor_id: string;
             /** Reason */
             reason: string;
         };
@@ -491,8 +515,6 @@ export interface components {
             proposed_routing?: string | null;
             /** Included */
             included?: boolean | null;
-            /** Actor Id */
-            actor_id: string;
             /** Reason */
             reason: string;
         };
@@ -525,10 +547,19 @@ export interface components {
             member_relevance?: number | null;
             signal?: components["schemas"]["SignalStrength"] | null;
             confidence?: components["schemas"]["SourceConfidence"] | null;
-            /** Actor Id */
-            actor_id: string;
             /** Reason */
             reason: string;
+        };
+        /** SessionOut */
+        SessionOut: {
+            /** User Id */
+            user_id: string;
+            /** Name */
+            name: string;
+            /** Roles */
+            roles: string[];
+            /** Csrf Token */
+            csrf_token: string;
         };
         /**
          * SignalStrength
@@ -550,8 +581,6 @@ export interface components {
         TransitionIn: {
             /** Expected Version */
             expected_version: number;
-            /** Actor Id */
-            actor_id: string;
             /** Reason */
             reason: string;
             /** Approval Ref */
@@ -578,8 +607,6 @@ export interface components {
         /** VerifyIn */
         VerifyIn: {
             verification: components["schemas"]["VerificationState"];
-            /** Actor Id */
-            actor_id: string;
             /** Reason */
             reason: string;
         };
@@ -597,7 +624,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                inzbc_session?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -610,14 +639,27 @@ export interface operations {
                     "application/json": components["schemas"]["RunOut"][];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     create_run_api_runs_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-CSRF-Token"?: string | null;
+            };
             path?: never;
-            cookie?: never;
+            cookie?: {
+                inzbc_session?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -652,7 +694,9 @@ export interface operations {
             path: {
                 run_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                inzbc_session?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -679,11 +723,15 @@ export interface operations {
     start_run_api_runs__run_id__start_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-CSRF-Token"?: string | null;
+            };
             path: {
                 run_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                inzbc_session?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -714,11 +762,15 @@ export interface operations {
     pause_run_api_runs__run_id__pause_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-CSRF-Token"?: string | null;
+            };
             path: {
                 run_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                inzbc_session?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -749,11 +801,15 @@ export interface operations {
     resume_run_api_runs__run_id__resume_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-CSRF-Token"?: string | null;
+            };
             path: {
                 run_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                inzbc_session?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -784,11 +840,15 @@ export interface operations {
     complete_run_api_runs__run_id__complete_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-CSRF-Token"?: string | null;
+            };
             path: {
                 run_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                inzbc_session?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -824,7 +884,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                inzbc_session?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -851,9 +913,13 @@ export interface operations {
     capture_candidate_api_candidates_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-CSRF-Token"?: string | null;
+            };
             path?: never;
-            cookie?: never;
+            cookie?: {
+                inzbc_session?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -888,7 +954,9 @@ export interface operations {
             path: {
                 candidate_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                inzbc_session?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -915,11 +983,15 @@ export interface operations {
     verify_candidate_api_candidates__candidate_id__verify_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-CSRF-Token"?: string | null;
+            };
             path: {
                 candidate_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                inzbc_session?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -950,11 +1022,15 @@ export interface operations {
     score_candidate_api_candidates__candidate_id__score_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-CSRF-Token"?: string | null;
+            };
             path: {
                 candidate_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                inzbc_session?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -985,11 +1061,15 @@ export interface operations {
     route_candidate_api_candidates__candidate_id__route_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-CSRF-Token"?: string | null;
+            };
             path: {
                 candidate_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                inzbc_session?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -1020,11 +1100,15 @@ export interface operations {
     merge_candidate_api_candidates__candidate_id__merge_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-CSRF-Token"?: string | null;
+            };
             path: {
                 candidate_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                inzbc_session?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -1055,9 +1139,13 @@ export interface operations {
     draft_api_comms_draft_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-CSRF-Token"?: string | null;
+            };
             path?: never;
-            cookie?: never;
+            cookie?: {
+                inzbc_session?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -1073,6 +1161,66 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["DraftOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    whoami_api_session_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                inzbc_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sign_out_api_session_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                inzbc_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
