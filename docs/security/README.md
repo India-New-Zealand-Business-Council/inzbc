@@ -182,22 +182,21 @@ records with no recorded author should not become unreviewable. That was fail-op
 cannot distinguish "nobody wrote this" from "we failed to read who wrote it", and anyone able to
 arrange a null author could approve their own work.
 
-**The candidate path does the opposite, and this is an inconsistency rather than a design.**
+**The candidate path answers a different question, and the fix was at the column.**
 `record_verification` checks `performer is not None and performer == verifier`, so a candidate with
-null `captured_by` and `assessed_by` can be verified by anyone, including whoever actually captured
-it. The schema states the reason: the provenance columns are nullable because rows predating them
-cannot have their authorship reconstructed, and refusing all of them would strand every candidate
-captured before the column existed. The schema comment is honest that this is "a stated trade-off
-rather than a control".
+a null `captured_by` used to pass unconditionally: whoever captured it could verify it by arranging
+for the column to be empty, which cost one `insert` omitting it. The schema justified the null with
+legacy rows, and that turned out to be hypothetical, because no production database exists yet.
 
-The exposure is narrow but real. Every candidate written through the API records its capturer, so
-a null can only come from a legacy row or a direct SQL insert — but a direct SQL insert is exactly
-the route someone would take to defeat the check, and it costs one `insert` with the column
-omitted. Two paths applying opposite rules to the same question is also the shape of mistake that
-survives review, because each one reads as reasonable on its own.
+So `captured_by` is now `NOT NULL`. The case cannot be created, and the check cannot be skipped by
+omission. Fixing it at the column rather than in the check matters: a guard in
+`record_verification` would still leave the bad row in the table for every other reader.
 
-**The fix is a backfill then `NOT NULL`**, which turns the trade-off into a control and lets both
-paths refuse alike. Tracked as #297.
+**`assessed_by` and `verified_by` stay nullable, and that is not the same compromise.** A candidate
+that has not been scored genuinely has no assessor; a candidate not yet verified has no verifier.
+Null there means "this has not happened", not "we failed to record it", so there is no act to
+conflict with and `is not None` is the correct test. The two paths were never applying opposite
+rules to the same question, which is what the original finding (#297) claimed.
 
 **The sole-operator exception.** INZBC is one person, so a strict BR8 would block all work.
 `candidate_sod_exceptions` permits it — but the exception is a row: it names an approver, it
@@ -333,7 +332,6 @@ marketing document.
 | OAuth handshake not merged; sessions issued out of band | #99 |
 | A hollowed-out prompt is sent rather than refused | ADR-0006 §5, threshold is INZBC's to set |
 | Session establishment and sign-out are not audited | this document, §5 |
-| Candidate provenance is nullable, so a null-author row skips the SoD check | #297 |
 | `users.mfa_enabled` exists but nothing reads or enforces it | this document, §1 |
 | MFA on owned accounts unverified | register §3 |
 | Backup never restored into an empty database | #290 |

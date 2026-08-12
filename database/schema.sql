@@ -158,16 +158,23 @@ create table candidates (
   -- candidate end to end while passing every role check, because `require_roles` is an OR over
   -- the roles held and the steady state after the placement is one person holding all of them.
   --
-  -- Nullable because rows predating this column cannot have their authorship reconstructed.
-  -- A null means "unknown", and verification of an unattributable candidate is permitted: with
-  -- these columns nullable there is no way to distinguish "nobody captured this" from "we failed
-  -- to record who did", and refusing both would strand every candidate captured before the
-  -- column existed. Every candidate written through the API records its capturer, so a null can
-  -- only come from a legacy row or a direct SQL insert.
+  -- captured_by is NOT NULL, and that is what makes the check a control rather than a
+  -- convention. It was nullable, on the reasoning that rows predating the column cannot have
+  -- their authorship reconstructed. But `record_verification` tests `performer is not None`, so
+  -- a null capturer passed the separation-of-duties check unconditionally and whoever captured a
+  -- candidate could verify it by arranging for the column to be empty. One INSERT omitting the
+  -- column was the whole attack, which is exactly the route someone would take to defeat it.
   --
-  -- This is a stated trade-off rather than a control. Making these NOT NULL after a backfill is
-  -- the change that would turn it into one.
-  captured_by        uuid references users(id),
+  -- The legacy-row argument turned out to be hypothetical: no production database exists yet
+  -- (#99), so there is nothing to strand and nothing to backfill. Fixing it now costs a schema
+  -- line; fixing it after the first real run costs a migration and a judgement about rows nobody
+  -- can attribute.
+  --
+  -- assessed_by and verified_by stay nullable, and that is not the same compromise. A candidate
+  -- that has not been scored genuinely has no assessor, and one not yet verified has no
+  -- verifier, so null here means "this has not happened", not "we failed to record it". The
+  -- `is not None` test is correct for those two: there is no act to conflict with.
+  captured_by        uuid not null references users(id),
   assessed_by        uuid references users(id),
   verified_by        uuid references users(id),
   in_coverage_window boolean,
