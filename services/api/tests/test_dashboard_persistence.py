@@ -152,19 +152,39 @@ def test_open_actions_are_bounded_and_say_so(actor_id: str) -> None:
     from services.api.persistence import _OPEN_ACTION_LIMIT
 
     prefix = uuid.uuid4().hex[:6]
-    with psycopg.connect(DATABASE_URL) as conn:
-        for i in range(_OPEN_ACTION_LIMIT + 5):
+    try:
+        with psycopg.connect(DATABASE_URL) as conn:
+            for i in range(_OPEN_ACTION_LIMIT + 5):
+                conn.execute(
+                    "insert into action_register (action_code, title, status) "
+                    "values (%s, %s, 'Open')",
+                    (f"ACT-{prefix}-{i:04d}", f"Bulk action {i}"),
+                )
+            conn.commit()
+
+        summary = DashboardRepository(DATABASE_URL).summary()
+
+        assert len(summary.open_actions) == _OPEN_ACTION_LIMIT
+        assert summary.open_actions_truncated is True
+    finally:
+        # Closed rather than left behind, and in a `finally` so a failed assertion still cleans up.
+        #
+        # This suite shares one database with every other, and the rows above are the only ones
+        # here that change what a *different* test sees: 205 open actions push any action added
+        # afterwards past the cap, so a sibling test that adds one and expects to find it fails.
+        # It failed exactly that way once, and passed before that only because the sort is on
+        # `action_code` and the random prefixes happened to compare favourably. A test that other
+        # tests pass or fail by luck of a random hex string is worse than no test.
+        #
+        # Closing them rather than deleting them uses the endpoint's own definition of "open", so
+        # the cleanup exercises the same predicate the query filters on.
+        with psycopg.connect(DATABASE_URL) as conn:
             conn.execute(
-                "insert into action_register (action_code, title, status) "
-                "values (%s, %s, 'Open')",
-                (f"ACT-{prefix}-{i:04d}", f"Bulk action {i}"),
+                "update action_register set closed_at = now(), status = 'Closed' "
+                "where action_code like %s",
+                (f"ACT-{prefix}-%",),
             )
-        conn.commit()
-
-    summary = DashboardRepository(DATABASE_URL).summary()
-
-    assert len(summary.open_actions) == _OPEN_ACTION_LIMIT
-    assert summary.open_actions_truncated is True
+            conn.commit()
 
 
 def test_open_actions_exclude_closed_ones_and_mark_overdue(actor_id: str) -> None:
@@ -206,9 +226,12 @@ def test_the_owner_falls_back_to_the_free_text_name(actor_id: str) -> None:
     action rather than dropping it matters: an action with no owner is the one to chase."""
     code = f"ACT-{uuid.uuid4().hex[:6]}"
     with psycopg.connect(DATABASE_URL) as conn:
+        # Overdue, so it sorts into the first page whatever else the shared database holds. The
+        # list is capped, and an assertion that depends on how a random `action_code` compares
+        # against other tests' rows is one that passes or fails by luck.
         conn.execute(
-            "insert into action_register (action_code, title, status, owner_text) "
-            "values (%s, %s, 'Open', %s)",
+            "insert into action_register (action_code, title, status, owner_text, due_date) "
+            "values (%s, %s, 'Open', %s, current_date - 1)",
             (code, "Text-owned action", "Executive Sponsor"),
         )
         conn.commit()
