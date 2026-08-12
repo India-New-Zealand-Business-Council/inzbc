@@ -527,6 +527,21 @@ class OpenAction:
 
 
 @dataclass(frozen=True)
+class GateStatus:
+    """Where the current run stands at its two quality and release gates.
+
+    Every field is nullable, and null means "not reached yet" rather than "unknown". A run that has
+    not been QA'd has no QA status; one with no report version has no approval and no distribution
+    authority, because those decisions are keyed to a report version that does not exist.
+    """
+
+    qa_status: str | None
+    report_approval: str | None
+    distribution_authority: str | None
+    distribution_recipient: str | None
+
+
+@dataclass(frozen=True)
 class DashboardSummary:
     """Everything the executive dashboard reads, in one shape (#47).
 
@@ -538,10 +553,12 @@ class DashboardSummary:
     """
 
     run: RunRecord | None
+    gates: GateStatus
     total_candidates: int
     included_candidates: int
     by_verification: dict[str, int]
     open_actions: list[OpenAction]
+    open_actions_truncated: bool
 
 
 # Every verification state, from `database/schema.sql`. Listed so a state with no candidates is
@@ -554,6 +571,12 @@ VERIFICATION_STATES = (
     "Not Required",
     "Rejected",
 )
+
+
+# The dashboard shows open actions to be worked, not an archive. A page beyond this is a register
+# that needs triage rather than a screen that needs scrolling, and the caller is told when it was
+# cut rather than left to infer it.
+_OPEN_ACTION_LIMIT = 200
 
 
 class DashboardRepository:
@@ -600,6 +623,28 @@ class DashboardRepository:
                     total += row["n"]
                     included += row["included"]
 
+            # QA and distribution status, which #47 asks for by name. `qa_status` lives on the
+            # run; the two decision values live on the run's newest report version, because
+            # ADR-0005 keys those streams to a report version. Both are null before the run
+            # reaches them, and null here means "not reached yet" rather than "unknown".
+            gates = GateStatus(None, None, None, None)
+            if run_row is not None:
+                qa = conn.execute(
+                    "select qa_status from runs where id = %s", (run_row["id"],)
+                ).fetchone()
+                decision = conn.execute(
+                    "select report_approval, distribution_authority, distribution_recipient "
+                    "from current_report_decisions where run_id = %s "
+                    "order by version_number desc limit 1",
+                    (run_row["id"],),
+                ).fetchone()
+                gates = GateStatus(
+                    qa_status=qa["qa_status"] if qa else None,
+                    report_approval=decision["report_approval"] if decision else None,
+                    distribution_authority=decision["distribution_authority"] if decision else None,
+                    distribution_recipient=decision["distribution_recipient"] if decision else None,
+                )
+
             action_rows = conn.execute(
                 "select a.action_code, a.title, a.priority, a.due_date, a.status, "
                 "       coalesce(u.name, a.owner_text) as owner, "
@@ -609,11 +654,21 @@ class DashboardRepository:
                 # Overdue first, then by due date, nulls last: an action with no due date is not
                 # more urgent than one that is late, and ordering by due_date alone puts nulls
                 # first in Postgres.
-                "order by overdue desc, a.due_date asc nulls last, a.action_code asc"
+                "order by overdue desc, a.due_date asc nulls last, a.action_code asc "
+                # Bounded, like every other read here. `action_register` has no retention rule, so
+                # nothing in the schema stops it growing, and an unbounded read on a dashboard
+                # someone opens all day is the wrong place to find that out. One extra row is
+                # fetched so the caller can be told the list was cut rather than silently seeing
+                # a short one.
+                "limit %s",
+                (_OPEN_ACTION_LIMIT + 1,),
             ).fetchall()
+            truncated = len(action_rows) > _OPEN_ACTION_LIMIT
+            action_rows = action_rows[:_OPEN_ACTION_LIMIT]
 
         return DashboardSummary(
             run=_row_to_record(run_row) if run_row is not None else None,
+            gates=gates,
             total_candidates=total,
             included_candidates=included,
             by_verification=counts,
@@ -629,4 +684,5 @@ class DashboardRepository:
                 )
                 for row in action_rows
             ],
+            open_actions_truncated=truncated,
         )

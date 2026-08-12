@@ -671,9 +671,12 @@ export interface components {
         /** DashboardOut */
         DashboardOut: {
             run: components["schemas"]["RunOut"] | null;
+            gates: components["schemas"]["GateStatusOut"];
             coverage: components["schemas"]["CoverageOut"];
             /** Open Actions */
             open_actions: components["schemas"]["OpenActionOut"][];
+            /** Open Actions Truncated */
+            open_actions_truncated: boolean;
         };
         /** DraftIn */
         DraftIn: {
@@ -713,6 +716,24 @@ export interface components {
             /** Answers */
             answers: components["schemas"]["AnswerOut"][];
             action_required?: components["schemas"]["ActionRequiredOut"] | null;
+        };
+        /**
+         * GateStatusOut
+         * @description QA and release status for the current run.
+         *
+         *     Every field is nullable, and null means "not reached yet" rather than "unknown". The two
+         *     decision values are keyed to a report version (ADR-0005), so they stay null until the run has
+         *     one.
+         */
+        GateStatusOut: {
+            /** Qa Status */
+            qa_status: string | null;
+            /** Report Approval */
+            report_approval: string | null;
+            /** Distribution Authority */
+            distribution_authority: string | null;
+            /** Distribution Recipient */
+            distribution_recipient: string | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {

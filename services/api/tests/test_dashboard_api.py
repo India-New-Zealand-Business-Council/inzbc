@@ -16,6 +16,7 @@ from services.api.main import app
 from services.api.persistence import (
     VERIFICATION_STATES,
     DashboardSummary,
+    GateStatus,
     OpenAction,
     RunRecord,
 )
@@ -42,6 +43,13 @@ class FakeDashboardRepository:
             included_candidates=2,
             by_verification={state: 0 for state in VERIFICATION_STATES} | {"Verified": 5},
             open_actions=[],
+            gates=GateStatus(
+                qa_status="Passed",
+                report_approval="Approved",
+                distribution_authority="Authorised",
+                distribution_recipient="board@example.test",
+            ),
+            open_actions_truncated=False,
         )
 
     def summary(self) -> DashboardSummary:
@@ -90,6 +98,8 @@ def test_no_run_is_200_with_a_null_run_not_404(
         total_candidates=0,
         included_candidates=0,
         by_verification={state: 0 for state in VERIFICATION_STATES},
+        gates=GateStatus(None, None, None, None),
+        open_actions_truncated=False,
         open_actions=[
             OpenAction(
                 action_code="ACT-016",
@@ -117,5 +127,39 @@ def test_the_response_shape_is_closed(client: TestClient) -> None:
     unannounced and a typo in one cannot pass silently."""
     body = client.get("/api/dashboard").json()
 
-    assert set(body) == {"run", "coverage", "open_actions"}
+    assert set(body) == {"run", "gates", "coverage", "open_actions", "open_actions_truncated"}
     assert set(body["coverage"]) == {"total", "included", "by_verification"}
+
+
+def test_qa_and_distribution_status_are_returned(client: TestClient) -> None:
+    """The route table promises "control state, open actions, QA/distribution status". The first
+    version returned only the first two, so the contract advertised something the response could
+    not supply."""
+    gates = client.get("/api/dashboard").json()["gates"]
+
+    assert gates["qa_status"] == "Passed"
+    assert gates["report_approval"] == "Approved"
+    assert gates["distribution_authority"] == "Authorised"
+
+
+def test_a_run_that_has_not_reached_its_gates_reports_null_not_absent(
+    client: TestClient, fake_repo: FakeDashboardRepository
+) -> None:
+    """Null means "not reached yet". Omitting the key would make the panel infer it, and the two
+    decision values are keyed to a report version that does not exist early in a run."""
+    fake_repo.next_summary = DashboardSummary(
+        run=_run(),
+        gates=GateStatus(None, None, None, None),
+        total_candidates=0,
+        included_candidates=0,
+        by_verification={state: 0 for state in VERIFICATION_STATES},
+        open_actions=[],
+        open_actions_truncated=False,
+    )
+
+    gates = client.get("/api/dashboard").json()["gates"]
+
+    assert set(gates) == {
+        "qa_status", "report_approval", "distribution_authority", "distribution_recipient",
+    }
+    assert all(value is None for value in gates.values())

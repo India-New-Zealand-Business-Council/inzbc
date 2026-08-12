@@ -57,12 +57,15 @@ GET    /api/dashboard                control state, open actions, QA/distributio
   "run": { "id": "...", "run_number": "RUN-20260813-01", "state": "Candidate Review",
            "version": 3, "prompt_version": "...", "coverage_start_utc": "...",
            "coverage_end_utc": "...", "initiated_by": "..." },
+  "gates": { "qa_status": "Passed", "report_approval": "Approved",
+             "distribution_authority": "Authorised", "distribution_recipient": "..." },
   "coverage": { "total": 7, "included": 2,
                 "by_verification": { "Verified": 5, "Partially Verified": 0,
                                      "Unverified": 2, "Not Required": 0, "Rejected": 0 } },
   "open_actions": [ { "action_code": "ACT-016", "title": "...", "owner": "Executive Sponsor",
                       "priority": "High", "due_date": "2026-08-01", "status": "Open",
-                      "overdue": true } ]
+                      "overdue": true } ],
+  "open_actions_truncated": false
 }
 ```
 
@@ -76,6 +79,16 @@ dashboard renders, not an error, and the open-actions panel is worth showing reg
 
 **`overdue` is computed by the database**, so a client with a wrong clock cannot make a late action
 look on time. Actions are ordered overdue first, then by due date with nulls last.
+
+**Every `gates` field is nullable, and null means "not reached yet" rather than "unknown".**
+`qa_status` comes from the run; `report_approval` and `distribution_authority` come from the run's
+newest report version, because ADR-0005 keys those decision streams to a report version, so they
+stay null until one exists.
+
+**Open actions are capped at 200, and `open_actions_truncated` says when the cap bit.**
+`action_register` has no retention rule, so nothing in the schema stops it growing. A silently cut
+list would read as "these are all the open actions", which is wrong for a screen used to decide
+what to work on.
 
 `extra="forbid"` on every model in the response, so a field added server-side cannot reach the UI
 unannounced.

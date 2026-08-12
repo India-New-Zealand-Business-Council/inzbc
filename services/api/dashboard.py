@@ -64,23 +64,45 @@ class CoverageOut(BaseModel):
     by_verification: dict[str, int]
 
 
+class GateStatusOut(BaseModel):
+    """QA and release status for the current run.
+
+    Every field is nullable, and null means "not reached yet" rather than "unknown". The two
+    decision values are keyed to a report version (ADR-0005), so they stay null until the run has
+    one.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    qa_status: str | None
+    report_approval: str | None
+    distribution_authority: str | None
+    distribution_recipient: str | None
+
+
 class DashboardOut(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     run: RunOut | None
+    gates: GateStatusOut
     coverage: CoverageOut
     open_actions: list[OpenActionOut]
+    # Told, not inferred. A silently cut list reads as "these are all the open actions", which is
+    # the wrong thing for a screen someone uses to decide what to work on.
+    open_actions_truncated: bool
 
 
 def _to_out(summary: DashboardSummary) -> DashboardOut:
     return DashboardOut(
         run=_run_out(summary.run) if summary.run is not None else None,
+        gates=GateStatusOut(**vars(summary.gates)),
         coverage=CoverageOut(
             total=summary.total_candidates,
             included=summary.included_candidates,
             by_verification=summary.by_verification,
         ),
         open_actions=[OpenActionOut(**vars(action)) for action in summary.open_actions],
+        open_actions_truncated=summary.open_actions_truncated,
     )
 
 

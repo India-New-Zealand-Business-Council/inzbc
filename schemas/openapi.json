@@ -1959,6 +1959,9 @@
               }
             ]
           },
+          "gates": {
+            "$ref": "#/components/schemas/GateStatusOut"
+          },
           "coverage": {
             "$ref": "#/components/schemas/CoverageOut"
           },
@@ -1968,14 +1971,20 @@
             },
             "type": "array",
             "title": "Open Actions"
+          },
+          "open_actions_truncated": {
+            "type": "boolean",
+            "title": "Open Actions Truncated"
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
           "run",
+          "gates",
           "coverage",
-          "open_actions"
+          "open_actions",
+          "open_actions_truncated"
         ],
         "title": "DashboardOut"
       },
@@ -2062,6 +2071,64 @@
         ],
         "title": "FtaQueryResponse",
         "description": "`status` is the field a client branches on \u2014 not the length of `answers`.\n\nA client that only checked `answers` would render an empty results list for a no-match and\nsilently drop the escalation path, which is the outcome docs/modules/fta-centre.md exists to\nprevent."
+      },
+      "GateStatusOut": {
+        "properties": {
+          "qa_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qa Status"
+          },
+          "report_approval": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Approval"
+          },
+          "distribution_authority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distribution Authority"
+          },
+          "distribution_recipient": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distribution Recipient"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "qa_status",
+          "report_approval",
+          "distribution_authority",
+          "distribution_recipient"
+        ],
+        "title": "GateStatusOut",
+        "description": "QA and release status for the current run.\n\nEvery field is nullable, and null means \"not reached yet\" rather than \"unknown\". The two\ndecision values are keyed to a report version (ADR-0005), so they stay null until the run has\none."
       },
       "HTTPValidationError": {
         "properties": {

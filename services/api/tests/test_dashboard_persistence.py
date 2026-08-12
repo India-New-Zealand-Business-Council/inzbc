@@ -105,8 +105,14 @@ def test_included_counts_only_true_not_merely_decided(run_id: str, actor_id: str
 
 def test_coverage_is_for_the_current_run_only(run_id: str, actor_id: str) -> None:
     """The newest run is the current one. A count spanning every run ever would grow forever and
-    describe nothing."""
+    describe nothing.
+
+    The older run gets two candidates and the newer one gets one, so the expected total is a
+    number no other implementation produces. An earlier version put candidates only on the older
+    run and expected 0, which a hardcoded-zero aggregate would also have satisfied.
+    """
     _candidate(run_id, actor_id, verification=VerificationState.VERIFIED.value, included=True)
+    _candidate(run_id, actor_id, verification=VerificationState.REJECTED.value, included=False)
     newer = RunRepository(DATABASE_URL).create_run(
         run_number=f"RUN-DASH-{uuid.uuid4().hex[:12]}",
         prompt_version="SIP-050 v1.1",
@@ -114,12 +120,51 @@ def test_coverage_is_for_the_current_run_only(run_id: str, actor_id: str) -> Non
         coverage_end_utc="2026-08-13T07:00:00+12:00",
         initiated_by=actor_id,
     )
+    _candidate(newer.id, actor_id, verification=VerificationState.UNVERIFIED.value, included=True)
 
     summary = DashboardRepository(DATABASE_URL).summary()
 
     assert summary.run is not None
     assert summary.run.id == newer.id
-    assert summary.total_candidates == 0, "counted the previous run's candidates"
+    assert summary.total_candidates == 1, "counted the previous run's candidates"
+    assert summary.included_candidates == 1
+    assert summary.by_verification["Unverified"] == 1
+    assert summary.by_verification["Verified"] == 0, "leaked a candidate from the older run"
+
+
+def test_gate_status_is_null_before_the_run_reaches_them(run_id: str) -> None:
+    """A fresh run has no QA status and no report version, so both decision values are null. Null
+    means "not reached yet"; the panel renders that differently from a refusal."""
+    summary = DashboardRepository(DATABASE_URL).summary()
+
+    assert summary.gates.qa_status is None
+    assert summary.gates.report_approval is None
+    assert summary.gates.distribution_authority is None
+
+
+def test_open_actions_are_bounded_and_say_so(actor_id: str) -> None:
+    """`action_register` has no retention rule, so nothing in the schema stops it growing. An
+    unbounded read on a screen someone leaves open all day is the wrong place to discover that.
+
+    The flag matters as much as the cap: a silently cut list reads as "these are all the open
+    actions", which is exactly wrong for a screen used to decide what to work on.
+    """
+    from services.api.persistence import _OPEN_ACTION_LIMIT
+
+    prefix = uuid.uuid4().hex[:6]
+    with psycopg.connect(DATABASE_URL) as conn:
+        for i in range(_OPEN_ACTION_LIMIT + 5):
+            conn.execute(
+                "insert into action_register (action_code, title, status) "
+                "values (%s, %s, 'Open')",
+                (f"ACT-{prefix}-{i:04d}", f"Bulk action {i}"),
+            )
+        conn.commit()
+
+    summary = DashboardRepository(DATABASE_URL).summary()
+
+    assert len(summary.open_actions) == _OPEN_ACTION_LIMIT
+    assert summary.open_actions_truncated is True
 
 
 def test_open_actions_exclude_closed_ones_and_mark_overdue(actor_id: str) -> None:
