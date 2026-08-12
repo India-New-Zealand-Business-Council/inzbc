@@ -320,9 +320,15 @@ origin and a caller naming the wrong source is not caught. It is keyword-only wi
 new call site cannot be written without answering the question and the answer shows up in review.
 That is weaker than verification and much stronger than nothing.
 
-**One path has no structural control**: the Comms Assistant brief is prose a staff member typed, so
-there is no record to minimise. What bounds it is the operator being told not to paste member
-details, with redaction catching the identifiers it can match.
+**One path has no structural control**, and it is the only one reaching a model with staff text
+today: the Comms Assistant brief is prose a staff member typed, so there is no record to minimise
+and nothing can tell a member's name from any other words. A brief reading `Board minutes: Priya
+Sharma, Chief Executive at Koru Exports, opposed the offer` satisfies `check_source`, survives
+redaction untouched, and violates ADR-0006 §1 and §3 while every automated control reports success.
+
+What bounds it is the operator being told not to. That is a procedure, not a boundary, and
+procedures are what #223 existed to replace. Closing it means the request carrying named fields
+instead of prose, so there is something to minimise. Tracked as #303.
 
 ## 8. Known gaps
 
@@ -332,7 +338,8 @@ marketing document.
 | Gap | Issue |
 |---|---|
 | OAuth handshake not merged; sessions issued out of band | #99 |
-| No module builds prompts through `minimise()` yet; the Comms brief has no structural control | ADR-0006 §2 |
+| No module builds prompts through `minimise()` yet | ADR-0006 §2 |
+| The Comms brief is free prose, so refusal cannot bound it; procedure only | #303 |
 | A hollowed-out prompt is sent rather than refused | ADR-0006 §5, threshold is INZBC's to set |
 | Session establishment and sign-out are not audited | this document, §5 |
 | `users.mfa_enabled` exists but nothing reads or enforces it | this document, §1 |

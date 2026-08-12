@@ -14,6 +14,7 @@ import json
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
+from enum import Enum
 
 import pytest
 from pydantic import BaseModel
@@ -143,6 +144,16 @@ class _MemberDataclass:
     name: str
 
 
+class _Contact(str, Enum):
+    """A `str`-based enum: the exact trap `PromptSource` itself fell into."""
+
+    MEMBER = "Priya Sharma, Chief Executive, Koru Exports Ltd"
+
+
+class _SneakyStr(str):
+    """Any `str` subclass. Nothing about it is hostile; the point is that it was never considered."""
+
+
 @pytest.mark.parametrize(
     "value",
     [
@@ -155,9 +166,11 @@ class _MemberDataclass:
         bytearray(b"Priya Sharma"),
         _MemberModel(name="Priya Sharma", job_title="Chief Executive"),
         _MemberDataclass(name="Priya Sharma"),
+        _Contact.MEMBER,
+        _SneakyStr("Priya Sharma"),
     ],
     ids=["dict", "list", "tuple", "set", "frozenset", "bytes", "bytearray", "pydantic",
-         "dataclass"],
+         "dataclass", "str-enum", "str-subclass"],
 )
 def test_a_non_scalar_value_is_refused_rather_than_passed_through(value: object) -> None:
     """The first version's real hole, and the first fix's.
@@ -166,15 +179,33 @@ def test_a_non_scalar_value_is_refused_rather_than_passed_through(value: object)
     `{"sector": {"contact": "Priya Sharma, Chief Executive"}}` whole.
 
     Version two refused a list of container types, which is a denylist in a module that argues for
-    allowlists five lines earlier. The last five cases here are what walked through it: `frozenset`
-    is not a subclass of `set`, `bytes` is not a container by that test, and a pydantic model or a
-    dataclass is neither. This repository is pydantic throughout, so a record holding a model is
-    the likely shape rather than a contrived one.
+    allowlists five lines earlier. `frozenset`, `bytes`, the pydantic model and the dataclass are
+    what walked through it: `frozenset` is not a subclass of `set`, and a model is not a container
+    by that test at all. This repository is pydantic throughout, so a record holding a model is the
+    likely shape rather than a contrived one.
 
-    The check is now an allowlist of scalar types, so a type nobody thought about is refused.
+    Version three used an allowlist but matched with `isinstance`, which admits subclasses, so the
+    last two cases still passed. A `str`-based enum is the exact trap `PromptSource` itself fell
+    into, and serialising one emits the value rather than the member name.
+
+    The check is now an allowlist matched by **exact type**, so a type nobody thought about is
+    refused rather than inheriting its way in.
     """
     with pytest.raises(ProhibitedInputError, match="non-scalar"):
         minimise({"sector": value}, ["sector"])
+
+
+def test_a_string_holding_serialised_structure_is_not_caught() -> None:
+    """Pinning the limit, so nobody reads the type check as more than it is.
+
+    A `str` is a permitted scalar, and no type check can see that this one holds a record. This is
+    the caller allowlisting a field whose contents are structured, which is the caller's decision
+    to get right. The guarantee is that a field nobody named cannot reach the prompt, not that a
+    named one is free of names.
+    """
+    smuggled = '{"name": "Priya Sharma", "job_title": "Chief Executive"}'
+
+    assert minimise({"sector": smuggled}, ["sector"]) == {"sector": smuggled}
 
 
 def test_the_scalar_types_a_record_actually_carries_still_pass() -> None:

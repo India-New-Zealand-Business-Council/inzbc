@@ -104,7 +104,13 @@ PERMITTED_SOURCES = frozenset(
 #
 # Dates are here because a record legitimately carries them and a caller should not have to
 # stringify a date to send it. Everything else is refused until someone decides otherwise.
-_LEAF_TYPES = (str, int, float, bool, type(None), Decimal, date, datetime)
+#
+# Matched by **exact type**, not `isinstance`. `isinstance` accepts subclasses, which is the same
+# trap `PromptSource` itself fell into: a `class Contact(str, Enum)` member is an unanticipated
+# type that would pass as a string, and serialising it emits the value rather than the name. An
+# allowlist that admits subclasses is not closed, so "a type nobody thought about is refused"
+# would have been false while reading as though it were true.
+_LEAF_TYPES = frozenset({str, int, float, bool, type(None), Decimal, date, datetime})
 
 
 def check_source(source: PromptSource) -> None:
@@ -164,9 +170,16 @@ def minimise(
     kept. The caller flattens and names the leaf fields it wants, which is what ADR-0006 §2 asks
     for.
 
-    The check is an allowlist of scalar types (`_LEAF_TYPES`) rather than a list of containers to
-    refuse. The first fix for this got that backwards and let a pydantic model, a dataclass,
-    `bytes` and a `frozenset` through with a name inside.
+    The check is an allowlist of scalar types (`_LEAF_TYPES`), matched by exact type, rather than a
+    list of containers to refuse. The first fix for this got that backwards and let a pydantic
+    model, a dataclass, `bytes` and a `frozenset` through with a name inside; the second used
+    `isinstance`, which admits subclasses, so a `str`-based enum still passed.
+
+    **What this does not do**, because no type check can: a plain `str` holding serialised
+    structure, such as `'{"name": "Priya Sharma"}'`, is a permitted scalar and passes. That is the
+    caller allowlisting a field whose contents are a record, which is the caller's decision to get
+    right. The guarantee here is that a field nobody named cannot reach the prompt, not that a
+    named one is free of names.
 
     Returns a new dict. The input is never mutated, so a caller cannot minimise a record and then
     accidentally read the trimmed original from the same variable.
@@ -180,7 +193,7 @@ def minimise(
         )
 
     kept = {key: value for key, value in record.items() if key in permitted}
-    composite = sorted(key for key, value in kept.items() if not isinstance(value, _LEAF_TYPES))
+    composite = sorted(key for key, value in kept.items() if type(value) not in _LEAF_TYPES)
     if composite:
         raise ProhibitedInputError(
             f"cannot minimise non-scalar field(s): {', '.join(composite)}. Allowlisting a key says "
