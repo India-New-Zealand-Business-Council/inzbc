@@ -538,3 +538,45 @@ def test_excluding_a_candidate_is_never_gated(
         actor_id=user_id, reason="not relevant",
     )
     assert updated.included is False
+
+
+def test_the_verifier_cannot_then_score_the_candidate(
+    repo: CandidateRepository, run_id: str, user_id: str, reviewer_id: str
+) -> None:
+    """The bypass a verification-only guard leaves open, and it needs no race.
+
+    A captures, B verifies, then B scores. Guarding verification alone let that through: B ends
+    up as both the assessor and the check on that assessment, which is the same defect as
+    verifying your own work approached from the other side.
+    """
+    candidate = repo.capture(
+        run_id=run_id, headline="Verify then score", source_id=None, url=None, summary=None,
+        published_at=None, in_coverage_window=None, actor_id=user_id,
+    )
+    repo.record_verification(
+        candidate.id, VerificationState.VERIFIED, actor_id=reviewer_id, reason="checked"
+    )
+
+    with pytest.raises(SelfVerificationError, match="verified this candidate"):
+        repo.record_score(
+            candidate.id, nz_relevance=5, india_relevance=5, member_relevance=5,
+            signal=None, confidence=None, actor_id=reviewer_id, reason="scoring my own check",
+        )
+
+
+def test_scoring_before_verification_is_unaffected(
+    repo: CandidateRepository, run_id: str, user_id: str, reviewer_id: str
+) -> None:
+    """The normal order still works: capture, score, then a second person verifies."""
+    candidate = repo.capture(
+        run_id=run_id, headline="Normal order", source_id=None, url=None, summary=None,
+        published_at=None, in_coverage_window=None, actor_id=user_id,
+    )
+    repo.record_score(
+        candidate.id, nz_relevance=4, india_relevance=3, member_relevance=3,
+        signal=None, confidence=None, actor_id=user_id, reason="scored",
+    )
+    updated = repo.record_verification(
+        candidate.id, VerificationState.VERIFIED, actor_id=reviewer_id, reason="checked"
+    )
+    assert updated.verification == VerificationState.VERIFIED

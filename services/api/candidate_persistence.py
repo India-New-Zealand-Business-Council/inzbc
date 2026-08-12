@@ -163,13 +163,22 @@ class CandidateRepository:
         return [_row_to_record(row) for row in rows]
 
     def _get_locked(self, conn: psycopg.Connection, candidate_id: str) -> dict:
-        """Read the current row inside the caller's transaction. No `version` column on
-        `candidates`, so there is no CAS to guard a lost-update race the way `RunRepository` does
-        for `runs` - a follow-up if concurrent candidate edits turn out to matter in practice, not
-        assumed away here.
+        """Read and lock the current row inside the caller's transaction.
+
+        `for update` is what the name always promised and did not do. Every separation-of-duties
+        and verification check in this module reads the row, decides, then writes; without the
+        lock a concurrent `record_score` could set `assessed_by` between another caller's read
+        and its update, so the decision was made against a row that no longer existed by the time
+        it was acted on. Comments elsewhere in this file cited a lock that was not being taken.
+
+        There is still no `version` column on `candidates`, so this is pessimistic locking rather
+        than the compare-and-swap `RunRepository` uses for `runs`. That is the right trade here:
+        these are short transactions with no human step inside them, unlike a run sitting in
+        `Awaiting CEO Decision` for hours.
         """
         row = conn.execute(
-            f"select {_SELECT_COLUMNS} from candidates where id = %s", (candidate_id,)
+            f"select {_SELECT_COLUMNS} from candidates where id = %s for update",
+            (candidate_id,),
         ).fetchone()
         if row is None:
             raise KeyError(f"no candidate {candidate_id!r}")
@@ -308,6 +317,23 @@ class CandidateRepository:
             current = self._get_locked(conn, candidate_id)
             current_verification = VerificationState(current["verification"])
             enforce_verification_gate(signal, current_verification)
+
+            # The other direction of BR8, and the one the first version missed. Guarding only
+            # verification left a deterministic bypass: A captures, B verifies, then B scores.
+            # Scoring after the fact makes B both the assessor and the verifier of the same
+            # candidate, and no race is needed to do it. The separation has to hold whichever
+            # order the acts happen in, so the assessor is checked against the recorded verifier
+            # exactly as the verifier is checked against the assessor.
+            provenance = conn.execute(
+                "select verified_by from candidates where id = %s", (candidate_id,)
+            ).fetchone()
+            verifier = canonical_actor(provenance["verified_by"])
+            if verifier is not None and verifier == canonical_actor(actor_id):
+                raise SelfVerificationError(
+                    f"{actor_id!r} verified this candidate and may not also score it. Scoring "
+                    "after verifying makes one person both the assessor and the check on that "
+                    "assessment, which is the same defect as verifying your own work."
+                )
 
             row = conn.execute(
                 "update candidates set nz_relevance = %s, india_relevance = %s, "

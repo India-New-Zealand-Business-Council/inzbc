@@ -158,9 +158,15 @@ create table candidates (
   -- candidate end to end while passing every role check, because `require_roles` is an OR over
   -- the roles held and the steady state after the placement is one person holding all of them.
   --
-  -- Nullable because rows predating this cannot have their authorship reconstructed. A null
-  -- means "unknown", which the verification check treats as a refusal rather than a pass: an
-  -- unattributable candidate needs its provenance backfilled, not waving through.
+  -- Nullable because rows predating this column cannot have their authorship reconstructed.
+  -- A null means "unknown", and verification of an unattributable candidate is permitted: with
+  -- these columns nullable there is no way to distinguish "nobody captured this" from "we failed
+  -- to record who did", and refusing both would strand every candidate captured before the
+  -- column existed. Every candidate written through the API records its capturer, so a null can
+  -- only come from a legacy row or a direct SQL insert.
+  --
+  -- This is a stated trade-off rather than a control. Making these NOT NULL after a backfill is
+  -- the change that would turn it into one.
   captured_by        uuid references users(id),
   assessed_by        uuid references users(id),
   verified_by        uuid references users(id),
