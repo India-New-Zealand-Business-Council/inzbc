@@ -1,0 +1,133 @@
+Candidate merge records no actor provenance
+Route-role test cannot detect a wrong role mapping
+Exception approver is not checked for being active or privileged
+Dashboard generated types are stale on main
+SIP critical path: what actually gates real staff use
+Outstanding items from Sunil's 9 August answers
+Build UI for Runs/Candidates endpoints (SIP)
+Make all three repositories visible in one session
+Prepare paste-ready Studio snippets for the page tree
+Spec the Studio build so the manual work is mechanical
+Put the six open client decisions into one pack
+Live homepage states the FTA is in effect; it is not
+Client decision F5: classic Editor or Wix Studio for the rebuild
+Write the Member Jungle assessment so F1 can be decided
+Password-gate the staging duplicate before the rebuild starts
+Give run-level launch and resumption authority a home
+Record what the staging duplicate supports before the rebuild
+Refuse member data at the boundary, do not rely on masking it
+Propose a redaction policy for INZBC to approve
+Settle FTA sector coverage; three lists disagree
+Requirements still calls the FTA no-match surface undelivered
+Record the project charter as a document of record
+Client decision F4: budget, ownership and support model
+Client decision F3: the identity and login model
+Complete the governance document set and RACI
+Take the Phase 1 gate to sign-off
+Write the acceptance test plan and run UAT with INZBC
+Keep the exception, intelligence and action registers for daily operation
+Improve the collection engine in daily-india-nz-news-agent
+Write the migration and rollback plan for cutover
+Write the incident response plan and start quarterly access review
+Separate development, test and production environments
+Build the account, licence and vendor register
+Build the data inventory, classification and retention schedule
+Publish the system-of-record map
+Membership and CRM data model for one relationship database
+Sponsors and trade services: pipeline, benefit delivery, introductions
+Events and delegations: lifecycle, registration, check-in, follow-up
+Member portal: gated resources, renewals, briefings, request forms
+Build the content inventory and migration mapping for the rebuild
+Rebuild the site on the Wix duplicate: page tree, slugs, navigation
+Define the board dashboard metrics without building the dashboard
+Add sector opportunity briefs on the existing scorer
+Add the newsletter and magazine workflow to the Comms Assistant
+Assess Member Jungle and Zoho Backstage together before any events work
+Build the security, privacy and continuity register
+Record the client decisions that block or shape the build
+Close out the SIP controlled launch and record production approval
+Establish the approved facts library behind every AI output
+Serve FTA content at the three levels of depth the client asked for
+Cover the ten FTA sectors the client has already named
+Build the central tariff database the Explainer answers from
+Decide the eleven redirect targets and the homepage statistics
+API contract still describes the decision model ADR-0005 replaced
+apply_transition reports a lost race as an illegal transition, flaking CI
+CI: frontend tests run for one package only, and body edits do not refire the linked-issue check
+Redirect and SEO protection map before the Wix rebuild
+Ease the backlog-order rule to match how we actually work
+Correct FTA facts against MFAT Tier 1 sources
+Wix build: work on a duplicate site, not the live one
+Record the Windows shell constraints in AGENTS.md
+Record how to run the repo so agents stop misdiagnosing the environment
+Stop board field edits from silently destroying values
+Final traceability pass
+Demo recording and screenshots
+Signed client sign-off
+Client acceptance session with INZBC, recorded live
+Final privacy assessment against the built system
+Backend restart and rehydration integration test
+Playwright: state survives a refresh and illegal actions are rejected
+Audit history view
+Client-side state handling mirroring the reconciled contract
+Audit read endpoint
+Decision and distribution endpoints, as separate authorisations
+Report and QA endpoints
+Split #57: it carries both REQ-U-01 and REQ-U-02
+Acceptance criteria for REQ-I-05
+Candidate command endpoints, no blanket PATCH
+Run endpoints: start, pause, resume, complete
+Server-side separation of duties
+Transactional audit service with database-level append-only enforcement
+Persistence adapter with concurrency control
+Orchestrator rehydration from persisted history
+Organisation secrets and a rotation policy
+ADR-0005: reconcile the domain on decision, approval and distribution
+Preliminary privacy and data-flow assessment, before any real data is stored
+Security design pack: threat model, authz matrix, audit event catalogue
+Package the FTA slice as a deployable image on a free host
+Record proposed client answers with provenance, and fill what they cover
+Correct the meeting records against the confirmed cadence
+Describe the practice, not the local tooling, in client-facing docs
+Require every PR to link the issue it delivers
+Milestone M1: deployed, hardened FTA slice (Friday 7 August)
+Playwright end-to-end tests including the 320px reflow case
+First deployment to the free tier per ADR-0004 as amended
+API hardening: CORS, rate limiting, input caps, error envelope
+Client: post-capstone ownership and org OAuth registration
+Client: name the human reviewer for AI-drafted output
+Client: Member Jungle decision (retain, integrate or replace)
+Client: provide brand kit (logo, colours, typography, photography)
+Client: confirm Cloud Run billing owner and monthly ceiling
+Make the Semgrep SAST job blocking once the baseline is clean
+Frontend testing & tooling stack (Storybook, Vitest/RTL, Playwright, Chromatic)
+Streaming Comms Assistant API (SSE) with redaction and reviewer gate
+LLM-as-judge evaluation pipeline for daily-brief quality
+Vector store and embeddings service (pgvector) for semantic retrieval and dedupe
+Agentic SIP-184 daily-run orchestrator (tool-use + hard human gates)
+Executive dashboard UI
+Comms Assistant review UI with the named-reviewer approval gate
+FTA Explorer embed UI against the FTA service contract
+Design system from DESIGN.local.md (token-driven, WCAG 2.2 AA)
+SIP review/approval UI against contract fixtures
+Pipeline integration test suite wired into CI
+End-to-end pipeline run against the SIP-184 SOP
+FTA Explainer retrieval upgrade: ranked retrieval over the corpus
+Comms Assistant service side (apps/comms) with the named-reviewer gate
+Wire GET /api/source-library into the collector's two lookups
+source_library: carry the SIP-185 source code for id-to-uuid resolution
+Backup and run-monitoring design
+Dashboards data layer: read endpoints for the executive dashboard
+Member portal access control (roles and Members Area gating)
+Webhook contract (Wix to internal) and site-forms receiver service
+Turn state-machine and schema drafts into migrations
+ADR-0002: internal platform decision (M365 vs repo-hosted)
+Auth and role model plus audit-log middleware
+Rotation policy and platform configuration
+SIP adversarial security review before any staff use
+SIP-050 scoring v0.2: run against real candidates, calibrate, batch scoring
+SIP-050 eval harness: golden set, regression checks, prompt-injection cases
+Redaction layer ahead of every external model call
+Model gateway v0.2: usage logging, audit persistence, second provider
+Ruff 0.16.0 findings in collector/FTA — fix and bump the CI pin
+Team coordination and open blockers

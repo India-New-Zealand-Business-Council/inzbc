@@ -580,3 +580,25 @@ def test_scoring_before_verification_is_unaffected(
         candidate.id, VerificationState.VERIFIED, actor_id=reviewer_id, reason="checked"
     )
     assert updated.verification == VerificationState.VERIFIED
+
+
+def test_an_exception_approved_by_a_deactivated_account_is_refused(
+    repo: CandidateRepository, run_id: str, user_id: str, reviewer_id: str
+) -> None:
+    """`approved_by` is a plain foreign key to `users`, so the schema permits naming an account
+    that no longer works here. An approval from someone who has left is not a current approval,
+    and without this check an exception could outlive the authority behind it indefinitely."""
+    candidate = repo.capture(
+        run_id=run_id, headline="Approved by a leaver", source_id=None, url=None, summary=None,
+        published_at=None, in_coverage_window=None, actor_id=user_id,
+    )
+    exception = _candidate_exception(candidate.id, user_id, approved_by=reviewer_id)
+    with psycopg.connect(DATABASE_URL) as conn:
+        conn.execute("update users set active = false where id = %s", (reviewer_id,))
+        conn.commit()
+
+    with pytest.raises(SelfVerificationError, match="no longer active"):
+        repo.record_verification(
+            candidate.id, VerificationState.VERIFIED, actor_id=user_id,
+            reason="citing a lapsed authority", sod_exception_id=exception,
+        )

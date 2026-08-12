@@ -254,3 +254,69 @@ def test_every_business_route_documents_refusal(method: str, path: str) -> None:
     assert "401" in responses and "403" in responses, (
         f"{method} {path} does not document 401/403; attach AUTH_RESPONSES to its router."
     )
+
+
+# The authority each route carries, stated once so a change has to be made deliberately in two
+# places. The general test above catches a route with no authority at all, which was the #278
+# defect; it cannot catch a *wrong* authority, because it only asks whether some recognised role
+# is named. Moving `/verify` to Auditor, or opening a sensitive write to every staff role, would
+# satisfy it. This map is what makes that fail.
+#
+# Sourced from the requirements, not from the implementation: docs/requirements.md for the
+# Analyst capture and scoring stories and the Quality Reviewer verification story, REQ-U-01 and
+# REQ-U-02 for the QA failure and CEO decision split, and launch-config.md for the Secretariat
+# distribution owner.
+EXPECTED_ROLES: dict[tuple[str, str], set[str]] = {
+    ("POST", "/api/runs"): {"Analyst", "SIP Owner"},
+    ("GET", "/api/runs"): set(STAFF_READ),
+    ("GET", "/api/runs/{run_id}"): set(STAFF_READ),
+    # Launch, CEO and resumption authority. Owner only.
+    ("POST", "/api/runs/{run_id}/start"): {"SIP Owner"},
+    ("POST", "/api/runs/{run_id}/pause"): {"SIP Owner"},
+    ("POST", "/api/runs/{run_id}/resume"): {"SIP Owner"},
+    ("POST", "/api/runs/{run_id}/stop"): {"SIP Owner"},
+    # REQ-U-01: the reviewer's independent stop. Deliberately not the owner's alone.
+    ("POST", "/api/runs/{run_id}/fail-qa"): {"Reviewer", "SIP Owner"},
+    ("POST", "/api/runs/{run_id}/complete"): {"Analyst", "SIP Owner"},
+    ("POST", "/api/candidates"): {"Analyst", "SIP Owner"},
+    ("GET", "/api/candidates"): set(STAFF_READ),
+    ("GET", "/api/candidates/{candidate_id}"): set(STAFF_READ),
+    ("POST", "/api/candidates/{candidate_id}/score"): {"Analyst", "SIP Owner"},
+    ("POST", "/api/candidates/{candidate_id}/route"): {"Analyst", "SIP Owner"},
+    ("POST", "/api/candidates/{candidate_id}/merge"): {"Analyst", "SIP Owner"},
+    # The reviewer's job. BR8 additionally refuses whoever captured or assessed it.
+    ("POST", "/api/candidates/{candidate_id}/verify"): {"Reviewer", "SIP Owner"},
+    # Spends money per call, so narrower than the other writes.
+    ("POST", "/api/comms/draft"): {"Secretariat", "SIP Owner"},
+}
+
+
+def test_the_expected_role_map_covers_every_business_route() -> None:
+    """Guards the map. A route added without an entry would otherwise be silently unchecked by
+    the test below, which is the same failure mode as the original bug one level up."""
+    actual = {(method, path) for method, path in business_routes()}
+    missing = actual - set(EXPECTED_ROLES)
+    extra = set(EXPECTED_ROLES) - actual
+    assert not missing, f"routes with no expected-roles entry: {sorted(missing)}"
+    assert not extra, f"expected-roles entries for routes that do not exist: {sorted(extra)}"
+
+
+@pytest.mark.parametrize(
+    ("method", "path"),
+    business_routes(),
+    ids=[f"{m} {p}" for m, p in business_routes()],
+)
+def test_every_route_carries_exactly_the_authority_it_should(method: str, path: str) -> None:
+    """The check the general test cannot make: not "some role", but *which*.
+
+    Widening a route to an extra role, or moving it to the wrong one, fails here. Changing who
+    may do what then has to be a deliberate edit to `EXPECTED_ROLES` as well as to the route,
+    which is the point: the map is a second opinion, not a mirror of the implementation.
+    """
+    route = next(r for r in _walk(app.routes) if r.path == path and method in r.methods)
+    actual = _dependency_names(route) & set(ALL_ROLES)
+    assert actual == EXPECTED_ROLES[(method, path)], (
+        f"{method} {path} carries {sorted(actual)}, expected "
+        f"{sorted(EXPECTED_ROLES[(method, path)])}. If this change is intended, update "
+        f"EXPECTED_ROLES and say why in the pull request."
+    )

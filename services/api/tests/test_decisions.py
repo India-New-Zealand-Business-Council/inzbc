@@ -461,3 +461,28 @@ def test_an_exception_for_another_decision_kind_does_not_transfer(
                 sod_exception_id=_exception(seeded),
             )
         )
+
+
+def test_an_exception_approved_by_a_deactivated_account_is_refused(
+    repo: DecisionRepository, seeded: dict
+) -> None:
+    """Same rule as the candidate path: an approval from a deactivated account is not current.
+
+    Without this, an exception recorded by someone who has since left would keep authorising
+    self-approval for as long as its review date allowed.
+    """
+    exception = _exception(seeded)
+    with psycopg.connect(DATABASE_URL) as conn:
+        conn.execute("update users set active = false where id = %s", (seeded["user_id"],))
+        conn.commit()
+
+    with pytest.raises(DecisionNotPermittedError, match="no longer active"):
+        repo.record(
+            **_kwargs(
+                seeded,
+                kind=REPORT_APPROVAL,
+                actor_id=seeded["author_id"],
+                value="Approved",
+                sod_exception_id=exception,
+            )
+        )

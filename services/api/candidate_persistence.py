@@ -212,10 +212,14 @@ class CandidateRepository:
                 "candidate_sod_exceptions row if a single operator is unavoidable."
             )
 
+        # Joined through `users`, so an exception naming a deactivated account authorises
+        # nothing. Same reasoning as `DecisionRepository._require_valid_exception`: `approved_by`
+        # is a plain foreign key, and an approval from someone who has left is not an approval.
         exception = conn.execute(
-            "select approved_by, review_date < current_date as lapsed "
-            "from candidate_sod_exceptions "
-            "where id = %s and candidate_id = %s and actor_id = %s",
+            "select e.approved_by, e.review_date < current_date as lapsed, "
+            "       u.active as approver_active "
+            "from candidate_sod_exceptions e join users u on u.id = e.approved_by "
+            "where e.id = %s and e.candidate_id = %s and e.actor_id = %s",
             (sod_exception_id, candidate_id, actor_id),
         ).fetchone()
         if exception is None:
@@ -227,6 +231,11 @@ class CandidateRepository:
             raise SelfVerificationError(
                 f"exception {sod_exception_id!r} was approved by the same person it exempts. "
                 "A self-approved exception is self-approval with an extra step."
+            )
+        if not exception["approver_active"]:
+            raise SelfVerificationError(
+                f"exception {sod_exception_id!r} was approved by an account that is no longer "
+                "active. An approval from someone who has left is not a current approval."
             )
         if exception["lapsed"]:
             raise SelfVerificationError(
