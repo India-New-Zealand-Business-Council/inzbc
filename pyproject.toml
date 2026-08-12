@@ -43,6 +43,7 @@ dev = [
 "services/api/comms.py" = ["B008"]
 "services/api/runs.py" = ["B008"]
 "services/api/session.py" = ["B008"]
+"services/api/oauth.py" = ["B008"]
 "services/api/tests/test_session_api.py" = ["B008"]
 
 # Explicit, because flat-layout auto-discovery sees database/, docs/ and schemas/ as

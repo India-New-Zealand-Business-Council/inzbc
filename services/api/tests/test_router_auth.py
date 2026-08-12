@@ -42,6 +42,13 @@ PUBLIC_PREFIXES = ("/health", "/api/fta", "/docs", "/openapi.json", "/redoc", "/
 # the enumeration below, which asserts a 401 for anonymous callers.
 SESSION_PREFIX = "/api/session"
 
+# The sign-in handshake itself. `/api/auth/github` and its callback are how an anonymous caller
+# becomes an authenticated one, so requiring a session to reach them would be circular. They are
+# not unprotected: the callback is guarded by the OAuth `state` cookie against handshake CSRF,
+# and by the allowlist in `establish_session`, which refuses any GitHub login without an active
+# `users` row. Covered by `test_oauth.py` rather than by the role enumeration below.
+OAUTH_PREFIX = "/api/auth"
+
 
 @pytest.fixture(autouse=True)
 def _no_auth_override():
@@ -82,7 +89,9 @@ def business_routes() -> list[tuple[str, str]]:
     """Every mounted route that is not deliberately public."""
     found = []
     for route in _walk(app.routes):
-        if route.path.startswith(PUBLIC_PREFIXES) or route.path.startswith(SESSION_PREFIX):
+        if route.path.startswith(
+            (*PUBLIC_PREFIXES, SESSION_PREFIX, OAUTH_PREFIX)
+        ):
             continue
         for method in sorted(route.methods - {"HEAD", "OPTIONS"}):
             found.append((method, route.path))
