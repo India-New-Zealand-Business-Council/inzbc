@@ -7,44 +7,55 @@
   },
   "paths": {
     "/api/runs": {
-      "get": {
-        "tags": [
-          "Runs"
-        ],
-        "summary": "List Runs",
-        "operationId": "list_runs_api_runs_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/RunOut"
-                  },
-                  "type": "array",
-                  "title": "Response List Runs Api Runs Get"
-                }
-              }
-            }
-          }
-        }
-      },
       "post": {
         "tags": [
           "Runs"
         ],
         "summary": "Create Run",
         "operationId": "create_run_api_runs_post",
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Csrf-Token"
+            }
+          },
+          {
+            "name": "inzbc_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Inzbc Session"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CreateRunIn"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
@@ -53,6 +64,57 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RunOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Runs"
+        ],
+        "summary": "List Runs",
+        "operationId": "list_runs_api_runs_get",
+        "parameters": [
+          {
+            "name": "inzbc_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Inzbc Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RunOut"
+                  },
+                  "title": "Response List Runs Api Runs Get"
                 }
               }
             }
@@ -85,6 +147,22 @@
             "schema": {
               "type": "string",
               "title": "Run Id"
+            }
+          },
+          {
+            "name": "inzbc_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Inzbc Session"
             }
           }
         ],
@@ -128,6 +206,38 @@
             "schema": {
               "type": "string",
               "title": "Run Id"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Csrf-Token"
+            }
+          },
+          {
+            "name": "inzbc_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Inzbc Session"
             }
           }
         ],
@@ -182,6 +292,38 @@
               "type": "string",
               "title": "Run Id"
             }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Csrf-Token"
+            }
+          },
+          {
+            "name": "inzbc_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Inzbc Session"
+            }
           }
         ],
         "requestBody": {
@@ -234,6 +376,38 @@
             "schema": {
               "type": "string",
               "title": "Run Id"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Csrf-Token"
+            }
+          },
+          {
+            "name": "inzbc_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Inzbc Session"
             }
           }
         ],
@@ -288,6 +462,38 @@
               "type": "string",
               "title": "Run Id"
             }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Csrf-Token"
+            }
+          },
+          {
+            "name": "inzbc_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Inzbc Session"
+            }
           }
         ],
         "requestBody": {
@@ -331,6 +537,40 @@
         ],
         "summary": "Capture Candidate",
         "operationId": "capture_candidate_api_candidates_post",
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Csrf-Token"
+            }
+          },
+          {
+            "name": "inzbc_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Inzbc Session"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -381,6 +621,22 @@
               "title": "Run"
             },
             "description": "Run id to list candidates for."
+          },
+          {
+            "name": "inzbc_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Inzbc Session"
+            }
           }
         ],
         "responses": {
@@ -427,6 +683,22 @@
               "type": "string",
               "title": "Candidate Id"
             }
+          },
+          {
+            "name": "inzbc_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Inzbc Session"
+            }
           }
         ],
         "responses": {
@@ -468,6 +740,38 @@
             "schema": {
               "type": "string",
               "title": "Candidate Id"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Csrf-Token"
+            }
+          },
+          {
+            "name": "inzbc_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Inzbc Session"
             }
           }
         ],
@@ -521,6 +825,38 @@
               "type": "string",
               "title": "Candidate Id"
             }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Csrf-Token"
+            }
+          },
+          {
+            "name": "inzbc_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Inzbc Session"
+            }
           }
         ],
         "requestBody": {
@@ -572,6 +908,38 @@
             "schema": {
               "type": "string",
               "title": "Candidate Id"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Csrf-Token"
+            }
+          },
+          {
+            "name": "inzbc_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Inzbc Session"
             }
           }
         ],
@@ -625,6 +993,38 @@
               "type": "string",
               "title": "Candidate Id"
             }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Csrf-Token"
+            }
+          },
+          {
+            "name": "inzbc_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Inzbc Session"
+            }
           }
         ],
         "requestBody": {
@@ -669,15 +1069,49 @@
         "summary": "Draft",
         "description": "Generates a draft. Never sends or publishes anything - see `apps/comms/draft.py`'s module\ndocstring for why \"nothing publishable without a recorded reviewer\" holds by construction.\n\nFailure mapping is deliberately specific, not a blanket 500:\n- `GatewayNotConfiguredError` / `RedactionNotConfiguredError` -> 503. Deployment configuration\n  is missing (no API key, or - per ADR-0006 - no approved `REDACTION_POLICY_PATH`). Expected,\n  correct refusal in any environment that hasn't been configured yet, not a bug to alert on\n  the same way as a real failure.\n- `GatewayCallError` -> 502. The provider call itself failed after a retry - genuinely down,\n  distinct from \"not configured\".",
         "operationId": "draft_api_comms_draft_post",
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Csrf-Token"
+            }
+          },
+          {
+            "name": "inzbc_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Inzbc Session"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/DraftIn"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -689,6 +1123,97 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/session": {
+      "get": {
+        "tags": [
+          "Session"
+        ],
+        "summary": "Whoami",
+        "description": "Who the current session belongs to, and the CSRF token to send with writes.\n\nA UI needs this to know which controls to show. It is not the authorisation check: the server\nre-checks on every write, because a hidden button is a hint and not a control.",
+        "operationId": "whoami_api_session_get",
+        "parameters": [
+          {
+            "name": "inzbc_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Inzbc Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Session"
+        ],
+        "summary": "Sign Out",
+        "description": "Ends the session server-side and clears the cookie.\n\nDeliberately not behind the CSRF check. A forged sign-out is a nuisance rather than a breach,\nand refusing to sign someone out because a token was missing is the worse failure.",
+        "operationId": "sign_out_api_session_delete",
+        "parameters": [
+          {
+            "name": "inzbc_session",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Inzbc Session"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
           },
           "422": {
             "description": "Validation Error",
@@ -1181,18 +1706,13 @@
               }
             ],
             "title": "In Coverage Window"
-          },
-          "actor_id": {
-            "type": "string",
-            "title": "Actor Id"
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
           "run_id",
-          "headline",
-          "actor_id"
+          "headline"
         ],
         "title": "CaptureCandidateIn"
       },
@@ -1213,10 +1733,6 @@
           "coverage_end_utc": {
             "type": "string",
             "title": "Coverage End Utc"
-          },
-          "initiated_by": {
-            "type": "string",
-            "title": "Initiated By"
           }
         },
         "additionalProperties": false,
@@ -1225,8 +1741,7 @@
           "run_number",
           "prompt_version",
           "coverage_start_utc",
-          "coverage_end_utc",
-          "initiated_by"
+          "coverage_end_utc"
         ],
         "title": "CreateRunIn"
       },
@@ -1333,10 +1848,6 @@
             "type": "string",
             "title": "Duplicate Of"
           },
-          "actor_id": {
-            "type": "string",
-            "title": "Actor Id"
-          },
           "reason": {
             "type": "string",
             "title": "Reason"
@@ -1346,7 +1857,6 @@
         "type": "object",
         "required": [
           "duplicate_of",
-          "actor_id",
           "reason"
         ],
         "title": "MergeIn"
@@ -1375,10 +1885,6 @@
             ],
             "title": "Included"
           },
-          "actor_id": {
-            "type": "string",
-            "title": "Actor Id"
-          },
           "reason": {
             "type": "string",
             "title": "Reason"
@@ -1387,7 +1893,6 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "actor_id",
           "reason"
         ],
         "title": "RouteIn"
@@ -1496,10 +2001,6 @@
               }
             ]
           },
-          "actor_id": {
-            "type": "string",
-            "title": "Actor Id"
-          },
           "reason": {
             "type": "string",
             "title": "Reason"
@@ -1508,10 +2009,40 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "actor_id",
           "reason"
         ],
         "title": "ScoreIn"
+      },
+      "SessionOut": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Roles"
+          },
+          "csrf_token": {
+            "type": "string",
+            "title": "Csrf Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "name",
+          "roles",
+          "csrf_token"
+        ],
+        "title": "SessionOut"
       },
       "SignalStrength": {
         "type": "string",
@@ -1539,10 +2070,6 @@
             "type": "integer",
             "title": "Expected Version"
           },
-          "actor_id": {
-            "type": "string",
-            "title": "Actor Id"
-          },
           "reason": {
             "type": "string",
             "title": "Reason"
@@ -1563,7 +2090,6 @@
         "type": "object",
         "required": [
           "expected_version",
-          "actor_id",
           "reason"
         ],
         "title": "TransitionIn",
@@ -1625,10 +2151,6 @@
           "verification": {
             "$ref": "#/components/schemas/VerificationState"
           },
-          "actor_id": {
-            "type": "string",
-            "title": "Actor Id"
-          },
           "reason": {
             "type": "string",
             "title": "Reason"
@@ -1638,7 +2160,6 @@
         "type": "object",
         "required": [
           "verification",
-          "actor_id",
           "reason"
         ],
         "title": "VerifyIn"

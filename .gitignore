@@ -71,3 +71,6 @@ board-before-*.json
 .claude/
 .agent-local/
 .remember/
+
+# Scratch space for one-off analysis and rendering. Working files, not project state.
+.tmp/

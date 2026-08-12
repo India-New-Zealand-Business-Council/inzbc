@@ -19,4 +19,34 @@ a caller (e.g. CI) hasn't already chosen a value.
 
 import os
 
+import pytest
+
 os.environ.setdefault("RATE_LIMIT_REQUESTS", "100000")
+
+
+# The API routers now require an authenticated session (#42). Every router test that predates
+# that change drives `services.api.main.app` directly and would otherwise get 401 on every
+# request, testing nothing but the auth dependency it is not there to test.
+#
+# This fixture supplies a fixed principal to those tests so each keeps testing what it was
+# written for. It deliberately does NOT prove the routes are protected: that would be circular,
+# since the fixture is what makes them pass. `services/api/tests/test_router_auth.py` asserts the
+# protection separately, against an app with no overrides.
+@pytest.fixture(autouse=True)
+def _authenticated_principal():
+    from services.api.auth import Principal
+    from services.api.main import app
+    from services.api.session import require_csrf, require_principal
+
+    principal = Principal(
+        user_id="00000000-0000-0000-0000-0000000000aa",
+        name="Test Principal",
+        roles=frozenset({"SIP Owner", "Analyst", "Reviewer"}),
+        session_id="test-session",
+        csrf_token="test-csrf",
+    )
+    app.dependency_overrides[require_principal] = lambda: principal
+    app.dependency_overrides[require_csrf] = lambda: principal
+    yield principal
+    app.dependency_overrides.pop(require_principal, None)
+    app.dependency_overrides.pop(require_csrf, None)
