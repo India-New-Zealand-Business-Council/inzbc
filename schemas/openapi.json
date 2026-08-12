@@ -1137,6 +1137,100 @@
         ]
       }
     },
+    "/api/auth/github": {
+      "get": {
+        "tags": [
+          "Session"
+        ],
+        "summary": "Begin Github Sign In",
+        "description": "Starts the handshake: mint a state value, set it as a cookie, redirect to GitHub.",
+        "operationId": "begin_github_sign_in_api_auth_github_get",
+        "responses": {
+          "307": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/github/callback": {
+      "get": {
+        "tags": [
+          "Session"
+        ],
+        "summary": "Complete Github Sign In",
+        "description": "Completes the handshake and issues a session, or refuses.\n\nChecked in this order, and the order is the point: the state before the code, because\nvalidating an attacker-supplied code first would mean exchanging it with GitHub before\ndiscovering the request was forged.",
+        "operationId": "complete_github_sign_in_api_auth_github_callback_get",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "title": "Code"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "title": "State"
+            }
+          },
+          {
+            "name": "inzbc_oauth_state",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Inzbc Oauth State"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Complete Github Sign In Api Auth Github Callback Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/fta/query": {
       "get": {
         "tags": [
