@@ -85,7 +85,8 @@ same branch-level fault hits someone else's PR later; not otherwise unresolved.
   across all 5 UI workspaces, generated TS clients regenerated. This round touches
   `services/api`/`database`-adjacent auth wiring — Bhanu's lane per this worklog's own rule, but
   his own review comments are the spec here; flagged for his re-review before merge, not treated
-  as settled.
+  as settled. Pushed and CI came back 9/9 green (docker, frontend, linked-issue, links, python,
+  sast, security, validate, workflows) - branch is `MERGEABLE` again. Awaiting Bhanu's re-review.
 - [ ] Backend restart/rehydration integration test (#130, PR #255): kills a real `uvicorn`
   subprocess mid-run and starts a fresh one on the same port, proving a run's state survives an
   actual process restart, not just a fresh request. CI green (151 passed against a real local
