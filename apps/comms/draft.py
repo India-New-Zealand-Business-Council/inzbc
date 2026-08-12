@@ -15,12 +15,12 @@ policy. A second, module-local redaction pass here would be a second place to ge
 wrong - the platform has exactly one redaction control, in the gateway, and this module calls
 through it rather than duplicating it.
 
-**What still gates real use, per ADR-0006 §7:** `REDACTION_POLICY_PATH` points at nothing in any
-real deployment today - only `config/redaction-policy.proposed.json` exists, and copying it to the
-approved path is an INZBC decision, not an engineering one. Building this module against the real
-`ModelGateway` interface (tested with a fake) is exactly what the ADR's "service-side development
-may begin now against a fake gateway; it is deployment that waits" describes: the code is correct
-and ready, but a live call still refuses until that policy lands.
+**What still gates real use, per ADR-0006 §7:** the policy itself is approved and committed at
+`config/redaction-policy.json`, so the INZBC decision is made. What is left is deployment -
+`REDACTION_POLICY_PATH` points at nothing in any real deployment today, and until it does the
+gateway refuses every call. Building this module against the real `ModelGateway` interface (tested
+with a fake) is exactly what the ADR's "service-side development may begin now against a fake
+gateway; it is deployment that waits" describes.
 """
 
 from __future__ import annotations

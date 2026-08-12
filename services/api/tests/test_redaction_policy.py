@@ -1,8 +1,9 @@
-"""The proposed policy file must stay loadable and keep doing what it claims.
+"""The approved policy file must stay loadable and keep doing what it claims.
 
-`config/redaction-policy.proposed.json` is a starting point for INZBC's decision, not the approved
-policy, and nothing loads it by default. It is still committed, so it can still rot: a rule edited
-in a hurry can stop matching and nothing would say so.
+`config/redaction-policy.json` carries the Executive Sponsor's approval of these rules as written.
+That raises the stakes on this suite rather than lowering them: an approved policy is one an
+operator is entitled to rely on, and a rule edited in a hurry can stop matching without anything
+saying so.
 
 Two failure directions matter and they pull against each other. Under-redaction sends member data
 to a provider. Over-redaction quietly destroys the trade content the digest exists to discuss, and
@@ -18,7 +19,7 @@ import pytest
 
 from services.api.redaction import load_policy, redact
 
-POLICY = Path(__file__).resolve().parents[3] / "config" / "redaction-policy.proposed.json"
+POLICY = Path(__file__).resolve().parents[3] / "config" / "redaction-policy.json"
 
 
 @pytest.fixture(scope="module")
@@ -26,7 +27,7 @@ def rules():
     return load_policy(POLICY)
 
 
-def test_the_proposed_policy_loads(rules):
+def test_the_approved_policy_loads(rules):
     """Also asserts every rule redacts its own example, since load_policy enforces that."""
     assert len(rules) >= 10
 

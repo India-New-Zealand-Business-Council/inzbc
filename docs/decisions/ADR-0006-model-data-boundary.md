@@ -127,12 +127,11 @@ data.
 The direction in §§1–6 is settled. Two gates remain before this ADR moves to Approved, and
 neither is satisfied today.
 
-**The approved policy file does not exist.** Only `config/redaction-policy.proposed.json` is in
-the repository. Approval means copying it to `config/redaction-policy.json`, reviewing what is
-missing from its eighteen rules — a question only INZBC can answer, since it knows its own data —
-and setting `REDACTION_POLICY_PATH` to that file in production. Until the copy exists, any
-instruction to point production at it is unexecutable, and the gateway will refuse every model
-call. That refusal is correct behaviour, not a fault.
+**The approved policy file now exists.** `config/redaction-policy.json` carries the Executive
+Sponsor's approval of the rules as written, taken 9 August 2026 and relayed by the Technical Lead.
+What remains is deployment rather than decision: `REDACTION_POLICY_PATH` has to point at it in each
+environment, and where it does not the gateway refuses every model call. That refusal is correct
+behaviour, not a fault, and it stays the default so an unconfigured environment fails closed.
 
 **The delegation is unrecorded.** Bhanu stated on 7 August 2026 that Sunil delegated decision
 authority to him. That is recorded as stated, not verified: the convention elsewhere in this repo

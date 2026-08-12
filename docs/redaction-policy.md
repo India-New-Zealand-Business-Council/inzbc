@@ -1,7 +1,8 @@
 # Redaction policy
 
-The mechanism is built and enforced. **The policy is not written, and until it is, no model call
-can be made at all.** That is deliberate.
+The mechanism is built and enforced, and **the policy is now approved**:
+`config/redaction-policy.json`. What still gates a real model call is deployment, not the decision:
+`REDACTION_POLICY_PATH` must point at the file, and where it does not, every call refuses.
 
 `docs/sip/README.md` makes redaction ahead of every external model call a non-negotiable. What
 counts as confidential is a business rule, and `PROJECT-RULES.md` says not to fill an unresolved rule with
@@ -29,33 +30,42 @@ to a model, and approving the policy does not make it so.
 Two evasions are defended because they are cheap to defend: a full-width `＠` homoglyph, and a
 number split across a line break. Others are not. Policy authorship remains a trusted operation.
 
-## Approving a policy
+## The approved policy
 
-A proposed starting point is committed at `config/redaction-policy.proposed.json`. It covers
-email, New Zealand and India phone numbers, IRD and NZBN, GSTIN and PAN, passport numbers, payment
-cards, New Zealand bank accounts, member identifiers, street addresses and credential shapes.
+`config/redaction-policy.json` carries the Executive Sponsor's approval, taken on 9 August 2026 and
+relayed by the Technical Lead. It covers email, New Zealand and India phone numbers, IRD and NZBN,
+GSTIN and PAN, passport numbers, payment cards, New Zealand bank accounts, member identifiers,
+street addresses and credential shapes.
 
-Nothing loads it. `REDACTION_POLICY_PATH` is unset, so every model call still refuses. That is
-deliberate: a file sitting in the repository is not a decision INZBC has made.
+The rules are unchanged from the proposed set that was put to him. Approval was of **the rules as
+written**, so editing one needs its own approval rather than inheriting this one.
 
-To approve one:
+**The written instrument is still owed** (#37). What is recorded is that the decision was taken, by
+whom and when. The convention in this repository is that the Executive Sponsor's authority is
+exercised in writing, so this is an accurate record of a decision rather than the instrument
+itself, and it is worth closing with one email.
 
-1. Read the rules. They are regexes with a literal replacement, chosen so a non-engineer can check
-   what each one does. If a rule is not readable, it is not approvable, and that is a defect in the
-   rule.
-2. Decide what is missing. The proposed set covers shapes we could anticipate. INZBC knows its own
-   data, and anything it considers confidential that is not on the list will not be redacted.
-3. Copy it to the deployment path under a name without `proposed` in it, and set
-   `REDACTION_POLICY_PATH` to that path.
-4. Record who approved it and when. The point of this control is that somebody owns the answer to
-   what counts as confidential.
+**Approval does not deploy it.** `REDACTION_POLICY_PATH` must point at the file in each
+environment, and where it is unset every model call still refuses. That default stays, in
+production as much as anywhere: an environment nobody has configured must fail closed rather than
+send unredacted text.
 
-Never put real member data in the repository copy. The examples use `example.test` addresses and
-invented numbers on purpose.
+Never put real member data in this file. The examples use `example.test` addresses and invented
+numbers on purpose, and the file is committed to the repository.
 
-`services/api/tests/test_proposed_policy.py` holds both ends still: sensitive shapes must not
+`services/api/tests/test_redaction_policy.py` holds both ends still: sensitive shapes must not
 survive, and real trade content must. Over-redaction is the quieter failure. A brief that reaches a
 member with its tariff line masked is useless, and nobody will report it as a redaction bug.
+
+### To change a rule
+
+1. Read it. The rules are regexes with a literal replacement, chosen so a non-engineer can check
+   what each does. If a rule is not readable, it is not approvable, and that is a defect in the
+   rule.
+2. Decide what is missing. The approved set covers shapes we could anticipate. INZBC knows its own
+   data, and anything it considers confidential that is not on the list will not be redacted.
+3. Get the change approved on its own terms, and record who approved it and when. The point of this
+   control is that somebody owns the answer to what counts as confidential.
 
 
 ## How it behaves today
