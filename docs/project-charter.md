@@ -141,11 +141,12 @@ Priority uses MoSCoW.
 **Committed build — the four modules the client selected**
 
 - FTA Opportunity Explainer, with the tariff database and three levels of information depth.
-  Sector coverage is **not settled**. The Digital System Overview lists ten (wool, wine, seafood,
-  primary industries, tourism, education, defence and security, investment, immigration, sports);
-  `client-answers.md` D19 proposes a different order and set; `requirements.md` and
-  `fta-source-corpus.md` both still record it as awaiting INZBC. One list has to win before build,
-  and closing it updates those documents in the same change.
+  Sector coverage settled 9 Aug 2026 (#219, `docs/client-answers-relayed-2026-08-09.md`) by scope
+  rather than by picking one of the Digital System Overview's ten or `client-answers.md` D19's
+  proposed set — they are different kinds of thing (broad sectors vs. this corpus's tariff-outcome
+  categories). Build now on the goods sectors already sourced; add tourism/education/investment
+  next once sourced from the agreement text; defence and security, immigration and sports are
+  named but not sourced and do not gate the build.
 - Trade Intelligence Digest produced by SIP: collection, source register, scoring, review, QA,
   approval, distribution and audit.
 - AI Communications Assistant for staff drafting, adversarially tested before use.
