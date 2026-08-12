@@ -90,6 +90,8 @@ Two conventions hold across this tree:
 - [`backup-and-monitoring.md`](backup-and-monitoring.md) — what to watch and what to back up. The
   two signals that matter most are absences: no run started today, and a run stalled in a human
   gate. Neither looks like an error.
+- [`restore-procedure.md`](restore-procedure.md) — restoring the database and proving it worked,
+  including which claims have actually been tested and which have not.
 - [`environments.md`](environments.md) — development, test and production, the four rules that keep
   them apart, and what has to be true before production is created.
 

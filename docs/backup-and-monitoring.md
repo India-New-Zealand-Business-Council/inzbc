@@ -137,8 +137,12 @@ storage is the fallback, and it is a small script rather than a project.
 
 ## The restore path
 
-**This is the part that is not done, and the only part that proves any of the above.** Tracked as
-#290.
+**The procedure and its checker now exist:** [`restore-procedure.md`](./restore-procedure.md) and
+`scripts/verify_restore.py`, which runs on every CI build against a schema applied to an empty
+database. What cannot be proven yet is a restore of a *production* backup, because there is no
+production database (#99).
+
+The steps, in short:
 
 1. Provision an empty database.
 2. Apply the backup.
@@ -150,7 +154,9 @@ storage is the fallback, and it is a small script rather than a project.
 
 **Step 5 is the one that would be skipped**, and it is the one that would matter. Triggers and
 grants are schema objects; a restore that recreates tables and rows but not `audit_log_append_only`
-leaves the audit trail editable while looking completely normal.
+leaves the audit trail editable while looking completely normal. `scripts/verify_restore.py` does
+step 5 for you, and goes further: it tries an update on an audit row and requires the refusal,
+because a trigger that exists and does not fire passes a catalogue check.
 
 **Step 6's elapsed time is the actual deliverable.** "We have backups" is not a recovery position.
 "We can be back in forty minutes and here is when we last proved it" is.
