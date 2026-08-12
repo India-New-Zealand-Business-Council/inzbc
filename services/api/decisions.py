@@ -30,6 +30,8 @@ from datetime import date, datetime
 import psycopg
 from psycopg.rows import dict_row
 
+from services.api.auth import canonical_actor
+
 # The three streams a submitted report version carries. Opened by a trigger on insert, so a
 # decision can never arrive for a stream nobody created.
 CEO_RULING = "CEO Ruling"
@@ -212,7 +214,13 @@ class DecisionRepository:
                     "select created_by from report_versions where id = %s",
                     (report_version_id,),
                 ).fetchone()
-                if author is not None and str(author["created_by"]) == str(actor_id):
+                # Canonicalised, not compared as raw strings. Postgres accepts an uppercase or
+                # unhyphenated UUID for the foreign key, so the permission check above passes
+                # while a raw string comparison here does not match - and the author approves
+                # their own version. `canonical_actor` was written in `auth.py` for exactly this
+                # and then not used here, which is the bug this line fixes.
+                author_id = canonical_actor(author["created_by"]) if author else None
+                if author_id is not None and author_id == canonical_actor(actor_id):
                     raise DecisionNotPermittedError(
                         f"{actor_id!r} created report version {report_version_id!r} and may not "
                         f"also record a {kind!r} decision on it. Separation of duties is the "

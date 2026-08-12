@@ -21,8 +21,12 @@ import pytest
 from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 
+from services.api.auth import STAFF_READ
 from services.api.main import app
 from services.api.session import require_csrf, require_principal
+
+# Every role name the platform recognises, per database/schema.sql.
+ALL_ROLES = STAFF_READ
 
 # Public by design. The FTA explainer is published material with no personal data and no writes,
 # and `/health` must answer before anything is configured or a load balancer cannot use it.
@@ -133,3 +137,64 @@ def test_no_write_route_accepts_a_caller_supplied_actor(method: str, path: str) 
                 f"{method} {path} still accepts {field_name!r} in its body. Identity comes from "
                 f"the session; a body field invites impersonation."
             )
+
+
+def _dependency_names(route: APIRoute) -> set[str]:
+    """Every dependency function name in a route's graph, flattened."""
+    names: set[str] = set()
+
+    def walk(dependant) -> None:
+        if dependant.call is not None:
+            names.add(getattr(dependant.call, "__name__", ""))
+            # `read_access`/`write_access` return a closure named `dependency`; the authority they
+            # carry is in the closure's cells, not its name.
+            closure = getattr(dependant.call, "__closure__", None) or ()
+            for cell in closure:
+                contents = cell.cell_contents
+                if isinstance(contents, tuple) and all(isinstance(c, str) for c in contents):
+                    names.update(contents)
+        for sub in dependant.dependencies:
+            walk(sub)
+
+    walk(route.dependant)
+    return names
+
+
+@pytest.mark.parametrize(
+    ("method", "path"),
+    business_routes(),
+    ids=[f"{m} {p}" for m, p in business_routes()],
+)
+def test_every_business_route_names_the_roles_it_requires(method: str, path: str) -> None:
+    """Authentication without authorisation is not access control.
+
+    This is the test that was missing. `require_roles` was written, unit-tested and never called
+    from a single route for the whole of #42, so every authenticated caller could do everything
+    regardless of role. Unit tests passed because they exercised the helper directly, and no
+    integration test could fail on a function that is simply never invoked.
+
+    Asserting the route's dependency graph carries at least one named role is what closes that:
+    a new route with a session check and no authority fails here.
+    """
+    route = next(r for r in _walk(app.routes) if r.path == path and method in r.methods)
+    names = _dependency_names(route)
+    roles = names & set(ALL_ROLES)
+    assert roles, (
+        f"{method} {path} authenticates but names no role, so any signed-in user may call it. "
+        f"Declare read_access(...) or write_access(...) with the roles that may."
+    )
+
+
+@pytest.mark.parametrize(
+    ("method", "path"),
+    [(m, p) for m, p in business_routes() if m in {"POST", "PUT", "PATCH", "DELETE"}],
+    ids=[f"{m} {p}" for m, p in business_routes() if m in {"POST", "PUT", "PATCH", "DELETE"}],
+)
+def test_every_write_route_keeps_its_csrf_check(method: str, path: str) -> None:
+    """Swapping `write_access` for `read_access` on a write would otherwise pass every other test
+    here: the route would still refuse anonymous callers and still name roles, while silently
+    losing the double-submit check."""
+    route = next(r for r in _walk(app.routes) if r.path == path and method in r.methods)
+    assert "require_csrf" in _dependency_names(route), (
+        f"{method} {path} is a write route without require_csrf in its dependency graph."
+    )

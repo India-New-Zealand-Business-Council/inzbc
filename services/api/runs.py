@@ -32,14 +32,14 @@ from pydantic import BaseModel, ConfigDict
 
 from apps.sip.core.orchestrator import IllegalTransition
 from apps.sip.pipeline.models import RunState
-from services.api.auth import Principal
+from services.api.auth import ANALYST, SIP_OWNER, STAFF_READ, Principal
 from services.api.persistence import (
     ConcurrentModificationError,
     HumanGateNotSatisfied,
     RunRecord,
     RunRepository,
 )
-from services.api.session import require_csrf, require_principal
+from services.api.session import read_access, write_access
 
 router = APIRouter(prefix="/api/runs", tags=["Runs"])
 
@@ -108,7 +108,7 @@ def _not_found(run_id: str) -> HTTPException:
 @router.post("", response_model=RunOut, status_code=status.HTTP_201_CREATED)
 def create_run(
     body: CreateRunIn,
-    principal: Principal = Depends(require_csrf),
+    principal: Principal = Depends(write_access(ANALYST, SIP_OWNER)),
     repo: RunRepository = Depends(get_run_repository),
 ) -> RunOut:
     run = repo.create_run(
@@ -123,7 +123,7 @@ def create_run(
 
 @router.get("", response_model=list[RunOut])
 def list_runs(
-    principal: Principal = Depends(require_principal),
+    principal: Principal = Depends(read_access(*STAFF_READ)),
     repo: RunRepository = Depends(get_run_repository),
 ) -> list[RunOut]:
     return [_run_out(run) for run in repo.list_runs()]
@@ -132,7 +132,7 @@ def list_runs(
 @router.get("/{run_id}", response_model=RunOut)
 def get_run(
     run_id: str,
-    principal: Principal = Depends(require_principal),
+    principal: Principal = Depends(read_access(*STAFF_READ)),
     repo: RunRepository = Depends(get_run_repository),
 ) -> RunOut:
     try:
@@ -178,7 +178,7 @@ def _apply(
 def start_run(
     run_id: str,
     body: TransitionIn,
-    principal: Principal = Depends(require_csrf),
+    principal: Principal = Depends(write_access(SIP_OWNER)),
     repo: RunRepository = Depends(get_run_repository),
 ) -> RunOut:
     """Draft -> Run Authorised. Launch authority; human gated (run-level, #227)."""
@@ -189,7 +189,7 @@ def start_run(
 def pause_run(
     run_id: str,
     body: TransitionIn,
-    principal: Principal = Depends(require_csrf),
+    principal: Principal = Depends(write_access(SIP_OWNER)),
     repo: RunRepository = Depends(get_run_repository),
 ) -> RunOut:
     """Awaiting CEO Decision -> Paused. CEO decision; `approval_ref` must name a
@@ -202,7 +202,7 @@ def pause_run(
 def resume_run(
     run_id: str,
     body: TransitionIn,
-    principal: Principal = Depends(require_csrf),
+    principal: Principal = Depends(write_access(SIP_OWNER)),
     repo: RunRepository = Depends(get_run_repository),
 ) -> RunOut:
     """Paused -> Coverage Locked. Resumption authority; human gated (run-level, #227)."""
@@ -213,7 +213,7 @@ def resume_run(
 def complete_run(
     run_id: str,
     body: TransitionIn,
-    principal: Principal = Depends(require_csrf),
+    principal: Principal = Depends(write_access(ANALYST, SIP_OWNER)),
     repo: RunRepository = Depends(get_run_repository),
 ) -> RunOut:
     """Distributed -> Closed. Mechanical closeout; not human gated."""

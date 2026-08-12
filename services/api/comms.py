@@ -20,14 +20,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from apps.comms.draft import BlankBriefError, ContentType, generate_draft
-from services.api.auth import Principal
+from services.api.auth import SECRETARIAT, SIP_OWNER, Principal
 from services.api.model_gateway import (
     GatewayCallError,
     GatewayNotConfiguredError,
     ModelGateway,
 )
 from services.api.redaction import RedactionNotConfiguredError
-from services.api.session import require_csrf
+from services.api.session import write_access
 
 router = APIRouter(prefix="/api/comms", tags=["Comms Assistant"])
 
@@ -60,7 +60,7 @@ class DraftOut(BaseModel):
 @router.post("/draft", response_model=DraftOut)
 def draft(
     body: DraftIn,
-    principal: Principal = Depends(require_csrf),
+    principal: Principal = Depends(write_access(SECRETARIAT, SIP_OWNER)),
     gateway: ModelGateway = Depends(get_model_gateway),
 ) -> DraftOut:
     """Generates a draft. Never sends or publishes anything - see `apps/comms/draft.py`'s module

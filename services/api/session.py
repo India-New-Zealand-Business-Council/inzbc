@@ -28,6 +28,7 @@ from services.api.auth import (
     NotAuthorisedError,
     Principal,
     SessionRepository,
+    require_roles,
 )
 
 router = APIRouter(prefix="/api/session", tags=["Session"])
@@ -157,3 +158,41 @@ def sign_out(
     if repository is not None:
         repository.end_session(principal.session_id)
     response.delete_cookie(key=SESSION_COOKIE, httponly=True, secure=True, samesite="lax")
+
+
+def _enforce_roles(principal: Principal, allowed: tuple[str, ...]) -> Principal:
+    try:
+        require_roles(principal, *allowed)
+    except NotAuthorisedError as error:
+        # 403, not 401: the caller is authenticated and refused. Signing in again changes nothing.
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail=str(error)) from error
+    return principal
+
+
+def read_access(*allowed: str):
+    """Dependency for a read route: a valid session, held by one of `allowed`.
+
+    Exists so a route declares its authority in its own signature rather than calling a check in
+    its body. A check in the body is one a new route can forget; a dependency is visible in the
+    route's dependency graph, which is what `test_router_auth.py` enumerates.
+    """
+
+    def dependency(principal: Principal = Depends(require_principal)) -> Principal:
+        return _enforce_roles(principal, allowed)
+
+    return dependency
+
+
+def write_access(*allowed: str):
+    """Dependency for a write route: a valid session, a matching CSRF token, and one of `allowed`.
+
+    Authentication, CSRF and authorisation in one declaration, because separating them is how a
+    route ends up with two of the three. That is not hypothetical: `require_roles` was written,
+    tested and left unwired for the whole of #42, so every authenticated caller could do
+    everything regardless of role until this landed.
+    """
+
+    def dependency(principal: Principal = Depends(require_csrf)) -> Principal:
+        return _enforce_roles(principal, allowed)
+
+    return dependency
