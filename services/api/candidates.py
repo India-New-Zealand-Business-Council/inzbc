@@ -25,7 +25,11 @@ from pydantic import BaseModel, ConfigDict
 from apps.sip.collector.verification import UnverifiedHighSignalError
 from apps.sip.pipeline.models import SignalStrength, SourceConfidence, VerificationState
 from services.api.auth import ANALYST, REVIEWER, SIP_OWNER, STAFF_READ, Principal
-from services.api.candidate_persistence import CandidateRecord, CandidateRepository
+from services.api.candidate_persistence import (
+    CandidateRecord,
+    CandidateRepository,
+    SelfVerificationError,
+)
 from services.api.session import AUTH_RESPONSES, read_access, write_access
 
 router = APIRouter(prefix="/api/candidates", tags=["Candidates"], responses=AUTH_RESPONSES)
@@ -188,6 +192,10 @@ def verify_candidate(
         )
     except KeyError as error:
         raise _not_found(candidate_id) from error
+    except SelfVerificationError as error:
+        # 403 like the other refusals, but a distinct message: the caller is permitted to verify
+        # in general and refused for this candidate specifically.
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail=str(error)) from error
     except UnverifiedHighSignalError as error:
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail=str(error)) from error
     return _candidate_out(candidate)

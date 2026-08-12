@@ -38,6 +38,16 @@ from psycopg.rows import dict_row
 from apps.sip.collector.verification import enforce_verification_gate
 from apps.sip.pipeline.models import SignalStrength, SourceConfidence, VerificationState
 from services.api.audit import record_audit
+from services.api.auth import canonical_actor
+
+
+class SelfVerificationError(RuntimeError):
+    """The actor is verifying a candidate they captured or assessed.
+
+    Its own type rather than a generic refusal, because a caller should be able to say which
+    control refused. This is BR8, not a permissions problem, and telling an operator "forbidden"
+    when the real answer is "you cannot check your own work" sends them to the wrong fix.
+    """
 
 
 @dataclass(frozen=True)
@@ -116,9 +126,11 @@ class CandidateRepository:
         with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
             row = conn.execute(
                 "insert into candidates (run_id, headline, source_id, url, summary, "
-                "published_at, in_coverage_window) values (%s, %s, %s, %s, %s, %s, %s) "
+                "published_at, in_coverage_window, captured_by) "
+                "values (%s, %s, %s, %s, %s, %s, %s, %s) "
                 f"returning {_SELECT_COLUMNS}",
-                (run_id, headline, source_id, url, summary, published_at, in_coverage_window),
+                (run_id, headline, source_id, url, summary, published_at, in_coverage_window,
+                 actor_id),
             ).fetchone()
             record_audit(
                 conn,
@@ -180,10 +192,35 @@ class CandidateRepository:
             current_signal = SignalStrength(current["signal"]) if current["signal"] else None
             enforce_verification_gate(current_signal, verification)
 
+            # BR8, checked against the acts rather than the roles. Holding Reviewer says a person
+            # may verify something; it cannot say whether they are verifying their own work, and
+            # that is the whole of the control. `require_roles` is an OR over the roles held, and
+            # the steady state after the placement is one person holding all of them, so a role
+            # check alone let one principal capture, score and verify the same candidate end to
+            # end. No role exempts anyone from this, including SIP Owner: an exemption that the
+            # most senior person can grant themselves is not a control.
+            #
+            # Checked inside the same transaction as the row lock, so a concurrent capture or
+            # score cannot slip in between the read and the update.
+            provenance = conn.execute(
+                "select captured_by, assessed_by from candidates where id = %s",
+                (candidate_id,),
+            ).fetchone()
+            verifier = canonical_actor(actor_id)
+            for column, act in (("captured_by", "captured"), ("assessed_by", "assessed")):
+                performer = canonical_actor(provenance[column])
+                if performer is not None and performer == verifier:
+                    raise SelfVerificationError(
+                        f"{actor_id!r} {act} this candidate and may not also verify it. "
+                        "Separation of duties is what the verification record evidences; a "
+                        "candidate one person can carry from capture to verified evidences "
+                        "nothing."
+                    )
+
             row = conn.execute(
-                f"update candidates set verification = %s where id = %s "
+                f"update candidates set verification = %s, verified_by = %s where id = %s "
                 f"returning {_SELECT_COLUMNS}",
-                (verification.value, candidate_id),
+                (verification.value, actor_id, candidate_id),
             ).fetchone()
             record_audit(
                 conn,
@@ -221,7 +258,8 @@ class CandidateRepository:
 
             row = conn.execute(
                 "update candidates set nz_relevance = %s, india_relevance = %s, "
-                "member_relevance = %s, signal = %s, confidence = %s where id = %s "
+                "member_relevance = %s, signal = %s, confidence = %s, assessed_by = %s "
+                "where id = %s "
                 f"returning {_SELECT_COLUMNS}",
                 (
                     nz_relevance,
@@ -229,6 +267,7 @@ class CandidateRepository:
                     member_relevance,
                     signal.value if signal else None,
                     confidence.value if confidence else None,
+                    actor_id,
                     candidate_id,
                 ),
             ).fetchone()
