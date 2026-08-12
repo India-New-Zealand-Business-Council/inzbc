@@ -12,7 +12,9 @@ in §3 is what catches it — but writing the matrix down first is how you notic
 it.
 
 The threat model and abuse cases live in [`../raci.md`](../raci.md#threat-model), with the rest of
-the governance set. Everything below is the design that answers it.
+the governance set. Everything below is the design that answers it. The review itself, with the
+eighteen findings it produced and what they had in common, is
+[`sip-review.md`](./sip-review.md).
 
 ---
 
