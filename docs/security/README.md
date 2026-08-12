@@ -129,8 +129,11 @@ platform did. It is still an allowlist: a user holding no role reads nothing.
 | `GET /api/dashboard` | all staff roles |
 | `POST /api/reports` | Analyst, SIP Owner |
 | `GET /api/reports/{id}` | all staff roles |
+| `GET /api/source-library` | all staff roles |
+| `POST /api/runs/{id}/source-checks` | Analyst, SIP Owner |
+| `GET /api/runs/{id}/source-checks` | all staff roles |
 
-Four rows are deliberate rather than obvious.
+Five rows are deliberate rather than obvious.
 
 **`fail-qa` includes Reviewer, and that is the point.** REQ-U-01 gives the reviewer an independent
 stop. A quality gate that only the owner can pull is not independent of the owner.
@@ -142,6 +145,13 @@ stop. A quality gate that only the owner can pull is not independent of the owne
 **`{id}/audit` is readable by every staff role**, including Auditor and Board Viewer, which exist
 for precisely this. Narrowing it to the owner would mean the person most likely to be audited
 controls who sees the record, and an audit trail nobody can read is not an audit trail.
+
+**`source-checks` writes sit with the Analyst, not the Reviewer.** Recording whether a mandatory
+SIP-185 source was covered for a run is the same act as capture — the analyst working the run
+states what they found — so it carries the same authority as `POST /api/candidates`. Giving it to
+the Reviewer instead would make the reviewer author the evidence they are supposed to verify. The
+read side follows `{id}/audit`'s reasoning: coverage is exactly what an auditor checks a run
+against, so restricting it to the role being audited defeats the purpose.
 
 **How this is enforced, and how it stays enforced.** `read_access(*roles)` and
 `write_access(*roles)` are dependency factories, so a route declares its authority *in its own
