@@ -52,11 +52,27 @@ The following MUST NOT be sent to an external model in identifiable form:
 A field being absent from this list does not make it safe when its combination with other fields
 can reasonably identify a person or reveal confidential information.
 
+**Implemented** in `services/api/prompt_boundary.py`. Every `ModelGateway.complete()` call names a
+`PromptSource`, and `MEMBER_RECORD`, `CRM_NOTE`, `BOARD_MATERIAL` and `PRIVATE_MESSAGE` are refused
+before a redaction policy is read or an API key is looked up. `PERMITTED_SOURCES` is an allowlist,
+so a source added to the enum and not classified is refused rather than permitted.
+
+**What that does and does not guarantee**, because the difference matters. `source` is a
+*declaration*. The gateway receives a string, so nothing about it reveals where it came from, and a
+caller that names the wrong source is not caught. What the parameter buys is that it is keyword-only
+with no default, so a new call site cannot be written without answering the question, and the answer
+is visible in the diff. Verification lives in §2.
+
 ### 2. Structured data must be minimised before prompt assembly
 
 Callers that construct prompts from structured records MUST use an explicit allowlist of fields
 needed for the model task. Prohibited fields are dropped before text assembly. Do not assemble a
 full record and depend on regex to remove sensitive fields afterwards.
+
+**Implemented** as `minimise(record, allowed)`. This is the enforceable half: a field nobody named
+cannot reach the prompt, whatever it contains and whatever shape it is in, which is the property
+regex redaction cannot offer. An empty allowlist refuses rather than passing everything, because
+the likeliest cause is a caller that forgot to name its fields.
 
 For trade-intelligence tasks, preferred external-model inputs are public-source content and
 non-identifying facts such as source URL, publication date, sector, HS code, tariff/rule text,
@@ -90,10 +106,14 @@ rule safe. No real member data may appear in policy examples or tests.
 ### 5. Behaviour when minimisation leaves little intact
 
 Where redaction or minimisation removes the substance of a payload, the call is refused rather
-than sent hollowed out. This is not yet implemented: `GatewayResult.redaction_counts` records
-which rules fired and how often, but nothing consumes it, so today a gutted prompt is sent exactly
-like one that lost a single phone number. The threshold is INZBC's to set and the enforcement is
-engineering work; both are tracked with #223.
+than sent hollowed out. **Still not implemented.** `GatewayResult.redaction_counts` records which
+rules fired and how often, but nothing consumes it, so a gutted prompt is sent exactly like one
+that lost a single phone number.
+
+This is the part of #223 that did not land with the rest. The threshold is INZBC's to set: "how
+much redaction means the prompt is no longer worth sending" is a judgement about output quality,
+not an engineering constant, and picking a number here would be inventing a business rule. The
+enforcement is a few lines once the threshold exists.
 
 ### 6. Provider and privacy review remains required
 

@@ -28,6 +28,7 @@ from __future__ import annotations
 from typing import Literal
 
 from services.api.model_gateway import GatewayResult, ModelGateway
+from services.api.prompt_boundary import PromptSource
 
 ContentType = Literal["newsletter", "linkedin_post", "event_announcement", "member_spotlight"]
 
@@ -76,4 +77,13 @@ def generate_draft(gateway: ModelGateway, content_type: ContentType, brief: str)
     if not brief.strip():
         raise BlankBriefError("brief must not be blank")
     prompt = build_prompt(content_type, brief)
-    return gateway.complete(prompt)
+    # STAFF_AUTHORED, and the residual risk is worth naming rather than leaving implied: the brief
+    # is free text a staff member typed, so nothing here can stop them pasting member details into
+    # it. The declaration records where the text came from, not that it is clean.
+    #
+    # This is the one call site with no structural control available, because there is no record to
+    # minimise - a human wrote prose. What bounds it is that the operator is told not to paste
+    # member details and told why (`docs/operator-guide.md` §3), with redaction as defence in depth
+    # for the identifiers it can match. A prompt assembled from member records must go through
+    # `minimise()` and be declared MINIMISED_RECORD instead.
+    return gateway.complete(prompt, source=PromptSource.STAFF_AUTHORED)
