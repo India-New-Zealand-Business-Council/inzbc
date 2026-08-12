@@ -24,10 +24,10 @@ behind an endpoint that looks built.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from services.api.auth import ANALYST, SIP_OWNER, STAFF_READ, Principal
 from services.api.decisions import (
@@ -48,6 +48,11 @@ router = APIRouter(prefix="/api/reports", tags=["Reports"], responses=AUTH_RESPO
 # something when one person holds every role.
 _SUBMIT_ROLES = (ANALYST, SIP_OWNER)
 
+# Absorbs ordinary clock skew between a caller and this service. Wide enough that a
+# correct request is never refused for being a few seconds ahead, narrow enough that a
+# genuinely future timestamp still is.
+_CLOCK_SKEW_ALLOWANCE = timedelta(minutes=5)
+
 
 def get_report_repository() -> ReportRepository:
     """Overridden in tests, matching the other routers."""
@@ -67,6 +72,26 @@ class SubmitReportIn(BaseModel):
     # thing approved is the thing distributed" checkable without this table holding the report.
     content_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     created_at: datetime
+
+    @field_validator("created_at")
+    @classmethod
+    def _not_in_the_future(cls, value: datetime) -> datetime:
+        """`submitted_at >= created_at` is a database CHECK, and reaching it costs a 500.
+
+        The database is still the boundary; this is about which answer the caller gets. A
+        `created_at` after the submission means the content was produced after it was handed over,
+        which did not happen, and a 422 naming the field says that where a constraint violation
+        does not.
+
+        Compared against the server's clock, because `submitted_at` defaults to the server's clock
+        and comparing the caller's timestamp to the caller's idea of now would check nothing. A
+        small tolerance absorbs ordinary clock skew rather than refusing a request that is right.
+        """
+        if value.tzinfo is None:
+            raise ValueError("created_at must carry a timezone")
+        if value > datetime.now(UTC) + _CLOCK_SKEW_ALLOWANCE:
+            raise ValueError("created_at is in the future; content cannot predate its own creation")
+        return value
 
 
 class ReportVersionOut(BaseModel):
@@ -169,9 +194,26 @@ def read_report(
     """
     try:
         version = repo.get(report_version_id)
-        current = decisions.current(report_version_id)
     except KeyError as error:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND, detail=f"no report version {report_version_id!r}"
         ) from error
+
+    # Caught separately, because the two `KeyError`s mean different things and one 404 for both
+    # would send a reader looking for a typo. `current_report_decisions` inner-joins all three
+    # streams, so a version missing any of them drops out of the view entirely while still
+    # existing in `report_versions`. The trigger opens all three on insert, so this should be
+    # unreachable; if it ever happens the trigger is gone, and saying that is more useful than
+    # claiming the version does not exist.
+    try:
+        current = decisions.current(report_version_id)
+    except KeyError as error:
+        raise HTTPException(
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=(
+                f"report version {report_version_id!r} exists but has no decision streams. "
+                "They are opened by a trigger on insert, so this means the trigger is missing."
+            ),
+        ) from error
+
     return ReportOut(report=_version_out(version), decisions=_decisions_out(current))

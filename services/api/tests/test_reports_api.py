@@ -8,7 +8,7 @@ fake agrees with itself, the same split `test_runs_api.py` uses.
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -197,3 +197,58 @@ def test_the_response_shape_is_closed(client: TestClient) -> None:
         "ceo_ruling", "report_approval", "distribution_authority",
         "distribution_recipient", "revisions",
     }
+
+
+@pytest.mark.parametrize(
+    "offset_minutes", [10, 60 * 24],
+    ids=["ten-minutes-ahead", "a-day-ahead"],
+)
+def test_a_future_created_at_is_422_not_500(client: TestClient, offset_minutes: int) -> None:
+    """`submitted_at >= created_at` is a database CHECK, and reaching it costs a 500.
+
+    The database stays the boundary; this is about which answer the caller gets. Content produced
+    after it was handed over did not happen, and a 422 naming the field says so where a constraint
+    violation does not.
+    """
+    future = (datetime.now(UTC) + timedelta(minutes=offset_minutes)).isoformat()
+
+    assert client.post("/api/reports", json=_submit_body(created_at=future)).status_code == 422
+
+
+def test_ordinary_clock_skew_is_not_refused(client: TestClient) -> None:
+    """A caller a minute ahead of this service is not wrong, and refusing it would be a bug that
+    only shows up on someone else's machine."""
+    slightly_ahead = (datetime.now(UTC) + timedelta(seconds=30)).isoformat()
+
+    response = client.post("/api/reports", json=_submit_body(created_at=slightly_ahead))
+
+    assert response.status_code == 201
+
+
+def test_a_naive_created_at_is_refused(client: TestClient) -> None:
+    """Without a timezone the value means nothing definite, and comparing it to a UTC clock would
+    silently treat it as whatever the server's locale implies."""
+    naive = datetime.now(UTC).replace(tzinfo=None).isoformat()
+
+    assert client.post("/api/reports", json=_submit_body(created_at=naive)).status_code == 422
+
+
+def test_a_version_whose_streams_are_missing_is_not_reported_as_absent(
+    client: TestClient, fake_decisions: FakeDecisionRepository
+) -> None:
+    """`current_report_decisions` inner-joins all three streams, so a version missing any of them
+    drops out of the view while still existing in `report_versions`.
+
+    A 404 there would send a reader looking for a typo when the real problem is that the trigger
+    which opens the streams is gone. The trigger makes this unreachable in practice; the point is
+    that if it ever happens the answer names the actual fault.
+    """
+    fake_decisions.next_error = KeyError("no submitted report version")
+
+    response = client.get(f"/api/reports/{VERSION_ID}")
+
+    assert response.status_code == 500
+    # The repo's own envelope from `hardening.py`, not FastAPI's `{"detail": ...}`. Asserting the
+    # message survives it matters: an unhandled exception is replaced with a generic string, so a
+    # reason that reads well in the source is worth nothing unless it reaches the caller.
+    assert "trigger" in response.json()["error"]["message"]
