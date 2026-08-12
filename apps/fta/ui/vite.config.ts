@@ -1,9 +1,21 @@
 /// <reference types="vitest/config" />
+import { reticle } from '@reticlehq/vite-plugin'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
-export default defineConfig({
-  plugins: [react()],
+// Reticle drives the running app through a browser for manual verification. It belongs in `vite
+// dev` and nowhere else, so it is added only for `serve` and never under Vitest.
+//
+// Both halves of that condition were earned rather than assumed. The installer added `reticle()`
+// unconditionally and all four Vitest workers then timed out on startup, taking 33 passing tests
+// with them: Vitest also runs as `serve`, so `command` alone does not separate them. A production
+// build was clean either way, but keeping it out of `build` says the intent rather than relying on
+// the plugin to keep opting out.
+const devOnlyPlugins = (command: string) =>
+  command === 'serve' && !process.env.VITEST ? [reticle()] : []
+
+export default defineConfig(({ command }) => ({
+  plugins: [...devOnlyPlugins(command), react()],
   server: {
     // The API runs on its own origin in development. In deployment the public UI is served
     // from Cloudflare Pages and calls the Fly-hosted API cross-origin (ADR-0004), so the dev
@@ -39,4 +51,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))

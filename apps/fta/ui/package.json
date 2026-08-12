@@ -21,6 +21,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@reticlehq/react": "2.6.0",
+    "@reticlehq/vite-plugin": "2.6.0",
     "@storybook/addon-a11y": "^10.5.4",
     "@storybook/react-vite": "^10.5.4",
     "@testing-library/jest-dom": "^7.0.0",
