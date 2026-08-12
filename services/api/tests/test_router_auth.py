@@ -10,9 +10,10 @@ auth dependency, or an existing one loses it, the enumeration below fails.
 
 The exploit this closes, found in adversarial review: an anonymous caller reads `GET /api/runs`,
 which returns run ids and a valid `initiated_by` user UUID, then posts that UUID as `actor_id` to
-`POST /api/runs/{id}/start` with any non-empty `approval_ref`. The launch gate accepts
-unverifiable free text, and the audit trail records the impersonated user as having authorised
-the run.
+`POST /api/runs/{id}/start` with any non-empty `approval_ref`, and the audit trail records the
+impersonated user as having authorised the run. The launch gate accepted unverifiable free text at
+the time; it now checks `run_authorisations` (#227), so both halves of that exploit are closed
+rather than one.
 """
 
 from __future__ import annotations

@@ -24,7 +24,7 @@ from services.api.persistence import (
     HumanGateNotSatisfied,
     RunRepository,
 )
-from services.api.tests.role_seed import grant
+from services.api.tests.role_seed import authorise_run, grant
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
@@ -71,18 +71,8 @@ def _authorise(run_id: str, actor_id: str, kind: str = "Launch") -> str:
     check that *something* was supplied (#227). The suite was therefore documenting the hole while
     appearing to test the gate.
     """
-    with psycopg.connect(DATABASE_URL, row_factory=psycopg.rows.dict_row) as conn:
-        role = conn.execute(
-            "select role_id from user_roles where user_id = %s limit 1", (actor_id,)
-        ).fetchone()
-        row = conn.execute(
-            "insert into run_authorisations (run_id, kind, actor_id, actor_role_id, decided_at, "
-            "reason, evidence_ref) values (%s, %s, %s, %s, now(), %s, %s) returning id",
-            (run_id, kind, actor_id, role["role_id"],
-             f"{kind.lower()} authorised for the controlled run", "SIP-184 run record"),
-        ).fetchone()
-        conn.commit()
-    return str(row["id"])
+    with psycopg.connect(DATABASE_URL) as conn:
+        return authorise_run(conn, run_id, actor_id, kind)
 
 
 def test_create_run_starts_at_version_zero_in_draft(
@@ -507,11 +497,16 @@ def test_a_run_authorisation_cannot_be_edited_after_the_fact(repo, initiated_by)
     )
     authorisation = _authorise(run.id, initiated_by)
 
-    with psycopg.connect(DATABASE_URL) as conn, pytest.raises(psycopg.errors.RaiseException):
+    # `psycopg.Error` and then the message, matching test_audit.py. The trigger raises with
+    # errcode 55000, which psycopg maps to ObjectNotInPrerequisiteState rather than
+    # RaiseException, so naming a subclass here pins an implementation detail of the mapping
+    # instead of the behaviour under test.
+    with psycopg.connect(DATABASE_URL) as conn, pytest.raises(psycopg.Error) as exc:
         conn.execute(
             "update run_authorisations set reason = %s where id = %s",
             ("a different reason", authorisation),
         )
+    assert "append-only" in str(exc.value)
 
 
 def test_a_report_level_gate_needs_a_real_decision_record(repo, initiated_by) -> None:
