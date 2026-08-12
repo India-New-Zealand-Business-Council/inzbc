@@ -514,6 +514,46 @@ for each row execute function open_decision_streams();
 
 -- Belt and braces against an accidental UPDATE or DELETE. The real boundary is the grants below;
 -- a table owner can always re-grant itself privileges, so this catches mistakes, not malice.
+-- ---------- run-level authority (#227) ----------
+-- ADR-0005's three decision streams are all keyed to report_version_id, but two human gates in the
+-- run state machine happen before any report version exists:
+--
+--   Draft  -> Run Authorised    (launch authority)
+--   Paused -> Coverage Locked   (resumption authority)
+--
+-- So there was nowhere to record who authorised either, and `persistence.apply_transition` named
+-- those two explicitly as the ones whose approval_ref it could not verify. Free text was accepted
+-- for exactly the two gates that decide whether a run may run at all.
+--
+-- A separate table rather than generalising decision_streams. Making that table reference either a
+-- run or a report version would loosen ten foreign keys and checks that currently make an
+-- impossible decision record unrepresentable, and weakening a working model to extend it is the
+-- wrong trade. This carries the same append-only shape and the same "one act, not a category"
+-- rule, keyed to the run instead.
+create type run_authority_kind as enum ('Launch','Resumption');
+
+create table run_authorisations (
+  id              uuid primary key default gen_random_uuid(),
+  run_id          uuid not null references runs(id),
+  kind            run_authority_kind not null,
+  actor_id        uuid not null,
+  actor_role_id   smallint not null,
+  decided_at      timestamptz not null,
+  recorded_at     timestamptz not null default now(),
+  reason          text not null check (btrim(reason) <> ''),
+  evidence_ref    text not null check (btrim(evidence_ref) <> ''),
+  -- The row is addressed by (id, run_id, kind) as well as by id, so apply_transition can require
+  -- that the authorisation belongs to the run being moved and covers the gate being passed. An
+  -- authorisation for another run, or a resumption cited to authorise a launch, is not an
+  -- authorisation for this act.
+  unique (id, run_id, kind),
+  -- The actor held the role at the time, and the role is real. Same shape as decision_records:
+  -- a claimed role nobody was granted is not a role.
+  foreign key (actor_id, actor_role_id) references user_roles(user_id, role_id)
+);
+
+create index run_authorisations_run_idx on run_authorisations (run_id, kind);
+
 create function reject_evidence_change() returns trigger
 language plpgsql as $$
 begin
@@ -531,6 +571,10 @@ create trigger sod_exceptions_append_only before update or delete on sod_excepti
 create trigger candidate_sod_exceptions_append_only
   before update or delete on candidate_sod_exceptions
   for each row execute function reject_evidence_change();
+-- Launch and resumption authority. An authorisation editable after the run started is not
+-- evidence that anyone authorised it.
+create trigger run_authorisations_append_only before update or delete on run_authorisations
+  for each row execute function reject_evidence_change();
 create trigger decision_records_append_only before update or delete on decision_records
   for each row execute function reject_evidence_change();
 create trigger distribution_deliveries_append_only before update or delete on distribution_deliveries
@@ -545,6 +589,8 @@ create trigger report_versions_no_wipe before truncate on report_versions
 create trigger sod_exceptions_no_wipe before truncate on sod_exceptions
   for each statement execute function reject_evidence_change();
 create trigger candidate_sod_exceptions_no_wipe before truncate on candidate_sod_exceptions
+  for each statement execute function reject_evidence_change();
+create trigger run_authorisations_no_wipe before truncate on run_authorisations
   for each statement execute function reject_evidence_change();
 create trigger decision_records_no_wipe before truncate on decision_records
   for each statement execute function reject_evidence_change();

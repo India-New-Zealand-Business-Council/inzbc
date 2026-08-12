@@ -39,15 +39,18 @@ from services.api.audit import record_audit
 
 
 # The two human gates that happen before a report version exists, so ADR-0005's decision streams
-# (all keyed to `report_version_id`) cannot record them. Launch authority and resumption authority
-# have no home in the model yet, so `approval_ref` for these two cannot be verified against
-# anything. See #227.
-_RUN_LEVEL_GATES: frozenset[tuple[RunState, RunState]] = frozenset(
-    {
-        (RunState.DRAFT, RunState.RUN_AUTHORISED),
-        (RunState.PAUSED, RunState.COVERAGE_LOCKED),
-    }
-)
+# (all keyed to `report_version_id`) cannot record them. They are verified against
+# `run_authorisations`, which is keyed to the run, and this maps each gate to the kind of authority
+# that covers it (#227).
+#
+# A mapping rather than a set, because knowing a transition is run-level is not enough: the check
+# has to require the *right* kind. A resumption authorisation cited to authorise a launch would
+# otherwise pass, and "somebody authorised something about this run" is not the claim the state
+# change makes.
+_RUN_LEVEL_GATES: dict[tuple[RunState, RunState], str] = {
+    (RunState.DRAFT, RunState.RUN_AUTHORISED): "Launch",
+    (RunState.PAUSED, RunState.COVERAGE_LOCKED): "Resumption",
+}
 
 
 class HumanGateNotSatisfied(RuntimeError):
@@ -257,17 +260,39 @@ class RunRepository:
                         "approval_ref. A durable state saying the run was authorised, with no "
                         "record of the authorisation, is worse than refusing the move."
                     )
-                # Only the report-level gates can be checked against `decision_records`, because
-                # that table is keyed to a report version. The run-level gates are launch and
-                # resumption authority, which happen before any report version exists, so ADR-0005's
-                # three streams have nowhere to record them. That is a real gap in the model rather
-                # than something to paper over with a looser check here: until it has a home,
-                # approval_ref for those two is unverifiable free text. Tracked as #227.
-                if (current_state, new_state) not in _RUN_LEVEL_GATES:
-                    # Compared as text, not cast to uuid: `approval_ref` is caller-supplied, and
-                    # comparing against a uuid column raises a type error for anything that is not
-                    # one. Free text is exactly what this refuses, so it has to come back as a
-                    # refusal with a reason rather than an opaque database error.
+                # Two tables, because the two kinds of gate happen at different points in the run.
+                #
+                # The report-level gates are checked against `decision_records`, which is keyed to
+                # a report version. The run-level gates are launch and resumption authority, which
+                # happen before any report version exists, so they are checked against
+                # `run_authorisations` instead (#227). Until that table existed, `approval_ref` for
+                # those two was unverifiable free text: the only two gates deciding whether a run
+                # may run at all accepted anything a caller typed.
+                #
+                # Both comparisons are made as text, not cast to uuid. `approval_ref` is
+                # caller-supplied, and comparing it against a uuid column raises a type error for
+                # anything that is not one. Free text is exactly what this refuses, so it has to
+                # come back as a refusal with a reason rather than an opaque database error.
+                gate = _RUN_LEVEL_GATES.get((current_state, new_state))
+                if gate is not None:
+                    # Matched on run and kind as well as id, so an authorisation belonging to
+                    # another run, or a resumption cited to authorise a launch, does not count. An
+                    # authorisation covers one act, not a category - the same rule the
+                    # separation-of-duties exceptions follow.
+                    authorised = conn.execute(
+                        "select 1 from run_authorisations "
+                        "where id::text = %s and run_id = %s and kind = %s",
+                        (approval_ref, run_id, gate),
+                    ).fetchone()
+                    if authorised is None:
+                        raise HumanGateNotSatisfied(
+                            f"approval_ref {approval_ref!r} is not a {gate.lower()} authorisation "
+                            f"for run {run_id}. Free text cannot authorise a gated transition, and "
+                            "an authorisation for another run or another gate is not an "
+                            "authorisation for this one. run_authorisations is append-only, so a "
+                            "reference into it cannot later be edited to say something else."
+                        )
+                else:
                     decided = conn.execute(
                         "select 1 from decision_records where id::text = %s", (approval_ref,)
                     ).fetchone()

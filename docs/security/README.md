@@ -234,12 +234,30 @@ without its audit row, or an audit row for a change that did not happen.
 Columns: `at`, `user_id` (the actor, or null for a system action), `action`, `record_type`,
 `record_id`, `old_value`, `new_value`, `reason`, `approval_ref`.
 
-**`approval_ref` is verified, not decorative.** `apply_transition` requires it for every gated
-transition and checks it against `decision_records`. Two transitions are the exception and are
-named explicitly rather than loosening the check for everything else — `Draft → Run Authorised`
-and `Paused → Coverage Locked` happen before any report version exists, and ADR-0005's decision
-streams are all keyed to `report_version_id`, so there is nowhere to record who authorised them.
-That gap is tracked as #227. It is a gap in the model, not in the adapter.
+**`approval_ref` is verified, not decorative**, and it points at one of two append-only tables
+depending on when the gate happens.
+
+| Gate | Verified against |
+|---|---|
+| `Draft → Run Authorised` (launch authority) | `run_authorisations`, kind `Launch` |
+| `Paused → Coverage Locked` (resumption authority) | `run_authorisations`, kind `Resumption` |
+| Every other human gate | `decision_records` |
+
+The split exists because ADR-0005's decision streams are all keyed to `report_version_id`, and the
+two run-level gates happen before any report version exists. Until `run_authorisations` was added
+(#227) there was nowhere to record them, so `approval_ref` for exactly those two was unverifiable
+free text — the two gates deciding whether a run may run at all accepted anything a caller typed.
+
+**The run-level check matches run and kind, not just the id.** An authorisation recorded for
+yesterday's run does not launch today's, and a resumption authorisation does not authorise a
+launch. "Somebody authorised something about this run" is not the claim the state change makes,
+which is the same rule the separation-of-duties exceptions follow: authority is granted for one
+act, not a category.
+
+A separate table rather than generalising `decision_streams`. Making that table reference either a
+run or a report version would loosen ten foreign keys and checks that currently make an impossible
+decision record unrepresentable, and weakening a working model in order to extend it is the wrong
+trade.
 
 **What is not audited, and should be.** Session establishment and sign-out write no `audit_log`
 row; `users.last_login_at` is the only trace, and it is overwritten each time. That is thin for
@@ -297,7 +315,6 @@ marketing document.
 | Gap | Issue |
 |---|---|
 | OAuth handshake not merged; sessions issued out of band | #99 |
-| Launch and resumption authority have nowhere to be recorded | #227 |
 | Prose carrying member data is refused nowhere at the boundary | #223 |
 | Session establishment and sign-out are not audited | this document, §5 |
 | Candidate provenance is nullable, so a null-author row skips the SoD check | #297 |
