@@ -107,6 +107,10 @@ class VerifyIn(BaseModel):
 
     verification: VerificationState
     reason: str
+    # Cited only when the verifier captured or assessed this candidate. INZBC is one person
+    # holding every role, so that is the normal case rather than the exceptional one, and the
+    # exception is recorded rather than the control being disabled.
+    sod_exception_id: str | None = None
 
 
 class ScoreIn(BaseModel):
@@ -188,7 +192,11 @@ def verify_candidate(
 ) -> CandidateOut:
     try:
         candidate = repo.record_verification(
-            candidate_id, body.verification, actor_id=principal.user_id, reason=body.reason
+            candidate_id,
+            body.verification,
+            actor_id=principal.user_id,
+            reason=body.reason,
+            sod_exception_id=body.sod_exception_id,
         )
     except KeyError as error:
         raise _not_found(candidate_id) from error
@@ -243,6 +251,10 @@ def route_candidate(
         )
     except KeyError as error:
         raise _not_found(candidate_id) from error
+    except UnverifiedHighSignalError as error:
+        # REQ-G-02: a High or Critical claim cannot be included on unverified evidence. 403
+        # rather than 422, because the request is well formed and the refusal is a control.
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail=str(error)) from error
     return _candidate_out(candidate)
 
 

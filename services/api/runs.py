@@ -32,7 +32,7 @@ from pydantic import BaseModel, ConfigDict
 
 from apps.sip.core.orchestrator import IllegalTransition
 from apps.sip.pipeline.models import RunState
-from services.api.auth import ANALYST, SIP_OWNER, STAFF_READ, Principal
+from services.api.auth import ANALYST, REVIEWER, SIP_OWNER, STAFF_READ, Principal
 from services.api.persistence import (
     ConcurrentModificationError,
     HumanGateNotSatisfied,
@@ -207,6 +207,48 @@ def resume_run(
 ) -> RunOut:
     """Paused -> Coverage Locked. Resumption authority; human gated (run-level, #227)."""
     return _apply(run_id, RunState.COVERAGE_LOCKED, body, repo, principal)
+
+
+@router.post("/{run_id}/fail-qa", response_model=RunOut)
+def fail_qa(
+    run_id: str,
+    body: TransitionIn,
+    principal: Principal = Depends(write_access(REVIEWER, SIP_OWNER)),
+    repo: RunRepository = Depends(get_run_repository),
+) -> RunOut:
+    """QA in Progress -> QA Failed. The Quality Reviewer's stop.
+
+    REQ-U-01: "A Critical failure blocks progression to the CEO decision." This is that block,
+    and it is the reviewer's independent authority: it is the one lifecycle move they can make
+    without the SIP Owner, and it prevents a brief they consider unsound from reaching the CEO at
+    all. Without this route the reviewer could record findings and still had no way to stop the
+    run, which made the QA gate advisory.
+
+    Deliberately not `Stopped`. REQ-U-02 reserves Stop for the CEO decision screen, so a reviewer
+    who terminates the run outright would be taking a decision the requirements give to the CEO.
+    QA Failed routes back to Report Drafted for correction, which is the documented path.
+    """
+    return _apply(run_id, RunState.QA_FAILED, body, repo, principal)
+
+
+@router.post("/{run_id}/stop", response_model=RunOut)
+def stop_run(
+    run_id: str,
+    body: TransitionIn,
+    principal: Principal = Depends(write_access(SIP_OWNER)),
+    repo: RunRepository = Depends(get_run_repository),
+) -> RunOut:
+    """Awaiting CEO Decision -> Stopped. Terminal, and the CEO's decision alone.
+
+    REQ-U-02 lists the CEO's four options as Continue, Continue with Correction, Pause and Stop.
+    Pause was mounted and Stop was not, so the only terminal refusal in the state machine had no
+    way to be exercised: a run the CEO wanted stopped could only be paused, which says something
+    different and leaves it resumable.
+
+    `Stopped` has no outbound transitions. Human gated, so `approval_ref` must name the
+    `decision_records` row carrying the decision.
+    """
+    return _apply(run_id, RunState.STOPPED, body, repo, principal)
 
 
 @router.post("/{run_id}/complete", response_model=RunOut)

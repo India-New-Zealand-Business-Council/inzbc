@@ -341,6 +341,136 @@
         }
       }
     },
+    "/api/runs/{run_id}/fail-qa": {
+      "post": {
+        "tags": [
+          "Runs"
+        ],
+        "summary": "Fail Qa",
+        "description": "QA in Progress -> QA Failed. The Quality Reviewer's stop.\n\nREQ-U-01: \"A Critical failure blocks progression to the CEO decision.\" This is that block,\nand it is the reviewer's independent authority: it is the one lifecycle move they can make\nwithout the SIP Owner, and it prevents a brief they consider unsound from reaching the CEO at\nall. Without this route the reviewer could record findings and still had no way to stop the\nrun, which made the QA gate advisory.\n\nDeliberately not `Stopped`. REQ-U-02 reserves Stop for the CEO decision screen, so a reviewer\nwho terminates the run outright would be taking a decision the requirements give to the CEO.\nQA Failed routes back to Report Drafted for correction, which is the documented path.",
+        "operationId": "fail_qa_api_runs__run_id__fail_qa_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransitionIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/runs/{run_id}/stop": {
+      "post": {
+        "tags": [
+          "Runs"
+        ],
+        "summary": "Stop Run",
+        "description": "Awaiting CEO Decision -> Stopped. Terminal, and the CEO's decision alone.\n\nREQ-U-02 lists the CEO's four options as Continue, Continue with Correction, Pause and Stop.\nPause was mounted and Stop was not, so the only terminal refusal in the state machine had no\nway to be exercised: a run the CEO wanted stopped could only be paused, which says something\ndifferent and leaves it resumable.\n\n`Stopped` has no outbound transitions. Human gated, so `approval_ref` must name the\n`decision_records` row carrying the decision.",
+        "operationId": "stop_run_api_runs__run_id__stop_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransitionIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/runs/{run_id}/complete": {
       "post": {
         "tags": [
@@ -1850,6 +1980,17 @@
           "reason": {
             "type": "string",
             "title": "Reason"
+          },
+          "sod_exception_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sod Exception Id"
           }
         },
         "additionalProperties": false,

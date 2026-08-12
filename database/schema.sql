@@ -158,9 +158,15 @@ create table candidates (
   -- candidate end to end while passing every role check, because `require_roles` is an OR over
   -- the roles held and the steady state after the placement is one person holding all of them.
   --
-  -- Nullable because rows predating this cannot have their authorship reconstructed. A null
-  -- means "unknown", which the verification check treats as a refusal rather than a pass: an
-  -- unattributable candidate needs its provenance backfilled, not waving through.
+  -- Nullable because rows predating this column cannot have their authorship reconstructed.
+  -- A null means "unknown", and verification of an unattributable candidate is permitted: with
+  -- these columns nullable there is no way to distinguish "nobody captured this" from "we failed
+  -- to record who did", and refusing both would strand every candidate captured before the
+  -- column existed. Every candidate written through the API records its capturer, so a null can
+  -- only come from a legacy row or a direct SQL insert.
+  --
+  -- This is a stated trade-off rather than a control. Making these NOT NULL after a backfill is
+  -- the change that would turn it into one.
   captured_by        uuid references users(id),
   assessed_by        uuid references users(id),
   verified_by        uuid references users(id),
@@ -192,6 +198,30 @@ create table daily_intelligence (
   signal         signal_strength,
   confidence     source_confidence,
   approval       approval_state not null default 'Pending'
+);
+
+-- A recorded, deliberate exception to the candidate separation-of-duties rule.
+--
+-- INZBC is one person holding every role, and that is the steady state rather than a temporary
+-- shortage. A control that simply refuses when the capturer is the only available verifier would
+-- be switched off within a week, and a switched-off control evidences nothing. This lets the act
+-- proceed while recording that it happened, who authorised it and why, which is the honest
+-- position: the audit trail says a single person carried the candidate end to end, rather than
+-- implying a second party who does not exist.
+--
+-- Deliberately NOT modelled on `sod_exceptions`: that table is keyed on `report_version_id` and
+-- `decision_kind`, so it cannot express an exception about a candidate.
+create table candidate_sod_exceptions (
+  id            uuid primary key default gen_random_uuid(),
+  candidate_id  uuid not null references candidates(id) on delete cascade,
+  actor_id      uuid not null references users(id),
+  approved_by   uuid not null references users(id),
+  approved_at   timestamptz not null default now(),
+  reason        text not null check (btrim(reason) <> ''),
+  review_date   date not null,
+  -- One exception authorises one act, not a standing permission. A second self-verification
+  -- needs its own recorded exception.
+  unique (candidate_id, actor_id)
 );
 
 -- ---------- registers (Intelligence Database is the authority) ----------
@@ -495,6 +525,11 @@ $$;
 create trigger report_versions_append_only before update or delete on report_versions
   for each row execute function reject_evidence_change();
 create trigger sod_exceptions_append_only before update or delete on sod_exceptions
+  for each row execute function reject_evidence_change();
+-- Same protection for the candidate-level exceptions: an exception that can be edited after the
+-- act it authorised is not evidence of anything.
+create trigger candidate_sod_exceptions_append_only
+  before update or delete on candidate_sod_exceptions
   for each row execute function reject_evidence_change();
 create trigger decision_records_append_only before update or delete on decision_records
   for each row execute function reject_evidence_change();
