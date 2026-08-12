@@ -2,15 +2,25 @@
 
 **Prepared for:** Sunil Kaushal, Executive Sponsor
 **Date:** 5 August 2026, end of Week 3
-**Purpose:** six decisions that belong to INZBC, in one place, so they can be worked through in a
-single sitting.
+**Purpose:** six decisions that belonged to INZBC, in one place, so they could be worked through in
+a single sitting.
 
-Each one below states the question, the options, what it costs to leave open, and what the team
-recommends. **None of them is decided here.** The recommendations exist so the decision is quick,
-not so it is pre-empted.
+> ## Status, 13 August 2026: all six are settled
+>
+> Every issue this pack tracks (#234, #93, #214, #96, #95, #231, #233, #213) is closed. **Nothing
+> on this page needs a decision.** It is kept as the record of what was asked, what the options
+> were, and what the team recommended, so a later reader can see how each answer was reached.
+>
+> The one client decision still open is **who owns the platform after the placement ends (#97)**,
+> which is not in this pack. It is in `sunil-decision-sheet.md`.
+>
+> Checked against the tracker rather than from memory.
 
-Between them these six are holding up **17 tracked items**, including the deployment due this
-Friday. That is why they are presented together rather than raised one at a time.
+Each one below states the question, the options, what it cost to leave open, and what the team
+recommended. The recommendations existed so the decision was quick, not so it was pre-empted.
+
+Between them these six were holding up **17 tracked items**, including the deployment due that
+Friday. That is why they were presented together rather than raised one at a time.
 
 Where a figure is missing it is marked `[[like this]]` rather than estimated, because a decision
 taken on an invented number is worse than a decision deferred.
