@@ -544,6 +544,8 @@ create trigger report_versions_no_wipe before truncate on report_versions
   for each statement execute function reject_evidence_change();
 create trigger sod_exceptions_no_wipe before truncate on sod_exceptions
   for each statement execute function reject_evidence_change();
+create trigger candidate_sod_exceptions_no_wipe before truncate on candidate_sod_exceptions
+  for each statement execute function reject_evidence_change();
 create trigger decision_records_no_wipe before truncate on decision_records
   for each statement execute function reject_evidence_change();
 create trigger distribution_deliveries_no_wipe before truncate on distribution_deliveries
