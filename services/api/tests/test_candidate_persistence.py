@@ -458,3 +458,83 @@ def test_an_exception_for_another_candidate_does_not_transfer(
             second.id, VerificationState.VERIFIED, actor_id=user_id,
             reason="reusing", sod_exception_id=exception,
         )
+
+
+def test_a_high_signal_candidate_cannot_be_included_while_unverified(
+    repo: CandidateRepository, run_id: str, user_id: str, reviewer_id: str
+) -> None:
+    """REQ-G-02 applied at the act that decides what the CEO reads.
+
+    The gate was enforced on scoring only, so a candidate scored High while verified, then moved
+    back to Unverified, could still be marked `included` and reach the brief. Scoring decides what
+    a claim is worth; inclusion decides whether it is put in front of anyone, and that is the last
+    point where the rule can still mean anything.
+    """
+    candidate = repo.capture(
+        run_id=run_id, headline="High signal, later unverified", source_id=None, url=None,
+        summary=None, published_at=None, in_coverage_window=None, actor_id=user_id,
+    )
+    repo.record_verification(
+        candidate.id, VerificationState.VERIFIED, actor_id=reviewer_id, reason="checked"
+    )
+    repo.record_score(
+        candidate.id, nz_relevance=5, india_relevance=5, member_relevance=4,
+        signal=SignalStrength.HIGH, confidence=None, actor_id=user_id, reason="high signal",
+    )
+    # Verification withdrawn after scoring, which is the sequence the scoring-time gate cannot see.
+    with psycopg.connect(DATABASE_URL) as conn:
+        conn.execute(
+            "update candidates set verification = 'Unverified' where id = %s", (candidate.id,)
+        )
+        conn.commit()
+
+    with pytest.raises(UnverifiedHighSignalError):
+        repo.record_routing(
+            candidate.id, proposed_routing="Brief", included=True,
+            actor_id=user_id, reason="include it",
+        )
+
+
+def test_a_verified_high_signal_candidate_may_be_included(
+    repo: CandidateRepository, run_id: str, user_id: str, reviewer_id: str
+) -> None:
+    """The other half: this refuses unverified inclusion, not inclusion."""
+    candidate = repo.capture(
+        run_id=run_id, headline="Verified and included", source_id=None, url=None, summary=None,
+        published_at=None, in_coverage_window=None, actor_id=user_id,
+    )
+    repo.record_verification(
+        candidate.id, VerificationState.VERIFIED, actor_id=reviewer_id, reason="checked"
+    )
+    repo.record_score(
+        candidate.id, nz_relevance=5, india_relevance=5, member_relevance=4,
+        signal=SignalStrength.HIGH, confidence=None, actor_id=user_id, reason="high signal",
+    )
+
+    updated = repo.record_routing(
+        candidate.id, proposed_routing="Brief", included=True,
+        actor_id=user_id, reason="include it",
+    )
+    assert updated.included is True
+
+
+def test_excluding_a_candidate_is_never_gated(
+    repo: CandidateRepository, run_id: str, user_id: str
+) -> None:
+    """The gate gets in the way of publishing, never of withholding. Setting `included = False`
+    on an unverified candidate must always be permitted: refusing that would trap material in the
+    brief because it could not be taken out."""
+    candidate = repo.capture(
+        run_id=run_id, headline="Unverified, excluded", source_id=None, url=None, summary=None,
+        published_at=None, in_coverage_window=None, actor_id=user_id,
+    )
+    repo.record_score(
+        candidate.id, nz_relevance=2, india_relevance=1, member_relevance=1,
+        signal=None, confidence=None, actor_id=user_id, reason="low",
+    )
+
+    updated = repo.record_routing(
+        candidate.id, proposed_routing=None, included=False,
+        actor_id=user_id, reason="not relevant",
+    )
+    assert updated.included is False

@@ -251,6 +251,10 @@ def route_candidate(
         )
     except KeyError as error:
         raise _not_found(candidate_id) from error
+    except UnverifiedHighSignalError as error:
+        # REQ-G-02: a High or Critical claim cannot be included on unverified evidence. 403
+        # rather than 422, because the request is well formed and the refusal is a control.
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail=str(error)) from error
     return _candidate_out(candidate)
 
 

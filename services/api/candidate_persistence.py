@@ -348,6 +348,25 @@ class CandidateRepository:
     ) -> CandidateRecord:
         with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
             current = self._get_locked(conn, candidate_id)
+
+            # REQ-G-02 applied where it decides something. The gate was enforced on scoring, so a
+            # High or Critical signal could not be *set* on an unverified candidate, but nothing
+            # checked it again at inclusion: a candidate scored High while verified, then moved
+            # back to Unverified, could still be marked `included` and reach the brief. Inclusion
+            # is the act that puts a claim in front of the CEO, so it is the last point where the
+            # rule can still mean anything.
+            #
+            # Checked against the live row under the same lock, so a concurrent verification
+            # change cannot slip between the read and the update.
+            if included:
+                current_signal = (
+                    SignalStrength(current["signal"]) if current["signal"] else None
+                )
+                current_verification = (
+                    VerificationState(current["verification"]) if current["verification"] else None
+                )
+                enforce_verification_gate(current_signal, current_verification)
+
             row = conn.execute(
                 "update candidates set proposed_routing = %s, included = %s where id = %s "
                 f"returning {_SELECT_COLUMNS}",
