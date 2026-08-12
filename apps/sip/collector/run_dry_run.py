@@ -24,12 +24,15 @@ Usage:
     python -m apps.sip.collector.run_dry_run \\
         --base-url http://localhost:8000 \\
         --articles-file apps/sip/collector/data/dry_run_fixture_articles.json \\
-        --initiated-by 00000000-0000-0000-0000-000000000001
+        --session-cookie "$SESSION_COOKIE" \\
+        --csrf-token "$CSRF_TOKEN"
 
-`--initiated-by` must be a real `users.id` (uuid) - `runs.initiated_by` is a NOT NULL FK, so a
-placeholder string fails the first `create_run` call. The CI workflow seeds a deterministic user
-row before running this script; do the same locally (or use an existing user's id) rather than
-inventing a value.
+`--session-cookie`/`--csrf-token` must come from an established session (ADR-0004): every business
+route requires one, and `initiated_by`/`actor_id` are no longer accepted in request bodies - the
+server derives them from the session instead. There is deliberately no sign-in route this script
+can call; sessions are issued out of band by `scripts/dev_session.py`, which needs database access.
+The CI workflow seeds a deterministic dry-run user with the Analyst role and mints a session for it
+before running this script; do the same locally.
 
 `--articles-file` must hold a JSON list of `clean_articles()`-shaped dicts. There is no wiring
 from this repo to the live agent yet (cross-repo checkout in CI would need a new PAT secret -
@@ -71,13 +74,18 @@ def _locked_coverage_window(now_utc: datetime) -> tuple[str, str]:
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-url", required=True)
-    parser.add_argument("--token", default="dry-run")
     parser.add_argument("--articles-file", required=True, type=Path)
     parser.add_argument(
-        "--initiated-by",
+        "--session-cookie",
         required=True,
-        help="a real users.id (uuid) - runs.initiated_by is a NOT NULL FK to users, and the same "
-        "value is sent as actor_id on every candidate capture (CaptureCandidateIn requires it).",
+        help="value of an established `inzbc_session` cookie (see `scripts/dev_session.py`) - "
+        "every business route requires one (ADR-0004).",
+    )
+    parser.add_argument(
+        "--csrf-token",
+        required=True,
+        help="the CSRF token returned alongside --session-cookie; required on every "
+        "state-changing request (create_run, create_candidate).",
     )
     parser.add_argument("--evidence-out", type=Path, default=None)
     return parser.parse_args(argv)
@@ -89,7 +97,7 @@ def main(argv: list[str] | None = None) -> int:
     if not isinstance(articles, list):
         raise ValueError(f"{args.articles_file} must contain a JSON list of article dicts")
 
-    client = SipPipelineClient(args.base_url, args.token)
+    client = SipPipelineClient(args.base_url, args.session_cookie, args.csrf_token)
     now = datetime.now(UTC)
     coverage_start, coverage_end = _locked_coverage_window(now)
 
@@ -99,33 +107,25 @@ def main(argv: list[str] | None = None) -> int:
             coverage_start_utc=coverage_start,
             coverage_end_utc=coverage_end,
             prompt_version="SIP-050-v1.1",
-            initiated_by=args.initiated_by,
+            initiated_by="",  # server-derived from the session now; unused, kept for Run's schema
             production_enabled=False,
         )
     )
     run_id = run["id"]
     print(f"[dry-run] created run {run['run_number']} (id={run_id}), production_enabled=False")
 
-    source_name_lookup = None
-    source_library_available = False
     try:
         source_rows = client.get_source_library()
-        source_name_lookup, _source_id_lookup = build_source_lookups(source_rows)
-        source_library_available = True
     except SipApiError as error:
-        print(
-            f"[dry-run] WARNING: GET /api/source-library unavailable ({error}); "
-            "source names will not resolve to source_library ids, and SIP-184 step 4 "
-            "(mandatory-source outcomes) is skipped entirely - services/api does not "
-            "implement this endpoint yet."
-        )
+        # Fatal, not a downgraded warning: a broken or unseeded source_library would otherwise
+        # look like a pass (candidates still get created, just all with source_id=None), which
+        # is exactly the failure mode this dry run exists to catch before a real run hits it.
+        print(f"[dry-run] FATAL: GET /api/source-library unavailable ({error})", file=sys.stderr)
+        return 1
+    source_name_lookup, _source_id_lookup = build_source_lookups(source_rows)
 
     ingest_result = ingest_articles(
-        client, run_id, articles, args.initiated_by, source_name_lookup
-    )
-
-    still_missing = (
-        [s for s in missing_mandatory_outcomes(set())] if source_library_available else None
+        client, run_id, articles, source_name_lookup, (coverage_start, coverage_end)
     )
 
     evidence = {
@@ -138,9 +138,9 @@ def main(argv: list[str] | None = None) -> int:
         "articles_in": len(articles),
         "candidates_created": len(ingest_result.created),
         "candidates_failed": [asdict(f) for f in ingest_result.failed],
-        "source_library_available": source_library_available,
+        "source_library_available": True,
         "mandatory_source_outcomes_recorded": 0,
-        "mandatory_source_outcomes_missing": still_missing,
+        "mandatory_source_outcomes_missing": list(missing_mandatory_outcomes(set())),
     }
     print(json.dumps(evidence, indent=2))
 

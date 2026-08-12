@@ -18,12 +18,15 @@ from apps.sip.pipeline.client import SipApiError
 
 FIXTURE = Path(__file__).parents[1] / "data" / "dry_run_fixture_articles.json"
 
+_SESSION_ARGS = ["--session-cookie", "cookie-value", "--csrf-token", "csrf-value"]
+
 
 @dataclass
 class _FakeClient:
     base_url: str
-    token: str
-    source_library_status: int | None = 404
+    session_cookie: str
+    csrf_token: str
+    source_library_status: int | None = None
     runs: list[dict] = field(default_factory=list)
     candidates: dict[str, dict] = field(default_factory=dict)
     _next_id: int = 0
@@ -43,7 +46,7 @@ class _FakeClient:
             raise SipApiError(self.source_library_status, "not found")
         return []
 
-    def create_candidate(self, candidate, actor_id) -> dict:  # noqa: ANN001
+    def create_candidate(self, candidate) -> dict:  # noqa: ANN001
         payload = candidate.model_dump(mode="json", exclude_none=True)
         payload["id"] = self._new_id("cand")
         self.candidates[payload["id"]] = payload
@@ -73,7 +76,7 @@ def test_locked_coverage_window_before_0700_nz_uses_previous_boundary():
 
 
 def test_main_creates_a_dryrun_stamped_run_not_a_run_number(monkeypatch, tmp_path):
-    fake = _FakeClient(base_url="http://x", token="t")
+    fake = _FakeClient(base_url="http://x", session_cookie="c", csrf_token="t")
     monkeypatch.setattr(run_dry_run, "SipPipelineClient", lambda *a, **k: fake)
     evidence_out = tmp_path / "evidence.json"
 
@@ -83,8 +86,7 @@ def test_main_creates_a_dryrun_stamped_run_not_a_run_number(monkeypatch, tmp_pat
             "http://x",
             "--articles-file",
             str(FIXTURE),
-            "--initiated-by",
-            "test",
+            *_SESSION_ARGS,
             "--evidence-out",
             str(evidence_out),
         ]
@@ -98,36 +100,42 @@ def test_main_creates_a_dryrun_stamped_run_not_a_run_number(monkeypatch, tmp_pat
     evidence = json.loads(evidence_out.read_text())
     assert evidence["dry_run"] is True
     assert evidence["candidates_created"] == 2
-    assert evidence["source_library_available"] is False
-    assert evidence["mandatory_source_outcomes_missing"] is None
-
-
-def test_main_reports_source_library_available_when_endpoint_works(monkeypatch, tmp_path):
-    fake = _FakeClient(base_url="http://x", token="t", source_library_status=None)
-    monkeypatch.setattr(run_dry_run, "SipPipelineClient", lambda *a, **k: fake)
-    evidence_out = tmp_path / "evidence.json"
-
-    run_dry_run.main(
-        [
-            "--base-url",
-            "http://x",
-            "--articles-file",
-            str(FIXTURE),
-            "--initiated-by",
-            "test",
-            "--evidence-out",
-            str(evidence_out),
-        ]
-    )
-
-    evidence = json.loads(evidence_out.read_text())
     assert evidence["source_library_available"] is True
     # an empty source_library means every mandatory source is still missing an outcome
     assert len(evidence["mandatory_source_outcomes_missing"]) == 112
 
 
+def test_main_is_fatal_when_source_library_is_unavailable(monkeypatch, tmp_path):
+    # A broken or unseeded source_library must not look like a pass: previously this was
+    # downgraded to a warning and the run continued with every candidate's source_id unset,
+    # which is exactly the failure mode this dry run exists to catch before a real run hits it.
+    fake = _FakeClient(
+        base_url="http://x", session_cookie="c", csrf_token="t", source_library_status=404
+    )
+    monkeypatch.setattr(run_dry_run, "SipPipelineClient", lambda *a, **k: fake)
+    evidence_out = tmp_path / "evidence.json"
+
+    exit_code = run_dry_run.main(
+        [
+            "--base-url",
+            "http://x",
+            "--articles-file",
+            str(FIXTURE),
+            *_SESSION_ARGS,
+            "--evidence-out",
+            str(evidence_out),
+        ]
+    )
+
+    assert exit_code == 1
+    # no evidence file - the run failed before there was anything honest to report
+    assert not evidence_out.exists()
+    # the run itself was still created; only the source-library step was fatal
+    assert len(fake.runs) == 1
+
+
 def test_main_returns_nonzero_when_an_article_fails_to_map(monkeypatch, tmp_path):
-    fake = _FakeClient(base_url="http://x", token="t")
+    fake = _FakeClient(base_url="http://x", session_cookie="c", csrf_token="t")
     monkeypatch.setattr(run_dry_run, "SipPipelineClient", lambda *a, **k: fake)
     bad_articles = tmp_path / "bad.json"
     bad_articles.write_text(json.dumps([{"description": "no title or url"}]))
@@ -138,8 +146,7 @@ def test_main_returns_nonzero_when_an_article_fails_to_map(monkeypatch, tmp_path
             "http://x",
             "--articles-file",
             str(bad_articles),
-            "--initiated-by",
-            "test",
+            *_SESSION_ARGS,
         ]
     )
 

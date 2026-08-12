@@ -33,8 +33,10 @@ from psycopg.rows import dict_row
 from pydantic import BaseModel, ConfigDict
 
 from apps.sip.pipeline.models import SourceOutcome
+from services.api.auth import ANALYST, SIP_OWNER, STAFF_READ, Principal
+from services.api.session import AUTH_RESPONSES, read_access, write_access
 
-router = APIRouter(prefix="/api/runs", tags=["Source checks"])
+router = APIRouter(prefix="/api/runs", tags=["Source checks"], responses=AUTH_RESPONSES)
 
 _SELECT_COLUMNS = (
     "id, run_id, source_id, outcome, checked_at, method, fallback_used, access_error, notes"
@@ -164,6 +166,7 @@ class RecordSourceCheckIn(BaseModel):
 def record_source_check(
     run_id: str,
     body: RecordSourceCheckIn,
+    principal: Principal = Depends(write_access(ANALYST, SIP_OWNER)),
     repo: SourceCheckRepository = Depends(get_source_check_repository),
 ) -> SourceCheckOut:
     return _out(
@@ -181,6 +184,8 @@ def record_source_check(
 
 @router.get("/{run_id}/source-checks", response_model=list[SourceCheckOut])
 def list_source_checks(
-    run_id: str, repo: SourceCheckRepository = Depends(get_source_check_repository)
+    run_id: str,
+    principal: Principal = Depends(read_access(*STAFF_READ)),
+    repo: SourceCheckRepository = Depends(get_source_check_repository),
 ) -> list[SourceCheckOut]:
     return [_out(record) for record in repo.list_for_run(run_id)]

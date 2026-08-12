@@ -2158,6 +2158,20 @@ export interface operations {
                     "application/json": components["schemas"]["SourceLibraryOut"][];
                 };
             };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     list_source_checks_api_runs__run_id__source_checks_get: {
@@ -2179,6 +2193,20 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["SourceCheckOut"][];
                 };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -2214,6 +2242,20 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["SourceCheckOut"];
                 };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

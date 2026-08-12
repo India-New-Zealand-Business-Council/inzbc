@@ -62,6 +62,30 @@ same branch-level fault hits someone else's PR later; not otherwise unresolved.
   force-pushing. CI triggered immediately after — so unlike #237 (still unexplained), this
   instance's cause is now understood: a stale/conflicting branch state, not a genuine GitHub
   Actions fault. Worth relaying that distinction so #237 isn't assumed to be the same thing.
+  **12 Aug, third review round:** rebasing surfaced that #272/#278/#279 landed session auth, role
+  enforcement and the security-scheme contract underneath this branch while it sat stale — Bhanu
+  flagged (a) the workflow gets 401 everywhere with no session, (b) `SipPipelineClient` still sent
+  `initiated_by`/`actor_id`, both removed from `CreateRunIn`/`CaptureCandidateIn`, (c) the three
+  new routes (`source_library.py`, `source_checks.py`) had no auth dependency at all — an
+  unauthenticated caller could read the 112-source register and write outcomes. Also two from his
+  adversarial pass: `in_coverage_window` hardcoded `True` in `mapping.py` regardless of the run's
+  actual locked window, and a broken `GET /api/source-library` was downgraded to a warning rather
+  than failing the workflow, so a broken seed looked like a pass. Fixed all five: `read_access`/
+  `write_access` (Analyst for writes, matching `runs.py`'s own gate) on both new routers;
+  `SipPipelineClient` now takes a session cookie + CSRF token instead of a bearer token and no
+  longer sends either removed field, `ingest_articles`/`map_article` take the run's locked
+  `(coverage_start_utc, coverage_end_utc)` and compute `in_coverage_window` against it (`None`,
+  not `True`, when unknown — same non-fabrication rule as everywhere else here); the workflow now
+  seeds `users.github_login`, grants Analyst via `role_seed.grant` (seeded by name per its own
+  docstring, not a fixed id), and mints a session with `scripts/dev_session.py` before running;
+  `run_dry_run.py`'s source-library fetch is fatal on failure, not a warning. Verified against a
+  real local Postgres end to end (schema applied, user + role seeded, session minted, dry run
+  created a run and 2 candidates, exit 0) - not just the fake-client suite, since that's exactly
+  what missed the original contract mismatches. 503 passed, ruff clean, `pnpm -r typecheck` clean
+  across all 5 UI workspaces, generated TS clients regenerated. This round touches
+  `services/api`/`database`-adjacent auth wiring — Bhanu's lane per this worklog's own rule, but
+  his own review comments are the spec here; flagged for his re-review before merge, not treated
+  as settled.
 - [ ] Backend restart/rehydration integration test (#130, PR #255): kills a real `uvicorn`
   subprocess mid-run and starts a fresh one on the same port, proving a run's state survives an
   actual process restart, not just a fresh request. CI green (151 passed against a real local

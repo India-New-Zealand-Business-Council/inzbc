@@ -67,8 +67,27 @@ def test_map_article_maps_core_fields() -> None:
     assert mapped.candidate.summary == "Officials met to progress trade talks."
     assert mapped.candidate.url == "https://example.com/article"
     assert mapped.candidate.published_at == "2026-07-21T19:32:00+00:00"
-    assert mapped.candidate.in_coverage_window is True
+    # unknown, not True: no coverage_window was supplied to compute it against.
+    assert mapped.candidate.in_coverage_window is None
     assert mapped.source_name == "RNZ Business"
+
+
+def test_map_article_marks_in_coverage_window_true_when_published_inside_the_locked_window() -> None:
+    window = ("2026-07-21T00:00:00+00:00", "2026-07-22T00:00:00+00:00")
+    mapped = map_article(_article(), RUN_ID, coverage_window=window)
+    assert mapped.candidate.in_coverage_window is True
+
+
+def test_map_article_marks_in_coverage_window_false_when_published_outside_the_locked_window() -> None:
+    window = ("2026-07-19T00:00:00+00:00", "2026-07-20T00:00:00+00:00")
+    mapped = map_article(_article(), RUN_ID, coverage_window=window)
+    assert mapped.candidate.in_coverage_window is False
+
+
+def test_map_article_leaves_in_coverage_window_unknown_when_published_at_is_unparseable() -> None:
+    window = ("2026-07-21T00:00:00+00:00", "2026-07-22T00:00:00+00:00")
+    mapped = map_article(_article(published="not a date"), RUN_ID, coverage_window=window)
+    assert mapped.candidate.in_coverage_window is None
 
 
 def test_map_article_leaves_source_id_unset_without_lookup() -> None:

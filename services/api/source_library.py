@@ -21,7 +21,10 @@ from fastapi import APIRouter, Depends
 from psycopg.rows import dict_row
 from pydantic import BaseModel, ConfigDict
 
-router = APIRouter(prefix="/api/source-library", tags=["Source library"])
+from services.api.auth import STAFF_READ, Principal
+from services.api.session import AUTH_RESPONSES, read_access
+
+router = APIRouter(prefix="/api/source-library", tags=["Source library"], responses=AUTH_RESPONSES)
 
 
 @dataclass(frozen=True)
@@ -65,6 +68,7 @@ class SourceLibraryOut(BaseModel):
 
 @router.get("", response_model=list[SourceLibraryOut])
 def list_source_library(
+    principal: Principal = Depends(read_access(*STAFF_READ)),
     repo: SourceLibraryRepository = Depends(get_source_library_repository),
 ) -> list[SourceLibraryOut]:
     return [

@@ -1393,8 +1393,19 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
           }
-        }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ]
       }
     },
     "/api/runs/{run_id}/source-checks": {
@@ -1404,6 +1415,12 @@
         ],
         "summary": "Record Source Check",
         "operationId": "record_source_check_api_runs__run_id__source_checks_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
         "parameters": [
           {
             "name": "run_id",
@@ -1436,6 +1453,12 @@
               }
             }
           },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -1454,6 +1477,11 @@
         ],
         "summary": "List Source Checks",
         "operationId": "list_source_checks_api_runs__run_id__source_checks_get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
         "parameters": [
           {
             "name": "run_id",
@@ -1479,6 +1507,12 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
           },
           "422": {
             "description": "Validation Error",

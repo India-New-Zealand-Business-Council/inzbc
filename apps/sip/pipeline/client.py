@@ -29,12 +29,27 @@ class SipApiError(RuntimeError):
 
 
 class SipPipelineClient:
-    """Bearer-token REST client for the pipeline endpoints. One instance per run/session."""
+    """Session-cookie REST client for the pipeline endpoints. One instance per run/session.
 
-    def __init__(self, base_url: str, token: str, timeout: float = 30.0):
+    ADR-0004's session cookie + CSRF double-submit (`services/api/session.py`) replaced the
+    caller-supplied `actor_id`/`initiated_by` fields this client used to send: the server now
+    derives the audit identity from the session, and `require_csrf` refuses any state-changing
+    request without a matching `X-CSRF-Token` header. `session_cookie`/`csrf_token` come from
+    `SessionRepository.establish_session` (see `scripts/dev_session.py`) - there is no sign-in
+    route this client can call itself.
+    """
+
+    def __init__(
+        self,
+        base_url: str,
+        session_cookie: str,
+        csrf_token: str,
+        timeout: float = 30.0,
+    ):
         self.base_url = base_url.rstrip("/")
         self._session = requests.Session()
-        self._session.headers.update({"Authorization": f"Bearer {token}"})
+        self._session.cookies.set("inzbc_session", session_cookie)
+        self._session.headers.update({"X-CSRF-Token": csrf_token})
         self.timeout = timeout
 
     def _request(self, method: str, path: str, **kwargs: Any) -> Any:
@@ -58,13 +73,15 @@ class SipPipelineClient:
         supplies any `Run` field with a non-None default (e.g. `coverage_timezone`), which is
         every caller - `Run()` sets it by default. Caught by actually running #55's dry run
         against a real server, not by the fake-client tests, which don't validate extra fields.
+
+        `run.initiated_by` is not sent: `CreateRunIn` no longer accepts it (ADR-0004) - the server
+        derives it from this client's session instead of trusting a caller-supplied value.
         """
         payload = {
             "run_number": run.run_number,
             "prompt_version": run.prompt_version,
             "coverage_start_utc": run.coverage_start_utc,
             "coverage_end_utc": run.coverage_end_utc,
-            "initiated_by": run.initiated_by,
         }
         return self._request("POST", "/api/runs", json=payload)
 
@@ -120,12 +137,13 @@ class SipPipelineClient:
     def list_candidates(self, run_id: str) -> list[dict]:
         return self._request("GET", "/api/candidates", params={"run": run_id})
 
-    def create_candidate(self, candidate: Candidate, actor_id: str) -> dict:
-        """POSTs the capture fields `CaptureCandidateIn` (`services/api/candidates.py`) accepts,
-        plus `actor_id` - not a `Candidate`/`candidates`-table field at all, it's audit-only
-        (`services/api/candidate_persistence.py`'s `capture()` passes it straight to
-        `record_audit`, never to the INSERT), the same caller-supplied-pending-real-session-auth
-        shape as `create_run`'s `initiated_by`.
+    def create_candidate(self, candidate: Candidate) -> dict:
+        """POSTs the capture fields `CaptureCandidateIn` (`services/api/candidates.py`) accepts.
+
+        No `actor_id`: it was never a `Candidate`/`candidates`-table field, only audit-only input
+        (`services/api/candidate_persistence.py`'s `capture()` passed it straight to
+        `record_audit`) - `CaptureCandidateIn` no longer accepts it (ADR-0004), since the server
+        derives the audit identity from this client's session instead.
 
         Whitelisted the same way `create_run` is, not `_model_json(candidate)` verbatim:
         `Candidate.verification` defaults to `Unverified` (not `None`), so it survives
@@ -143,7 +161,6 @@ class SipPipelineClient:
             "in_coverage_window": candidate.in_coverage_window,
         }
         payload = {k: v for k, v in payload.items() if v is not None}
-        payload["actor_id"] = actor_id
         return self._request("POST", "/api/candidates", json=payload)
 
     def patch_candidate(self, candidate_id: str, fields: dict) -> dict:

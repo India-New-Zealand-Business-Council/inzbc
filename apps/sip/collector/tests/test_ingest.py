@@ -15,11 +15,10 @@ class _FakeClient:
         self.fail_headlines = fail_headlines or set()
         self.created_payloads: list[dict] = []
 
-    def create_candidate(self, candidate, actor_id) -> dict:
+    def create_candidate(self, candidate) -> dict:
         if candidate.headline in self.fail_headlines:
             raise SipApiError(500, "server error")
         payload = candidate.model_dump(mode="json", exclude_none=True)
-        payload["actor_id"] = actor_id
         self.created_payloads.append(payload)
         return {"id": "created", **payload}
 
@@ -43,7 +42,7 @@ def test_ingest_articles_creates_every_candidate() -> None:
     client = _FakeClient()
     articles = [_article(title="First"), _article(title="Second")]
 
-    result = ingest_articles(client, RUN_ID, articles, "actor-1")
+    result = ingest_articles(client, RUN_ID, articles)
 
     assert len(result.created) == 2
     assert result.failed == []
@@ -54,7 +53,7 @@ def test_ingest_articles_collects_failures_without_aborting_the_batch() -> None:
     client = _FakeClient(fail_headlines={"First"})
     articles = [_article(title="First"), _article(title="Second")]
 
-    result = ingest_articles(client, RUN_ID, articles, "actor-1")
+    result = ingest_articles(client, RUN_ID, articles)
 
     assert len(result.created) == 1
     assert len(result.failed) == 1
@@ -77,7 +76,7 @@ def test_ingest_articles_handles_non_string_published_without_aborting_the_batch
         _article(title="After"),
     ]
 
-    result = ingest_articles(client, RUN_ID, articles, "actor-1")
+    result = ingest_articles(client, RUN_ID, articles)
 
     assert {c["headline"] for c in client.created_payloads} == {"Before", "Malformed", "After"}
     assert result.failed == []
@@ -93,7 +92,7 @@ def test_ingest_articles_records_a_malformed_article_without_aborting_the_batch(
     del malformed["title"]
     articles = [_article(title="Before"), malformed, _article(title="After")]
 
-    result = ingest_articles(client, RUN_ID, articles, "actor-1")
+    result = ingest_articles(client, RUN_ID, articles)
 
     assert {c["headline"] for c in client.created_payloads} == {"Before", "After"}
     assert len(result.failed) == 1
@@ -108,7 +107,7 @@ def test_ingest_articles_records_a_non_dict_item_without_aborting_the_batch(bad:
     client = _FakeClient()
     articles = [_article(title="Before"), bad, _article(title="After")]
 
-    result = ingest_articles(client, RUN_ID, articles, "actor-1")
+    result = ingest_articles(client, RUN_ID, articles)
 
     assert {c["headline"] for c in client.created_payloads} == {"Before", "After"}
     assert len(result.failed) == 1
