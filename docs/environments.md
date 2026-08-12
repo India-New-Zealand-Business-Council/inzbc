@@ -82,8 +82,8 @@ CI.** Nine jobs are the gate: `validate` (JSON), `linked-issue`, `docker` (build
 check), `python` (ruff and pytest with coverage against a real Postgres), `frontend`, `sast`
 (semgrep), `security` (gitleaks), `workflows` (actionlint) and `links`.
 
-One of them is weaker than the list implies: `sast` runs report-only, so a new semgrep finding does
-not fail the build. Making it blocking is #70.
+All nine block the merge. `sast` was report-only until its baseline was confirmed clean (#70); it
+now fails on any semgrep finding.
 
 **Deployment is from `main` only, by CI**, so what is running is always a commit someone can point
 at.

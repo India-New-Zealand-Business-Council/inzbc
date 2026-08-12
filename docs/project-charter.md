@@ -291,10 +291,11 @@ gate.
   The routing is a convention the team keeps, not a control the platform enforces.
 - Reviews correct the content in dispute rather than annotating it. A specification carrying a note
   that says it is wrong is still wrong for the next person who reads it.
-- Linting, type checking, tests, coverage, secret scanning, link checking and workflow linting run
-  on every pull request and block the merge. Static analysis runs report-only until its baseline is
-  confirmed clean, and dependency updates come from Dependabot rather than a blocking audit job.
-  Both are tracked as work to tighten, and neither is claimed as enforcement today.
+- Linting, type checking, tests, coverage, secret scanning, static analysis, link checking and
+  workflow linting run on every pull request and block the merge. Static analysis started
+  report-only and became blocking once its baseline was confirmed clean, so it is enforcement now
+  rather than a report. Dependency updates still come from Dependabot rather than a blocking audit
+  job, and that one is tracked as work to tighten rather than claimed as enforcement.
 - Security-touching changes get an adversarial review, and findings are reproduced by execution
   before they are accepted or dismissed.
 - Decisions that shape the system are recorded as ADRs with consequences and rejected alternatives.

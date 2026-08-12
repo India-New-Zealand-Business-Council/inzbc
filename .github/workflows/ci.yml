@@ -213,13 +213,28 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       # Free SAST that works on private repos (CodeQL/GHAS is a paid add-on for private repos).
-      # Report-only for now — tighten to blocking once the baseline is confirmed clean, the same
-      # way the links job started.
+      #
+      # Blocking as of #70. It started report-only, the same way the links job did, so an unvetted
+      # baseline could not block every pull request on day one. The baseline is now clean: 228
+      # rules over 204 files, 0 findings. `--error` makes semgrep exit non-zero on any finding,
+      # and there is deliberately no `|| echo` fallback swallowing it, because a check that
+      # reports and passes is a check nobody reads.
+      #
+      # Suppress a genuine false positive inline and say why:
+      #   # nosemgrep: <rule-id> — <reason>
+      # A blanket suppression with no rule id and no reason is how a real finding gets hidden
+      # behind an old one, so name both.
+      #
+      # **The engine is pinned; the rules are not.** `p/python` and `p/security-audit` are fetched
+      # from the registry at scan time, so a rule added upstream can fail a pull request that
+      # changed nothing here. That is a deliberate trade: the alternative is vendoring the rule
+      # sets and reviewing every update by hand, which costs more attention than this project has.
+      # When it happens the finding is usually real and worth seeing, so read it before assuming
+      # the job broke.
       - name: Static analysis (semgrep)
         run: |
           docker run --rm -v "${{ github.workspace }}:/src" -w /src semgrep/semgrep:1.171.0 \
-            semgrep scan --config p/python --config p/security-audit --error apps services \
-            || echo "semgrep reported findings (report-only) — review before making this blocking"
+            semgrep scan --config p/python --config p/security-audit --error apps services
 
   security:
     runs-on: ubuntu-latest
