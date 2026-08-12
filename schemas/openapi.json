@@ -1125,6 +1125,114 @@
         ]
       }
     },
+    "/api/reports": {
+      "post": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Submit Report",
+        "description": "Submits the next version of a run's report.\n\nThe version number is assigned by the database, not by the caller. A caller-supplied number\nwould be a second opinion about the sequence, and the one that disagreed would win.\n\n**409 on a concurrent submission**, not 500. Two submissions racing for the same version number\nis a retry, and saying so is the difference between a caller that recovers and one that gives\nup.",
+        "operationId": "submit_report_api_reports_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitReportIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportVersionOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ]
+      }
+    },
+    "/api/reports/{report_version_id}": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Read Report",
+        "description": "A report version and everything currently decided about it.\n\nEvery staff role may read it, for the same reason every staff role may read the audit trail: a\nrecord only the decider can see is not evidence anyone else can rely on.",
+        "operationId": "read_report_api_reports__report_version_id__get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "report_version_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Report Version Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/session": {
       "get": {
         "tags": [
@@ -1988,6 +2096,72 @@
         ],
         "title": "DashboardOut"
       },
+      "DecisionsOut": {
+        "properties": {
+          "ceo_ruling": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ceo Ruling"
+          },
+          "report_approval": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Approval"
+          },
+          "distribution_authority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distribution Authority"
+          },
+          "distribution_recipient": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distribution Recipient"
+          },
+          "revisions": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Revisions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "ceo_ruling",
+          "report_approval",
+          "distribution_authority",
+          "distribution_recipient",
+          "revisions"
+        ],
+        "title": "DecisionsOut",
+        "description": "The current decision on each stream, plus the revision each was read at.\n\nA `null` value means undecided *after submission*, which is a different fact from an explicit\nrefusal: `Not Authorised` is a decision, `null` is the absence of one. Keeping them distinct is\nthe whole reason the mutable approvals row was replaced.\n\n`revisions` is not decoration. A caller recording a decision passes back the revision it read,\nand that is what makes a decision built on a superseded ruling detectable."
+      },
       "DraftIn": {
         "properties": {
           "content_type": {
@@ -2227,6 +2401,67 @@
         ],
         "title": "OpenActionOut"
       },
+      "ReportOut": {
+        "properties": {
+          "report": {
+            "$ref": "#/components/schemas/ReportVersionOut"
+          },
+          "decisions": {
+            "$ref": "#/components/schemas/DecisionsOut"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "report",
+          "decisions"
+        ],
+        "title": "ReportOut"
+      },
+      "ReportVersionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "version_number": {
+            "type": "integer",
+            "title": "Version Number"
+          },
+          "created_by": {
+            "type": "string",
+            "title": "Created By"
+          },
+          "content_sha256": {
+            "type": "string",
+            "title": "Content Sha256"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "submitted_at": {
+            "type": "string",
+            "title": "Submitted At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "run_id",
+          "version_number",
+          "created_by",
+          "content_sha256",
+          "created_at",
+          "submitted_at"
+        ],
+        "title": "ReportVersionOut"
+      },
       "RouteIn": {
         "properties": {
           "proposed_routing": {
@@ -2429,6 +2664,32 @@
           "Unverified"
         ],
         "title": "SourceConfidence"
+      },
+      "SubmitReportIn": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "content_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Content Sha256"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "run_id",
+          "content_sha256",
+          "created_at"
+        ],
+        "title": "SubmitReportIn"
       },
       "TransitionIn": {
         "properties": {

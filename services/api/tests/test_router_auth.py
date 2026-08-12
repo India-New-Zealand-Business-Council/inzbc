@@ -308,6 +308,10 @@ EXPECTED_ROLES: dict[tuple[str, str], set[str]] = {
     ("POST", "/api/comms/draft"): {"Secretariat", "SIP Owner"},
     # Every staff role. A dashboard the board cannot open is not an executive dashboard.
     ("GET", "/api/dashboard"): set(STAFF_READ),
+    # Drafting the report is the analyst's act; the owner may also submit.
+    ("POST", "/api/reports"): {"Analyst", "SIP Owner"},
+    # A decision record only its decider can read is not evidence anyone else can rely on.
+    ("GET", "/api/reports/{report_version_id}"): set(STAFF_READ),
 }
 
 

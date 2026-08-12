@@ -35,8 +35,9 @@ POST   /api/candidates/:id/verify | /score | /route | /merge
 
 ## Control (Paras) — data out + human gates
 ```
+POST   /api/reports                  submit a report version for a run  [BUILT]
+GET    /api/reports/:id              the version plus every current decision on it  [BUILT]
 POST   /api/reports/daily            build the SIP-186 brief from selected candidates
-GET    /api/reports/:id
 POST   /api/reports/:id/qa           record SIP-188 QA result (blocks release on Critical)
 POST   /api/reports/:id/submit
 POST   /api/reports/:id/approval     report-approval stream: Approved | Rejected |
@@ -92,6 +93,27 @@ what to work on.
 
 `extra="forbid"` on every model in the response, so a field added server-side cannot reach the UI
 unannounced.
+
+**What is built, and what the decision-writing endpoints are waiting on.**
+
+`POST /api/reports` and `GET /api/reports/:id` are mounted. Submitting a version is what makes a
+report decidable: a trigger opens the CEO Ruling, Report Approval and Distribution Authority
+streams on insert, so a decision can never arrive for a stream nobody created, and there is no
+separate call to forget. The version number is assigned by the database, because a caller-supplied
+number is a second opinion about the sequence and the one that disagreed would win.
+
+The read returns the version **and** its current decisions **and** the revision each was read at,
+in one response. A reviewer cannot act on a version without knowing what has already been decided,
+and a caller recording a decision has to pass back the revision it read. Two calls would let a
+decision commit in between, which is the race `DecisionRepository.current` closes in a single
+statement, so splitting them over HTTP would reopen it one layer up.
+
+`/approval`, `/ruling` and `/distribution` are **specified and deliberately not mounted**.
+`decision_role_permissions` is unseeded, and no row means nobody may act, so the repository refuses
+every decision by design. Mounting them now would ship three endpoints that answer 403 until INZBC
+decides who may approve what. That is a client decision (ADR-0005 required follow-up 4, client
+answers B8), not an engineering one, and an endpoint that looks built is worse than one that is
+honestly absent.
 
 **Why ruling and distribution are separate commands.** REQ-U-02 requires distribution authority to
 be captured as a separate action, and ADR-0005 records the three facts as independent immutable
