@@ -27,13 +27,14 @@ silently assumed done.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, ConfigDict
 
 from apps.sip.core.orchestrator import IllegalTransition
 from apps.sip.pipeline.models import RunState
 from services.api.auth import ANALYST, REVIEWER, SIP_OWNER, STAFF_READ, Principal
 from services.api.persistence import (
+    AuditRepository,
     ConcurrentModificationError,
     HumanGateNotSatisfied,
     RunRecord,
@@ -260,3 +261,73 @@ def complete_run(
 ) -> RunOut:
     """Distributed -> Closed. Mechanical closeout; not human gated."""
     return _apply(run_id, RunState.CLOSED, body, repo, principal)
+
+
+class AuditEntryOut(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: int
+    at: str
+    user_id: str | None
+    action: str
+    record_type: str | None
+    record_id: str | None
+    old_value: str | None
+    new_value: str | None
+    reason: str | None
+    approval_ref: str | None
+
+
+class AuditPageOut(BaseModel):
+    """A page of audit entries plus the cursor for the next one.
+
+    `next_before_id` rather than a page number, so a caller pages by passing back what it was
+    given instead of computing an offset. `null` means this is the last page.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    entries: list[AuditEntryOut]
+    next_before_id: int | None
+
+
+def get_audit_repository() -> AuditRepository:
+    """Overridden in tests, same as `get_run_repository`."""
+    return AuditRepository()
+
+
+@router.get("/{run_id}/audit", response_model=AuditPageOut)
+def read_run_audit(
+    run_id: str,
+    limit: int = Query(100, ge=1, le=500),
+    before_id: int | None = Query(None, ge=1),
+    principal: Principal = Depends(read_access(*STAFF_READ)),
+    repo: RunRepository = Depends(get_run_repository),
+    audit: AuditRepository = Depends(get_audit_repository),
+) -> AuditPageOut:
+    """The run's audit trail, newest first. Every staff role may read it.
+
+    **Readable by all seven roles deliberately.** An audit trail nobody can read is not an audit
+    trail, and the Auditor and Board Viewer roles exist precisely to read it. Restricting it to the
+    owner would mean the person most likely to be audited controls who sees the record.
+
+    **404 for an unknown run, not an empty page.** A run with no audit rows cannot exist, because
+    `create_run` writes one in the same transaction, so an empty result means the run id is wrong
+    and saying so is more useful than returning `[]`. The run is looked up first for that reason.
+
+    Ordered by `id`, so rows written in one transaction keep their real order: `at` is transaction
+    start time and would tie.
+    """
+    try:
+        repo.get_run(run_id)
+    except KeyError as error:
+        raise _not_found(run_id) from error
+
+    entries = audit.for_run(run_id, limit=limit, before_id=before_id)
+    # Only offer a cursor when the page was full. A short page is the last one, and handing back a
+    # cursor there would invite a request that can only return nothing.
+    next_before_id = entries[-1].id if len(entries) == limit else None
+    return AuditPageOut(
+        entries=[AuditEntryOut(**vars(entry)) for entry in entries],
+        next_before_id=next_before_id,
+    )

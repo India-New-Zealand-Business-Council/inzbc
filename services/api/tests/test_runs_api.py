@@ -20,11 +20,12 @@ from apps.sip.core.orchestrator import IllegalTransition
 from apps.sip.pipeline.models import RunState
 from services.api.main import app
 from services.api.persistence import (
+    AuditEntry,
     ConcurrentModificationError,
     HumanGateNotSatisfied,
     RunRecord,
 )
-from services.api.runs import get_run_repository
+from services.api.runs import get_audit_repository, get_run_repository
 
 
 class FakeRunRepository:
@@ -336,3 +337,114 @@ def test_fail_qa_is_the_reviewers_authority_and_stop_is_not() -> None:
 
     assert "Reviewer" in roles_for("/api/runs/{run_id}/fail-qa")
     assert "Reviewer" not in roles_for("/api/runs/{run_id}/stop")
+
+
+class FakeAuditRepository:
+    """Returns whatever it was seeded with, and records how it was asked.
+
+    `last_query` exists for the same reason `FakeRunRepository.last_transition` does: without it a
+    router that dropped `limit` or `before_id`, or hardcoded one, would still pass every test here.
+    """
+
+    def __init__(self) -> None:
+        self.entries: list[AuditEntry] = []
+        self.last_query: dict | None = None
+
+    def for_run(self, run_id: str, *, limit: int = 100, before_id: int | None = None
+                ) -> list[AuditEntry]:
+        self.last_query = {"run_id": run_id, "limit": limit, "before_id": before_id}
+        return self.entries
+
+
+def _entry(entry_id: int) -> AuditEntry:
+    return AuditEntry(
+        id=entry_id,
+        at="2026-08-13T09:00:00+00:00",
+        user_id="00000000-0000-0000-0000-0000000000aa",
+        action="run.transition",
+        record_type="runs",
+        record_id="a-run",
+        old_value="Draft",
+        new_value="Run Authorised",
+        reason="authorise run",
+        approval_ref="an-authorisation-id",
+    )
+
+
+@pytest.fixture
+def fake_audit() -> FakeAuditRepository:
+    audit = FakeAuditRepository()
+    app.dependency_overrides[get_audit_repository] = lambda: audit
+    yield audit
+    app.dependency_overrides.pop(get_audit_repository, None)
+
+
+def test_audit_returns_the_runs_entries(client: TestClient, fake_audit: FakeAuditRepository):
+    run = _create(client)
+    fake_audit.entries = [_entry(3), _entry(2)]
+
+    response = client.get(f"/api/runs/{run['id']}/audit")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert [e["id"] for e in body["entries"]] == [3, 2]
+    assert body["entries"][0]["action"] == "run.transition"
+
+
+def test_audit_asks_for_the_run_it_was_given(client: TestClient, fake_audit: FakeAuditRepository):
+    """A router that passed the wrong id would return another run's trail, which is the worst
+    possible failure for this endpoint and would look completely normal."""
+    run = _create(client)
+
+    client.get(f"/api/runs/{run['id']}/audit")
+
+    assert fake_audit.last_query["run_id"] == run["id"]
+
+
+def test_audit_hands_down_limit_and_cursor(client: TestClient, fake_audit: FakeAuditRepository):
+    run = _create(client)
+
+    client.get(f"/api/runs/{run['id']}/audit?limit=25&before_id=90")
+
+    assert fake_audit.last_query["limit"] == 25
+    assert fake_audit.last_query["before_id"] == 90
+
+
+def test_audit_offers_a_cursor_only_when_the_page_is_full(
+    client: TestClient, fake_audit: FakeAuditRepository
+):
+    """A short page is the last one. Handing back a cursor there invites a request that can only
+    return nothing, and a caller looping until the cursor is null would make one extra round trip
+    on every trail."""
+    run = _create(client)
+    fake_audit.entries = [_entry(9), _entry(8)]
+
+    full = client.get(f"/api/runs/{run['id']}/audit?limit=2").json()
+    short = client.get(f"/api/runs/{run['id']}/audit?limit=3").json()
+
+    assert full["next_before_id"] == 8
+    assert short["next_before_id"] is None
+
+
+def test_audit_is_404_for_an_unknown_run(client: TestClient, fake_audit: FakeAuditRepository):
+    """Not an empty page. A run with no audit rows cannot exist, because create_run writes one in
+    the same transaction, so an empty result means the id is wrong and saying so is more useful."""
+    response = client.get(f"/api/runs/{uuid.uuid4()}/audit")
+
+    assert response.status_code == 404
+    assert fake_audit.last_query is None, "the trail was read before the run was known to exist"
+
+
+@pytest.mark.parametrize(
+    "query", ["limit=0", "limit=501", "before_id=0", "limit=abc"],
+    ids=["limit-too-small", "limit-too-large", "cursor-zero", "limit-not-a-number"],
+)
+def test_audit_refuses_an_out_of_range_query(
+    client: TestClient, fake_audit: FakeAuditRepository, query: str
+):
+    """Bounded at the edge as well as in the adapter. The adapter clamps, which protects the
+    database; refusing here tells the caller its request was wrong rather than silently returning
+    something it did not ask for."""
+    run = _create(client)
+
+    assert client.get(f"/api/runs/{run['id']}/audit?{query}").status_code == 422

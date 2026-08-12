@@ -24,7 +24,7 @@ import pytest
 from apps.sip.pipeline.models import RunState
 from services.api import persistence as persistence_module
 from services.api.audit import record_audit
-from services.api.persistence import RunRepository
+from services.api.persistence import AuditRepository, RunRepository
 from services.api.tests.role_seed import authorise_run
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -229,3 +229,77 @@ def test_a_failed_audit_write_rolls_back_the_state_change(
             (run_id,),
         ).fetchone()[0]
     assert count == 0
+
+
+# ---------- read path (#126) ----------
+
+
+def test_the_trail_reads_back_newest_first(repo: RunRepository, run_id: str, actor_id: str) -> None:
+    """Ordered by id, not by `at`.
+
+    `at` defaults to `now()`, which in Postgres is transaction start time, so rows written in one
+    transaction share a timestamp and ordering by it leaves their real order undefined. `create_run`
+    and its transition are separate transactions here, but a run that moved twice inside one would
+    tie, and that is exactly the sequence the trail exists to record.
+    """
+    with psycopg.connect(DATABASE_URL) as conn:
+        authorisation = authorise_run(conn, run_id, actor_id)
+    repo.apply_transition(
+        run_id, expected_version=0, new_state=RunState.RUN_AUTHORISED,
+        actor_id=actor_id, reason="authorise", approval_ref=authorisation,
+    )
+
+    entries = AuditRepository(DATABASE_URL).for_run(run_id)
+
+    assert [e.action for e in entries] == ["run.transition", "run.create"]
+    assert entries[0].id > entries[1].id
+
+
+def test_the_trail_only_returns_this_runs_rows(
+    repo: RunRepository, run_id: str, actor_id: str
+) -> None:
+    """`record_id` is text and holds ids from several tables, so filtering on it alone could
+    return a candidate that happened to share a uuid string."""
+    other = repo.create_run(
+        run_number=f"RUN-AUDIT-{uuid.uuid4().hex[:12]}",
+        prompt_version="SIP-050 v1.1",
+        coverage_start_utc="2026-07-27T07:00:00+12:00",
+        coverage_end_utc="2026-07-28T07:00:00+12:00",
+        initiated_by=actor_id,
+    )
+
+    entries = AuditRepository(DATABASE_URL).for_run(run_id)
+
+    assert entries, "the run's own create row must be there"
+    assert all(e.record_id == run_id for e in entries)
+    assert other.id not in {e.record_id for e in entries}
+
+
+def test_the_cursor_pages_without_repeating_or_skipping(
+    repo: RunRepository, run_id: str, actor_id: str
+) -> None:
+    """Keyset pagination over an append-only table: every row appears exactly once."""
+    with psycopg.connect(DATABASE_URL) as conn:
+        for _ in range(4):
+            record_audit(conn, action="test.page", record_type="runs", record_id=run_id)
+        conn.commit()
+
+    audit = AuditRepository(DATABASE_URL)
+    first = audit.for_run(run_id, limit=2)
+    second = audit.for_run(run_id, limit=2, before_id=first[-1].id)
+
+    ids = [e.id for e in first + second]
+    assert len(ids) == 4
+    assert len(set(ids)) == 4, "a row was returned on both pages"
+    assert ids == sorted(ids, reverse=True)
+
+
+def test_an_unreasonable_limit_is_clamped_not_obeyed(
+    repo: RunRepository, run_id: str, actor_id: str
+) -> None:
+    """The adapter bounds the read itself. The router validates too, but an unbounded scan is the
+    kind of thing a later caller reaches for directly."""
+    audit = AuditRepository(DATABASE_URL)
+
+    assert len(audit.for_run(run_id, limit=10_000)) <= 500
+    assert audit.for_run(run_id, limit=0), "a nonsense limit must not return nothing"

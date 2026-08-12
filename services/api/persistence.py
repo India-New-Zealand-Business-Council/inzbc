@@ -333,3 +333,92 @@ class RunRepository:
                 "committed first; re-read the run before retrying"
             )
         return _row_to_record(row)
+
+
+@dataclass(frozen=True)
+class AuditEntry:
+    """One `audit_log` row, as the read endpoint returns it.
+
+    `at` is an ISO-8601 string rather than a `datetime` for the same reason `RunRecord` stringifies
+    its coverage window: this crosses an HTTP boundary, and one conversion in the adapter beats one
+    in every caller.
+    """
+
+    id: int
+    at: str
+    user_id: str | None
+    action: str
+    record_type: str | None
+    record_id: str | None
+    old_value: str | None
+    new_value: str | None
+    reason: str | None
+    approval_ref: str | None
+
+
+_AUDIT_COLUMNS = (
+    "id, at, user_id, action, record_type, record_id, old_value, new_value, reason, approval_ref"
+)
+
+
+class AuditRepository:
+    """Read access to `audit_log`. Reads only: this class has no write method by design.
+
+    Writes go through `services/api/audit.py`'s `record_audit`, which takes the caller's open
+    connection so the audit row and the mutation it describes share one transaction. A write method
+    here would open its own, which is exactly the thing that must not happen.
+    """
+
+    def __init__(self, database_url: str | None = None):
+        self._database_url = database_url or os.environ["DATABASE_URL"]
+
+    def for_run(self, run_id: str, *, limit: int = 100, before_id: int | None = None
+                ) -> list[AuditEntry]:
+        """The audit trail for one run, newest first.
+
+        **Ordered by `id`, not by `at`.** `at` defaults to `now()`, which in Postgres is the
+        transaction start time, so two rows written in the same transaction share a timestamp and
+        their relative order is undefined. `id` is a `bigserial`, so it is unique and monotonic,
+        and the one question this endpoint exists to answer is what happened in what order.
+
+        **Keyset pagination, not OFFSET.** The trail is append-only, so nothing is inserted between
+        existing rows and a cursor stays valid: `before_id` is the last id the caller saw. OFFSET
+        would be correct here too, but it re-scans on every page and it teaches a pattern that
+        breaks on a table where rows can appear mid-sequence.
+
+        Filtered on `record_id` and `record_type = 'runs'`. `record_id` is text and holds ids from
+        several tables, so matching on it alone would return a candidate that happened to share a
+        uuid string.
+        """
+        # Bounded server-side. A caller asking for everything gets the maximum rather than an
+        # unbounded scan, because the honest failure of an unbounded read is a timeout under the
+        # exact conditions that make the trail worth reading.
+        limit = max(1, min(limit, 500))
+        clauses = ["record_type = 'runs'", "record_id = %s"]
+        params: list[object] = [run_id]
+        if before_id is not None:
+            clauses.append("id < %s")
+            params.append(before_id)
+        params.append(limit)
+
+        with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
+            rows = conn.execute(
+                f"select {_AUDIT_COLUMNS} from audit_log where {' and '.join(clauses)} "
+                f"order by id desc limit %s",
+                tuple(params),
+            ).fetchall()
+        return [
+            AuditEntry(
+                id=row["id"],
+                at=row["at"].isoformat(),
+                user_id=str(row["user_id"]) if row["user_id"] else None,
+                action=row["action"],
+                record_type=row["record_type"],
+                record_id=row["record_id"],
+                old_value=row["old_value"],
+                new_value=row["new_value"],
+                reason=row["reason"],
+                approval_ref=row["approval_ref"],
+            )
+            for row in rows
+        ]
