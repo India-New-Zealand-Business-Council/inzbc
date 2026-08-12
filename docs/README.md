@@ -74,6 +74,9 @@ Two conventions hold across this tree:
   actually done. It is an index, not a restatement, so it points at the documents below rather than
   copying them. Two rows are unverified rather than done, and the register keeps that distinction
   visible.
+- [`security/sip-review.md`](security/sip-review.md) — the adversarial security review SIP requires
+  before staff use: eighteen findings, what they had in common, and the open items with owners.
+  Review complete, sign-off outstanding.
 - [`security/README.md`](security/README.md) — the security design: authentication architecture,
   the route-level authorisation matrix, separation-of-duties rules, session and CSRF design, the
   audit event catalogue and data classification. It ends with the known gaps, listed rather than
