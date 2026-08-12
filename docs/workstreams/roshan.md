@@ -46,6 +46,13 @@ same branch-level fault hits someone else's PR later; not otherwise unresolved.
   actual process restart, not just a fresh request. CI green (151 passed against a real local
   Postgres running the actual merged `main` — both #120's and #121's routers, plus Bhanu's
   hardening middleware).
+- [ ] Dashboard generated-types drift (#271, PR #274): found while chasing an unrelated `frontend`
+  CI failure on #273 — `apps/dashboard/ui/src/api/schema.ts` was a generation behind because #268
+  branched before #261 added `POST /api/comms/draft`, so `pnpm run codegen`'s drift check fails on
+  every PR that touches Python, including mine. Someone had already filed #271 with the exact
+  diagnosis and fix; ran `pnpm run codegen` on current `main` and committed just the one stale
+  file — no source change. `pnpm -r lint`/`typecheck` clean across all five UI workspaces, all 9
+  CI checks green. Once this merges, #273's `frontend` check clears on rebase too.
 
 ## Next up
 - SHARED-OK: SIP-050 relevance/signal/confidence scoring moved to Bhanu's worklog — it runs
