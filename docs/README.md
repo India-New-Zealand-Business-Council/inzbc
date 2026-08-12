@@ -60,6 +60,22 @@ Two conventions hold across this tree:
   the fact that the system holds no member data at all today, which is what makes the controls
   cheap to put in now and expensive to retrofit later.
 
+## I am checking a governance or security control
+- [`security-privacy-continuity-register.md`](security-privacy-continuity-register.md) — **start
+  here.** All fifteen controls the client's overview asks for, each with its owner and whether it is
+  actually done. It is an index, not a restatement, so it points at the documents below rather than
+  copying them. Two rows are unverified rather than done, and the register keeps that distinction
+  visible.
+- [`raci.md`](raci.md) — who is responsible, accountable, consulted and informed for each decision,
+  plus the governance document set tracker and the threat model.
+- [`incident-response.md`](incident-response.md) — what to do when something goes wrong, the
+  quarterly access review, and the joiners/movers/leavers process.
+- [`migration-and-rollback.md`](migration-and-rollback.md) — the cutover plan and what rollback can
+  and cannot recover.
+- [`secrets-register.md`](secrets-register.md) and
+  [`account-licence-register.md`](account-licence-register.md) — credentials by name, owner and
+  scope; and the accounts behind them.
+
 ## I need to know why something was decided
 - [`decisions/`](decisions/) — architecture decision records. Each states the context, the options
   compared, the decision and its consequences.
