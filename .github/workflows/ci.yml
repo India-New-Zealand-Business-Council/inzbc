@@ -42,7 +42,21 @@ jobs:
         env:
           BODY: ${{ github.event.pull_request.body }}
           TITLE: ${{ github.event.pull_request.title }}
+          AUTHOR_TYPE: ${{ github.event.pull_request.user.type }}
         run: |
+          # Bots are exempt, and the exemption is inside the step rather than in the job's `if:`
+          # so the check still reports success. A skipped job leaves a required status check
+          # pending, which blocks the pull request just as firmly as a failing one.
+          #
+          # The rule exists so a human's work is traceable to the item it delivers. A dependency
+          # bump has no such item: its traceability is the bump itself, and the changelog it
+          # links. Dependabot cannot open an issue to satisfy this and cannot edit its own body
+          # to add one, so without this the check could never pass and #276 sat blocked on a
+          # rule it had no way to meet.
+          if [ "$AUTHOR_TYPE" = "Bot" ]; then
+            echo "Automated pull request; a linked issue is not required."
+            exit 0
+          fi
           # Accepts every form GitHub itself links from: `Closes #12`, `Closes: #12`,
           # cross-repo `Closes owner/repo#12`, and the full issue URL. The leading \b stops
           # words like "encloses #5" satisfying the check.
