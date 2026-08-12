@@ -21,6 +21,7 @@ import uuid
 import psycopg
 import pytest
 
+from apps.sip.core.orchestrator import CorruptHistory
 from apps.sip.pipeline.models import RunState
 from services.api import persistence as persistence_module
 from services.api.audit import record_audit
@@ -366,3 +367,32 @@ def test_rehydrating_a_run_that_never_moved_gives_a_draft(
 
     assert resumed.state is RunState.DRAFT
     assert resumed.history == ()
+
+
+def test_rehydrate_refuses_a_gated_transition_with_no_recorded_authority(
+    repo: RunRepository, run_id: str, actor_id: str
+) -> None:
+    """Replay must not manufacture the decision the gate exists to require.
+
+    `apply_transition` will not commit a gated transition without an `approval_ref` it has
+    verified, so a stored row missing one was not written by that path. Filling the gap with a
+    placeholder would wave through exactly the history that proves something went wrong.
+
+    Written directly through `record_audit`, which is the shape of the problem: `audit_log` is
+    append-only, not append-*validated*, so a row can exist that no legitimate path would write.
+    """
+    with psycopg.connect(DATABASE_URL) as conn:
+        record_audit(
+            conn,
+            user_id=actor_id,
+            action="run.transition",
+            record_type="runs",
+            record_id=run_id,
+            old_value=RunState.DRAFT.value,
+            new_value=RunState.RUN_AUTHORISED.value,
+            reason="forged: no approval reference",
+        )
+        conn.commit()
+
+    with pytest.raises(CorruptHistory, match="no approval reference"):
+        AuditRepository(DATABASE_URL).rehydrate(run_id)

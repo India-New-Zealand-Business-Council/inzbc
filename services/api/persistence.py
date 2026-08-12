@@ -34,6 +34,7 @@ import psycopg
 from psycopg.rows import dict_row
 
 from apps.sip.core.orchestrator import (
+    CorruptHistory,
     HumanDecision,
     IllegalTransition,
     Orchestrator,
@@ -468,9 +469,22 @@ class AuditRepository:
             to_state = RunState(row["new_value"])
             decision = None
             if is_human_gated(from_state, to_state):
+                # Refuse rather than fabricate. `apply_transition` will not commit a gated
+                # transition without an `approval_ref` it has verified against `decision_records`
+                # or `run_authorisations`, so a stored row missing one was not written by that
+                # path. Filling the gap with a placeholder would manufacture the decision the gate
+                # exists to require, and replay would then wave through exactly the history that
+                # proves something went wrong.
+                if not row["approval_ref"] or not row["user_id"]:
+                    raise CorruptHistory(
+                        f"the recorded {from_state.value} -> {to_state.value} transition on run "
+                        f"{run_id!r} is human gated but names no approval reference or actor. A "
+                        "gated transition cannot be replayed from a row that does not say who "
+                        "authorised it."
+                    )
                 decision = HumanDecision(
-                    approver=str(row["user_id"]) if row["user_id"] else "unknown",
-                    decision=row["approval_ref"] or "recorded",
+                    approver=str(row["user_id"]),
+                    decision=str(row["approval_ref"]),
                     note=row["reason"],
                 )
             records.append(
