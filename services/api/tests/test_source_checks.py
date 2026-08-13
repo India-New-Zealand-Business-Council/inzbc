@@ -121,3 +121,113 @@ def test_list_for_run_only_returns_that_runs_checks(
     other_run_id = "00000000-0000-0000-0000-000000000000"
     assert repo.list_for_run(other_run_id) == []
     assert len(repo.list_for_run(run_id)) == 1
+
+
+def _actor_for(run_id: str) -> str:
+    """The run's initiator, reused as the acting user so the audit assertions have a real id."""
+    with psycopg.connect(DATABASE_URL) as conn:
+        row = conn.execute("select initiated_by from runs where id = %s", (run_id,)).fetchone()
+    return str(row[0])
+
+
+def _audit_rows(record_id: str) -> list[tuple]:
+    with psycopg.connect(DATABASE_URL) as conn:
+        return conn.execute(
+            "select action, old_value, new_value, user_id from audit_log "
+            "where record_type = 'source_checks' and record_id = %s order by id",
+            (record_id,),
+        ).fetchall()
+
+
+def test_recording_a_source_check_writes_an_audit_row(
+    repo: SourceCheckRepository, run_and_source: tuple[str, str]
+):
+    run_id, source_id = run_and_source
+    actor = _actor_for(run_id)
+
+    record = repo.record(
+        run_id=run_id,
+        source_id=source_id,
+        outcome=SourceOutcome.INCLUDED,
+        method="Direct access",
+        fallback_used=False,
+        access_error=None,
+        notes=None,
+        actor_id=actor,
+    )
+
+    rows = _audit_rows(record.id)
+    assert len(rows) == 1
+    action, old_value, new_value, user_id = rows[0]
+    assert action == "source_check.record"
+    assert old_value is None, "a first recording has no prior value to describe"
+    assert new_value == SourceOutcome.INCLUDED.value
+    assert str(user_id) == actor
+
+
+def test_overwriting_an_outcome_records_what_it_replaced(
+    repo: SourceCheckRepository, run_and_source: tuple[str, str]
+):
+    """The reason this table is audited at all.
+
+    `source_checks` is not append-only, so the upsert overwrites in place. Without the audit row,
+    a source recorded `Inaccessible` becoming `Included` leaves no trace that it ever said
+    otherwise - on the register an auditor checks a run against. The prior outcome has to survive
+    the write that replaces it.
+    """
+    run_id, source_id = run_and_source
+    actor = _actor_for(run_id)
+
+    first = repo.record(
+        run_id=run_id,
+        source_id=source_id,
+        outcome=SourceOutcome.INACCESSIBLE,
+        method="Direct access",
+        fallback_used=False,
+        access_error="timeout",
+        notes=None,
+        actor_id=actor,
+    )
+    repo.record(
+        run_id=run_id,
+        source_id=source_id,
+        outcome=SourceOutcome.INCLUDED,
+        method="RSS or approved feed",
+        fallback_used=True,
+        access_error=None,
+        notes="fell back to RSS",
+        actor_id=actor,
+    )
+
+    rows = _audit_rows(first.id)
+    assert len(rows) == 2, "the correction is a second event, not an edit of the first"
+
+    action, old_value, new_value, _ = rows[1]
+    assert action == "source_check.update", "a changed answer is a different event to an auditor"
+    assert old_value == SourceOutcome.INACCESSIBLE.value
+    assert new_value == SourceOutcome.INCLUDED.value
+
+
+def test_the_audit_row_and_the_check_land_together(
+    repo: SourceCheckRepository, run_and_source: tuple[str, str]
+):
+    """One commit, so there is no state where the check exists unaudited or the reverse.
+
+    Asserted by counting both sides after a write rather than by inspecting the transaction: what
+    matters is that a reader never sees one without the other.
+    """
+    run_id, source_id = run_and_source
+
+    record = repo.record(
+        run_id=run_id,
+        source_id=source_id,
+        outcome=SourceOutcome.EXCLUDED,
+        method=None,
+        fallback_used=False,
+        access_error=None,
+        notes=None,
+        actor_id=_actor_for(run_id),
+    )
+
+    assert len(repo.list_for_run(run_id)) == 1
+    assert len(_audit_rows(record.id)) == 1

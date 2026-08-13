@@ -33,6 +33,7 @@ from psycopg.rows import dict_row
 from pydantic import BaseModel, ConfigDict
 
 from apps.sip.pipeline.models import SourceOutcome
+from services.api.audit import record_audit
 from services.api.auth import ANALYST, SIP_OWNER, STAFF_READ, Principal
 from services.api.session import AUTH_RESPONSES, read_access, write_access
 
@@ -77,6 +78,15 @@ class SourceCheckRepository:
     source re-checked after a fallback attempt updates the same row instead of colliding with it.
     No optimistic concurrency here: unlike `runs`/`candidates`, there is no multi-step human
     workflow racing to update one source check, just one operator recording what they found.
+
+    **The upsert is why every write here is audited.** `source_checks` is not one of the
+    append-only tables, so the update branch overwrites the previous outcome in place and nothing
+    else preserves it. Without an audit row, a source recorded `Inaccessible` could become
+    `Included` with no trace that it ever said otherwise and no record of who changed it - on the
+    register an auditor checks a run against. SIP-184 requires every mandatory source to carry an
+    outcome; an outcome that can be silently rewritten is a weaker guarantee than that implies.
+    So `record_audit` runs on the same connection before the single commit, carrying the prior
+    outcome as `old_value`, which turns the overwrite into a recorded correction.
     """
 
     def __init__(self, database_url: str | None = None):
@@ -91,8 +101,17 @@ class SourceCheckRepository:
         fallback_used: bool,
         access_error: str | None,
         notes: str | None,
+        actor_id: str | None = None,
     ) -> SourceCheckRecord:
         with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
+            # Read the prior outcome inside the same transaction as the upsert that replaces it.
+            # Reading it before the connection opens, or after the write, would leave a window
+            # where `old_value` describes a state the row was never actually in.
+            previous = conn.execute(
+                "select outcome from source_checks where run_id = %s and source_id = %s",
+                (run_id, source_id),
+            ).fetchone()
+
             row = conn.execute(
                 "insert into source_checks (run_id, source_id, outcome, method, fallback_used, "
                 "access_error, notes) values (%s, %s, %s, %s, %s, %s, %s) "
@@ -103,6 +122,22 @@ class SourceCheckRepository:
                 f"returning {_SELECT_COLUMNS}",
                 (run_id, source_id, outcome.value, method, fallback_used, access_error, notes),
             ).fetchone()
+
+            # Distinct actions, because "this source was checked" and "a recorded outcome was
+            # changed" are different events to an auditor, and only the second needs explaining.
+            previous_outcome = previous["outcome"] if previous else None
+            action = "source_check.update" if previous else "source_check.record"
+
+            record_audit(
+                conn,
+                user_id=actor_id,
+                action=action,
+                record_type="source_checks",
+                record_id=str(row["id"]),
+                old_value=previous_outcome,
+                new_value=outcome.value,
+                reason=f"source {source_id} recorded {outcome.value} for run {run_id}",
+            )
             conn.commit()
         return _row_to_record(row)
 
@@ -178,6 +213,9 @@ def record_source_check(
             fallback_used=body.fallback_used,
             access_error=body.access_error,
             notes=body.notes,
+            # From the session, never the body (ADR-0004) - the audit row names who actually
+            # acted, not who the caller says acted.
+            actor_id=principal.user_id,
         )
     )
 
