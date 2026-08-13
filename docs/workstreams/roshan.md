@@ -107,6 +107,25 @@ same branch-level fault hits someone else's PR later; not otherwise unresolved.
   `DRYRUN-20260812230100` created, 2 fixture candidates captured, source library resolving against
   176 seeded rows, all 112 mandatory-source outcomes still honestly reported missing, exit 0.
   Semgrep not runnable locally (the job runs it in Docker; no Docker on this machine) — left to CI.
+  **13 Aug, fourth review round — one real finding, and the control that should have caught it
+  was the reason it didn't.** Bhanu checked out the branch and reproduced by execution:
+  `SourceCheckRepository.record` inserted and committed with no `record_audit`, against
+  `services/api/README.md`'s rule that every state-changing write is audited. `test_audit_coverage.py`
+  passed anyway because `PERSISTENCE_MODULES` was a hand-written list of four files and
+  `source_checks.py` was not in it — so the scanner never looked. The reason it matters beyond the
+  rule: the write is an upsert and `source_checks` is not append-only, so a source recorded
+  `Inaccessible` could become `Included` with nothing preserving the prior value, on the register
+  an auditor checks a run against. Fixed with `record_audit` on the same connection before the
+  single commit, prior outcome read inside that transaction as `old_value`, and separate
+  `source_check.record`/`source_check.update` actions. Took the deeper fix he suggested rather than
+  just adding the file: the scanner now globs `services/api/*.py` with an explicit `NOT_SCANNED`
+  list, going from 4 modules/8 write paths to 14/14 — this was the **fourth** hand-written list here
+  to quietly stop covering what it names (whole-table guards missed a table, route matrix missed a
+  route, `VERIFICATION_STATES` drifted from the schema enum), and the shape is always a conformance
+  test being told its subjects instead of finding them. Also added the two routers to `pyproject.toml`'s
+  B008 ignores, which he raised only as a heads-up for #270's ruff bump — inert under the current
+  pin, and leaving it means whoever lands #270 meets the failure without the context. 789 passed
+  against real Postgres, ruff clean, no codegen drift, lint/typecheck clean, 9/9 CI green, MERGEABLE.
 
 ## Next up
 - SHARED-OK: SIP-050 relevance/signal/confidence scoring moved to Bhanu's worklog — it runs
