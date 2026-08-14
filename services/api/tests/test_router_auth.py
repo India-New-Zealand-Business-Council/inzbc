@@ -312,6 +312,23 @@ EXPECTED_ROLES: dict[tuple[str, str], set[str]] = {
     ("POST", "/api/reports"): {"Analyst", "SIP Owner"},
     # A decision record only its decider can read is not evidence anyone else can rely on.
     ("GET", "/api/reports/{report_version_id}"): set(STAFF_READ),
+    # Registers (#209): operational trackers and the append-only exceptions log. Same authority
+    # shape as source-checks - the analyst working the run records what they found; the register
+    # is reference/evidence every staff role needs to read.
+    ("POST", "/api/action-register"): {"Analyst", "SIP Owner"},
+    ("POST", "/api/action-register/{action_id}/status"): {"Analyst", "SIP Owner"},
+    ("GET", "/api/action-register/{action_id}"): set(STAFF_READ),
+    ("GET", "/api/action-register"): set(STAFF_READ),
+    ("POST", "/api/watch-lists"): {"Analyst", "SIP Owner"},
+    ("POST", "/api/watch-lists/{watch_id}/status"): {"Analyst", "SIP Owner"},
+    ("GET", "/api/watch-lists/{watch_id}"): set(STAFF_READ),
+    ("GET", "/api/watch-lists"): set(STAFF_READ),
+    ("POST", "/api/exceptions"): {"Analyst", "SIP Owner"},
+    # Inserts a new row rather than editing the one named in the path (append-only), but it is
+    # still the analyst's act of recording what they found, same authority as the write above.
+    ("POST", "/api/exceptions/{exception_id}/correct"): {"Analyst", "SIP Owner"},
+    ("GET", "/api/exceptions/{exception_id}"): set(STAFF_READ),
+    ("GET", "/api/exceptions"): set(STAFF_READ),
 }
 
 
