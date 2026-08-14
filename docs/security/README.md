@@ -129,8 +129,14 @@ platform did. It is still an allowlist: a user holding no role reads nothing.
 | `GET /api/dashboard` | all staff roles |
 | `POST /api/reports` | Analyst, SIP Owner |
 | `GET /api/reports/{id}` | all staff roles |
+| `POST /api/action-register`, `POST /api/action-register/{id}/status` | Analyst, SIP Owner |
+| `GET /api/action-register/{id}`, `GET /api/action-register` | all staff roles |
+| `POST /api/watch-lists`, `POST /api/watch-lists/{id}/status` | Analyst, SIP Owner |
+| `GET /api/watch-lists/{id}`, `GET /api/watch-lists` | all staff roles |
+| `POST /api/exceptions`, `POST /api/exceptions/{id}/correct` | Analyst, SIP Owner |
+| `GET /api/exceptions/{id}`, `GET /api/exceptions` | all staff roles |
 
-Four rows are deliberate rather than obvious.
+Five rows are deliberate rather than obvious.
 
 **`fail-qa` includes Reviewer, and that is the point.** REQ-U-01 gives the reviewer an independent
 stop. A quality gate that only the owner can pull is not independent of the owner.
@@ -142,6 +148,11 @@ stop. A quality gate that only the owner can pull is not independent of the owne
 **`{id}/audit` is readable by every staff role**, including Auditor and Board Viewer, which exist
 for precisely this. Narrowing it to the owner would mean the person most likely to be audited
 controls who sees the record, and an audit trail nobody can read is not an audit trail.
+
+**The registers (action-register, watch-lists, exceptions) carry Analyst/SIP Owner on every
+write, including `exceptions/{id}/correct`.** A correction inserts a new row rather than editing
+the one it corrects, but it is still the analyst's act of recording what they found - same
+authority as the write it follows, not a Reviewer-gated act like `verify`.
 
 **How this is enforced, and how it stays enforced.** `read_access(*roles)` and
 `write_access(*roles)` are dependency factories, so a route declares its authority *in its own
