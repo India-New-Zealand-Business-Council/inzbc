@@ -41,6 +41,14 @@ the local Postgres verification (114 passed) in the PR body. Worth a standup men
 same branch-level fault hits someone else's PR later; not otherwise unresolved.
 
 ## In review (opened, awaiting merge)
+- [ ] Approved facts library (#188, PR #321): `approved_facts` table + `FactRepository`
+  (draft/approve/archive, self-approval refused at both the app layer and a schema CHECK
+  constraint) + `/api/facts` (Analyst drafts, Reviewer/SIP Owner approves - same split as
+  `candidates/verify`). Corrections chain via `supersedes_id` rather than overwriting, same
+  pattern `decision_records` uses. 20 new tests, 803 total passing, 9/9 CI green, MERGEABLE.
+  Branched fresh off `main` rather than stacked on the existing registers branch, since #319 (also
+  mine, also awaiting review) is a separate PR and mixing new scope into it mid-review would have
+  changed what its reviewer sees.
 - [ ] Backend restart/rehydration integration test (#130, PR #255): kills a real `uvicorn`
   subprocess mid-run and starts a fresh one on the same port, proving a run's state survives an
   actual process restart, not just a fresh request. CI green (151 passed against a real local
