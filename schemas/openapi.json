@@ -1372,6 +1372,330 @@
         }
       }
     },
+    "/api/facts": {
+      "post": {
+        "tags": [
+          "Approved facts"
+        ],
+        "summary": "Draft Fact",
+        "operationId": "draft_fact_api_facts_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftFactIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FactOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ]
+      }
+    },
+    "/api/facts/{fact_id}/approve": {
+      "post": {
+        "tags": [
+          "Approved facts"
+        ],
+        "summary": "Approve Fact",
+        "operationId": "approve_fact_api_facts__fact_id__approve_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "fact_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Fact Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FactOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/facts/{fact_id}/archive": {
+      "post": {
+        "tags": [
+          "Approved facts"
+        ],
+        "summary": "Archive Fact",
+        "operationId": "archive_fact_api_facts__fact_id__archive_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "fact_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Fact Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FactOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/facts/{fact_id}": {
+      "get": {
+        "tags": [
+          "Approved facts"
+        ],
+        "summary": "Get Fact",
+        "operationId": "get_fact_api_facts__fact_id__get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "fact_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Fact Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FactOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/facts/by-key/{fact_key}/latest": {
+      "get": {
+        "tags": [
+          "Approved facts"
+        ],
+        "summary": "Get Latest Approved Fact",
+        "operationId": "get_latest_approved_fact_api_facts_by_key__fact_key__latest_get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "fact_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Fact Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FactOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/facts/by-key/{fact_key}/history": {
+      "get": {
+        "tags": [
+          "Approved facts"
+        ],
+        "summary": "Get Fact History",
+        "operationId": "get_fact_history_api_facts_by_key__fact_key__history_get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "fact_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Fact Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FactOut"
+                  },
+                  "title": "Response Get Fact History Api Facts By Key  Fact Key  History Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/fta/query": {
       "get": {
         "tags": [
@@ -2162,6 +2486,85 @@
         "title": "DecisionsOut",
         "description": "The current decision on each stream, plus the revision each was read at.\n\nA `null` value means undecided *after submission*, which is a different fact from an explicit\nrefusal: `Not Authorised` is a decision, `null` is the absence of one. Keeping them distinct is\nthe whole reason the mutable approvals row was replaced.\n\n`revisions` is not decoration. A caller recording a decision passes back the revision it read,\nand that is what makes a decision built on a superseded ruling detectable."
       },
+      "DraftFactIn": {
+        "properties": {
+          "fact_key": {
+            "type": "string",
+            "title": "Fact Key"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id"
+          },
+          "owner_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Text"
+          },
+          "verified_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verified At"
+          },
+          "review_due_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Due At"
+          },
+          "supersedes_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supersedes Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "fact_key",
+          "content",
+          "source"
+        ],
+        "title": "DraftFactIn"
+      },
       "DraftIn": {
         "properties": {
           "content_type": {
@@ -2203,6 +2606,151 @@
         ],
         "title": "DraftOut",
         "description": "Matches `apps/comms/ui/src/api/client.ts`'s `isCommsDraftResult` guard exactly: one\nrequired non-empty `draft` string, nothing else the UI reads today."
+      },
+      "FactOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "fact_key": {
+            "type": "string",
+            "title": "Fact Key"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id"
+          },
+          "owner_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Text"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "verified_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verified At"
+          },
+          "review_due_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Due At"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "supersedes_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supersedes Id"
+          },
+          "created_by": {
+            "type": "string",
+            "title": "Created By"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "approved_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved By"
+          },
+          "approved_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "archived_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "fact_key",
+          "content",
+          "owner_id",
+          "owner_text",
+          "status",
+          "source",
+          "verified_at",
+          "review_due_at",
+          "version",
+          "supersedes_id",
+          "created_by",
+          "created_at",
+          "approved_by",
+          "approved_at",
+          "archived_at"
+        ],
+        "title": "FactOut"
       },
       "FtaQueryResponse": {
         "properties": {
