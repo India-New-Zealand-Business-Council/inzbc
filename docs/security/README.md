@@ -129,8 +129,11 @@ platform did. It is still an allowlist: a user holding no role reads nothing.
 | `GET /api/dashboard` | all staff roles |
 | `POST /api/reports` | Analyst, SIP Owner |
 | `GET /api/reports/{id}` | all staff roles |
+| `POST /api/comms/drafts/{id}/approve` | **Reviewer**, SIP Owner |
+| `GET /api/comms/drafts/{id}` | all staff roles |
+| `GET /api/comms/drafts` | all staff roles |
 
-Four rows are deliberate rather than obvious.
+Five rows are deliberate rather than obvious.
 
 **`fail-qa` includes Reviewer, and that is the point.** REQ-U-01 gives the reviewer an independent
 stop. A quality gate that only the owner can pull is not independent of the owner.
@@ -142,6 +145,12 @@ stop. A quality gate that only the owner can pull is not independent of the owne
 **`{id}/audit` is readable by every staff role**, including Auditor and Board Viewer, which exist
 for precisely this. Narrowing it to the owner would mean the person most likely to be audited
 controls who sees the record, and an audit trail nobody can read is not an audit trail.
+
+**`comms/drafts/{id}/approve` requires Reviewer or SIP Owner, and that role check is only half the
+control.** Holding Reviewer says a principal may approve *something*; it does not say they may
+approve *their own* draft. `CommsDraftRepository.approve` refuses that specifically
+(`refuse_self_review`, BR8), independent of role — the same split as `/api/candidates/{id}/verify`,
+where the role map and the self-review check are two separate gates rather than one.
 
 **How this is enforced, and how it stays enforced.** `read_access(*roles)` and
 `write_access(*roles)` are dependency factories, so a route declares its authority *in its own
