@@ -26,6 +26,7 @@ from apps.fta.explainer import ExplainerAnswer, NoMatch, answer_query, no_match
 from services.api.candidates import router as candidates_router
 from services.api.comms import router as comms_router
 from services.api.dashboard import router as dashboard_router
+from services.api.facts import facts_router
 from services.api.hardening import install as install_hardening
 from services.api.oauth import router as oauth_router
 from services.api.reports import router as reports_router
@@ -49,6 +50,7 @@ app.include_router(dashboard_router)
 app.include_router(reports_router)
 app.include_router(session_router)
 app.include_router(oauth_router)
+app.include_router(facts_router)
 
 
 class AnswerOut(BaseModel):

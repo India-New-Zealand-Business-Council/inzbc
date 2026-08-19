@@ -312,6 +312,15 @@ EXPECTED_ROLES: dict[tuple[str, str], set[str]] = {
     ("POST", "/api/reports"): {"Analyst", "SIP Owner"},
     # A decision record only its decider can read is not evidence anyone else can rely on.
     ("GET", "/api/reports/{report_version_id}"): set(STAFF_READ),
+    # Approved facts library (#188): drafting is capture (Analyst), approving is verification and
+    # must be a different actor than the drafter - Reviewer or SIP Owner, never Analyst alone.
+    # Archiving retires a claim rather than asserting one, so any writer role may do it.
+    ("POST", "/api/facts"): {"Analyst", "SIP Owner"},
+    ("POST", "/api/facts/{fact_id}/approve"): {"Reviewer", "SIP Owner"},
+    ("POST", "/api/facts/{fact_id}/archive"): {"Analyst", "Reviewer", "SIP Owner"},
+    ("GET", "/api/facts/{fact_id}"): set(STAFF_READ),
+    ("GET", "/api/facts/by-key/{fact_key}/latest"): set(STAFF_READ),
+    ("GET", "/api/facts/by-key/{fact_key}/history"): set(STAFF_READ),
     # The named-reviewer approval gate #60 depends on. BR8: refuse_self_review checks the author
     # against the approver regardless of role, so Reviewer/SIP Owner here is "may approve
     # something", not "may approve their own draft" - that second check lives in the repository,

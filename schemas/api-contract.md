@@ -46,6 +46,18 @@ PATCH  /api/candidates/:id
 POST   /api/candidates/:id/verify | /score | /route | /merge
 ```
 
+## Approved facts library (#188 — Roshan's)
+```
+POST   /api/facts                        draft a fact; a named owner (owner_id or owner_text)
+POST   /api/facts/:id/approve            Reviewer/SIP Owner only; refuses self-approval
+POST   /api/facts/:id/archive            retires a fact; any writer role
+GET    /api/facts/:id
+GET    /api/facts/by-key/:fact_key/latest    latest *approved* revision, 404 if none approved yet
+GET    /api/facts/by-key/:fact_key/history   every revision, newest version first
+```
+Drafting a new version of an existing fact passes `supersedes_id`; the prior row is never edited,
+only chained.
+
 ## Control (Paras) — data out + human gates
 ```
 POST   /api/reports                  submit a report version for a run  [BUILT]
