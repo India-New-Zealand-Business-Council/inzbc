@@ -1,0 +1,123 @@
+name: SIP dry run (#55)
+
+# Manual only, by design. This is NOT a SIP-184 production run: SIP-191's launch window
+# (docs/sip/launch/launch-config.md) was 27-31 Jul 2026 and has expired with no re-approval on
+# record, and SIP-184's fail-closed list treats an out-of-window run as a Critical stop. This
+# workflow proves the collector -> capture code path against a real backend and a fixture article
+# set (apps/sip/collector/data/dry_run_fixture_articles.json, clearly synthetic) - it produces
+# evidence that the wiring works, not a Production Run Register entry. Every business route
+# requires a session (ADR-0004, #278), so this workflow seeds a deterministic CI-only user with
+# the Analyst role and mints a session for it before running the dry run - see
+# apps/sip/collector/run_dry_run.py's module docstring for the full picture.
+on:
+  workflow_dispatch:
+
+jobs:
+  dry-run:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16.2
+        env:
+          POSTGRES_USER: inzbc
+          POSTGRES_PASSWORD: inzbc
+          POSTGRES_DB: inzbc_dry_run
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://inzbc:inzbc@localhost:5432/inzbc_dry_run
+      # runs.initiated_by is a NOT NULL FK to users(id) - a plain string like "gh-actions-dry-run"
+      # fails the first create_run call, and a random UUID isn't enough either since the FK needs
+      # a real row. This is a fixed, deterministic id for the CI-seeded dry-run user only - never
+      # used outside this ephemeral, per-run Postgres service container.
+      DRY_RUN_CI_USER_ID: 00000000-0000-0000-0000-000000000001
+      DRY_RUN_CI_GITHUB_LOGIN: gh-actions-dry-run
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install "uv==0.8.17"
+          uv sync --locked --extra dev
+      - name: Apply database schema
+        run: psql -v ON_ERROR_STOP=1 --single-transaction "$DATABASE_URL" -f database/schema.sql
+      - name: Seed CI dry-run user
+        # create_run's initiated_by FK needs a real users row - nothing else in this workflow
+        # creates one, so the first create_run call would otherwise fail (see DRY_RUN_CI_USER_ID
+        # above). github_login is required too: ADR-0004's session issuance (establish_session)
+        # looks a user up by it, and role enforcement (#278) reads the granted role by name, so
+        # both have to be right before a session can be minted below - a bare id/name/email row
+        # is not enough any more.
+        run: |
+          psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -c "
+            insert into users (id, name, email, github_login)
+            values ('$DRY_RUN_CI_USER_ID', 'GitHub Actions dry run',
+                    'gh-actions-dry-run@example.invalid', '$DRY_RUN_CI_GITHUB_LOGIN')
+            on conflict (id) do update set github_login = excluded.github_login;
+          "
+      - name: Grant Analyst role
+        # Seeded by name, not a fixed role id: roles.name is unique but roles.id is not
+        # coordinated across the test suites that share this database, so a fixed id can land on
+        # whichever name another suite claimed first (services/api/tests/role_seed.py's own
+        # docstring). Analyst is enough to create a run and capture candidates
+        # (write_access(ANALYST, SIP_OWNER) on both) - this workflow never starts/pauses/resumes a
+        # run, so it does not need SIP Owner.
+        run: |
+          uv run python -c "
+          import psycopg
+          from services.api.tests.role_seed import grant
+          with psycopg.connect('$DATABASE_URL') as conn, conn.transaction():
+              grant(conn, '$DRY_RUN_CI_USER_ID', 'Analyst')
+          "
+      - name: Seed source library
+        # GET /api/source-library returns [] until source_library is populated - without this,
+        # the dry run's source_id resolution has nothing to resolve against.
+        run: uv run python scripts/seed_source_library.py
+      - name: Start services/api
+        run: |
+          uv run uvicorn services.api.main:app --host 127.0.0.1 --port 8000 &
+          for _ in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:8000/health >/dev/null 2>&1 && break
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:8000/health
+      - name: Mint CI dry-run session
+        # No sign-in route exists to call over HTTP, deliberately (services/api/session.py) -
+        # scripts/dev_session.py is the only way to get a session, and it needs DATABASE_URL
+        # directly. Cookie and CSRF token are shown once, so they're captured into GITHUB_ENV
+        # here rather than re-derivable later.
+        run: |
+          output="$(uv run python -m scripts.dev_session --github-login "$DRY_RUN_CI_GITHUB_LOGIN")"
+          echo "$output"
+          cookie="$(echo "$output" | sed -n 's/^cookie:  *inzbc_session=//p')"
+          csrf="$(echo "$output" | sed -n 's/^csrf:  *//p')"
+          if [ -z "$cookie" ] || [ -z "$csrf" ]; then
+            echo "failed to parse session cookie/csrf from dev_session output" >&2
+            exit 1
+          fi
+          echo "::add-mask::$cookie"
+          echo "::add-mask::$csrf"
+          echo "DRY_RUN_SESSION_COOKIE=$cookie" >> "$GITHUB_ENV"
+          echo "DRY_RUN_CSRF_TOKEN=$csrf" >> "$GITHUB_ENV"
+      - name: Run the dry run
+        run: |
+          uv run python -m apps.sip.collector.run_dry_run \
+            --base-url http://127.0.0.1:8000 \
+            --articles-file apps/sip/collector/data/dry_run_fixture_articles.json \
+            --session-cookie "$DRY_RUN_SESSION_COOKIE" \
+            --csrf-token "$DRY_RUN_CSRF_TOKEN" \
+            --evidence-out dry_run_evidence.json
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sip-dry-run-evidence
+          path: dry_run_evidence.json

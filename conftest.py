@@ -8,7 +8,8 @@ count meaningful: `pyproject.toml` runs every test under `apps`/`services` in on
 imports `main.app` shares one counter. Enough HTTP-hitting test files in the same run pushes the
 total past 60 and later tests start seeing 429s that have nothing to do with what they're testing
 - discovered while adding `services/api/tests/test_comms_api.py`, which was enough on its own to
-tip `test_runs_api.py`'s later tests over the limit.
+tip `test_runs_api.py`'s later tests over the limit. Independently hit again by the #55
+source-library/source-checks router tests before this branch was rebased onto that fix.
 
 Raising the limit via `RATE_LIMIT_REQUESTS`, the environment variable `hardening.py` already reads
 and documents, rather than changing anything in that module: this is test configuration, not a

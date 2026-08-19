@@ -41,6 +41,91 @@ the local Postgres verification (114 passed) in the PR body. Worth a standup men
 same branch-level fault hits someone else's PR later; not otherwise unresolved.
 
 ## In review (opened, awaiting merge)
+- [ ] SIP-184 dry run (#55, PR #264): Bhanu's second review round found two real integration
+  gaps his first (approving) pass missed — the `workflow_dispatch` job never seeds a `users` row,
+  so `runs.initiated_by`'s NOT NULL FK fails the first `create_run` call; and
+  `scripts/seed_source_library.py` was added but never invoked, so `source_library` stayed empty.
+  Fixed both: a deterministic CI-only user seeded via `psql` before the run, real uuid passed to
+  `--initiated-by`; added the missing seed step. Also took his two non-blocking notes —
+  `SourceCheckOut.outcome` now typed `SourceOutcome` not `str`, and the upsert's fallback-attempt
+  overwrite behaviour now has an explicit documented decision instead of being silently assumed
+  fine. Hit the same CI-silently-didn't-trigger anomaly already on file for #237/#242 (confirmed
+  via the Actions API, not just `gh pr checks`) — an empty-commit retrigger (the #237 precedent)
+  did **not** fix it this time, still zero runs afterward. Root cause turned out to be real:
+  the branch was several days stale and `mergeable` had flipped to `CONFLICTING` against `main`
+  (dashboard app, the `CLAUDE.md`→`PROJECT-RULES.md` rename, and more had landed since). Rebased
+  onto current `main` (conflicts in `conftest.py` — an identical rate-limiter fix independently
+  landed on both branches, kept the more detailed docstring; `services/api/main.py` — both
+  branches added a router the other didn't know about, kept both; generated files resolved by
+  regenerating fresh rather than hand-merging diffs), regenerated API types, reran the full suite
+  (364 passed) and `pnpm -r lint`/`typecheck` clean across all five UI workspaces before
+  force-pushing. CI triggered immediately after — so unlike #237 (still unexplained), this
+  instance's cause is now understood: a stale/conflicting branch state, not a genuine GitHub
+  Actions fault. Worth relaying that distinction so #237 isn't assumed to be the same thing.
+  **12 Aug, third review round:** rebasing surfaced that #272/#278/#279 landed session auth, role
+  enforcement and the security-scheme contract underneath this branch while it sat stale — Bhanu
+  flagged (a) the workflow gets 401 everywhere with no session, (b) `SipPipelineClient` still sent
+  `initiated_by`/`actor_id`, both removed from `CreateRunIn`/`CaptureCandidateIn`, (c) the three
+  new routes (`source_library.py`, `source_checks.py`) had no auth dependency at all — an
+  unauthenticated caller could read the 112-source register and write outcomes. Also two from his
+  adversarial pass: `in_coverage_window` hardcoded `True` in `mapping.py` regardless of the run's
+  actual locked window, and a broken `GET /api/source-library` was downgraded to a warning rather
+  than failing the workflow, so a broken seed looked like a pass. Fixed all five: `read_access`/
+  `write_access` (Analyst for writes, matching `runs.py`'s own gate) on both new routers;
+  `SipPipelineClient` now takes a session cookie + CSRF token instead of a bearer token and no
+  longer sends either removed field, `ingest_articles`/`map_article` take the run's locked
+  `(coverage_start_utc, coverage_end_utc)` and compute `in_coverage_window` against it (`None`,
+  not `True`, when unknown — same non-fabrication rule as everywhere else here); the workflow now
+  seeds `users.github_login`, grants Analyst via `role_seed.grant` (seeded by name per its own
+  docstring, not a fixed id), and mints a session with `scripts/dev_session.py` before running;
+  `run_dry_run.py`'s source-library fetch is fatal on failure, not a warning. Verified against a
+  real local Postgres end to end (schema applied, user + role seeded, session minted, dry run
+  created a run and 2 candidates, exit 0) - not just the fake-client suite, since that's exactly
+  what missed the original contract mismatches. 503 passed, ruff clean, `pnpm -r typecheck` clean
+  across all 5 UI workspaces, generated TS clients regenerated. This round touches
+  `services/api`/`database`-adjacent auth wiring — Bhanu's lane per this worklog's own rule, but
+  his own review comments are the spec here; flagged for his re-review before merge, not treated
+  as settled. Pushed and CI came back 9/9 green (docker, frontend, linked-issue, links, python,
+  sast, security, validate, workflows) - branch is `MERGEABLE` again. Awaiting Bhanu's re-review.
+  **13 Aug — rebased again, and this time the rebase was not just mechanical.** 19 commits landed
+  on `main` while the PR waited, including #294 (every business route states its authority twice:
+  once as a dependency, once in `test_router_auth.py`'s `EXPECTED_ROLES`) and #306 (semgrep now
+  blocking). The three routes this branch adds were written before that map existed, so they had
+  correct dependencies and no map entries, and
+  `test_the_expected_role_map_covers_every_business_route` failed on rebase — exactly what that
+  test is for. Added the entries with the reasoning it asks for: `GET /api/source-library` and
+  `GET /api/runs/{run_id}/source-checks` at `STAFF_READ` (an auditor checks a run against the
+  register; restricting it to the role being audited defeats the point, same argument as
+  `/audit`), and `POST /api/runs/{run_id}/source-checks` at Analyst/SIP Owner — the same authority
+  as capture, because it is the same act. Deliberately not the Reviewer's: a per-source outcome is
+  evidence to be verified, not the verification. Conflicts elsewhere were the usual ones —
+  `services/api/main.py` (both sides added a router: kept `oauth_router` *and* the two new ones),
+  and the generated files (`schemas/openapi.json`, both UI `schema.ts`) resolved by regenerating
+  rather than hand-merging. Re-verified against a real local Postgres: **740 passed, zero skipped**
+  (the 117 normally-skipped live-DB tests actually ran), ruff clean, `pnpm -r lint`/`typecheck`
+  clean across all 5 workspaces, no codegen drift, and the dry run itself re-run end to end —
+  `DRYRUN-20260812230100` created, 2 fixture candidates captured, source library resolving against
+  176 seeded rows, all 112 mandatory-source outcomes still honestly reported missing, exit 0.
+  Semgrep not runnable locally (the job runs it in Docker; no Docker on this machine) — left to CI.
+  **13 Aug, fourth review round — one real finding, and the control that should have caught it
+  was the reason it didn't.** Bhanu checked out the branch and reproduced by execution:
+  `SourceCheckRepository.record` inserted and committed with no `record_audit`, against
+  `services/api/README.md`'s rule that every state-changing write is audited. `test_audit_coverage.py`
+  passed anyway because `PERSISTENCE_MODULES` was a hand-written list of four files and
+  `source_checks.py` was not in it — so the scanner never looked. The reason it matters beyond the
+  rule: the write is an upsert and `source_checks` is not append-only, so a source recorded
+  `Inaccessible` could become `Included` with nothing preserving the prior value, on the register
+  an auditor checks a run against. Fixed with `record_audit` on the same connection before the
+  single commit, prior outcome read inside that transaction as `old_value`, and separate
+  `source_check.record`/`source_check.update` actions. Took the deeper fix he suggested rather than
+  just adding the file: the scanner now globs `services/api/*.py` with an explicit `NOT_SCANNED`
+  list, going from 4 modules/8 write paths to 14/14 — this was the **fourth** hand-written list here
+  to quietly stop covering what it names (whole-table guards missed a table, route matrix missed a
+  route, `VERIFICATION_STATES` drifted from the schema enum), and the shape is always a conformance
+  test being told its subjects instead of finding them. Also added the two routers to `pyproject.toml`'s
+  B008 ignores, which he raised only as a heads-up for #270's ruff bump — inert under the current
+  pin, and leaving it means whoever lands #270 meets the failure without the context. 789 passed
+  against real Postgres, ruff clean, no codegen drift, lint/typecheck clean, 9/9 CI green, MERGEABLE.
 - [ ] Registers: action-register, watch-lists, exceptions (#209): the controlled launch recorded
   source outcomes, exceptions and carried-forward actions by hand — schema for all three has
   existed since DB schema v0.1 (Bhanu's Workstream A), nothing wrote to it. Built persistence +
@@ -98,6 +183,65 @@ same branch-level fault hits someone else's PR later; not otherwise unresolved.
   `PromptSource` and a prompt built from member records must go through `minimise()` and declare
   `MINIMISED_RECORD`. The brief itself is `STAFF_AUTHORED`, which is a declaration rather than a
   guarantee the text is clean, so do not paste member details into one.
+- [ ] End-to-end pipeline run against the SIP-184 SOP (#55). **Progress 8 Aug 2026 — dry run now
+  runs clean, real bugs found and fixed by actually running it, not just testing against fakes:**
+  - Secrets confirmed set (`gh secret list` on both `inzbc` and `daily-india-nz-news-agent`
+    matches `docs/sip/README.md`'s table exactly, since 22-25 Jul).
+  - **SIP-191 run authority has expired** (`docs/sip/launch/launch-config.md`'s window was 27-31
+    Jul 2026; SIP-184's fail-closed list treats an out-of-window run as a Critical stop, never
+    downgradable to a warning). No real SIP-184 production run can happen today without a fresh
+    controlled decision — INZBC's call, not a code blocker. `apps/sip/collector/run_dry_run.py`
+    stamps every run `DRYRUN-...` (never `RUN-...`) so this can't be mistaken for an authorised
+    row.
+  - **Built the orchestration that never existed:** `ingest_articles()`/`create_run` had only ever
+    been called from tests before this. `run_dry_run.py` runs the real SIP-184 step-2/5 sequence
+    against a live `services/api` + Postgres.
+  - **Built the two `services/api` pieces this needed and #55 was actually blocked on** —
+    correcting what I told you 8 Aug earlier today: I'd misread `database/schema.sql:235`'s
+    "deliberately unseeded" comment as being about `source_library`; re-checking it, that comment
+    is on `distribution_configuration`, a different table entirely. `source_library` was just
+    genuinely never seeded, no policy reason, so building it was the right call:
+    `services/api/source_library.py` (`GET /api/source-library`),
+    `scripts/seed_source_library.py` (idempotent seed from the existing SIP-185 CSV loader),
+    `services/api/source_checks.py` (`POST`/`GET .../source-checks`, upserts on
+    `(run_id, source_id)`). Live-Postgres tests for all three. This crosses into Bhanu's
+    `services/api`/`database` lane — recorded here per the worklog's own SHARED-OK convention,
+    one-off, not a lane transfer; flag at standup if it should come back.
+  - **Three real contract bugs, found only by running against a live server, not by any fake-client
+    test:** `SipPipelineClient.create_run` sent `Run`'s full dump including `coverage_timezone`
+    (non-None default) → 422 against `CreateRunIn`'s `extra="forbid"`. `create_candidate` had no
+    way to send `actor_id` at all (`CaptureCandidateIn` requires it; `Candidate` doesn't carry it —
+    audit-only). `create_candidate` also leaked `Candidate.verification`'s `Unverified` default the
+    same way `create_run` leaked `coverage_timezone`. All three fixed in `client.py`, all three now
+    covered by `apps/sip/pipeline/tests/test_client.py` (didn't exist before either). Every fake
+    client in `test_ingest.py`/`test_pipeline_integration.py`/`test_run_dry_run.py` updated to
+    match the new `create_candidate(candidate, actor_id)` signature.
+  - **Deliberately not recording source-check outcomes for the real 112 mandatory sources in the
+    dry run**, even though the write path now exists: nobody actually checked them for a run with
+    no authority, and writing "Included"/"Excluded" against the real SIP-185 register for sources
+    never visited would be inventing data into a real system — the same rule `CLAUDE.md` states
+    for statistics and board names. Evidence honestly reports all 112 as missing.
+  - **Still not wired:** a live `agent.py` fetch. `run_dry_run.py` consumes a fixture file
+    (`apps/sip/collector/data/dry_run_fixture_articles.json`, clearly labelled synthetic) — pulling
+    real output across repos in CI needs a new PAT secret, an infra/admin decision, not something
+    to add unilaterally.
+  - Full local verification before pushing: real Postgres (not CI's — a local instance, schema
+    applied fresh), 392 passed, `ruff` clean, `pnpm` lint/typecheck clean, OpenAPI schema +
+    generated TS client regenerated and committed (new endpoints), and the dry run itself run
+    end-to-end against a live local `services/api`: run created, 2 fixture candidates captured,
+    exit 0. PR #264 (updated), plus `.github/workflows/sip-dry-run.yml` to reproduce this in CI
+    on demand.
+- [ ] Collection-engine reliability (#208, via `daily-india-nz-news-agent`'s own PR flow). Scoped
+  into a 4-day plan, ~6h/day (logged on #208): `agent.py` is 1364 lines with zero test coverage,
+  no retry/timeout on RSS fetches, no per-source freshness tracking, no shape-change detection.
+  Day 1 — test harness: `daily-india-nz-news-agent#13`, 49 characterization tests on the
+  deterministic logic (freshness/date handling, relevance/sector scoring, `clean_articles`).
+  First CI run failed (`ModuleNotFoundError: No module named 'agent'` — `tests/` has no
+  `__init__.py`, so plain `pytest` inserts `tests/` into `sys.path` rather than the repo root;
+  local verification had used `python -m pytest`, which adds cwd for free and hid the gap).
+  Fixed in `tests/conftest.py`, reverified against CI's exact invocation. Day 2 (source freshness
+  enforcement), Day 3 (recovery on source-shape-change), Day 4 (fail-closed gate hardening +
+  wrap-up) not started yet.
 - [ ] End-to-end pipeline run once org-repo secrets land (Bhanu's item): collector → capture →
   assessment live against the SIP-184 SOP; fix what breaks; record the run. (#55's own detailed
   progress log lives on `feat/roshan/sip-dry-run`/PR #264 — not duplicated here until it merges,

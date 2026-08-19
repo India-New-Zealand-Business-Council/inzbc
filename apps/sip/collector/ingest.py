@@ -41,6 +41,7 @@ def ingest_articles(
     run_id: str,
     articles: list[dict],
     source_name_lookup: SourceNameLookup | None = None,
+    coverage_window: tuple[str, str] | None = None,
 ) -> IngestResult:
     """POSTs each of `articles` (daily-india-nz-news-agent's `clean_articles()` output) to
     `/api/candidates` for `run_id`. Continues past individual mapping *or* write failures instead
@@ -48,6 +49,14 @@ def ingest_articles(
     potentially relevant item, so one malformed article (e.g. a missing `title`) must not abort
     every later item in the batch; each article is mapped and sent inside its own try/except,
     not mapped eagerly for the whole batch up front.
+
+    `coverage_window` is the run's locked `(coverage_start_utc, coverage_end_utc)`, passed straight
+    through to `map_article` so `in_coverage_window` reflects the run's actual window rather than
+    being left unknown.
+
+    No `actor_id` parameter: `client` carries the caller's session, and `CaptureCandidateIn`
+    (`services/api/candidates.py`) derives the audit identity from that session rather than a
+    caller-supplied field.
     """
     result = IngestResult()
     for article in articles:
@@ -60,7 +69,7 @@ def ingest_articles(
                 )
             source_name = str(article.get("source", "")).strip()
             headline = str(article.get("title", ""))
-            mapped = map_article(article, run_id, source_name_lookup)
+            mapped = map_article(article, run_id, source_name_lookup, coverage_window)
             result.created.append(client.create_candidate(mapped.candidate))
         except (SipApiError, ValidationError, KeyError, MalformedArticleError) as error:
             result.failed.append(

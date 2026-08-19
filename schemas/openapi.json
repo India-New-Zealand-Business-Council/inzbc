@@ -1526,6 +1526,161 @@
         }
       }
     },
+    "/api/source-library": {
+      "get": {
+        "tags": [
+          "Source library"
+        ],
+        "summary": "List Source Library",
+        "operationId": "list_source_library_api_source_library_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SourceLibraryOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Source Library Api Source Library Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ]
+      }
+    },
+    "/api/runs/{run_id}/source-checks": {
+      "post": {
+        "tags": [
+          "Source checks"
+        ],
+        "summary": "Record Source Check",
+        "operationId": "record_source_check_api_runs__run_id__source_checks_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordSourceCheckIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceCheckOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Source checks"
+        ],
+        "summary": "List Source Checks",
+        "operationId": "list_source_checks_api_runs__run_id__source_checks_get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SourceCheckOut"
+                  },
+                  "title": "Response List Source Checks Api Runs  Run Id  Source Checks Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/action-register": {
       "get": {
         "tags": [
@@ -4278,6 +4433,62 @@
         ],
         "title": "RecordExceptionIn"
       },
+      "RecordSourceCheckIn": {
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "title": "Source Id"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/SourceOutcome"
+          },
+          "method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method"
+          },
+          "fallback_used": {
+            "type": "boolean",
+            "title": "Fallback Used",
+            "default": false
+          },
+          "access_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access Error"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source_id",
+          "outcome"
+        ],
+        "title": "RecordSourceCheckIn"
+      },
       "ReportOut": {
         "properties": {
           "report": {
@@ -4532,6 +4743,80 @@
         ],
         "title": "SignalStrength"
       },
+      "SourceCheckOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "source_id": {
+            "type": "string",
+            "title": "Source Id"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/SourceOutcome"
+          },
+          "checked_at": {
+            "type": "string",
+            "title": "Checked At"
+          },
+          "method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method"
+          },
+          "fallback_used": {
+            "type": "boolean",
+            "title": "Fallback Used"
+          },
+          "access_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access Error"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "run_id",
+          "source_id",
+          "outcome",
+          "checked_at",
+          "method",
+          "fallback_used",
+          "access_error",
+          "notes"
+        ],
+        "title": "SourceCheckOut"
+      },
       "SourceConfidence": {
         "type": "string",
         "enum": [
@@ -4541,6 +4826,49 @@
           "Unverified"
         ],
         "title": "SourceConfidence"
+      },
+      "SourceLibraryOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "sip185_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sip185 Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "sip185_code",
+          "name"
+        ],
+        "title": "SourceLibraryOut"
+      },
+      "SourceOutcome": {
+        "type": "string",
+        "enum": [
+          "Included",
+          "Context",
+          "Suppressed",
+          "Inaccessible",
+          "Excluded",
+          "No Qualifying Item"
+        ],
+        "title": "SourceOutcome"
       },
       "SubmitReportIn": {
         "properties": {

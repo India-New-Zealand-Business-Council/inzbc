@@ -2,8 +2,9 @@
 
 Implements `schemas/api-contract.md` over the domain modules: the FTA Explainer read path, the SIP
 run lifecycle endpoints (#120, `services/api/runs.py`), the candidate command endpoints
-(#121, `services/api/candidates.py`), and the Comms Assistant draft endpoint (#53,
-`services/api/comms.py`).
+(#121, `services/api/candidates.py`), the Comms Assistant draft endpoint (#53,
+`services/api/comms.py`), and the source library + source check endpoints (#55,
+`services/api/source_library.py`, `services/api/source_checks.py`).
 
 The response envelope is deliberately status-tagged rather than "a list that might be empty".
 `apps/fta/explainer` keeps `ExplainerAnswer` and `NoMatch` structurally distinct so escalation
@@ -37,6 +38,8 @@ from services.api.registers import (
 from services.api.reports import router as reports_router
 from services.api.runs import router as runs_router
 from services.api.session import router as session_router
+from services.api.source_checks import router as source_checks_router
+from services.api.source_library import router as source_library_router
 
 app = FastAPI(
     title="INZBC API",
@@ -55,6 +58,8 @@ app.include_router(dashboard_router)
 app.include_router(reports_router)
 app.include_router(session_router)
 app.include_router(oauth_router)
+app.include_router(source_library_router)
+app.include_router(source_checks_router)
 app.include_router(action_register_router)
 app.include_router(watch_list_router)
 app.include_router(exceptions_router)

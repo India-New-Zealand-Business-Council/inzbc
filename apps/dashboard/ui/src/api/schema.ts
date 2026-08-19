@@ -545,6 +545,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/source-library": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Source Library */
+        get: operations["list_source_library_api_source_library_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/runs/{run_id}/source-checks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Source Checks */
+        get: operations["list_source_checks_api_runs__run_id__source_checks_get"];
+        put?: never;
+        /** Record Source Check */
+        post: operations["record_source_check_api_runs__run_id__source_checks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/action-register": {
         parameters: {
             query?: never;
@@ -1364,6 +1399,23 @@ export interface components {
              */
             original_preserved: boolean;
         };
+        /** RecordSourceCheckIn */
+        RecordSourceCheckIn: {
+            /** Source Id */
+            source_id: string;
+            outcome: components["schemas"]["SourceOutcome"];
+            /** Method */
+            method?: string | null;
+            /**
+             * Fallback Used
+             * @default false
+             */
+            fallback_used: boolean;
+            /** Access Error */
+            access_error?: string | null;
+            /** Notes */
+            notes?: string | null;
+        };
         /** ReportOut */
         ReportOut: {
             report: components["schemas"]["ReportVersionOut"];
@@ -1443,11 +1495,45 @@ export interface components {
          * @enum {string}
          */
         SignalStrength: "Low" | "Medium" | "High" | "Critical";
+        /** SourceCheckOut */
+        SourceCheckOut: {
+            /** Id */
+            id: string;
+            /** Run Id */
+            run_id: string;
+            /** Source Id */
+            source_id: string;
+            outcome: components["schemas"]["SourceOutcome"];
+            /** Checked At */
+            checked_at: string;
+            /** Method */
+            method: string | null;
+            /** Fallback Used */
+            fallback_used: boolean;
+            /** Access Error */
+            access_error: string | null;
+            /** Notes */
+            notes: string | null;
+        };
         /**
          * SourceConfidence
          * @enum {string}
          */
         SourceConfidence: "High" | "Medium" | "Low" | "Unverified";
+        /** SourceLibraryOut */
+        SourceLibraryOut: {
+            /** Id */
+            id: string;
+            /** Sip185 Code */
+            sip185_code: string | null;
+            /** Name */
+            name: string;
+        };
+        /**
+         * SourceOutcome
+         * @enum {string}
+         */
+        SourceOutcome: "Included" | "Context" | "Suppressed" | "Inaccessible" | "Excluded" | "No Qualifying Item";
         /** SubmitReportIn */
         SubmitReportIn: {
             /** Run Id */
@@ -2728,6 +2814,134 @@ export interface operations {
                         [key: string]: string;
                     };
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_source_library_api_source_library_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceLibraryOut"][];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_source_checks_api_runs__run_id__source_checks_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceCheckOut"][];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_source_check_api_runs__run_id__source_checks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordSourceCheckIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceCheckOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

@@ -312,6 +312,18 @@ EXPECTED_ROLES: dict[tuple[str, str], set[str]] = {
     ("POST", "/api/reports"): {"Analyst", "SIP Owner"},
     # A decision record only its decider can read is not evidence anyone else can rely on.
     ("GET", "/api/reports/{report_version_id}"): set(STAFF_READ),
+    # The SIP-185 mandatory-source register. Reference data every role needs to read to know
+    # which sources a run was obliged to cover; nothing personal in it and no write path here,
+    # but it is the register an auditor checks a run against, so it is not public either.
+    ("GET", "/api/source-library"): set(STAFF_READ),
+    # SIP-184 step 4: recording whether a mandatory source was covered for a run. Same authority
+    # as capture (`POST /api/candidates`) because it is the same act — the analyst working the
+    # run states what they found. Deliberately not the Reviewer's: the outcome per source is
+    # evidence to be verified, not the verification.
+    ("POST", "/api/runs/{run_id}/source-checks"): {"Analyst", "SIP Owner"},
+    # Read side of the same record, and the Auditor's view of coverage. Same reasoning as
+    # `/api/runs/{run_id}/audit`: restricting it to the role being audited defeats the point.
+    ("GET", "/api/runs/{run_id}/source-checks"): set(STAFF_READ),
     # Registers (#209): operational trackers and the append-only exceptions log. Same authority
     # shape as source-checks - the analyst working the run records what they found; the register
     # is reference/evidence every staff role needs to read.

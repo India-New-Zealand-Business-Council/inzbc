@@ -129,6 +129,9 @@ platform did. It is still an allowlist: a user holding no role reads nothing.
 | `GET /api/dashboard` | all staff roles |
 | `POST /api/reports` | Analyst, SIP Owner |
 | `GET /api/reports/{id}` | all staff roles |
+| `GET /api/source-library` | all staff roles |
+| `POST /api/runs/{id}/source-checks` | Analyst, SIP Owner |
+| `GET /api/runs/{id}/source-checks` | all staff roles |
 | `POST /api/action-register`, `POST /api/action-register/{id}/status` | Analyst, SIP Owner |
 | `GET /api/action-register/{id}`, `GET /api/action-register` | all staff roles |
 | `POST /api/watch-lists`, `POST /api/watch-lists/{id}/status` | Analyst, SIP Owner |
@@ -156,6 +159,12 @@ stop. A quality gate that only the owner can pull is not independent of the owne
 for precisely this. Narrowing it to the owner would mean the person most likely to be audited
 controls who sees the record, and an audit trail nobody can read is not an audit trail.
 
+**`source-checks` writes sit with the Analyst, not the Reviewer.** Recording whether a mandatory
+SIP-185 source was covered for a run is the same act as capture — the analyst working the run
+states what they found — so it carries the same authority as `POST /api/candidates`. Giving it to
+the Reviewer instead would make the reviewer author the evidence they are supposed to verify. The
+read side follows `{id}/audit`'s reasoning: coverage is exactly what an auditor checks a run
+against, so restricting it to the role being audited defeats the purpose.
 **The registers (action-register, watch-lists, exceptions) carry Analyst/SIP Owner on every
 write, including `exceptions/{id}/correct`.** A correction inserts a new row rather than editing
 the one it corrects, but it is still the analyst's act of recording what they found - same

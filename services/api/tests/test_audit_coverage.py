@@ -31,6 +31,48 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SCHEMA = REPO_ROOT / "database" / "schema.sql"
 
+# Files this scan deliberately does not read, each for a reason that is about the file rather
+# than about convenience. Everything else under `services/api/` is scanned, whether or not anyone
+# remembered to add it.
+NOT_SCANNED = frozenset(
+    {
+        # The FastAPI app itself: it mounts routers and declares response models, and any write
+        # in here would be the bug, caught by the scan of the module it belongs in.
+        "main.py",
+        # Emits audit rows; it is the mechanism, not a caller of it.
+        "audit.py",
+        # No database access at all.
+        "hardening.py",
+        "model_gateway.py",
+        "redaction.py",
+    }
+)
+
+
+def persistence_modules() -> list[Path]:
+    """Every module under `services/api/` that this scan should read.
+
+    **Discovered, not listed.** This was a hand-written list of four files, and `source_checks.py`
+    was not one of them - so the scanner never looked at it, reported success, and an unaudited
+    upsert on the register an auditor checks a run against shipped behind a green check. Found in
+    review of #264 by adding the file to the list by hand, which is exactly the step that cannot
+    be relied on.
+
+    That is the fourth hand-written list in this repository to quietly stop covering what it
+    names (the whole-table guards missed a table, the route matrix missed a route,
+    `VERIFICATION_STATES` drifted from the schema enum). The common shape is a conformance test
+    being *told* its subjects instead of finding them, which makes forgetting silent and makes
+    the test's green pass mean less the longer it runs. So this globs, and a new router or
+    repository is covered the day it lands.
+
+    Exclusions are explicit in `NOT_SCANNED` and each has to justify itself, which is the
+    difference between an exemption and an omission: an omission is invisible.
+    """
+    return sorted(
+        path
+        for path in (REPO_ROOT / "services" / "api").glob("*.py")
+        if not path.name.startswith("_") and path.name not in NOT_SCANNED
+    )
 # Modules that own writes. Routers are excluded: they delegate, and a router that wrote directly
 # would be the bug this test is meant to make visible in whichever module it landed in.
 PERSISTENCE_MODULES = [
@@ -115,7 +157,7 @@ def _written_tables(sql_strings: list[str]) -> set[str]:
 def write_methods() -> list[tuple[str, str, ast.FunctionDef]]:
     """Every function in the persistence modules whose body issues a write."""
     found = []
-    for path in PERSISTENCE_MODULES:
+    for path in persistence_modules():
         tree = ast.parse(path.read_text(encoding="utf-8"))
         for node in ast.walk(tree):
             if not isinstance(node, ast.FunctionDef):
@@ -131,7 +173,31 @@ def test_the_scan_finds_the_write_paths_it_is_meant_to_guard() -> None:
     names = {f"{module}:{func}" for module, func, _ in write_methods()}
     assert "candidate_persistence.py:record_score" in names
     assert "decisions.py:record" in names
+    # The path the hand-written module list missed. Named explicitly so that if the glob ever
+    # stops reaching it, this fails rather than the parametrised test quietly shrinking.
+    assert "source_checks.py:record" in names
     assert len(names) >= 8, f"expected the known write paths, found {sorted(names)}"
+
+
+def test_the_scan_reads_every_module_it_is_not_explicitly_excused() -> None:
+    """The exclusion list must stay a list of decisions, not a place things drift into.
+
+    A file added to `services/api/` is scanned by default. If it should not be, it goes in
+    `NOT_SCANNED` with a reason - and this asserts that every name in there still exists, so a
+    renamed or deleted module cannot leave a stale exemption behind that silently excuses a
+    future file of the same name.
+    """
+    api_dir = REPO_ROOT / "services" / "api"
+    for name in NOT_SCANNED:
+        assert (api_dir / name).exists(), (
+            f"{name} is excused from the audit scan but no longer exists - remove it from "
+            f"NOT_SCANNED so the exemption cannot be inherited by a future file of that name."
+        )
+
+    scanned = {path.name for path in persistence_modules()}
+    assert "source_library.py" in scanned, (
+        "read-only modules are scanned too - that is what proves they stay read-only"
+    )
 
 
 @pytest.mark.parametrize(
