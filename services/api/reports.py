@@ -25,15 +25,17 @@ behind an endpoint that looks built.
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from services.api.auth import ANALYST, SIP_OWNER, STAFF_READ, Principal
+from services.api.auth import ANALYST, REVIEWER, SIP_OWNER, STAFF_READ, Principal
 from services.api.decisions import (
     CurrentDecisions,
     DecisionNotPermittedError,
     DecisionRepository,
+    QaSelfReviewError,
     ReportRepository,
     ReportVersion,
     ReportVersionConflict,
@@ -147,6 +149,30 @@ def _decisions_out(decisions: CurrentDecisions) -> DecisionsOut:
     )
 
 
+class RecordQaIn(BaseModel):
+    """A SIP-188 QA result. `Pass`/`Fail` and a Critical count is exactly what the checklist's own
+    result block collects, so the request carries that and not a richer shape nobody fills in.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    result: Literal["Pass", "Fail"]
+    # Counted rather than listed: SIP-188 records "Critical failures found" as a number, and a
+    # list here would invite a per-finding table that does not exist yet.
+    critical_failures: int = Field(default=0, ge=0)
+    notes: str = Field(min_length=1, max_length=2000)
+
+
+class QaResultOut(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    report_version_id: str
+    # `Passed`/`Failed`, matching `runs.qa_status` and the run-state vocabulary, rather than
+    # echoing the request's `Pass`/`Fail` back and leaving two spellings in circulation.
+    qa_status: str
+    critical_failures: int
+
+
 @router.post("", response_model=ReportVersionOut, status_code=status.HTTP_201_CREATED)
 def submit_report(
     body: SubmitReportIn,
@@ -179,6 +205,57 @@ def submit_report(
     except ReportVersionConflict as error:
         raise HTTPException(status.HTTP_409_CONFLICT, detail=str(error)) from error
     return _version_out(version)
+
+
+@router.post("/{report_version_id}/qa", response_model=QaResultOut)
+def record_qa(
+    report_version_id: str,
+    body: RecordQaIn,
+    principal: Principal = Depends(write_access(REVIEWER, SIP_OWNER)),
+    repo: ReportRepository = Depends(get_report_repository),
+) -> QaResultOut:
+    """Records the SIP-188 QA result for the run this report version belongs to.
+
+    Writes `runs.qa_status`, the field `GET /api/dashboard` already reports, so the gate a
+    reviewer sees is the one this wrote. There is deliberately no second QA table: ADR-0005's
+    release predicate wants "no open Critical QA failure" and a durable per-finding table is the
+    follow-up recorded in `schemas/api-contract.md`. This endpoint records the checklist's own
+    output, which is a Pass or a Fail with a count, and does not pretend to more granularity than
+    SIP-188 collects.
+
+    **Reviewer or SIP Owner only, and never the run's analyst.** The role check says the actor may
+    record a QA result at all; `record_qa` separately refuses the analyst on that particular run.
+    Two gates, same split as `/api/candidates/{id}/verify`, because holding Reviewer does not make
+    checking your own run someone else's check.
+
+    **This is not `POST /api/runs/{run_id}/fail-qa`, and neither replaces the other.** That route
+    moves the run's lifecycle state to `QA Failed`; this one records what the checklist found.
+    Recording a Fail here deliberately does not move the run, because the transition carries its
+    own guards and an optimistic-concurrency version the caller has to pass, and firing it as a
+    side effect would take a lifecycle decision out of the reviewer's hands and skip that check.
+    The reviewer records the result, then stops the run. Two acts, because they are two acts.
+    """
+    try:
+        qa_status = repo.record_qa(
+            report_version_id,
+            result=body.result,
+            critical_failures=body.critical_failures,
+            actor_id=principal.user_id,
+            notes=body.notes,
+        )
+    except KeyError as error:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, detail=f"no report version {report_version_id!r}"
+        ) from error
+    except QaSelfReviewError as error:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail=str(error)) from error
+    except ValueError as error:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(error)) from error
+    return QaResultOut(
+        report_version_id=report_version_id,
+        qa_status=qa_status,
+        critical_failures=body.critical_failures,
+    )
 
 
 @router.get("/{report_version_id}", response_model=ReportOut)

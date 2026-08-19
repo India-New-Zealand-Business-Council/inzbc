@@ -126,3 +126,31 @@ def test_openapi_documents_the_query_endpoint() -> None:
     operation = schema["paths"]["/api/fta/query"]["get"]
     assert operation["parameters"][0]["name"] == "q"
     assert "FtaQueryResponse" in str(operation["responses"]["200"])
+
+
+def test_a_tariff_query_returns_the_structured_figures_not_only_prose() -> None:
+    """#185: the Explainer must answer a tariff question *from* the data.
+
+    The structured fields reached `ExplainerAnswer` in #273 but not `AnswerOut`, so every HTTP
+    caller still received `treatment` prose and had to re-parse it. `extra="forbid"` meant they
+    could not appear by accident, so nothing failed and the gap was invisible from the API.
+    """
+    answer = client.get("/api/fta/query", params={"q": "wool"}).json()["answers"][0]
+    assert answer["current_tariff"] == "2.75%"
+    assert answer["final_tariff"] == "0% (eliminated)"
+    assert answer["implementation_period_years"] == 0
+    assert answer["direction"] == "NZ exports to India"
+
+
+def test_an_entry_with_no_sourced_figure_returns_null_not_zero() -> None:
+    """Excluded dairy has no product-level tariff line in the source.
+
+    `None` here means "not sourced", never "zero" or "unchanged". Serving 0 would be inventing a
+    figure for the one product the FTA explicitly leaves out, which is the worst place to guess.
+    """
+    answer = client.get("/api/fta/query", params={"q": "dairy"}).json()["answers"][0]
+    assert answer["current_tariff"] is None
+    assert answer["final_tariff"] is None
+    # The qualitative claim is still sourced, so the answer is not empty.
+    assert answer["treatment"]
+    assert answer["citation"]
