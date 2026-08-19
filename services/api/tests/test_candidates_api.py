@@ -80,14 +80,21 @@ class FakeCandidateRepository:
         from dataclasses import replace
 
         current = self._candidates[candidate_id]
-        updated = replace(
-            current,
-            nz_relevance=kwargs.get("nz_relevance"),
-            india_relevance=kwargs.get("india_relevance"),
-            member_relevance=kwargs.get("member_relevance"),
-            signal=kwargs.get("signal"),
-            confidence=kwargs.get("confidence"),
-        )
+        # Mirrors the real repository: a field that was not passed is not written. Using
+        # `kwargs.get(...)` here defaulted every absent field to None and wiped it, which is the
+        # defect #323 fixed, and a fake that keeps the defect hides the fix.
+        scored = {
+            field: kwargs[field]
+            for field in (
+                "nz_relevance",
+                "india_relevance",
+                "member_relevance",
+                "signal",
+                "confidence",
+            )
+            if field in kwargs
+        }
+        updated = replace(current, **scored)
         self._candidates[candidate_id] = updated
         return updated
 
@@ -194,6 +201,67 @@ def test_score_gate_failure_returns_403(
         json={"signal": "Critical", "reason": "n/a"},
     )
     assert response.status_code == 403
+
+
+def test_partial_score_leaves_the_fields_it_did_not_send_alone(client: TestClient) -> None:
+    """#323: a partial score must not erase the fields it omits.
+
+    Before this, `ScoreIn` defaulted every scoring field to None and the route forwarded all five
+    unconditionally, so correcting one number wrote NULL over the other four. The UI in #263 made
+    that reachable in one click: its signal and confidence selects default to an "Unchanged"
+    option that transmitted null.
+    """
+    created = _capture(client)
+    full = client.post(
+        f"/api/candidates/{created['id']}/score",
+        json={
+            "nz_relevance": 4,
+            "india_relevance": 3,
+            "member_relevance": 5,
+            "signal": "Low",
+            "confidence": "Medium",
+            "reason": "first pass",
+        },
+    )
+    assert full.status_code == 200
+
+    partial = client.post(
+        f"/api/candidates/{created['id']}/score",
+        json={"nz_relevance": 2, "reason": "corrected the NZ score only"},
+    )
+    assert partial.status_code == 200
+    body = partial.json()
+    assert body["nz_relevance"] == 2
+    assert body["india_relevance"] == 3
+    assert body["member_relevance"] == 5
+    assert body["signal"] == "Low"
+    assert body["confidence"] == "Medium"
+
+
+def test_score_can_still_clear_a_field_by_sending_null_explicitly(client: TestClient) -> None:
+    """Clearing stays expressible; it is just no longer what silence means."""
+    created = _capture(client)
+    client.post(
+        f"/api/candidates/{created['id']}/score",
+        json={"signal": "Low", "confidence": "Medium", "reason": "first pass"},
+    )
+    cleared = client.post(
+        f"/api/candidates/{created['id']}/score",
+        json={"signal": None, "reason": "retracting the signal"},
+    )
+    assert cleared.status_code == 200
+    assert cleared.json()["signal"] is None
+    assert cleared.json()["confidence"] == "Medium"
+
+
+def test_score_with_no_scoring_fields_is_refused(client: TestClient) -> None:
+    """A reason on its own records nothing, so it is a client error rather than a silent no-op."""
+    created = _capture(client)
+    response = client.post(
+        f"/api/candidates/{created['id']}/score",
+        json={"reason": "thinking about it"},
+    )
+    assert response.status_code == 422
 
 
 def test_route_sets_proposed_routing(client: TestClient) -> None:

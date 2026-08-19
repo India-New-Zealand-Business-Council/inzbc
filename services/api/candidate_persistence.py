@@ -41,6 +41,25 @@ from services.api.audit import record_audit
 from services.api.auth import canonical_actor
 
 
+class _Unset:
+    """Sentinel for "this scoring field was not supplied", which `None` cannot express.
+
+    `ScoreIn` defaults every scoring field to `None`, so before this existed a caller who sent
+    only `nz_relevance` had the other four written as NULL over whatever was stored (#323). There
+    was no value meaning "leave this alone": omitting the key and sending an explicit null reached
+    `record_score` identically. The route now passes only the fields present in
+    `model_fields_set`, and everything else stays `UNSET` and is left out of the UPDATE entirely.
+    """
+
+    __slots__ = ()
+
+    def __repr__(self) -> str:  # pragma: no cover - debugging aid only
+        return "UNSET"
+
+
+UNSET = _Unset()
+
+
 class SelfVerificationError(RuntimeError):
     """The actor is verifying a candidate they captured or assessed.
 
@@ -310,22 +329,31 @@ class CandidateRepository:
         self,
         candidate_id: str,
         *,
-        nz_relevance: int | None,
-        india_relevance: int | None,
-        member_relevance: int | None,
-        signal: SignalStrength | None,
-        confidence: SourceConfidence | None,
+        nz_relevance: int | None | _Unset = UNSET,
+        india_relevance: int | None | _Unset = UNSET,
+        member_relevance: int | None | _Unset = UNSET,
+        signal: SignalStrength | None | _Unset = UNSET,
+        confidence: SourceConfidence | None | _Unset = UNSET,
         actor_id: str,
         reason: str,
     ) -> CandidateRecord:
-        """Sets the scoring fields. Refuses setting a High/Critical `signal` on a candidate whose
-        *current* verification is not Verified/Partially Verified - the gate this candidate would
-        otherwise carry unenforced from capture straight through to a report.
+        """Sets the scoring fields that were supplied, and leaves the rest as they are.
+
+        Refuses setting a High/Critical `signal` on a candidate whose *current* verification is
+        not Verified/Partially Verified - the gate this candidate would otherwise carry unenforced
+        from capture straight through to a report.
+
+        A field left `UNSET` is not written at all (#323). Passing `None` explicitly still clears
+        the column, so "clear this" remains expressible; it just is no longer the same thing as
+        saying nothing.
         """
         with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
             current = self._get_locked(conn, candidate_id)
             current_verification = VerificationState(current["verification"])
-            enforce_verification_gate(signal, current_verification)
+            # Only gate when a signal is actually being set. An unsupplied signal changes nothing,
+            # so the gate that guards *raising* a signal has nothing to guard.
+            if not isinstance(signal, _Unset):
+                enforce_verification_gate(signal, current_verification)
 
             # The other direction of BR8, and the one the first version missed. Guarding only
             # verification left a deterministic bypass: A captures, B verifies, then B scores.
@@ -344,20 +372,31 @@ class CandidateRepository:
                     "assessment, which is the same defect as verifying your own work."
                 )
 
+            # Column names are fixed literals from this dict, never caller input, so composing
+            # the SET clause here cannot carry anything injectable. Values stay parameterised.
+            supplied: dict[str, object] = {}
+            for column, value in (
+                ("nz_relevance", nz_relevance),
+                ("india_relevance", india_relevance),
+                ("member_relevance", member_relevance),
+                ("signal", signal),
+                ("confidence", confidence),
+            ):
+                if isinstance(value, _Unset):
+                    continue
+                supplied[column] = value.value if hasattr(value, "value") else value
+
+            if not supplied:
+                raise ValueError(
+                    "record_score was called with no scoring fields; nothing to record. Use a "
+                    "different command if the intent was only to note a reason."
+                )
+
+            assignments = ", ".join(f"{column} = %s" for column in supplied)
             row = conn.execute(
-                "update candidates set nz_relevance = %s, india_relevance = %s, "
-                "member_relevance = %s, signal = %s, confidence = %s, assessed_by = %s "
-                "where id = %s "
+                f"update candidates set {assignments}, assessed_by = %s where id = %s "
                 f"returning {_SELECT_COLUMNS}",
-                (
-                    nz_relevance,
-                    india_relevance,
-                    member_relevance,
-                    signal.value if signal else None,
-                    confidence.value if confidence else None,
-                    actor_id,
-                    candidate_id,
-                ),
+                (*supplied.values(), actor_id, candidate_id),
             ).fetchone()
             record_audit(
                 conn,
@@ -366,7 +405,10 @@ class CandidateRepository:
                 record_type="candidates",
                 record_id=candidate_id,
                 old_value=current["signal"],
-                new_value=signal.value if signal else None,
+                # Reports what the signal is after this call: the new one when supplied, the
+                # unchanged current one when it was not, rather than a null that would read as
+                # "the signal was cleared".
+                new_value=supplied.get("signal", current["signal"]),
                 reason=reason,
             )
             conn.commit()
