@@ -13,7 +13,9 @@ Owner: Roshan. Maps the `daily-india-nz-news-agent` repo's output onto
   rolling filter isn't quite the same boundary as SIP-184's fixed 07:00-to-07:00 NZT window.
 - `ingest.py` — `ingest_articles()`: maps a batch and POSTs each to `/api/candidates` via
   `SipPipelineClient.create_candidate`, collecting per-item failures instead of aborting the
-  batch on the first one.
+  batch on the first one. Takes a required `actor_id` — `CaptureCandidateIn`
+  (`services/api/candidates.py`) requires it in the body (audit-only, not a `Candidate` field);
+  found by running #55's dry run against a live server, not by any test against a fake.
 - `source_register.py` — SIP-185's mandatory source worklist (`MANDATORY_SOURCES`), the fallback
   sequence, `missing_mandatory_outcomes()` (client-side check mirroring SIP-184's "blank
   mandatory-source outcome is a Critical stop"), and `record_source_outcome()` to build a
@@ -69,10 +71,26 @@ lookups this module needs:
   `source_checks.source_id` is **NOT NULL** (`database/schema.sql`), so there is no valid source
   check without one; this can't degrade gracefully the way candidate capture can.
 
-## Still blocked
-- **Live runs.** Collection-engine secrets (`OPENAI_API_KEY`, `PERPLEXITY_API_KEY`, etc.) aren't
-  supplied here, and `services/api` is still a stub — nothing in this module can be exercised
-  end-to-end yet, only unit-tested against fixtures. Wire `ingest_articles()` to a real run once
-  both exist: create the run via `SipPipelineClient.create_run`, call
-  `agent.clean_articles(agent.fetch_news(24))` (or however the agent's `main()` is refactored to
-  expose that list), then `ingest_articles(client, run_id, articles)`.
+## Live runs (#55) — current state, 8 Aug 2026
+Collection-engine secrets are supplied (both `inzbc` and `daily-india-nz-news-agent` have every
+secret `docs/sip/README.md` lists). `services/api` is no longer a stub —
+`run_dry_run.py` exercises `create_run` → `get_source_library` → `ingest_articles` against a real
+Postgres + `services/api`, and running it for real (not just against a fake client) surfaced three
+contract bugs no test had ever caught, all now fixed:
+- `SipPipelineClient.create_run` sent the whole `Run` model, including server-only fields with
+  non-None defaults (`coverage_timezone`) — 422s against `CreateRunIn`'s `extra="forbid"` for
+  every real caller. Now sends only the fields `CreateRunIn` accepts.
+- `SipPipelineClient.create_candidate` had no way to send `actor_id`, which
+  `CaptureCandidateIn` requires — `Candidate` doesn't carry it (it's audit-only, like `runs.py`'s
+  `initiated_by`). Now a required second parameter, threaded through `ingest_articles`.
+- `GET /api/source-library` didn't exist (`services/api/source_library.py`, #55) and
+  `source_library` was never seeded (`scripts/seed_source_library.py`, #55) — both fixed, see
+  `docs/workstreams/roshan.md` for the full account.
+
+**Still not wired:** a live `agent.py` fetch. `run_dry_run.py` consumes a fixture file
+(`data/dry_run_fixture_articles.json`) rather than pulling real output across repos — that needs a
+new PAT secret (infra decision), not something added unilaterally. `POST /api/runs/{id}/source-checks`
+(`SipPipelineClient.record_source_check`) also still doesn't exist in `services/api` — found while
+building the dry run, not yet fixed, so SIP-184 step 4 (mandatory-source outcome recording) still
+can't complete an actual write even though `GET /api/source-library` now resolves the ids it
+would need.

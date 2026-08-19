@@ -1,7 +1,7 @@
 """Redaction ahead of every external model call (#37).
 
 `docs/sip/README.md` makes this a non-negotiable: member, Board and confidential data must be
-stripped before anything reaches a provider. `CLAUDE.md` also says not to fill an unresolved
+stripped before anything reaches a provider. `PROJECT-RULES.md` also says not to fill an unresolved
 business rule with an assumption, and *what counts as confidential* is exactly that kind of rule.
 
 So this module deliberately ships the mechanism without the policy. The policy is data: a list of

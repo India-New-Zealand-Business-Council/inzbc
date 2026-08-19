@@ -38,6 +38,16 @@ from psycopg.rows import dict_row
 from apps.sip.collector.verification import enforce_verification_gate
 from apps.sip.pipeline.models import SignalStrength, SourceConfidence, VerificationState
 from services.api.audit import record_audit
+from services.api.auth import canonical_actor
+
+
+class SelfVerificationError(RuntimeError):
+    """The actor is verifying a candidate they captured or assessed.
+
+    Its own type rather than a generic refusal, because a caller should be able to say which
+    control refused. This is BR8, not a permissions problem, and telling an operator "forbidden"
+    when the real answer is "you cannot check your own work" sends them to the wrong fix.
+    """
 
 
 @dataclass(frozen=True)
@@ -116,9 +126,11 @@ class CandidateRepository:
         with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
             row = conn.execute(
                 "insert into candidates (run_id, headline, source_id, url, summary, "
-                "published_at, in_coverage_window) values (%s, %s, %s, %s, %s, %s, %s) "
+                "published_at, in_coverage_window, captured_by) "
+                "values (%s, %s, %s, %s, %s, %s, %s, %s) "
                 f"returning {_SELECT_COLUMNS}",
-                (run_id, headline, source_id, url, summary, published_at, in_coverage_window),
+                (run_id, headline, source_id, url, summary, published_at, in_coverage_window,
+                 actor_id),
             ).fetchone()
             record_audit(
                 conn,
@@ -151,17 +163,85 @@ class CandidateRepository:
         return [_row_to_record(row) for row in rows]
 
     def _get_locked(self, conn: psycopg.Connection, candidate_id: str) -> dict:
-        """Read the current row inside the caller's transaction. No `version` column on
-        `candidates`, so there is no CAS to guard a lost-update race the way `RunRepository` does
-        for `runs` - a follow-up if concurrent candidate edits turn out to matter in practice, not
-        assumed away here.
+        """Read and lock the current row inside the caller's transaction.
+
+        `for update` is what the name always promised and did not do. Every separation-of-duties
+        and verification check in this module reads the row, decides, then writes; without the
+        lock a concurrent `record_score` could set `assessed_by` between another caller's read
+        and its update, so the decision was made against a row that no longer existed by the time
+        it was acted on. Comments elsewhere in this file cited a lock that was not being taken.
+
+        There is still no `version` column on `candidates`, so this is pessimistic locking rather
+        than the compare-and-swap `RunRepository` uses for `runs`. That is the right trade here:
+        these are short transactions with no human step inside them, unlike a run sitting in
+        `Awaiting CEO Decision` for hours.
         """
         row = conn.execute(
-            f"select {_SELECT_COLUMNS} from candidates where id = %s", (candidate_id,)
+            f"select {_SELECT_COLUMNS} from candidates where id = %s for update",
+            (candidate_id,),
         ).fetchone()
         if row is None:
             raise KeyError(f"no candidate {candidate_id!r}")
         return row
+
+    @staticmethod
+    def _require_candidate_exception(
+        conn: psycopg.Connection,
+        *,
+        sod_exception_id: str | None,
+        candidate_id: str,
+        actor_id: str,
+        act: str,
+    ) -> None:
+        """Permits a self-verification only against a recorded, still-valid exception.
+
+        Without this the control has no exception path at all, and INZBC is one person holding
+        every role. A rule that refuses outright would make verification impossible for the only
+        operator there is, and a control that blocks all legitimate work gets switched off, which
+        leaves the system worse than before. Recording the exception keeps the audit trail honest:
+        it says one person carried this candidate end to end, and who authorised that.
+
+        Checked inside the caller's transaction, under the same row lock, so an exception cannot
+        be inserted between the check and the update.
+        """
+        if sod_exception_id is None:
+            raise SelfVerificationError(
+                f"{actor_id!r} {act} this candidate and may not also verify it. Separation of "
+                "duties is what the verification record evidences; a candidate one person can "
+                "carry from capture to verified evidences nothing. Cite an approved "
+                "candidate_sod_exceptions row if a single operator is unavoidable."
+            )
+
+        # Joined through `users`, so an exception naming a deactivated account authorises
+        # nothing. Same reasoning as `DecisionRepository._require_valid_exception`: `approved_by`
+        # is a plain foreign key, and an approval from someone who has left is not an approval.
+        exception = conn.execute(
+            "select e.approved_by, e.review_date < current_date as lapsed, "
+            "       u.active as approver_active "
+            "from candidate_sod_exceptions e join users u on u.id = e.approved_by "
+            "where e.id = %s and e.candidate_id = %s and e.actor_id = %s",
+            (sod_exception_id, candidate_id, actor_id),
+        ).fetchone()
+        if exception is None:
+            raise SelfVerificationError(
+                f"exception {sod_exception_id!r} does not cover {actor_id!r} verifying candidate "
+                f"{candidate_id!r}. An exception authorises one act, not a category."
+            )
+        if canonical_actor(exception["approved_by"]) == canonical_actor(actor_id):
+            raise SelfVerificationError(
+                f"exception {sod_exception_id!r} was approved by the same person it exempts. "
+                "A self-approved exception is self-approval with an extra step."
+            )
+        if not exception["approver_active"]:
+            raise SelfVerificationError(
+                f"exception {sod_exception_id!r} was approved by an account that is no longer "
+                "active. An approval from someone who has left is not a current approval."
+            )
+        if exception["lapsed"]:
+            raise SelfVerificationError(
+                f"exception {sod_exception_id!r} has passed its review date and has lapsed. "
+                "A lapsed approval is not a current one."
+            )
 
     def record_verification(
         self,
@@ -170,6 +250,7 @@ class CandidateRepository:
         *,
         actor_id: str,
         reason: str,
+        sod_exception_id: str | None = None,
     ) -> CandidateRecord:
         """Sets `verification`. Refuses (via `enforce_verification_gate`) a downgrade away from
         Verified/Partially Verified on a candidate whose *current* signal is High/Critical - the
@@ -180,10 +261,37 @@ class CandidateRepository:
             current_signal = SignalStrength(current["signal"]) if current["signal"] else None
             enforce_verification_gate(current_signal, verification)
 
+            # BR8, checked against the acts rather than the roles. Holding Reviewer says a person
+            # may verify something; it cannot say whether they are verifying their own work, and
+            # that is the whole of the control. `require_roles` is an OR over the roles held, and
+            # the steady state after the placement is one person holding all of them, so a role
+            # check alone let one principal capture, score and verify the same candidate end to
+            # end. No role exempts anyone from this, including SIP Owner: an exemption that the
+            # most senior person can grant themselves is not a control.
+            #
+            # Checked inside the same transaction as the row lock, so a concurrent capture or
+            # score cannot slip in between the read and the update.
+            provenance = conn.execute(
+                "select captured_by, assessed_by from candidates where id = %s",
+                (candidate_id,),
+            ).fetchone()
+            verifier = canonical_actor(actor_id)
+            for column, act in (("captured_by", "captured"), ("assessed_by", "assessed")):
+                performer = canonical_actor(provenance[column])
+                if performer is not None and performer == verifier:
+                    self._require_candidate_exception(
+                        conn,
+                        sod_exception_id=sod_exception_id,
+                        candidate_id=candidate_id,
+                        actor_id=actor_id,
+                        act=act,
+                    )
+                    break
+
             row = conn.execute(
-                f"update candidates set verification = %s where id = %s "
+                f"update candidates set verification = %s, verified_by = %s where id = %s "
                 f"returning {_SELECT_COLUMNS}",
-                (verification.value, candidate_id),
+                (verification.value, actor_id, candidate_id),
             ).fetchone()
             record_audit(
                 conn,
@@ -219,9 +327,27 @@ class CandidateRepository:
             current_verification = VerificationState(current["verification"])
             enforce_verification_gate(signal, current_verification)
 
+            # The other direction of BR8, and the one the first version missed. Guarding only
+            # verification left a deterministic bypass: A captures, B verifies, then B scores.
+            # Scoring after the fact makes B both the assessor and the verifier of the same
+            # candidate, and no race is needed to do it. The separation has to hold whichever
+            # order the acts happen in, so the assessor is checked against the recorded verifier
+            # exactly as the verifier is checked against the assessor.
+            provenance = conn.execute(
+                "select verified_by from candidates where id = %s", (candidate_id,)
+            ).fetchone()
+            verifier = canonical_actor(provenance["verified_by"])
+            if verifier is not None and verifier == canonical_actor(actor_id):
+                raise SelfVerificationError(
+                    f"{actor_id!r} verified this candidate and may not also score it. Scoring "
+                    "after verifying makes one person both the assessor and the check on that "
+                    "assessment, which is the same defect as verifying your own work."
+                )
+
             row = conn.execute(
                 "update candidates set nz_relevance = %s, india_relevance = %s, "
-                "member_relevance = %s, signal = %s, confidence = %s where id = %s "
+                "member_relevance = %s, signal = %s, confidence = %s, assessed_by = %s "
+                "where id = %s "
                 f"returning {_SELECT_COLUMNS}",
                 (
                     nz_relevance,
@@ -229,6 +355,7 @@ class CandidateRepository:
                     member_relevance,
                     signal.value if signal else None,
                     confidence.value if confidence else None,
+                    actor_id,
                     candidate_id,
                 ),
             ).fetchone()
@@ -256,6 +383,25 @@ class CandidateRepository:
     ) -> CandidateRecord:
         with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
             current = self._get_locked(conn, candidate_id)
+
+            # REQ-G-02 applied where it decides something. The gate was enforced on scoring, so a
+            # High or Critical signal could not be *set* on an unverified candidate, but nothing
+            # checked it again at inclusion: a candidate scored High while verified, then moved
+            # back to Unverified, could still be marked `included` and reach the brief. Inclusion
+            # is the act that puts a claim in front of the CEO, so it is the last point where the
+            # rule can still mean anything.
+            #
+            # Checked against the live row under the same lock, so a concurrent verification
+            # change cannot slip between the read and the update.
+            if included:
+                current_signal = (
+                    SignalStrength(current["signal"]) if current["signal"] else None
+                )
+                current_verification = (
+                    VerificationState(current["verification"]) if current["verification"] else None
+                )
+                enforce_verification_gate(current_signal, current_verification)
+
             row = conn.execute(
                 "update candidates set proposed_routing = %s, included = %s where id = %s "
                 f"returning {_SELECT_COLUMNS}",

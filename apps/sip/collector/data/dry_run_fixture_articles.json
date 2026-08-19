@@ -1,0 +1,22 @@
+[
+  {
+    "title": "SYNTHETIC TEST DATA - India-NZ FTA talks resume in Wellington",
+    "description": "SYNTHETIC TEST DATA - fixture article for run_dry_run.py, not a real news item.",
+    "url": "https://example.invalid/fixture/fta-talks-resume",
+    "source": "Beehive",
+    "published": "2026-08-07T20:00:00+00:00",
+    "score": 24,
+    "nz_relevance_score": 6,
+    "sectors": ["Trade, FTA and market access"]
+  },
+  {
+    "title": "SYNTHETIC TEST DATA - Dairy exporters watch India tariff review",
+    "description": "SYNTHETIC TEST DATA - fixture article for run_dry_run.py, not a real news item.",
+    "url": "https://example.invalid/fixture/dairy-tariff-review",
+    "source": "RNZ Business",
+    "published": "2026-08-07T21:30:00+00:00",
+    "score": 18,
+    "nz_relevance_score": 4,
+    "sectors": ["Dairy and nutrition"]
+  }
+]

@@ -46,42 +46,48 @@ export function FtaQuery({ baseUrl = '' }: { baseUrl?: string }) {
   }
 
   return (
-    <section>
-      <form onSubmit={onSubmit} noValidate>
-        <div className="fta-field">
-          <div>
-            <label className="fta-label" htmlFor={inputId}>
-              Ask about the NZ–India FTA
-            </label>
-            <input
-              id={inputId}
-              className="fta-input"
-              name="q"
-              type="search"
-              maxLength={500}
-              value={query}
-              placeholder="e.g. dairy, wine, manuka honey"
-              onChange={(event) => setQuery(event.target.value)}
-            />
-          </div>
-          <button className="fta-submit" type="submit" disabled={state.kind === 'loading'}>
-            {state.kind === 'loading' ? 'Searching…' : 'Search'}
-          </button>
+    <section className="mt-6">
+      <form onSubmit={onSubmit} noValidate className="flex flex-wrap items-end gap-2">
+        <div className="min-w-72 flex-1">
+          <label htmlFor={inputId} className="mb-1 block text-sm font-semibold text-inzbc-navy">
+            Ask about the NZ–India FTA
+          </label>
+          <input
+            id={inputId}
+            name="q"
+            type="search"
+            maxLength={500}
+            value={query}
+            placeholder="e.g. dairy, wine, manuka honey"
+            onChange={(event) => setQuery(event.target.value)}
+            className="w-full rounded-md border border-inzbc-navy/20 px-3 py-2 text-sm transition-colors hover:border-inzbc-navy/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue"
+          />
         </div>
+        <button
+          type="submit"
+          disabled={state.kind === 'loading'}
+          // min-h-11: 44px minimum touch target (WCAG 2.5.8), same as apps/comms/ui's icon
+          // buttons. Navy text on tangerine, not white: white-on-tangerine is 3.37:1 against the
+          // 4.5:1 AA minimum, navy-on-tangerine is 5.56:1 — same fix applied to every primary
+          // button in apps/comms/ui and apps/sip/ui.
+          className="min-h-11 rounded-md bg-inzbc-tangerine px-4 py-2 text-sm font-semibold text-inzbc-navy transition-colors hover:enabled:bg-inzbc-tangerine/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue disabled:cursor-progress disabled:opacity-60"
+        >
+          {state.kind === 'loading' ? 'Searching…' : 'Search'}
+        </button>
       </form>
 
       {/* Results are announced rather than silently swapped in — a screen-reader user must learn
           that a no-match escalation appeared, not just that the page changed. */}
       <div aria-live="polite" aria-busy={state.kind === 'loading'}>
         {state.kind === 'error' ? (
-          <p className="fta-error" role="alert">
+          <p role="alert" className="mt-4 text-sm font-medium text-inzbc-crimson">
             {state.message}
           </p>
         ) : null}
 
         {state.kind === 'result' && state.result.status === 'matched' ? (
           <>
-            <h2>
+            <h2 className="mt-6 text-lg font-bold text-inzbc-navy sm:text-xl">
               {state.result.answers.length} sourced{' '}
               {state.result.answers.length === 1 ? 'answer' : 'answers'}
             </h2>

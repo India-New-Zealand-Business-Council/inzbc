@@ -58,7 +58,7 @@ Two things these roles are explicitly *not*, per the same source:
 **Not decided.** An earlier draft of this spec said login was decided as Wix Members Area
 (native). Nothing decided it: `docs/client-answers.md` C1, C5, C6 and C7 are all `PROPOSED`,
 including "no second membership register on the website" and "link to the Member Jungle directory,
-do not copy or embed". `CLAUDE.md` says to build only after the business rule is decided and not to
+do not copy or embed". `PROJECT-RULES.md` says to build only after the business rule is decided and not to
 fill an unresolved rule with an assumption. Treat the login mechanism as
 `[[proposed — pending INZBC confirmation]]`.
 
@@ -154,7 +154,7 @@ before building this screen]]`
 ## Build gate
 
 **Nothing in this spec is buildable until the retain/integrate/replace assessment is approved.**
-`CLAUDE.md` is explicit: membership runs on Member Jungle as provisional system of record, do not
+`PROJECT-RULES.md` is explicit: membership runs on Member Jungle as provisional system of record, do not
 rebuild it on Wix before that assessment, link out and do not duplicate, and never hold the member
 or payment register in two places.
 

@@ -73,7 +73,7 @@ nothing to buy. Anyone with the link reaches it, and search engines can index it
 `[[placeholder]]` markers wherever INZBC still owes a fact: the member count, the milestone dates,
 the fee structure, the Executive Council entries. Those are correct in a draft. On a public page
 carrying INZBC's name, in front of a member, a journalist or a board member, they are not.
-`CLAUDE.md` requires sourced material only with placeholders where facts are owed; that convention
+`PROJECT-RULES.md` requires sourced material only with placeholders where facts are owed; that convention
 assumes the placeholders never reach publication.
 
 Duplicate-content damage is the lesser worry. `inzbc.org` is older, stronger and more linked, so a
@@ -106,7 +106,7 @@ a collaborator, by hand.
 The duplicate carries the **Wix Members Area** app. Nothing has been built on it, and nothing
 should be.
 
-`CLAUDE.md` and [`modules/membership-crm.md`](./modules/membership-crm.md) are explicit: Member
+`PROJECT-RULES.md` and [`modules/membership-crm.md`](./modules/membership-crm.md) are explicit: Member
 Jungle is the provisional system of record and membership is not rebuilt on Wix before the
 retain / integrate / replace assessment closes. The app being installed is not permission to use
 it. It arrived with the duplicate.

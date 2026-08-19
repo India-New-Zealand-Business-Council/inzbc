@@ -50,6 +50,11 @@ docs/sunil-requests.md
 docs/inzbc-talking-points.md
 docs/sip/sunil-update.md
 
+# The .local suffix now means what it says. It previously did not: AUDIT.local.md and
+# DESIGN.local.md both described themselves as gitignored while being tracked and readable by
+# everyone with repo access. Anything genuinely shared gets a normal name instead.
+*.local.md
+
 # Render/preview artifacts
 *.png
 .playwright-mcp/
@@ -58,3 +63,14 @@ docs/sip/sunil-update.md
 # restored over good data by someone trusting it. Regenerate with scripts/board.py snapshot.
 board-snapshot.json
 board-before-*.json
+
+# Local editor and assistant configuration. Kept out of the repository because it is
+# per-machine tooling setup, not project state: paths, hooks and skill definitions differ
+# between contributors and a shared copy would fight them. Contributor rules that DO
+# belong to the project are in PROJECT-RULES.md and CONTRIBUTING.md, which are tracked.
+.claude/
+.agent-local/
+.remember/
+
+# Scratch space for one-off analysis and rendering. Working files, not project state.
+.tmp/

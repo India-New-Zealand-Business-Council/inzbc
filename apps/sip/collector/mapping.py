@@ -79,28 +79,48 @@ class MappedCandidate(BaseModel):
     source_name: str
 
 
+def _in_locked_window(published_at: str | None, coverage_window: tuple[str, str] | None) -> bool | None:
+    """Compares a parsed `published_at` against the run's locked coverage window.
+
+    Returns `None`, not `False`, when either side is missing or unparseable: SIP-184 step 2's
+    window is a fact about the run, and an article whose publish time is unknown or a caller that
+    never supplied a window are both "we don't know", not "outside the window". Writing `False`
+    for either would store a fabricated coverage fact — the same category of thing this codebase
+    refuses to do for statistics or board names.
+    """
+    if coverage_window is None or published_at is None:
+        return None
+    start_utc, end_utc = coverage_window
+    try:
+        published_dt = datetime.fromisoformat(published_at)
+        start_dt = datetime.fromisoformat(start_utc)
+        end_dt = datetime.fromisoformat(end_utc)
+    except ValueError:
+        return None
+    return start_dt <= published_dt < end_dt
+
+
 def map_article(
-    article: dict, run_id: str, source_name_lookup: SourceNameLookup | None = None
+    article: dict,
+    run_id: str,
+    source_name_lookup: SourceNameLookup | None = None,
+    coverage_window: tuple[str, str] | None = None,
 ) -> MappedCandidate:
     """Maps one `clean_articles()` output dict onto a Candidate for run `run_id`.
 
     `source_name_lookup` maps a source name (`article["source"]`) to a `source_library.id`; omit it
     (or leave a name unmatched) to capture the candidate with `source_id=None`.
 
-    KNOWN SIMPLIFICATION - `in_coverage_window` is hardcoded True, not computed against the
-    locked window: SIP-184 step 2 locks a *fixed* 24h Pacific/Auckland window (previous day
-    07:00 to current day 07:00) at run start, but agent.py's `is_recent_article`/`fetch_news`
-    filter on a *rolling* cutoff (`datetime.now(timezone.utc) - max_age_hours`) computed whenever
-    the agent happens to run - the two windows are usually close but are not the same boundary,
-    and can disagree by however late/early the agent's run lands relative to 07:00 NZT. This is
-    accepted here because `articles` is still always the agent's own within-window output, not
-    an arbitrary mix, but it is not the same thing as evaluating each item against the run's
-    actual locked `coverage_start_utc`/`coverage_end_utc`. Fix properly by comparing each
-    article's parsed `published_at` against the run's locked window once the run object is
-    threaded through here, rather than trusting the agent's rolling filter as a proxy for it.
+    `coverage_window` is the run's locked `(coverage_start_utc, coverage_end_utc)` from SIP-184
+    step 2 - pass it so `in_coverage_window` is computed against the run's actual fixed 24h
+    Pacific/Auckland window rather than trusting agent.py's rolling `max_age_hours` cutoff as a
+    proxy for it (the two windows are usually close but are not the same boundary). Omitting it
+    leaves `in_coverage_window` unset (`None`), not `True` - an uncomputed fact should read as
+    unknown, not as a fabricated "yes".
     """
     source_name = str(article.get("source", "")).strip()
     source_id = source_name_lookup.get(source_name) if source_name_lookup else None
+    published_at = parse_published_at(article.get("published"))
 
     candidate = Candidate(
         run_id=run_id,
@@ -108,13 +128,18 @@ def map_article(
         source_id=source_id,
         url=article.get("url") or None,
         summary=article.get("description") or None,
-        published_at=parse_published_at(article.get("published")),
-        in_coverage_window=True,
+        published_at=published_at,
+        in_coverage_window=_in_locked_window(published_at, coverage_window),
     )
     return MappedCandidate(candidate=candidate, source_name=source_name)
 
 
 def map_articles(
-    articles: list[dict], run_id: str, source_name_lookup: SourceNameLookup | None = None
+    articles: list[dict],
+    run_id: str,
+    source_name_lookup: SourceNameLookup | None = None,
+    coverage_window: tuple[str, str] | None = None,
 ) -> list[MappedCandidate]:
-    return [map_article(article, run_id, source_name_lookup) for article in articles]
+    return [
+        map_article(article, run_id, source_name_lookup, coverage_window) for article in articles
+    ]

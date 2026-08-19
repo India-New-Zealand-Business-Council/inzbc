@@ -75,7 +75,7 @@ Run `uv run pnpm run codegen` and commit the result; CI fails if regenerating ch
   checks by `sip185_code`, never by name. An ambiguous name must degrade to unset rather than pick a
   row.
 - **`production_enabled` is `false` everywhere**, and nothing AI-drafted publishes without a named
-  human reviewer. See [CLAUDE.md](./CLAUDE.md).
+  human reviewer. See [PROJECT-RULES.md](./PROJECT-RULES.md).
 
 ## Editing the project board
 

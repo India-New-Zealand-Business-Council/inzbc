@@ -11,10 +11,17 @@ the platform builds on keys that already exist rather than waiting on new access
 is configuration, not architecture: swapping models/providers means changing env values, not
 call sites.
 
-Every prompt is redacted here before it reaches a provider (#37). Redaction lives in the gateway
-rather than in each caller for the same reason the client does: a control that every caller has to
-remember is a control that one caller will forget. With no policy configured the call is refused,
-so a deployment that has not decided what counts as confidential sends nothing at all.
+Two controls sit here, in this order.
+
+**Boundary refusal (#223).** Every call names a `PromptSource`, and a prohibited origin is refused
+before a policy is read or a key is looked up. Per ADR-0006 this is the *primary* control: regex
+redaction cannot catch a name, job title or employer in ordinary prose, so the answer for that data
+is not to send it. See `prompt_boundary.py` for what this does and does not enforce.
+
+**Redaction (#37).** Every prompt is then redacted before it reaches a provider. Both live in the
+gateway rather than in each caller for the same reason the client does: a control that every caller
+has to remember is a control that one caller will forget. With no policy configured the call is
+refused, so a deployment that has not decided what counts as confidential sends nothing at all.
 
 Configuration (environment):
 - OPENAI_API_KEY          - required for live calls; absent -> GatewayNotConfiguredError.
@@ -30,6 +37,7 @@ import os
 import time
 from dataclasses import dataclass, field
 
+from services.api.prompt_boundary import PromptSource, check_source
 from services.api.redaction import redact
 
 DEFAULT_MODEL = "gpt-4.1-mini"
@@ -89,13 +97,26 @@ class ModelGateway:
             self._client = OpenAI(api_key=api_key)
         return self._client
 
-    def complete(self, prompt: str) -> GatewayResult:
+    def complete(self, prompt: str, *, source: PromptSource) -> GatewayResult:
         """One prompt in, text out, with a single retry on a transient provider failure.
 
-        The prompt is redacted first, against the policy at `REDACTION_POLICY_PATH`. This happens
-        before `_ensure_client`, so a missing policy is reported even on a machine with no API key,
-        and before any network call, so an unredacted payload cannot leave the process while a
-        policy is being argued about.
+        `source` names where the text came from, and a prohibited origin is refused before
+        anything else happens (#223, ADR-0006 §1). It is keyword-only and has **no default**: a
+        default would be the value every caller ends up with, including the one that never thought
+        about it, and the whole point is that a new call site cannot be written without answering
+        the question.
+
+        This is a declaration rather than a verification, and the docstring says so rather than
+        implying more. By the time text reaches here the structure is gone, so nothing about the
+        string reveals its origin and a caller that declares the wrong source is not caught. What
+        it does buy is that the question is unavoidable and the answer is reviewable in the diff.
+        The enforceable half is `minimise()`, applied before assembly.
+
+        The prompt is then redacted, against the policy at `REDACTION_POLICY_PATH`. Refusal,
+        redaction and `_ensure_client` run in that order, so a prohibited payload is refused
+        without consulting a policy or a key, and a missing policy is reported even on a machine
+        with no API key. Nothing unredacted can leave the process while either is being argued
+        about.
 
         There is deliberately no way for a caller to supply its own rules. An earlier version took
         an injectable rule set so tests need not write a policy file; that made "redaction is
@@ -103,6 +124,7 @@ class ModelGateway:
         would have sailed through with an empty audit trail. Tests now point
         `REDACTION_POLICY_PATH` at a real file, the same way production does.
         """
+        check_source(source)
         redaction = redact(prompt)
         client = self._ensure_client()
         started = time.monotonic()
