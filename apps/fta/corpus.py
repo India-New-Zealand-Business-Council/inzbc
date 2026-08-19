@@ -11,6 +11,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date
+from enum import Enum
 
 FTA_STATUS_LINE = (
     "NZ-India FTA signed 27 April 2026 (negotiations concluded 22 Dec 2025). Not yet in force - "
@@ -18,14 +19,19 @@ FTA_STATUS_LINE = (
     "FTA enters into force, not current access."
 )
 
-# The sectors docs/fta-source-corpus.md names for first-pass coverage, taken from the About
-# page. Provisional: "INZBC to confirm which member sectors to prioritise in the first release"
-# is still an open item there - do not treat this list as final.
-PROVISIONAL_SECTORS_IN_SCOPE: tuple[str, ...] = (
+# Settled 9 Aug 2026 (#219, docs/client-answers-relayed-2026-08-09.md "FTA sectors: goods first,
+# services second"): the three previously-conflicting sector lists are resolved by scope, not by
+# picking one - Sunil's ten broad sectors and this corpus's tariff-outcome categories are
+# different kinds of thing. Build now on the goods sectors already sourced (these four category
+# values, used by CORPUS entries below). Add next, once sourced from the agreement text before
+# publication: tourism, education, investment. Defence and security, immigration and sports are
+# not dropped, but are not sourced and do not gate the build (BR2: nothing is written about a
+# sector until it has a source). No longer provisional/pending INZBC - this list will grow as
+# "add next" items get sourced, not on further confirmation.
+SECTORS_IN_SCOPE: tuple[str, ...] = (
     "Agriculture",
+    "Cross-sector",
     "Dairy",
-    "Education",
-    "Finance",
     "Infrastructure",
 )
 
@@ -89,11 +95,33 @@ TIER_2_SOURCES: tuple[SourceDocument, ...] = (
 )
 
 
+class TradeDirection(str, Enum):
+    """Which way the goods move. A tariff outcome only makes sense read against one direction -
+    "NZ removes all tariffs on Indian imports" and "India phases out its tariff on NZ wool" are
+    both true and both in the corpus, but they are not the same fact from the same country's
+    tariff schedule.
+    """
+
+    NZ_EXPORTS_TO_INDIA = "NZ exports to India"  # India's tariff schedule applies
+    INDIA_EXPORTS_TO_NZ = "India exports to NZ"  # NZ's tariff schedule applies
+
+
 @dataclass(frozen=True)
 class TariffOutcome:
     """One sourced fact from the FTA. `confirmed=False` entries exist so the Explainer can
     represent "known but not citable yet" rather than omitting the topic entirely - it must
     never present one as a confirmed figure (see explainer.py).
+
+    The structured tariff fields (#185) exist because `treatment` alone is prose the Explainer
+    cannot answer a tariff question *from* - a member asking "what's the current tariff on wool"
+    needs a queryable value, not a sentence to re-parse. They are free text (`str | None`), not
+    a parsed percentage, because the source itself states some as ranges ("5.5%-11%") and others
+    as within-quota figures that aren't reducible to one number without losing meaning - storing
+    exactly what the Tier 1 source says is more honest than forcing a false precision. All four
+    are `None` for cross-sector/aggregate entries (there is no single product tariff line for
+    "95% of exports") and for entries where the source doesn't give a product-specific figure
+    (see docs/fta-source-corpus.md's "Not in this table" list) - `None` there means "not yet
+    sourced", not "zero" or "unchanged".
     """
 
     # Stable identifier, assigned once and never reused. Callers key React lists and DOM ids
@@ -112,6 +140,12 @@ class TariffOutcome:
     # 1 = the citation is a Tier 1 official/treaty source; 2 = industry/secondary reporting.
     # Drives the Information Confidence Standard rating (docs/information-standard.md).
     source_tier: int = 1
+    direction: TradeDirection | None = None
+    current_tariff: str | None = None  # pre-FTA baseline, as stated by the source
+    fta_commencement_tariff: str | None = None  # rate at entry into force ("day 1")
+    staged_reductions: str | None = None  # the phase-in path between commencement and final
+    final_tariff: str | None = None
+    implementation_period_years: int | None = None  # 0 = immediate/day-one
 
 
 CORPUS: tuple[TariffOutcome, ...] = (
@@ -123,6 +157,7 @@ CORPUS: tuple[TariffOutcome, ...] = (
         confirmed=True,
         citation="MFAT National Interest Analysis, Executive Summary",
         verified_at=date(2026, 7, 22),
+        direction=TradeDirection.INDIA_EXPORTS_TO_NZ,
     ),
     TariffOutcome(
         id="FTA-002",
@@ -137,6 +172,7 @@ CORPUS: tuple[TariffOutcome, ...] = (
         citation="MFAT National Interest Analysis, section 1.3",
         notes="This is the figure to cite for NZ audiences.",
         verified_at=date(2026, 7, 22),
+        direction=TradeDirection.NZ_EXPORTS_TO_INDIA,
     ),
     TariffOutcome(
         id="FTA-003",
@@ -156,6 +192,7 @@ CORPUS: tuple[TariffOutcome, ...] = (
             "until someone opens those links in a browser and confirms it directly."
         ),
         verified_at=date(2026, 7, 22),
+        direction=TradeDirection.NZ_EXPORTS_TO_INDIA,
     ),
     TariffOutcome(
         id="FTA-004",
@@ -163,8 +200,14 @@ CORPUS: tuple[TariffOutcome, ...] = (
         sector="Agriculture",
         treatment="Tariff eliminated on ~95%+ of exports at entry into force.",
         confirmed=True,
-        citation="MFAT National Interest Analysis, key tariff outcomes table",
-        verified_at=date(2026, 7, 22),
+        citation="MFAT National Interest Analysis, Key Tariff Outcomes table, p.13",
+        verified_at=date(2026, 8, 10),
+        direction=TradeDirection.NZ_EXPORTS_TO_INDIA,
+        current_tariff="5.5%-11%",
+        fta_commencement_tariff="Eliminated on almost all goods",
+        staged_reductions="Remainder of forestry trade interests phased out over 5-7 years",
+        final_tariff="0% (eliminated)",
+        implementation_period_years=7,
     ),
     TariffOutcome(
         id="FTA-005",
@@ -172,8 +215,13 @@ CORPUS: tuple[TariffOutcome, ...] = (
         sector="Agriculture",
         treatment="Tariff eliminated day one.",
         confirmed=True,
-        citation="MFAT National Interest Analysis, key tariff outcomes table",
-        verified_at=date(2026, 7, 22),
+        citation="MFAT National Interest Analysis, Key Tariff Outcomes table, p.13",
+        verified_at=date(2026, 8, 10),
+        direction=TradeDirection.NZ_EXPORTS_TO_INDIA,
+        current_tariff="2.75%",
+        fta_commencement_tariff="0% (eliminated day 1)",
+        final_tariff="0% (eliminated)",
+        implementation_period_years=0,
     ),
     TariffOutcome(
         id="FTA-006",
@@ -181,8 +229,13 @@ CORPUS: tuple[TariffOutcome, ...] = (
         sector="Agriculture",
         treatment="Tariff eliminated day one.",
         confirmed=True,
-        citation="MFAT National Interest Analysis, key tariff outcomes table",
-        verified_at=date(2026, 7, 22),
+        citation="MFAT National Interest Analysis, Key Tariff Outcomes table, p.13",
+        verified_at=date(2026, 8, 10),
+        direction=TradeDirection.NZ_EXPORTS_TO_INDIA,
+        current_tariff="33%",
+        fta_commencement_tariff="0% (eliminated day 1)",
+        final_tariff="0% (eliminated)",
+        implementation_period_years=0,
     ),
     TariffOutcome(
         id="FTA-007",
@@ -190,8 +243,13 @@ CORPUS: tuple[TariffOutcome, ...] = (
         sector="Infrastructure",
         treatment="Tariff eliminated day one.",
         confirmed=True,
-        citation="MFAT National Interest Analysis, key tariff outcomes table",
-        verified_at=date(2026, 7, 22),
+        citation="MFAT National Interest Analysis, Key Tariff Outcomes table, p.13",
+        verified_at=date(2026, 8, 10),
+        direction=TradeDirection.NZ_EXPORTS_TO_INDIA,
+        current_tariff="2.75%",
+        fta_commencement_tariff="0% (eliminated day 1)",
+        final_tariff="0% (eliminated)",
+        implementation_period_years=0,
     ),
     TariffOutcome(
         id="FTA-008",
@@ -199,17 +257,38 @@ CORPUS: tuple[TariffOutcome, ...] = (
         sector="Agriculture",
         treatment="Tariff phased out over 7 years.",
         confirmed=True,
-        citation="MFAT National Interest Analysis, key tariff outcomes table",
-        verified_at=date(2026, 7, 22),
+        citation="MFAT National Interest Analysis, Key Tariff Outcomes table, p.13",
+        verified_at=date(2026, 8, 10),
+        direction=TradeDirection.NZ_EXPORTS_TO_INDIA,
+        current_tariff="33%",
+        staged_reductions="Phased out over 7 years",
+        final_tariff="0% (eliminated on most goods)",
+        notes="Table says 'most goods' over 7 years, not all - do not present as a blanket elimination.",
+        implementation_period_years=7,
     ),
     TariffOutcome(
         id="FTA-009",
-        topic="Kiwifruit and apples",
+        topic="Kiwifruit",
         sector="Agriculture",
-        treatment="New quota access; NZ is first mover.",
+        treatment=(
+            "New quota access; NZ is first mover. Tariff-free within quota (6,250 tonnes from "
+            "day 1, growing to 15,900 tonnes over 6 years); 50% tariff reduction (to 16.5%) "
+            "outside quota, from day 1."
+        ),
         confirmed=True,
-        citation="MFAT National Interest Analysis, key tariff outcomes table",
-        verified_at=date(2026, 7, 22),
+        citation="MFAT National Interest Analysis, Key Tariff Outcomes table, p.13",
+        verified_at=date(2026, 8, 10),
+        direction=TradeDirection.NZ_EXPORTS_TO_INDIA,
+        current_tariff="33%",
+        fta_commencement_tariff="0% within quota (6,250t); 16.5% outside quota",
+        staged_reductions="In-quota volume grows from 6,250t to 15,900t over 6 years",
+        final_tariff="0% within quota (up to 15,900t); 16.5% outside quota",
+        implementation_period_years=6,
+        notes=(
+            "Split from a combined 'Kiwifruit and apples' entry - apples has a different "
+            "structured outcome (never fully eliminated, see FTA-019) and combining the two "
+            "under one current/final tariff pair would misrepresent one of them."
+        ),
     ),
     TariffOutcome(
         id="FTA-010",
@@ -217,8 +296,17 @@ CORPUS: tuple[TariffOutcome, ...] = (
         sector="Agriculture",
         treatment="Tariff reduced at entry into force, cut further over 10 years.",
         confirmed=True,
-        citation="MFAT National Interest Analysis, key tariff outcomes table",
-        verified_at=date(2026, 7, 22),
+        citation="MFAT National Interest Analysis, Key Tariff Outcomes table, p.13",
+        verified_at=date(2026, 8, 10),
+        direction=TradeDirection.NZ_EXPORTS_TO_INDIA,
+        current_tariff="150%",
+        staged_reductions="66-83% reduction over 10 years from entry into force",
+        final_tariff="25% or 50% (depending on price tier)",
+        notes=(
+            "Also carries a most-favoured-nation-style clause: any better tariff outcome India "
+            "offers a later FTA partner is automatically extended to New Zealand."
+        ),
+        implementation_period_years=10,
     ),
     TariffOutcome(
         id="FTA-011",
@@ -226,17 +314,32 @@ CORPUS: tuple[TariffOutcome, ...] = (
         sector="Agriculture",
         treatment="Tariff cut 75% over 5 years; NZ is first mover.",
         confirmed=True,
-        citation="MFAT National Interest Analysis, key tariff outcomes table",
-        verified_at=date(2026, 7, 22),
+        citation="MFAT National Interest Analysis, Key Tariff Outcomes table, p.13",
+        verified_at=date(2026, 8, 10),
+        direction=TradeDirection.NZ_EXPORTS_TO_INDIA,
+        current_tariff="66%",
+        staged_reductions="75% reduction over 5 years, within a 200 tonne quota",
+        final_tariff="16.5%",
+        implementation_period_years=5,
     ),
     TariffOutcome(
         id="FTA-012",
-        topic="Cherries, avocados, blueberries, persimmons",
+        topic="Cherries and avocados",
         sector="Agriculture",
-        treatment="Phased tariff elimination.",
+        treatment="Tariff eliminated over 10 years.",
         confirmed=True,
-        citation="MFAT National Interest Analysis, key tariff outcomes table",
-        verified_at=date(2026, 7, 22),
+        citation="MFAT National Interest Analysis, Key Tariff Outcomes table, p.13",
+        verified_at=date(2026, 8, 10),
+        direction=TradeDirection.NZ_EXPORTS_TO_INDIA,
+        current_tariff="33%",
+        staged_reductions="Phased elimination over 10 years",
+        final_tariff="0% (eliminated)",
+        implementation_period_years=10,
+        notes=(
+            "Split from a combined 'Cherries, avocados, blueberries, persimmons' entry - "
+            "blueberries and persimmons don't have their own line in the Key Tariff Outcomes "
+            "table (see FTA-020) and don't share this confirmed 33%/10-year figure by default."
+        ),
     ),
     TariffOutcome(
         id="FTA-013",
@@ -253,9 +356,12 @@ CORPUS: tuple[TariffOutcome, ...] = (
             "Reporting also calls this NZ's first FTA to exclude major dairy products. That "
             "comparison is Tier 2, is not a tariff fact, and no Tier 1 source establishes it, "
             "so it is deliberately not asserted here. The agreement carries a 'Dairy "
-            "Consultations' side letter, so the exclusion is not necessarily permanent."
+            "Consultations' side letter, so the exclusion is not necessarily permanent. Excluded "
+            "products don't get a current-tariff callout in the Key Tariff Outcomes table - "
+            "current_tariff stays unset rather than guessed."
         ),
         verified_at=date(2026, 7, 22),
+        direction=TradeDirection.NZ_EXPORTS_TO_INDIA,
     ),
     TariffOutcome(
         id="FTA-014",
@@ -263,8 +369,13 @@ CORPUS: tuple[TariffOutcome, ...] = (
         sector="Dairy",
         treatment="Tariff phases out over 7 years.",
         confirmed=True,
-        citation="MFAT National Interest Analysis",
-        verified_at=date(2026, 7, 22),
+        citation="MFAT National Interest Analysis, Key Tariff Outcomes table, p.13",
+        verified_at=date(2026, 8, 10),
+        direction=TradeDirection.NZ_EXPORTS_TO_INDIA,
+        current_tariff="33%",
+        staged_reductions="Phased out over 7 years",
+        final_tariff="0% (eliminated)",
+        implementation_period_years=7,
     ),
     TariffOutcome(
         id="FTA-015",
@@ -273,7 +384,16 @@ CORPUS: tuple[TariffOutcome, ...] = (
         treatment="Tariff phases out over 7 years.",
         confirmed=True,
         citation="MFAT National Interest Analysis",
+        notes=(
+            "Peptones has no own row in the Key Tariff Outcomes table - only bulk infant "
+            "formula does (FTA-014, 33% current). Do not assume peptones shares that baseline; "
+            "current_tariff stays unset until a peptones-specific figure is found."
+        ),
         verified_at=date(2026, 7, 22),
+        direction=TradeDirection.NZ_EXPORTS_TO_INDIA,
+        staged_reductions="Phased out over 7 years",
+        final_tariff="0% (eliminated)",
+        implementation_period_years=7,
     ),
     TariffOutcome(
         id="FTA-016",
@@ -281,8 +401,51 @@ CORPUS: tuple[TariffOutcome, ...] = (
         sector="Dairy",
         treatment="50% tariff cut within a quota.",
         confirmed=True,
-        citation="MFAT National Interest Analysis",
+        citation="MFAT National Interest Analysis, Key Tariff Outcomes table, p.13",
+        verified_at=date(2026, 8, 10),
+        direction=TradeDirection.NZ_EXPORTS_TO_INDIA,
+        current_tariff="22%",
+        fta_commencement_tariff="11% for 1,000 tonnes",
+        staged_reductions="In-quota volume grows from 1,000t to 3,000t over 5 years",
+        final_tariff="11% (within quota, up to 3,000t)",
+        implementation_period_years=5,
+    ),
+    TariffOutcome(
+        id="FTA-019",
+        topic="Apples",
+        sector="Agriculture",
+        treatment=(
+            "New quota access; NZ is first mover. 50% tariff reduction (to 25%) for 32,500 "
+            "tonnes from day 1, growing to 45,000 tonnes over 6 years. Not fully eliminated."
+        ),
+        confirmed=True,
+        citation="MFAT National Interest Analysis, Key Tariff Outcomes table, p.13",
+        verified_at=date(2026, 8, 10),
+        direction=TradeDirection.NZ_EXPORTS_TO_INDIA,
+        current_tariff="50%",
+        fta_commencement_tariff="25% for 32,500 tonnes",
+        staged_reductions="In-quota volume grows from 32,500t to 45,000t over 6 years",
+        final_tariff="25% (within quota, up to 45,000t) - never fully eliminated",
+        implementation_period_years=6,
+        notes="Split from a combined 'Kiwifruit and apples' entry - see FTA-009's note.",
+    ),
+    TariffOutcome(
+        id="FTA-020",
+        topic="Blueberries and persimmons",
+        sector="Agriculture",
+        treatment="Phased tariff elimination.",
+        confirmed=True,
+        citation="MFAT National Interest Analysis, section 1.3",
+        notes=(
+            "Split from a combined entry with cherries/avocados. The NIA prose bundles "
+            "blueberries and persimmons with cherries/avocados as 'phased tariff elimination,' "
+            "but the Key Tariff Outcomes table only breaks out Cherries and Avocados by name "
+            "(see FTA-012) - no product-specific current/final tariff figure exists for "
+            "blueberries or persimmons yet. The qualitative claim stays confirmed; the "
+            "structured fields stay unset rather than borrowing FTA-012's numbers."
+        ),
         verified_at=date(2026, 7, 22),
+        direction=TradeDirection.NZ_EXPORTS_TO_INDIA,
     ),
     TariffOutcome(
         id="FTA-017",

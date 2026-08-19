@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 
-
 import pytest
 
 from services.api.model_gateway import (
@@ -10,6 +9,7 @@ from services.api.model_gateway import (
     GatewayNotConfiguredError,
     ModelGateway,
 )
+from services.api.prompt_boundary import PromptSource
 
 
 def test_missing_key_fails_closed_not_silent(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
@@ -27,7 +27,7 @@ def test_missing_key_fails_closed_not_silent(monkeypatch: pytest.MonkeyPatch, tm
     )
     monkeypatch.setenv("REDACTION_POLICY_PATH", str(policy))
     with pytest.raises(GatewayNotConfiguredError):
-        ModelGateway().complete("anything")
+        ModelGateway().complete("anything", source=PromptSource.PUBLIC_SOURCE)
 
 
 def test_model_defaults_to_news_agent_model_and_env_overrides(

@@ -6,14 +6,18 @@ crossing a human gate without a recorded decision, and no resurrecting a stopped
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 import pytest
 
 from apps.sip.core.orchestrator import (
+    CorruptHistory,
     HumanDecision,
     HumanGateRequired,
     IllegalTransition,
     Orchestrator,
     RunTerminated,
+    TransitionRecord,
     is_human_gated,
     is_legal_transition,
 )
@@ -269,3 +273,138 @@ def test_history_property_is_a_copy() -> None:
     # Mutating after the snapshot does not change the earlier tuple.
     assert len(snapshot) == 1
     assert len(orch.history) == 2
+
+
+# ---------- rehydration (#116) ----------
+
+
+def _replayable() -> Orchestrator:
+    """A run that reached Coverage Locked through a gate, so replay has something to check."""
+    orch = _authorised_run()
+    orch.advance(RunState.COVERAGE_LOCKED, actor="agent")
+    return orch
+
+
+def test_from_history_rebuilds_the_state() -> None:
+    original = _replayable()
+
+    resumed = Orchestrator.from_history(original.history, run_id="RUN-1")
+
+    assert resumed.state is original.state
+    assert resumed.run_id == "RUN-1"
+
+
+def test_from_history_keeps_the_original_records_rather_than_restamping_them() -> None:
+    """The reason replay cannot just call `advance`.
+
+    `advance` stamps `datetime.now()`, so replaying through it would relabel every transition as
+    having happened at boot. A history whose timestamps change on reload is not evidence of
+    anything, and this is a trail whose entire purpose is answering when something happened.
+    """
+    original = _replayable()
+
+    resumed = Orchestrator.from_history(original.history)
+
+    assert resumed.history == original.history
+    assert [r.at for r in resumed.history] == [r.at for r in original.history]
+    assert [r.actor for r in resumed.history] == [r.actor for r in original.history]
+    assert resumed.history[0].human_decision == original.history[0].human_decision
+
+
+def test_from_history_refuses_a_chain_that_does_not_join_up() -> None:
+    """The check that catches a reordered or missing entry.
+
+    Each record must start where its predecessor left the run. Without this, a history missing its
+    middle would replay as though the run had jumped.
+    """
+    original = _replayable()
+    reordered = tuple(reversed(original.history))
+
+    with pytest.raises(CorruptHistory, match="does not join up"):
+        Orchestrator.from_history(reordered)
+
+
+def test_from_history_refuses_a_history_that_does_not_start_at_draft() -> None:
+    """Every run begins at Draft, so a history starting elsewhere is missing its beginning."""
+    original = _replayable()
+
+    with pytest.raises(CorruptHistory):
+        Orchestrator.from_history(original.history[1:])
+
+
+def test_from_history_refuses_a_gated_transition_with_no_recorded_decision() -> None:
+    """The property that makes replay a control rather than a formality.
+
+    A restart must not be a way to arrive at a gated state without the decision that authorises
+    it. `Orchestrator(state=...)` would allow exactly that, which is why resuming goes through
+    here instead.
+    """
+    ungated = TransitionRecord(
+        from_state=RunState.DRAFT,
+        to_state=RunState.RUN_AUTHORISED,
+        actor="agent",
+        at=datetime(2026, 8, 13, tzinfo=timezone.utc),
+        human_decision=None,
+    )
+
+    with pytest.raises(CorruptHistory, match="could have made"):
+        Orchestrator.from_history([ungated])
+
+
+def test_from_history_refuses_an_illegal_jump() -> None:
+    """Draft straight to Distributed skips every gate in between."""
+    jump = TransitionRecord(
+        from_state=RunState.DRAFT,
+        to_state=RunState.DISTRIBUTED,
+        actor="agent",
+        at=datetime(2026, 8, 13, tzinfo=timezone.utc),
+        human_decision=CEO,
+    )
+
+    with pytest.raises(CorruptHistory, match="could have made"):
+        Orchestrator.from_history([jump])
+
+
+def test_from_history_refuses_something_that_is_not_a_transition_record() -> None:
+    """Exact-type, for the same reason `advance` checks `HumanDecision` that way: a subclass could
+    override validation and satisfy a check it should not."""
+    with pytest.raises(CorruptHistory, match="TransitionRecord"):
+        Orchestrator.from_history([{"from_state": "Draft", "to_state": "Run Authorised"}])
+
+
+def test_an_empty_history_is_a_draft_run() -> None:
+    """Not an error. A run created and not yet moved has no transitions, and refusing that would
+    make the first resume after creation fail."""
+    resumed = Orchestrator.from_history([])
+
+    assert resumed.state is RunState.DRAFT
+    assert resumed.history == ()
+
+
+def test_a_rehydrated_run_can_still_advance() -> None:
+    """Resume has to produce a working orchestrator, not a read-only snapshot."""
+    resumed = Orchestrator.from_history(_replayable().history)
+
+    resumed.advance(RunState.SCANNING, actor="agent")
+
+    assert resumed.state is RunState.SCANNING
+    assert len(resumed.history) == 3
+
+
+def test_from_history_refuses_a_record_whose_states_are_not_run_states() -> None:
+    """`TransitionRecord` is a dataclass, so its annotations do not enforce anything.
+
+    `TransitionRecord(from_state="Draft", ...)` constructs happily. Before this check the mismatch
+    surfaced as an `AttributeError` on `.value` while building the refusal message, so a corrupt
+    history raised the wrong exception type from the wrong line.
+    """
+    stringly = TransitionRecord(
+        from_state="Draft",
+        to_state="Run Authorised",
+        actor="agent",
+        at=datetime(2026, 8, 13, tzinfo=timezone.utc),
+        human_decision=None,
+    )
+
+    with pytest.raises(CorruptHistory, match="rather than RunState"):
+        Orchestrator.from_history([stringly])

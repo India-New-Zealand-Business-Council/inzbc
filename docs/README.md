@@ -18,13 +18,17 @@ Two conventions hold across this tree:
 2. [`inzbc-ai-operating-system.md`](inzbc-ai-operating-system.md) — what INZBC is building and why.
 3. [`architecture.md`](architecture.md) — system diagrams: context, components, run state machine,
    fail-closed controls, data model.
-4. [`../CONTRIBUTING.md`](../CONTRIBUTING.md) and [`../CLAUDE.md`](../CLAUDE.md) — how work lands
+4. [`../CONTRIBUTING.md`](../CONTRIBUTING.md) and [`../PROJECT-RULES.md`](../PROJECT-RULES.md) — how work lands
    here: branch, PR, review, evidence block.
 5. [`workstreams/README.md`](workstreams/README.md) — how the lanes are divided and who owns what.
 
 ## I am running SIP (analyst, reviewer or CEO)
-- [`sip/operator-guide.md`](sip/operator-guide.md) — **start here.** One full day, in order, in
-  plain language.
+- [`operator-guide.md`](operator-guide.md) — **running the platform.** Written for an operator with
+  no prior involvement, per BR12. What each refusal means and what to do about it, recording a
+  separation-of-duties exception when you are the only person available, rotating a credential, and
+  reading the audit trail. Ends with what it cannot yet tell you.
+- [`sip/operator-guide.md`](sip/operator-guide.md) — **the controlled launch**, which runs on the
+  workbook rather than the platform. One full day, in order, in plain language.
 - [`sip/launch/`](sip/launch/) — the launch pack. `SIP-184` is the daily-run procedure, but the
   pack is at **v0.9 review draft and is not approved**: the only approved controlling document is
   `SIP-050 Master Prompt v1.1`. Treat `SIP-184` as the working procedure for the controlled launch,
@@ -44,12 +48,71 @@ Two conventions hold across this tree:
 - [`../database/schema.sql`](../database/schema.sql) — the data model. An entity diagram of it is in
   [`architecture.md`](architecture.md).
 
+## I am waiting on a client decision
+- [`sunil-decision-sheet.md`](sunil-decision-sheet.md) — **start here.** Eight of its nine items are
+  settled. The one client decision still open is who owns the platform after the placement ends
+  (#97).
+- [`client-decision-pack.md`](client-decision-pack.md) — the six decisions that belonged to INZBC,
+  each with the options and what it cost to leave it open. **All six are settled**; kept as the
+  record of how each answer was reached, not as a list of questions.
+- [`membership/member-jungle-assessment.md`](membership/member-jungle-assessment.md) — foundation
+  decision F1: retain, integrate or replace Member Jungle. Blocks modules 2, 3 and 4, which is the
+  largest block of unstarted work in the programme.
+- [`project-charter.md`](project-charter.md) §11 and §18 — the four foundation decisions and the
+  open items INZBC owns.
+
+## I am handling data
+- [`privacy-assessment.md`](privacy-assessment.md) — the preliminary privacy and data-flow
+  assessment: what personal data can be captured, which fields are necessary, what happens on an
+  external model call, and the eight things that must happen before member data is stored. Three of
+  the eight are unbuilt engineering work rather than paperwork.
+- [`data/system-of-record-and-retention.md`](data/system-of-record-and-retention.md) — where each
+  data type authoritatively lives, how it is classified, and how long it may be kept. Starts with
+  the fact that the system holds no member data at all today, which is what makes the controls
+  cheap to put in now and expensive to retrofit later.
+
+## I am checking a governance or security control
+- [`security-privacy-continuity-register.md`](security-privacy-continuity-register.md) — **start
+  here.** All fifteen controls the client's overview asks for, each with its owner and whether it is
+  actually done. It is an index, not a restatement, so it points at the documents below rather than
+  copying them. Two rows are unverified rather than done, and the register keeps that distinction
+  visible.
+- [`security/sip-review.md`](security/sip-review.md) — the adversarial security review SIP requires
+  before staff use: eighteen findings, what they had in common, and the open items with owners.
+  Review complete, sign-off outstanding.
+- [`security/README.md`](security/README.md) — the security design: authentication architecture,
+  the route-level authorisation matrix, separation-of-duties rules, session and CSRF design, the
+  audit event catalogue and data classification. It ends with the known gaps, listed rather than
+  implied.
+- [`raci.md`](raci.md) — who is responsible, accountable, consulted and informed for each decision,
+  plus the governance document set tracker and the threat model.
+- [`incident-response.md`](incident-response.md) — what to do when something goes wrong, the
+  quarterly access review, and the joiners/movers/leavers process.
+- [`migration-and-rollback.md`](migration-and-rollback.md) — the cutover plan and what rollback can
+  and cannot recover.
+- [`secrets-register.md`](secrets-register.md) and
+  [`account-licence-register.md`](account-licence-register.md) — credentials by name, owner and
+  scope; and the accounts behind them.
+- [`backup-and-monitoring.md`](backup-and-monitoring.md) — what to watch and what to back up. The
+  two signals that matter most are absences: no run started today, and a run stalled in a human
+  gate. Neither looks like an error.
+- [`restore-procedure.md`](restore-procedure.md) — restoring the database and proving it worked,
+  including which claims have actually been tested and which have not.
+- [`environments.md`](environments.md) — development, test and production, the four rules that keep
+  them apart, and what has to be true before production is created.
+
 ## I need to know why something was decided
 - [`decisions/`](decisions/) — architecture decision records. Each states the context, the options
   compared, the decision and its consequences.
   - `0001-backend-language.md` — Python, FastAPI and Pydantic for the backend.
+  - `0002-internal-platform.md` — internal platform hosting.
   - `0003-frontend-tooling.md` — Storybook, Vitest, Playwright and Chromatic, with the paid
     alternatives explicitly rejected on cost.
+  - `0004-platform-graduation.md` — hosted service, managed Postgres, GitHub identity; the decision
+    that took the API from a scheduled process to an always-on service with a real database.
+  - `0005-decision-approval-distribution.md` — one authoritative record stream per decision,
+    approval and distribution; governs `services/api/decisions.py` and the run/candidate command
+    endpoints.
 
   A significant technical decision is recorded here **with the alternatives considered**, not
   announced after the fact.
@@ -65,6 +128,19 @@ Two conventions hold across this tree:
   material only, `[[placeholders]]` where a fact is owed by INZBC, and a named human reviewer before
   anything publishes.
 
+## I am working on the Wix site
+- [`studio-build-spec.md`](studio-build-spec.md) — the build spec for the Studio site: tokens,
+  page tree, slugs, content rules, and the checklist that gates the first republish.
+- [`website-rebuild-plan.md`](website-rebuild-plan.md) — **read first.** What the rebuild
+  does in what order, the Editor versus Studio decision that governs it, and which external
+  research findings survived checking.
+- [`wix-staging-readiness.md`](wix-staging-readiness.md) — **read first.** What is verified on the
+  duplicate, what cannot be scripted, and why publishing it before the content is real is the
+  thing to avoid.
+- [`website-redirect-map.md`](website-redirect-map.md) and
+  [`wix-rebuild-decisions.md`](wix-rebuild-decisions.md) — the URLs and the decisions behind them.
+- [`wix-changes-log.md`](wix-changes-log.md) — every editor session, before and after text.
+
 ## Background and client context
 - [`discovery.md`](discovery.md) — the original discovery work.
 - [`ai-service-architecture.md`](ai-service-architecture.md) — why the AI layer is hosted separately
@@ -78,11 +154,18 @@ Two conventions hold across this tree:
 
 ## Repositories
 
+Three of them. [`repositories.md`](repositories.md) explains what each holds, why they are separate,
+and how to open a session that can see all three at once.
+
 | Repository | Holds |
 |---|---|
 | `inzbc` (this one) | The platform, the shared contracts, and all controlled documentation |
 | `daily-india-nz-news-agent` | The collection engine behind the daily digest, draft-only |
+| `inzbc-studio-site` | The Wix Studio website. Wix pushes to this one too |
 
-The collection engine is deliberately separate: it has its own release cadence and reaches out to
-untrusted sources, while this repository holds the platform and the documents of record. It
-prepares drafts; it does not run on a timer and does not send anything automatically.
+The short version: the collection engine reaches untrusted sources on a schedule, and Wix owns the
+structure of the site repository and pushes to it. Neither belongs inside the repository holding the
+shared contracts and the documents of record.
+
+**Controlled documents live here and nowhere else.** The other two link to them rather than copying
+them.

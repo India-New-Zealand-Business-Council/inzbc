@@ -2,9 +2,9 @@
 
 Documents the design decisions behind the homepage and About page rebuild: what was
 specified by INZBC, what the team decided where sources conflicted, and what's still open.
-Not a style guide — the reusable design-token implementation is `DESIGN.local.md` (not yet
-created; see `docs/workstreams/paras.md` "Design system" item). This doc is the sourced
-input that system should be built from.
+Not a style guide — the design direction lives in `docs/design-direction.md`, and the reusable
+design-token implementation built from it does not exist yet (see `docs/workstreams/paras.md`
+"Design system" item). This doc is the sourced input that system should be built from.
 
 ## Sources
 - `INZBC_Website_Migration_Checklist.xlsx` — Sunil Kaushal, Drive, uploaded 20 Jul 2026.
@@ -41,6 +41,12 @@ share one 5% allocation rather than taking 5% each. Listing them separately at 5
 Preferred gradient: Lavender → Blue → Navy Blue (guide calls this combination out as
 particularly successful). Red/orange/green gradients should stay sparing, matching the
 solid-colour usage ratio.
+
+**A provisional third palette exists — NOT FINAL, not the table above.** Added 6 August
+2026 in the `inzbc-studio-site` repo (`docs/live-site-extract.md`), pending Sunil/INZBC
+confirmation: Deep Navy `#12203D` / Marigold `#E86A17` / Teal `#0E7C86`, a 60/30/10
+trust-plus-accent allocation tied to INZBC's bicultural India–NZ identity. It does not
+replace the Brand Guidelines table above and nothing in either repo is built against it yet.
 
 **Typography** — two fonts:
 - **Big Shoulders** (Medium–Bold): headings and short, high-impact statements only, set in
@@ -151,3 +157,6 @@ photography assets sourced yet.
    positive) — none sourced yet.
 7. Confirm CTA-colour (Tangerine) and FTA-band gradient (Lavender→Blue→Navy) choices above
    — reasonable applications of the palette, not documented requirements.
+8. Decide the palette, three-way: this table (Brand Guidelines), the live `inzbc.org`
+   colours, or the provisional bicultural palette above — see `inzbc-studio-site`'s
+   `docs/live-site-extract.md` for the full comparison.

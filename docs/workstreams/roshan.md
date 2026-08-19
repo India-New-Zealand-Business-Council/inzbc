@@ -22,47 +22,91 @@ own PR flow; this lane is the integration that pulls its output into SIP.
 ## Depends on (Bhanu's contracts)
 DB schema, API contract, auth. Build against them; don't write to control-plane tables.
 
-**Lane note, 28 Jul 2026:** #117/#118/#120/#121/#122/#130 (persistence adapter, audit service,
-run + candidate endpoints, REQ-I-05 acceptance criteria, restart/rehydration test) were assigned
-to me as a **one-off delegation to balance Bhanu's workload, not a lane transfer** — confirmed
-with him directly. `/services/api`, `/database` and `/schemas` stay his lane; the delegation
-reverts once these six are done, and nothing else under those paths gets picked up without asking
-him first. Recording this so a later reader doesn't mistake the one-off for a standing change.
+**Lane note, 28 Jul 2026 — closed out 6 Aug.** #117/#118/#120/#121/#122/#130 (persistence adapter,
+audit service, run + candidate endpoints, REQ-I-05 acceptance criteria, restart/rehydration test)
+were assigned to me as a **one-off delegation to balance Bhanu's workload, not a lane transfer** —
+confirmed with him directly. All six are now done or in final review (below); `/services/api`,
+`/database` and `/schemas` revert to being his lane as of #130 merging — nothing further under
+those paths gets picked up without asking him first.
 
-Of the six, #122/#117/#118 are done (closed via PRs #154/#163, and #118 below) — the remaining three
-(#120/#121/#130) sit inside a cluster that's otherwise his: #117/#118 were foundational and his
-#124/#125/#126 write through this persistence adapter and audit service; #119 (separation of
-duties, his) constrains #120/#121 here. The conventions set in #117/#118 are the ones he then has
-to build on — keep them boring and close to what the schema and ADR-0005 already imply, and flag
-anything that's inventing a contract shape rather than following one already decided, instead of
-deciding it here.
+- #117, #118, #122: closed (PRs #163, #154, and #118's own PR).
+- #120 (PR #237) and #121 (PR #242): **merged 5 Aug.**
+- #130: **PR #248 auto-closed** when `feat/roshan/run-endpoints` was deleted on #237's merge — its
+  base branch vanished, not a rejection. Rebuilt clean against current `main` (same commit,
+  cherry-picked, re-verified) as **PR #255, CI green, awaiting review.**
+
+**#237's CI anomaly (4+ pushes, zero workflow runs, confirmed via the Actions API not just a stale
+`gh pr checks`) never got a root cause** — Bhanu approved and merged it anyway, on the strength of
+the local Postgres verification (114 passed) in the PR body. Worth a standup mention in case the
+same branch-level fault hits someone else's PR later; not otherwise unresolved.
+
+## In review (opened, awaiting merge)
+- [ ] Approved facts library (#188, PR #321): `approved_facts` table + `FactRepository`
+  (draft/approve/archive, self-approval refused at both the app layer and a schema CHECK
+  constraint) + `/api/facts` (Analyst drafts, Reviewer/SIP Owner approves - same split as
+  `candidates/verify`). Corrections chain via `supersedes_id` rather than overwriting, same
+  pattern `decision_records` uses. 20 new tests, 803 total passing, 9/9 CI green, MERGEABLE.
+  Branched fresh off `main` rather than stacked on the existing registers branch, since #319 (also
+  mine, also awaiting review) is a separate PR and mixing new scope into it mid-review would have
+  changed what its reviewer sees.
+- [ ] Backend restart/rehydration integration test (#130, PR #255): kills a real `uvicorn`
+  subprocess mid-run and starts a fresh one on the same port, proving a run's state survives an
+  actual process restart, not just a fresh request. CI green (151 passed against a real local
+  Postgres running the actual merged `main` — both #120's and #121's routers, plus Bhanu's
+  hardening middleware).
+- [ ] Dashboard generated-types drift (#271, PR #274): found while chasing an unrelated `frontend`
+  CI failure on #273 — `apps/dashboard/ui/src/api/schema.ts` was a generation behind because #268
+  branched before #261 added `POST /api/comms/draft`, so `pnpm run codegen`'s drift check fails on
+  every PR that touches Python, including mine. Someone had already filed #271 with the exact
+  diagnosis and fix; ran `pnpm run codegen` on current `main` and committed just the one stale
+  file — no source change. `pnpm -r lint`/`typecheck` clean across all five UI workspaces, all 9
+  CI checks green. Once this merges, #273's `frontend` check clears on rebase too.
+- [ ] Central tariff database for the Explainer (#185, PR #273): `TariffOutcome` carries
+  direction/current/commencement/staged/final tariff + implementation period, sourced from the
+  NIA's Key Tariff Outcomes table. Second commit wires those fields into `ExplainerAnswer` itself
+  (`_to_answer()`) — the first commit only added them to the corpus, so a member query still
+  returned free-text `treatment` only; #185's own wording is the Explainer must answer a tariff
+  question "from" the data, not have it filed away unused. `apps/fta` + `apps/fta/tests` (37
+  passed) and `docs/fta-source-corpus.md`'s member-facing-mapping section updated to match. The
+  `frontend` check that was red here was the #271 generated-types drift, not this diff; #274 fixed
+  it on `main`, so the check clears on this rebase (13 Aug 2026).
 
 ## Next up
-- [ ] Run endpoints (#120): `/api/runs` + start/pause/resume/complete, against ADR-0005's
-  reconciled contract. **Unblocked 1 Aug** — Bhanu confirmed `schemas/api-contract.md` now reflects
-  ADR-0005 (#176 merged): three separate approval/ruling/distribution commands, session-cookie auth,
-  roles via `user_roles`. Drive state through `persistence.apply_transition`, which now writes the
-  audit row transactionally (#118) and refuses illegal jumps (#174) — pass `actor_id`/`reason`.
-- [ ] Candidate command endpoints (#121): explicit commands (capture, record verification, score,
-  submit assessment, supersede assessment), not a blanket PATCH — a PATCH can't produce a
-  meaningful audit record since the server never learns which action was intended. **Unblocked
-  1 Aug** alongside #120; `/verify` `/score` `/route` `/merge` stand as specified, `/assess` moved
-  out of ADR-0005 as unrelated to decision authority.
-- [ ] Backend restart/rehydration integration test (#130): restart the app + DB fixture
-  deliberately, prove replay produces identical state. Server-side counterpart to the Playwright
-  persistence test — do last, once #120/#121 exist to actually restart and rehydrate.
 - SHARED-OK: SIP-050 relevance/signal/confidence scoring moved to Bhanu's worklog — it runs
   through the model gateway he owns. `assessment.py` stays the validation/carry layer here.
 - [ ] Comms Assistant service side (`apps/comms`): draft-generation flow with the named-reviewer
-  gate, per [docs/modules/comms-assistant.md](../modules/comms-assistant.md). Corrected 30 Jul
-  (PR #161): the model gateway itself is already built and reusable
-  (`services/api/model_gateway.py`) — the actual blocker is the **redaction layer**, currently
-  unowned. Non-negotiable per `comms-assistant.md`'s "drafts only, adversarially tested" promise —
-  no request may reach the model gateway from this flow until redaction has an owner and an
-  implementation. Not starting this until that's resolved.
+  gate, per [docs/modules/comms-assistant.md](../modules/comms-assistant.md). **Unblocked as of
+  12 Aug:** the Executive Sponsor approved the redaction policy on 9 August, and it is committed at
+  `config/redaction-policy.json` (`docs/redaction-policy.md`). The service side can now be built.
+  The gateway still refuses every call wherever `REDACTION_POLICY_PATH` is unset, which is the
+  intended default, so a live call needs that set in the environment as well. Non-negotiable per
+  `comms-assistant.md`'s "drafts only, adversarially tested" promise: the named-reviewer gate is
+  not optional. Boundary refusal has since landed too, so every model call declares a
+  `PromptSource` and a prompt built from member records must go through `minimise()` and declare
+  `MINIMISED_RECORD`. The brief itself is `STAFF_AUTHORED`, which is a declaration rather than a
+  guarantee the text is clean, so do not paste member details into one.
 - [ ] End-to-end pipeline run once org-repo secrets land (Bhanu's item): collector → capture →
-  assessment live against the SIP-184 SOP; fix what breaks; record the run.
-- [ ] Collection-engine improvements in `daily-india-nz-news-agent` (via its own PR flow).
+  assessment live against the SIP-184 SOP; fix what breaks; record the run. (#55's own detailed
+  progress log lives on `feat/roshan/sip-dry-run`/PR #264 — not duplicated here until it merges,
+  to avoid two branches disagreeing about the same narrative.)
+- [ ] Collection-engine reliability (#208, via `daily-india-nz-news-agent`'s own PR flow). 4-day
+  plan, all four days now built: Day 1 — test harness, `daily-india-nz-news-agent#13` (49
+  characterization tests; a real `ModuleNotFoundError` under plain `pytest` found and fixed via
+  `tests/conftest.py`, reverified against CI's exact invocation). Days 2-4 — `#14`, stacked on
+  `#13`'s branch (not `main`) so review can start without waiting on `#13` to merge: source
+  freshness classification (`ok`/`no_recent`/`empty`/`error`, distinguishing a quiet news day from
+  a dead feed — RSS and the three GDELT-backed sources need opposite rules since GDELT applies its
+  time window server-side); timeout+retry+entry-shape recovery on `fetch_rss_news` (which had
+  **no timeout at all** before this, unlike GDELT's existing `timeout=45`) and retry on
+  `gdelt_query`; a regression test locking `SIP_AUTOMATED_DISTRIBUTION_ENABLED`'s default-off and
+  exact-string comparison. 12 commits, 121 tests, all mutation-tested (each real defect verified
+  by deliberately reintroducing it and confirming the test suite caught it) — including two bugs
+  caught during development itself: the coverage-qualified no-signal line first claimed "all
+  sources answered" with zero outcomes recorded, and `retry_transient`'s default `sleep=time.sleep`
+  bound the real function at import time so a test patching `agent.time.sleep` never reached it,
+  hanging the suite on real sleeps until found. `#14` is `MERGEABLE`, 5/5 CI green. Left open by
+  design rather than solved unilaterally: cross-run freshness-counter persistence, written up with
+  real tradeoffs in `docs/source-freshness.md` for the team to decide.
 - [ ] Bump the CI ruff pin to 0.16.0 (#31): the collector/FTA findings are fixed and merged (PR
   #152), but the pin itself is still 0.15.22 pending `apps/sip/core`, `scripts/board.py` and
   `services/api` (Bhanu's lane) going clean under 0.16.0 too.
@@ -71,6 +115,16 @@ See Blocked / decisions needed for what's still open before any of this runs liv
 INZBC sector/disclaimer sign-off).
 
 ## Done
+- [x] Backend restart/rehydration integration test (#130, PR #255, merged 7 Aug 2026): kills a real
+  `uvicorn` subprocess mid-run and starts a fresh one on the same port, proving a run's state
+  survives an actual process restart, not just a fresh request. 151 passed against a real local
+  Postgres running the merged `main` — both #120's and #121's routers, plus Bhanu's hardening
+  middleware.
+- [x] Dashboard generated-types drift (#271, PR #274, merged 12 Aug 2026): found while chasing an
+  unrelated `frontend` CI failure on #273 — `apps/dashboard/ui/src/api/schema.ts` was a generation
+  behind because #268 branched before #261 added `POST /api/comms/draft`, so `pnpm run codegen`'s
+  drift check failed on every PR touching Python. #271 already had the exact diagnosis; ran
+  `pnpm run codegen` on current `main` and committed just the one stale file — no source change.
 - [x] FTA Explainer retrieval upgrade (#54): `answer_query` now ranks confirmed matches by
   weighted keyword relevance instead of returning an unordered keyword-overlap set. Self-contained
   TF-IDF-style scorer (`_relevance_score`) — no vector service, no new dependency: topic-keyword
@@ -125,7 +179,7 @@ INZBC sector/disclaimer sign-off).
   expected output changed as a result. **Not done: bumping the CI pin.** The issue assumed only
   3 findings existed tree-wide; `apps/sip/core`, `scripts/board.py` and `services/api` now have 7
   more (subclass slots ordering, `datetime.UTC` alias, blind `except Exception`, `subprocess.run`
-  without `check`) — all outside my lane per the CLAUDE.md rule that `/services/api` changes go
+  without `check`) — all outside my lane per the PROJECT-RULES.md rule that `/services/api` changes go
   through Bhanu. Bumping the pin now would break CI tree-wide on code I don't own; pin stays at
   `0.15.22` until those are fixed too. Raising at standup rather than guessing at someone else's
   code.
@@ -283,16 +337,16 @@ the practice PDR (Week 5) and final PDR.
 
 | Obj | Requirement | Status | Evidence I have | Still need |
 |---|---|---|---|---|
-| 1.1 | Capture requirements via a methodology/tool | 🟢 | ADR-0001, SIP-050/184/185 specs, GitHub issues #52-56 | — |
-| 1.2 | Contribute meaningfully — **steady and regular**, not just volume | 🔴 | 25 commits, 5 merged PRs (#14,#15,#17,#19,#23) — but **all dated 22 Jul**, one day | Commits spread across *multiple distinct days* this block. One heavy day reads as a cram, not sustained contribution — this is the single biggest pass risk. |
-| 2.1 | Independent research, justified decisions | 🟢 | MFAT source verification (PR #14/#15), FTA corpus confirmed/unconfirmed flags, ADR-0001 rationale | Keep citing sources in PR descriptions as I go |
-| 3.1 | Team communication | 🟡 | none gathered yet | Screenshot/log standup (17:00 daily) and Wednesday client meeting attendance; keep PR review comment threads as evidence |
-| 3.2 | Industry-standard PM tools, used professionally | 🟡 | GitHub issues + org project board exist | Actually reference the board/issues in commits and PRs (e.g. "closes #52"), not just have them exist |
-| 3.3 | Documentation (technical + reflective) | 🟢 | Module docstrings, this worklog, PR evidence blocks, `apps/sip/collector/README.md` | Add a reflective report before the PDR — the marking criteria explicitly ask for one, separate from technical docs |
+| 1.1 | Capture requirements via a methodology/tool | 🟢 Done | ADR-0001, SIP-050/184/185 specs, `schemas/api-contract.md`/`state-machine.md` followed exactly for #120/#121's endpoint shapes | — |
+| 1.2 | Contribute meaningfully — **steady and regular**, not just volume | 🟢 | Merged/opened PRs now span **eight distinct days**: 22 Jul, 28-31 Jul, and 3-5 Aug (#237/#242/#248 this week alone) | Keep the cadence into the rest of the block — eight days across three weeks is real, no longer the single-day risk it was |
+| 2.1 | Independent research, justified decisions | 🟢 Done | MFAT source verification, FTA corpus confirmed/unconfirmed flags, ADR-0005 §7 read to confirm candidate commands don't need `decision_records`, mutation-tested every new gate/test before committing | — |
+| 3.1 | Team communication | 🟡 | Standup log `2026-07-20-week.md`, client meeting `2026-07-22-inzbc.md` | Still no standup/client-meeting record past 22 Jul — log this week's before the PDR |
+| 3.2 | Industry-standard PM tools, used professionally | 🟢 Done | Every PR closes/refs an issue; issue labels kept current (`stage:in-progress` on #120/#121/#130 as PRs opened); GitHub Projects board linked automatically via PR body | Board *Status* field stuck on "Todo" for #120/#121 — account lacks write permission on the board itself, flagged for Bhanu/admin, not something I can self-fix |
+| 3.3 | Documentation (technical + reflective) | 🟢 Done | Module docstrings, this worklog, PR evidence blocks, `apps/sip/collector/README.md` | Reflective report still owed before the PDR — separate from technical docs |
 
-**Action for this week:** don't batch commits into one sitting even when the code is ready sooner —
-land one focused PR per day against the open issues (#52 done; #31, #54, #56 next), so the git
-history itself is 3.1/1.2 evidence instead of a liability.
+**This week's remaining risk is just 3.1** — everything else has real evidence now. #237's CI
+anomaly resolved itself (Bhanu merged on the strength of local verification) and isn't a live
+concern anymore.
 
 **Weekly hours target: 22-24h**, not just the assignment's 20h floor — the buffer absorbs a thin
 day (blocked review, a meeting running long) without dropping under the pass threshold. Tracked in

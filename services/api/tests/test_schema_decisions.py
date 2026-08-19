@@ -99,3 +99,42 @@ def test_audit_log_is_append_only_by_trigger() -> None:
         "create trigger audit_log_append_only before update or delete on audit_log" in sql
     ), "audit_log lost its append-only trigger"
     assert "execute function reject_evidence_change()" in sql
+
+
+def test_no_append_only_table_can_be_emptied_in_one_statement() -> None:
+    """A row trigger never fires for a whole-table wipe.
+
+    Every append-only guard was `for each row`, so one statement could clear the evidence without
+    meeting any of them. The restricted application role has no such privilege, but the schema
+    describes these triggers as catching a mistake by the table owner or a migration, and that is
+    exactly who would run one. Only a statement-level trigger sees it.
+
+    The table list is **derived from the schema**, not written out here. It used to be a literal
+    tuple, and `candidate_sod_exceptions` was added afterwards with its row trigger and no
+    statement trigger: the test passed, because the table it did not know about was the one
+    missing its guard. A hardcoded list only ever checks the tables somebody remembered.
+    """
+    sql = _schema()
+    protected = set(re.findall(r"before update or delete on (\w+)", sql))
+    assert protected, "no append-only tables found; the pattern this test scans for has changed"
+
+    for table in sorted(protected):
+        assert f"before truncate on {table}" in sql, (
+            f"{table} can still be emptied in one statement without meeting its append-only guard"
+        )
+
+
+def test_the_dashboard_verification_list_matches_the_schema_enum() -> None:
+    """`VERIFICATION_STATES` is a hand-written copy of a schema enum, and this is the third time
+    that shape of list has drifted in this repository.
+
+    The dashboard aggregate zero-fills from it and then assigns `counts[row["verification"]]`.
+    A value added to the enum and not to the list would `KeyError` at request time; a value
+    removed would report a state that cannot occur. Deriving the expectation from `schema.sql`
+    means the enum cannot change without this failing first.
+
+    Text-level, so it runs in every CI job rather than skipping without a database.
+    """
+    from services.api.persistence import VERIFICATION_STATES
+
+    assert _enum_values(_schema(), "verification_state") == list(VERIFICATION_STATES)

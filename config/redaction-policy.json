@@ -1,0 +1,138 @@
+{
+  "_comment": [
+    "APPROVED by the Executive Sponsor, 9 August 2026, relayed by the Technical Lead. The written",
+    "instrument is still owed (#37) and this note is not it: what is recorded here is that the",
+    "decision was taken, by whom, and when. NOT SUFFICIENT ON ITS OWN either way: read the LIMIT",
+    "below before deciding what may be sent to a model under it.",
+    "",
+    "What counts as confidential is a business rule INZBC owns (#37). This file is that decision,",
+    "carried over unchanged from the proposed set that was put to the Executive Sponsor. Approval",
+    "was of the rules as written, so a later edit to any rule needs its own approval rather than",
+    "inheriting this one.",
+    "",
+    "Still nothing loads it automatically. REDACTION_POLICY_PATH must point at this file in a given",
+    "environment, and where it is unset every model call refuses. That default is deliberate and",
+    "stays: an environment nobody has configured must fail closed, not send unredacted text.",
+    "",
+    "LIMIT, stated plainly because it decides how this may be used: these rules match FORMATTED",
+    "IDENTIFIERS. They cannot catch a person's name, job title, employer, or anything else carried in",
+    "ordinary prose, and no regex will. 'Delegation lead: Priya Sharma, Chief Executive, Koru Exports'",
+    "passes through untouched. Review before publication does not help, because disclosure to the",
+    "model provider has already happened by then. The real control for that data is not sending it:",
+    "prohibited inputs and structured-field removal, tracked as #223.",
+    "",
+    "Every rule carries an example it must actually redact, or the policy will not load. The examples",
+    "below use example.test addresses and invented numbers. Do not put real member data in this file:",
+    "it is committed to the repository."
+  ],
+  "rules": [
+    {
+      "name": "email",
+      "pattern": "[\\w.+-]+[@＠][\\w-]+\\.[\\w.]{2,}",
+      "replacement": "[redacted:email]",
+      "example": "forward it to sunil@example.test before Friday"
+    },
+    {
+      "name": "nz-phone",
+      "pattern": "(?:\\+?64[-.\\s]?|\\b0)(?:2\\d|[3-9])[-.\\s]?\\d{3}[-.\\s]?\\d{3,4}\\b",
+      "replacement": "[redacted:phone]",
+      "example": "call the office on 09 555 0100 or 021 555 0199"
+    },
+    {
+      "name": "india-phone",
+      "pattern": "(?:\\+?91[-.\\s]?)[6-9]\\d{4}[-.\\s]?\\d{5}\\b",
+      "replacement": "[redacted:phone]",
+      "example": "the Mumbai contact is +91 98765 43210"
+    },
+    {
+      "name": "nz-ird-number",
+      "pattern": "\\b\\d{2,3}[- ]\\d{3}[- ]\\d{3}\\b",
+      "replacement": "[redacted:ird]",
+      "example": "IRD number 123-456-789 on the invoice"
+    },
+    {
+      "name": "nzbn",
+      "pattern": "\\b942\\d{10}\\b",
+      "replacement": "[redacted:nzbn]",
+      "example": "registered as NZBN 9429000000000"
+    },
+    {
+      "name": "india-gstin",
+      "pattern": "\\b\\d{2}[A-Z]{5}\\d{4}[A-Z][A-Z0-9]Z[A-Z0-9]\\b",
+      "replacement": "[redacted:gstin]",
+      "example": "GSTIN 27AAAAA0000A1Z5 on their tax invoice"
+    },
+    {
+      "name": "india-pan",
+      "pattern": "\\b[A-Z]{5}\\d{4}[A-Z]\\b",
+      "replacement": "[redacted:pan]",
+      "example": "PAN AAAPZ1234C was supplied"
+    },
+    {
+      "name": "passport",
+      "pattern": "(?i)\\b(?:passport|passport no\\.?|passport number)\\s*:?\\s*[A-Z]{1,2}\\d{6,8}\\b",
+      "replacement": "[redacted:passport]",
+      "example": "delegate passport LA123456 expires next year"
+    },
+    {
+      "name": "payment-card",
+      "pattern": "\\b(?:4\\d{3}|5[1-5]\\d{2}|3[47]\\d{2}|6011|65\\d{2}|3(?:0[0-5]|[68]\\d)\\d)(?:[ -]?\\d{4}){2,3}\\b",
+      "replacement": "[redacted:card]",
+      "example": "paid on 4111 1111 1111 1111 last month"
+    },
+    {
+      "name": "nz-bank-account",
+      "pattern": "\\b\\d{2}[- ]\\d{4}[- ]\\d{7}[- ]\\d{2,3}\\b",
+      "replacement": "[redacted:bank-account]",
+      "example": "deposit to 01-0123-0123456-00 by the due date"
+    },
+    {
+      "name": "member-id",
+      "pattern": "(?i)\\b(?:member|membership)\\s*(?:id|no\\.?|number)\\s*:?\\s*[A-Z]{0,3}[-]?\\d{3,10}\\b",
+      "replacement": "[redacted:member-id]",
+      "example": "Member ID: 123456 renewed in June"
+    },
+    {
+      "name": "street-address",
+      "pattern": "\\b\\d{1,5}[A-Za-z]?\\s+(?:[A-Z][a-z]+\\s+){1,3}(?:Street|St|Road|Rd|Avenue|Ave|Drive|Dr|Lane|Ln|Terrace|Tce|Place|Pl|Crescent|Cres|Quay|Parade|Pde|Highway|Hwy)\\b",
+      "replacement": "[redacted:address]",
+      "example": "the office moved to 123 Queen Street last year"
+    },
+    {
+      "name": "credential",
+      "pattern": "\\b(?:sk-[A-Za-z0-9_-]{16,}|gh[pousr]_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|xox[baprs]-[A-Za-z0-9-]{10,})",
+      "replacement": "[redacted:credential]",
+      "example": "the key is sk-XXXXXXXXXXXXXXXXXXXXXXXX and it works"
+    },
+    {
+      "name": "secret-assignment",
+      "pattern": "(?i)\\b(?:api[_-]?key|secret|password|passwd|token|bearer)\\b\\s*[:=]\\s*\\S+",
+      "replacement": "[redacted:credential]",
+      "example": "set api_key=REPLACE_ME_NOT_A_REAL_VALUE in the environment"
+    },
+    {
+      "name": "nz-company-number",
+      "pattern": "(?i)\\b(?:company|companies office)\\s*(?:number|no\\.?|#)\\s*:?\\s*\\d{6,8}\\b",
+      "replacement": "[redacted:company-number]",
+      "example": "NZ Companies Office number 1234567"
+    },
+    {
+      "name": "date-of-birth",
+      "pattern": "(?i)\\b(?:born|d\\.?o\\.?b\\.?|date of birth)\\s*:?\\s*\\d{1,2}[/.\\-]\\d{1,2}[/.\\-]\\d{2,4}\\b",
+      "replacement": "[redacted:dob]",
+      "example": "born 14/08/1986 in Auckland"
+    },
+    {
+      "name": "visa-or-immigration-reference",
+      "pattern": "(?i)\\b(?:visa|immigration|client)\\s*(?:number|no\\.?|ref\\.?|reference)?\\s*:?\\s*[A-Z]{2,3}\\d{5,9}\\b",
+      "replacement": "[redacted:immigration]",
+      "example": "work visa NZV123456 expires in March"
+    },
+    {
+      "name": "linkedin-profile",
+      "pattern": "(?i)\\b(?:https?://)?(?:[a-z]{2,3}\\.)?linkedin\\.com/(?:in|pub|company)/[\\w%-]+",
+      "replacement": "[redacted:profile-url]",
+      "example": "see https://www.linkedin.com/in/example-person for background"
+    }
+  ]
+}

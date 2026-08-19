@@ -11,7 +11,7 @@ why if you skip one. Move finished items to **Done**.
 /apps/comms/ui/**
 /apps/fta/ui/**       (the Explainer's embedded UI; Roshan owns its service)
 ```
-Design: follow `DESIGN.local.md`. Do not invent a look; brand tokens come from INZBC's kit.
+Design: follow `docs/design-direction.md`. Do not invent a look; brand tokens come from INZBC's kit.
 
 ## Modules I own (see [docs/modules](../modules/README.md))
 [Public website](../modules/website.md) + [Member portal](../modules/member-portal.md) +
@@ -22,7 +22,8 @@ SIP review/approval UI + Comms Assistant UI + FTA Explainer embed.
 The shared API + auth for anything that reads/writes data. Roshan's FTA service for the Explainer UI.
 
 ## Next up
-- [ ] Design system from `DESIGN.local.md` (not yet created): token-driven component library on
+- [ ] Design system from `docs/design-direction.md` (the system is what's outstanding, not the
+      source doc): token-driven component library on
       the real brand tokens documented in `docs/design-decisions.md` (#155) (colours, typography,
       logo rules from the INZBC Brand Guidelines 2026 — no placeholder swap needed, kit already
       arrived), WCAG 2.2 AA behaviour — focus order, contrast, keyboard paths — built into each
@@ -70,13 +71,40 @@ The shared API + auth for anything that reads/writes data. Roshan's FTA service 
       this is the end-to-end verification pass).
 
 ## Done
+- Member portal Dashboard (`apps/member/ui`, `feat/paras/member-dashboard`, 11 commits) — the
+  main overview screen on top of the link-out shell (issue #198, PR #217). Not a routed page:
+  no router exists anywhere in this codebase and this app has exactly one screen, so `Dashboard`
+  is a page-level component `App.tsx` renders above the existing full Notifications/Membership/
+  Events/Resources sections, which are unchanged below it. Four summary widgets
+  (`src/components/dashboard/`) reuse the full sections' own data — moved each section's
+  placeholder constants into `src/lib/*Data.ts` so both the widget and the full section import
+  the same array rather than risking two copies drifting apart — and link down to the matching
+  full section via the same in-page anchors (`#notifications` etc.) Header's nav already uses.
+  Widgets sit in a responsive grid: 1 column mobile, 2 at `sm`, 4 at `lg`.
+  Also fixed, as its own early commit since it affects the whole app: the shared layout was
+  capped at `max-w-2xl` (672px), leaving large dead margins on desktop/laptop. Widened to
+  `max-w-7xl` (1280px) via a new shared `Container` component used by Header, Footer and
+  `App.tsx`'s main content, so the width is consistent across the app rather than patched on
+  the Dashboard alone.
+  Accessibility pass found one real gap beyond the reused-safe colour/focus patterns already
+  established: the four cards were bare `<div>`s with no group semantics, so a screen reader
+  user tabbing through the grid had no signal of where one card's content ended and the next
+  began — added `role="group"` + `aria-labelledby` (via `useId`, same pattern
+  `apps/sip/ui`'s `BriefBuilderScreen` uses) to each card. Mobile pass found the widgets' bare
+  text links were ~20px tall, under WCAG 2.5.8's 24px tap-target minimum — padded with
+  `-mx-1 px-1 py-1` (cancels out visually, pads the hit area) rather than changing the visible
+  spacing.
+  Not visually verified in a real browser this session (Chrome tools weren't enabled) —
+  verified via Testing Library (44 tests) and reasoning about Tailwind class values, not an
+  actual render at each breakpoint; worth an eyeball pass at mobile/tablet/desktop widths
+  before this ships.
 - Member portal link-out shell (`apps/member/ui`, `feat/paras/member-portal-ui`, 9 commits).
   Was asked for as a 16-commit build (branded shell, login, dashboard, profile, a searchable
   member directory, events, resources, Member Jungle link-out, notifications, responsive,
   a11y, loading skeletons). Read against `docs/modules/member-portal-spec.md`'s own "Build
   gate" first: login forms, a dashboard/profile carrying real membership status, and a
   member directory are all explicitly named there as "not buildable until the
-  retain/integrate/replace assessment is approved" — the same rule `CLAUDE.md` and
+  retain/integrate/replace assessment is approved" — the same rule `PROJECT-RULES.md` and
   `docs/modules/membership-crm.md` state (do not rebuild membership on Wix, link out, don't
   duplicate the register; that assessment is still `PROPOSED`, not confirmed). Flagged the
   conflict rather than building against it; scoped down to what the spec's own carve-out
@@ -92,7 +120,7 @@ The shared API + auth for anything that reads/writes data. Roshan's FTA service 
   `client-answers.md` C1/C5); Events section (link out per event to Member Jungle or Zoho per
   C6/C7, using the confirmed "INZBC Summit" name only where illustrative, never a fabricated
   date); Resources and Notifications sections (placeholder-labelled rows only — no invented
-  report titles or announcements, per `CLAUDE.md`'s "never invent" rule); a mobile pass
+  report titles or announcements, per `PROJECT-RULES.md`'s "never invent" rule); a mobile pass
   (Header's four nav links didn't fit one row under 375px — restructured into a logo+CTA row
   plus a horizontally-scrollable nav strip, the same pattern `apps/sip/ui`'s `AppShell.tsx`
   already uses for its screen switcher); a WCAG 2.2 AA pass that found and fixed three real

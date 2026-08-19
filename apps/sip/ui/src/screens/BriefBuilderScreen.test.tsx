@@ -104,27 +104,51 @@ describe('BriefBuilderScreen', () => {
     ).toBeInTheDocument()
   })
 
-  it('blocks on blank mandatory source outcomes and no candidate selected, by default', () => {
+  it('stays invalid on blank mandatory sources and no candidate selected, without alarming on load', () => {
+    // A fresh brief is invalid by construction (112 blank sources, no candidate yet) — that's
+    // expected, not an error state. The detailed box only appears after a submit attempt
+    // (hasAttemptedSubmit); on load, this is just the ordinary starting point.
     const report = newDraftReportFixture()
     render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)
 
-    const alert = screen.getByRole('alert')
-    expect(alert).toHaveTextContent(/at least one scored candidate must be selected/i)
-    expect(alert).toHaveTextContent(/mandatory source with no recorded outcome/i)
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     expect(screen.queryByText(/ready to submit for qa/i)).not.toBeInTheDocument()
+  })
+
+  it('shows the calm progress count instead of the red box before any submit attempt', () => {
+    const report = newDraftReportFixture()
+    render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)
+
+    expect(screen.getByText('0 / 112 sources recorded')).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('leaves the Outcome select with a neutral border before any submit attempt', async () => {
+    const report = newDraftReportFixture()
+    render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)
+
+    // Expand a group to reach a still-blank mandatory Outcome select.
+    await userEvent.click(screen.getByRole('button', { name: /nz official/i }))
+    const outcomeSelect = screen.getAllByRole('combobox')[0]!
+
+    expect(outcomeSelect.className).not.toContain('border-inzbc-crimson')
+    expect(outcomeSelect.className).toContain('border-inzbc-navy/20')
   })
 
   it('still blocks submit when the only unrecorded source sits inside a collapsed group', async () => {
     // The risk this change introduces: 112 rows are now hidden by default, so a staff member sees
     // a tidy screen and could believe coverage is complete. Validation runs on the report, not on
-    // what is rendered, and the error list names the missing source whether or not its group is
-    // open. Collapsing must never be able to buy a submit.
+    // what is rendered, regardless of collapse state. Collapsing must never be able to buy a submit.
     const report = newDraftReportFixture()
     render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)
 
     // Every group is collapsed, so no row is on screen at all.
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
 
+    const submitSpy = vi.spyOn(reportsStore, 'submitReportForQa')
+    await userEvent.click(screen.getByRole('button', { name: /submit for qa/i }))
+
+    expect(submitSpy).not.toHaveBeenCalled()
     expect(screen.getByRole('alert')).toHaveTextContent(/mandatory source with no recorded outcome/i)
     expect(screen.queryByText(/ready to submit for qa/i)).not.toBeInTheDocument()
   })
@@ -183,6 +207,30 @@ describe('BriefBuilderScreen', () => {
     expect(screen.queryByText('World Trade Organization')).not.toBeInTheDocument()
   })
 
+  it('leaves collapsed groups collapsed through a failed submit attempt, and expand still works after', async () => {
+    // PR #179's whole point was reducing visual overwhelm by collapsing 112 rows by default.
+    // A validation-state change (calm indicator -> red box) must not silently reopen every group
+    // behind the analyst's back — that would be the same overwhelm PR #179 removed, just
+    // triggered by a different action.
+    const report = newDraftReportFixture()
+    render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)
+
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: /submit for qa/i }))
+
+    expect(screen.getByRole('alert')).toBeInTheDocument()
+    // Still no rows on screen — the red box named every blank source by text; it didn't need to
+    // force any group open to do it.
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /nz official/i })).toHaveAttribute('aria-expanded', 'false')
+
+    // Expanding a single category still works normally with the red box showing.
+    await userEvent.click(screen.getByRole('button', { name: /nz official/i }))
+    expect(screen.getByText('New Zealand Parliament')).toBeInTheDocument()
+    expect(screen.queryByText('World Trade Organization')).not.toBeInTheDocument()
+  })
+
   it('clears once a candidate is selected and every mandatory source has an outcome', () => {
     render(<ControlledBriefBuilder initial={reportReadyForQa()} />)
 
@@ -214,10 +262,62 @@ describe('BriefBuilderScreen', () => {
     expect(alert).toHaveTextContent(/numbers need a source check/i)
   })
 
-  it('disables Submit for QA while the brief is invalid', () => {
+  it('keeps Submit for QA clickable while the brief is invalid, revealing errors instead of submitting', async () => {
+    // Not disabled: a disabled button can't be clicked, so there'd be no way to attempt a submit
+    // and see why it's blocked. onSubmitForQa still refuses to call the API while errors remain —
+    // clicking while invalid must surface the validation box, not silently succeed.
+    const submitSpy = vi.spyOn(reportsStore, 'submitReportForQa')
     const report = newDraftReportFixture()
     render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)
-    expect(screen.getByRole('button', { name: /submit for qa/i })).toBeDisabled()
+
+    const submit = screen.getByRole('button', { name: /submit for qa/i })
+    expect(submit).toBeEnabled()
+    await userEvent.click(submit)
+
+    expect(submitSpy).not.toHaveBeenCalled()
+    const alert = screen.getByRole('alert')
+    expect(alert).toHaveTextContent(/at least one scored candidate must be selected/i)
+    expect(alert).toHaveTextContent(/mandatory source with no recorded outcome/i)
+  })
+
+  it('replaces the calm progress count with the red box once a submit attempt fails', async () => {
+    const report = newDraftReportFixture()
+    render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)
+
+    expect(screen.getByText('0 / 112 sources recorded')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /submit for qa/i }))
+
+    expect(screen.queryByText(/sources recorded/i)).not.toBeInTheDocument()
+    expect(screen.getByRole('alert')).toBeInTheDocument()
+  })
+
+  it('marks a still-blank mandatory Outcome select red once a submit attempt fails', async () => {
+    const report = newDraftReportFixture()
+    render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)
+
+    await userEvent.click(screen.getByRole('button', { name: /nz official/i }))
+    const outcomeSelect = screen.getAllByRole('combobox')[0]!
+    await userEvent.click(screen.getByRole('button', { name: /submit for qa/i }))
+
+    expect(outcomeSelect.className).toContain('border-inzbc-crimson')
+  })
+
+  it('clears a source from the red box and its own red border once its outcome is recorded', async () => {
+    render(<ControlledBriefBuilder initial={newDraftReportFixture()} />)
+
+    await userEvent.click(screen.getByRole('button', { name: /nz official/i }))
+    const outcomeSelect = screen.getAllByRole('combobox')[0]!
+    await userEvent.click(screen.getByRole('button', { name: /submit for qa/i }))
+    expect(outcomeSelect.className).toContain('border-inzbc-crimson')
+    const alertBefore = screen.getByRole('alert')
+    const blankCountBefore = within(alertBefore).getAllByText(/mandatory source with no recorded outcome/i).length
+
+    fireEvent.change(outcomeSelect, { target: { value: 'Included' } })
+
+    expect(outcomeSelect.className).not.toContain('border-inzbc-crimson')
+    const alertAfter = screen.getByRole('alert')
+    const blankCountAfter = within(alertAfter).getAllByText(/mandatory source with no recorded outcome/i).length
+    expect(blankCountAfter).toBe(blankCountBefore - 1)
   })
 
   it('shows a loading state, then a submitted banner, on a successful submit', async () => {

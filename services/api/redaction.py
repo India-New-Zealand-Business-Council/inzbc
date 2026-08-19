@@ -1,7 +1,7 @@
 """Redaction ahead of every external model call (#37).
 
 `docs/sip/README.md` makes this a non-negotiable: member, Board and confidential data must be
-stripped before anything reaches a provider. `CLAUDE.md` also says not to fill an unresolved
+stripped before anything reaches a provider. `PROJECT-RULES.md` also says not to fill an unresolved
 business rule with an assumption, and *what counts as confidential* is exactly that kind of rule.
 
 So this module deliberately ships the mechanism without the policy. The policy is data: a list of
@@ -167,6 +167,22 @@ def load_policy(path: str | Path | None = None) -> list[RedactionRule]:
                 f"rule {name!r} does not redact anything in its own example {example!r}. A rule "
                 "whose every match is zero-length loads cleanly and then removes nothing, so it "
                 "must demonstrate on a sample that it works."
+            )
+        # Matching is not redacting. `"pattern": "sunil", "replacement": "sunil"` matches, so the
+        # check above passes, and then substitution puts the value straight back and counts a
+        # redaction. That is the backreference bug again by a different route: the payload leaves
+        # unchanged while the audit trail says it was masked.
+        if compiled.search(replacement):
+            raise RedactionPolicyError(
+                f"rule {name!r} has a replacement that its own pattern matches. The value would be "
+                "re-emitted while the audit trail recorded a redaction, and the token would match "
+                "on any later pass."
+            )
+        if redact(example, [RedactionRule(name=name, pattern=compiled,
+                                          replacement=replacement)]).text == example:
+            raise RedactionPolicyError(
+                f"rule {name!r} leaves its own example {example!r} unchanged. Matching is not "
+                "redacting: the rule must be shown to remove something, not merely to fire."
             )
         rules.append(RedactionRule(name=name, pattern=compiled, replacement=replacement))
     return rules

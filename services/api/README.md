@@ -32,10 +32,17 @@ is reachable by staff and `production_enabled` stays `false`; the adversarial se
 
 Every state-changing write records `old_value`/`new_value`/`reason`/`approval_ref` in `audit_log`
 **inside the mutation's own transaction** (`audit.record_audit`, called on the caller's connection),
-so a change and its audit record commit together or not at all — `persistence.apply_transition` is
-the first writer wired this way. Immutability is enforced by the database, not by convention:
+so a change and its audit record commit together or not at all. `create_run` and
+`apply_transition` are both wired this way.
 
-- an `audit_log_append_only` trigger refuses `UPDATE`/`DELETE` from any role (`database/schema.sql`);
+The database does not itself require an audit row when `runs` changes, so this holds because
+every writer here does it, not because the schema compels it. A new write path, or direct SQL,
+can still omit one. Immutability, by contrast, is enforced by the database rather than by
+convention:
+
+- an `audit_log_append_only` trigger refuses `UPDATE`/`DELETE` from any role, and an
+  `audit_log_no_wipe` statement trigger refuses a whole-table clear, which a row trigger
+  never sees (`database/schema.sql`);
 - the application login role is granted `INSERT`/`SELECT` only. That grant lives in
   `database/audit_role.sql`, applied against a deployed database after `schema.sql`:
 

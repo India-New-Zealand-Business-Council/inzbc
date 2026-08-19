@@ -1,8 +1,9 @@
 """INZBC API — FastAPI application.
 
-Implements `schemas/api-contract.md` over the domain modules. This first slice exposes the FTA
-Explainer read path only; the SIP run and candidate endpoints land once the database and the
-orchestrator's persistence exist (ADR-0004 graduated the platform to make that possible).
+Implements `schemas/api-contract.md` over the domain modules: the FTA Explainer read path, the SIP
+run lifecycle endpoints (#120, `services/api/runs.py`), the candidate command endpoints
+(#121, `services/api/candidates.py`), and the Comms Assistant draft endpoint (#53,
+`services/api/comms.py`).
 
 The response envelope is deliberately status-tagged rather than "a list that might be empty".
 `apps/fta/explainer` keeps `ExplainerAnswer` and `NoMatch` structurally distinct so escalation
@@ -17,16 +18,39 @@ from pathlib import Path
 from typing import Literal
 
 from fastapi import FastAPI, Query
+from fastapi.openapi.utils import get_openapi
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, model_validator
 
 from apps.fta.explainer import ExplainerAnswer, NoMatch, answer_query, no_match
+from services.api.candidates import router as candidates_router
+from services.api.comms import router as comms_router
+from services.api.dashboard import router as dashboard_router
+from services.api.facts import facts_router
+from services.api.hardening import install as install_hardening
+from services.api.oauth import router as oauth_router
+from services.api.reports import router as reports_router
+from services.api.runs import router as runs_router
+from services.api.session import router as session_router
 
 app = FastAPI(
     title="INZBC API",
     version="0.1.0",
     summary="Trade intelligence and FTA services for the India New Zealand Business Council.",
 )
+app.include_router(runs_router)
+
+# Rate limiting, one error shape, security headers, and CORS only when configured (#98). Applied
+# here rather than per endpoint so a route added later is covered by default instead of by
+# somebody remembering.
+install_hardening(app)
+app.include_router(candidates_router)
+app.include_router(comms_router)
+app.include_router(dashboard_router)
+app.include_router(reports_router)
+app.include_router(session_router)
+app.include_router(oauth_router)
+app.include_router(facts_router)
 
 
 class AnswerOut(BaseModel):
@@ -173,3 +197,44 @@ _STATIC = Path(__file__).resolve().parents[2] / "static"
 if _STATIC.is_dir():
     # html=True makes unknown paths fall back to index.html, which a client-side router needs.
     app.mount("/", StaticFiles(directory=_STATIC, html=True), name="ui")
+
+
+def _require_both_schemes(spec: dict) -> dict:
+    """Rewrites write routes to require the session cookie *and* the CSRF token, not either.
+
+    FastAPI emits one entry per security dependency, and a list of entries is OR in OpenAPI:
+    `[{"SessionCookie": []}, {"CsrfToken": []}]` reads as "whichever you have". The server
+    requires both, so the published contract was describing something more permissive than the
+    API actually is, and a generated client had grounds to send only the cookie and then be
+    surprised by a 403.
+
+    Merging them into a single object makes it AND. Done here, over the generated document,
+    rather than by hand-editing `schemas/openapi.json`: the spec is regenerated on every change,
+    so anything written into the file directly is lost the next time codegen runs.
+    """
+    for operations in spec.get("paths", {}).values():
+        for operation in operations.values():
+            if not isinstance(operation, dict):
+                continue
+            security = operation.get("security")
+            if not security or len(security) < 2:
+                continue
+            merged: dict[str, list] = {}
+            for requirement in security:
+                merged.update(requirement)
+            operation["security"] = [merged]
+    return spec
+
+
+def custom_openapi() -> dict:
+    if app.openapi_schema is None:
+        app.openapi_schema = _require_both_schemes(get_openapi(
+            title=app.title,
+            version=app.version,
+            summary=app.summary,
+            routes=app.routes,
+        ))
+    return app.openapi_schema
+
+
+app.openapi = custom_openapi

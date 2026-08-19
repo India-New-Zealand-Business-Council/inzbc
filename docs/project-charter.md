@@ -141,11 +141,12 @@ Priority uses MoSCoW.
 **Committed build — the four modules the client selected**
 
 - FTA Opportunity Explainer, with the tariff database and three levels of information depth.
-  Sector coverage is **not settled**. The Digital System Overview lists ten (wool, wine, seafood,
-  primary industries, tourism, education, defence and security, investment, immigration, sports);
-  `client-answers.md` D19 proposes a different order and set; `requirements.md` and
-  `fta-source-corpus.md` both still record it as awaiting INZBC. One list has to win before build,
-  and closing it updates those documents in the same change.
+  Sector coverage settled 9 Aug 2026 (#219, `docs/client-answers-relayed-2026-08-09.md`) by scope
+  rather than by picking one of the Digital System Overview's ten or `client-answers.md` D19's
+  proposed set — they are different kinds of thing (broad sectors vs. this corpus's tariff-outcome
+  categories). Build now on the goods sectors already sourced; add tourism/education/investment
+  next once sourced from the agreement text; defence and security, immigration and sports are
+  named but not sourced and do not gate the build.
 - Trade Intelligence Digest produced by SIP: collection, source register, scoring, review, QA,
   approval, distribution and audit.
 - AI Communications Assistant for staff drafting, adversarially tested before use.
@@ -235,9 +236,9 @@ Each item exists because a simpler version was tried, specified or reviewed and 
 
 | Problem | Why the obvious approach fails | What was built, and where it is |
 |---|---|---|
-| Recording who approved what | A mutable approvals row can be overwritten, leaving no trace of what it previously said. An audit trail that can be edited is not an audit trail | Three append-only decision streams — CEO Ruling, Report Approval, Distribution Authority — with database-level append-only triggers, nine tables and a current-decisions view ([ADR-0005](./decisions/0005-decision-approval-distribution.md)). The DDL is on `main` and CI applies it against PostgreSQL; it is not yet migrated to a running database and no endpoints expose it |
-| Two people deciding at once | Row locking serialises writers but does not detect conflict: the second re-reads the head the first just wrote and commits over it. Both land, and the loser is never told | Compare-and-swap concurrency where the caller passes back the revision it read; a stale decision is refused with the reason. The schema and its constraints are on `main`; the repository that enforces the check is in flight against #125 |
-| Sending member data to an external model | Redaction as a convention is not redaction. A rule set matching nothing satisfies an "is it configured" check, and a backreference in a replacement re-emits the original value while counting a successful redaction | A gate that refuses without a policy, rejects backreference replacements and empty-matching patterns at load, bounds payload size, and redacts the union of overlapping spans. In review on #180, not yet on `main` |
+| Recording who approved what | A mutable approvals row can be overwritten, leaving no trace of what it previously said. An audit trail that can be edited is not an audit trail | Three append-only decision streams — CEO Ruling, Report Approval, Distribution Authority — with database-level append-only triggers, nine tables including the audit log, and a current-decisions view ([ADR-0005](./decisions/0005-decision-approval-distribution.md)). The DDL is on `main` and CI applies it against PostgreSQL. It is not yet migrated to a running database and no endpoints expose it, so this is a designed and tested schema rather than a running service |
+| Two people deciding at once | Row locking serialises writers but does not detect conflict: the second re-reads the head the first just wrote and commits over it. Both land, and the loser is never told | Compare-and-swap concurrency where the caller passes back the revision it read; a stale decision is refused with the reason. Both the schema and the repository that enforces the check are on `main`. A gated transition also now requires the decision record behind it, so the durable state cannot claim an authorisation nobody gave |
+| Sending member data to an external model | Redaction as a convention is not redaction. A rule set matching nothing satisfies an "is it configured" check, and a backreference in a replacement re-emits the original value while counting a successful redaction | A gate that refuses without a policy, rejects backreference replacements and empty-matching patterns at load, bounds payload size, and redacts the union of overlapping spans. On `main`. A rule must also prove it redacts its own example, since matching is not removing |
 | Preventing an unsupported claim reaching a member | A confidence threshold still renders an answer. A no-match sharing the shape of a match will eventually be rendered as one | A distinct no-match type carrying no evidence fields, enforced across four independent layers: domain type, wire envelope, generated types, interface component |
 | Guaranteeing coverage of mandatory sources | Keying the coverage gate on source name under-counts silently, because two names are duplicated across the NZ and India lists | The gate re-keyed on stable source identifiers, with 112 mandatory sources verified against the approved register |
 | Stopping an illegal state change | A permissive default fails open: an unrecognised transition is allowed because nothing refused it. Reporting a lost race as an illegal move sends the operator to the wrong diagnosis | A fail-closed state machine with legal transitions only, hard human gates, a terminal stopped state, an append-only transition history, and staleness checked before legality. The gates and that history live in the in-memory orchestrator; the durable adapter deliberately does not re-implement them, so a caller writing straight through it can still commit a legal but human-gated move. Closing that is #119, server-side separation of duties |
@@ -290,10 +291,11 @@ gate.
   The routing is a convention the team keeps, not a control the platform enforces.
 - Reviews correct the content in dispute rather than annotating it. A specification carrying a note
   that says it is wrong is still wrong for the next person who reads it.
-- Linting, type checking, tests, coverage, secret scanning, link checking and workflow linting run
-  on every pull request and block the merge. Static analysis runs report-only until its baseline is
-  confirmed clean, and dependency updates come from Dependabot rather than a blocking audit job.
-  Both are tracked as work to tighten, and neither is claimed as enforcement today.
+- Linting, type checking, tests, coverage, secret scanning, static analysis, link checking and
+  workflow linting run on every pull request and block the merge. Static analysis started
+  report-only and became blocking once its baseline was confirmed clean, so it is enforcement now
+  rather than a report. Dependency updates still come from Dependabot rather than a blocking audit
+  job, and that one is tracked as work to tighten rather than claimed as enforcement.
 - Security-touching changes get an adversarial review, and findings are reproduced by execution
   before they are accepted or dismissed.
 - Decisions that shape the system are recorded as ADRs with consequences and rejected alternatives.

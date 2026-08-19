@@ -42,7 +42,21 @@ jobs:
         env:
           BODY: ${{ github.event.pull_request.body }}
           TITLE: ${{ github.event.pull_request.title }}
+          AUTHOR_TYPE: ${{ github.event.pull_request.user.type }}
         run: |
+          # Bots are exempt, and the exemption is inside the step rather than in the job's `if:`
+          # so the check still reports success. A skipped job leaves a required status check
+          # pending, which blocks the pull request just as firmly as a failing one.
+          #
+          # The rule exists so a human's work is traceable to the item it delivers. A dependency
+          # bump has no such item: its traceability is the bump itself, and the changelog it
+          # links. Dependabot cannot open an issue to satisfy this and cannot edit its own body
+          # to add one, so without this the check could never pass and #276 sat blocked on a
+          # rule it had no way to meet.
+          if [ "$AUTHOR_TYPE" = "Bot" ]; then
+            echo "Automated pull request; a linked issue is not required."
+            exit 0
+          fi
           # Accepts every form GitHub itself links from: `Closes #12`, `Closes: #12`,
           # cross-repo `Closes owner/repo#12`, and the full issue URL. The leading \b stops
           # words like "encloses #5" satisfying the check.
@@ -125,6 +139,12 @@ jobs:
         # only part of schema.sql actually applied. --single-transaction: all-or-nothing, so a
         # partial apply can't leave some tables present and others missing.
         run: psql -v ON_ERROR_STOP=1 --single-transaction "$DATABASE_URL" -f database/schema.sql
+      - name: Verify the restore checker against the freshly applied schema
+        # The CI database is a schema applied to an empty instance, which is structurally what a
+        # restore produces. So this both exercises the checker (a restore-verification script that
+        # has never run is the same unproven thing as a backup that has never been restored) and
+        # asserts the schema still carries every append-only guard it claims.
+        run: uv run python scripts/verify_restore.py "$DATABASE_URL"
       - name: Lint (ruff)
         # `uv run` so every step uses the locked environment, not whatever pip left on PATH.
         run: uv run ruff check apps services scripts
@@ -143,7 +163,7 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.11'
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@v6.0.9
       - uses: actions/setup-node@v7
         with:
           node-version-file: '.nvmrc'
@@ -164,10 +184,10 @@ jobs:
           uv run pnpm run codegen
           # --porcelain, not `git diff`: it reports untracked files too, so a generated artifact
           # that was never committed still fails the check instead of passing silently.
-          if [ -n "$(git status --porcelain -- schemas/openapi.json apps/fta/ui/src/api/schema.ts)" ]; then
+          if [ -n "$(git status --porcelain -- schemas/openapi.json apps/fta/ui/src/api/schema.ts apps/dashboard/ui/src/api/schema.ts)" ]; then
             echo "::error::Generated types are stale — run 'pnpm run codegen' and commit the result."
-            git --no-pager diff -- schemas/openapi.json apps/fta/ui/src/api/schema.ts
-            git status --porcelain -- schemas/openapi.json apps/fta/ui/src/api/schema.ts
+            git --no-pager diff -- schemas/openapi.json apps/fta/ui/src/api/schema.ts apps/dashboard/ui/src/api/schema.ts
+            git status --porcelain -- schemas/openapi.json apps/fta/ui/src/api/schema.ts apps/dashboard/ui/src/api/schema.ts
             exit 1
           fi
       - name: Lint
@@ -193,13 +213,28 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       # Free SAST that works on private repos (CodeQL/GHAS is a paid add-on for private repos).
-      # Report-only for now — tighten to blocking once the baseline is confirmed clean, the same
-      # way the links job started.
+      #
+      # Blocking as of #70. It started report-only, the same way the links job did, so an unvetted
+      # baseline could not block every pull request on day one. The baseline is now clean: 228
+      # rules over 204 files, 0 findings. `--error` makes semgrep exit non-zero on any finding,
+      # and there is deliberately no `|| echo` fallback swallowing it, because a check that
+      # reports and passes is a check nobody reads.
+      #
+      # Suppress a genuine false positive inline and say why:
+      #   # nosemgrep: <rule-id> — <reason>
+      # A blanket suppression with no rule id and no reason is how a real finding gets hidden
+      # behind an old one, so name both.
+      #
+      # **The engine is pinned; the rules are not.** `p/python` and `p/security-audit` are fetched
+      # from the registry at scan time, so a rule added upstream can fail a pull request that
+      # changed nothing here. That is a deliberate trade: the alternative is vendoring the rule
+      # sets and reviewing every update by hand, which costs more attention than this project has.
+      # When it happens the finding is usually real and worth seeing, so read it before assuming
+      # the job broke.
       - name: Static analysis (semgrep)
         run: |
           docker run --rm -v "${{ github.workspace }}:/src" -w /src semgrep/semgrep:1.171.0 \
-            semgrep scan --config p/python --config p/security-audit --error apps services \
-            || echo "semgrep reported findings (report-only) — review before making this blocking"
+            semgrep scan --config p/python --config p/security-audit --error apps services
 
   security:
     runs-on: ubuntu-latest

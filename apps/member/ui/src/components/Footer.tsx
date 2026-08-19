@@ -1,3 +1,5 @@
+import { Container } from './Container'
+
 // Contact + social links are sourced from the live inzbc.org/connect page
 // (docs/client-answers.md D14/D18, apps/site/content/connect.md), not invented. Flickr is
 // deliberately excluded — client-answers.md D18 flags it as "still linked on the live site,
@@ -14,7 +16,7 @@ const SOCIAL_LINKS = [
 export function Footer() {
   return (
     <footer className="bg-inzbc-navy text-white">
-      <div className="mx-auto max-w-2xl px-4 py-6 text-sm">
+      <Container className="py-6 text-sm">
         <nav aria-label="Social media" className="flex flex-wrap gap-x-5 gap-y-2">
           {SOCIAL_LINKS.map((link) => (
             <a
@@ -37,7 +39,7 @@ export function Footer() {
             Contact us
           </a>
         </div>
-      </div>
+      </Container>
     </footer>
   )
 }
