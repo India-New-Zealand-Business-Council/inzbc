@@ -38,6 +38,7 @@ from psycopg.rows import dict_row
 from apps.sip.collector.verification import enforce_verification_gate
 from apps.sip.pipeline.models import SignalStrength, SourceConfidence, VerificationState
 from services.api.audit import record_audit
+from services.api.auth import canonical_actor
 
 
 class _Unset:
@@ -57,7 +58,6 @@ class _Unset:
 
 
 UNSET = _Unset()
-from services.api.auth import canonical_actor
 
 
 class SelfVerificationError(RuntimeError):
