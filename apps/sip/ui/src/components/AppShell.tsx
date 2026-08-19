@@ -39,7 +39,7 @@ export function AppShell() {
         >
           Skip to main content
         </a>
-        <div className="mx-auto max-w-4xl px-4 py-4 sm:py-6">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:py-6">
           <div className="flex items-center gap-2">
             <img src={LOGO_URL} alt="INZBC" className="h-6 w-auto" />
             <span aria-hidden="true" className="h-4 w-px bg-white/30" />
@@ -51,7 +51,7 @@ export function AppShell() {
             builder, QA, CEO decision, distribution status (docs/sip-ui-spec.md).
           </p>
         </div>
-        <nav aria-label="Screens" className="mx-auto max-w-4xl overflow-x-auto px-4">
+        <nav aria-label="Screens" className="mx-auto max-w-7xl overflow-x-auto px-4">
           <ul className="flex gap-1">
             {SCREENS.map((option) => (
               <li key={option.id}>
@@ -73,7 +73,7 @@ export function AppShell() {
         </nav>
       </header>
 
-      <main id="main-content" className="mx-auto w-full max-w-4xl flex-1 px-4 py-6">
+      <main id="main-content" className="mx-auto w-full max-w-7xl flex-1 px-4 py-6">
         {screen === 'brief-builder' ? <BriefBuilderScreen report={report} onChange={setReport} /> : null}
         {screen === 'qa-review' ? <QaReviewScreen report={report} onChange={setReport} /> : null}
         {screen === 'ceo-decision' ? <CeoDecisionScreen report={report} onChange={setReport} /> : null}

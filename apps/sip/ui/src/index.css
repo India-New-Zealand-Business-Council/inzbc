@@ -36,6 +36,16 @@
 }
 
 @layer base {
+  /* Now that AppShell renders at max-w-7xl instead of max-w-4xl (a wider, dashboard-style
+     layout), the dense text-sm/text-xs form and table copy throughout the four screens reads
+     small against that extra width. Every Tailwind text-* size is rem-based, so bumping the root
+     size scales all of them (and most spacing) proportionally in one place, rather than editing
+     each of the ~150 text-sm/text-xs occurrences across BriefBuilderScreen, QaReviewScreen,
+     CeoDecisionScreen and DistributionStatusScreen individually. */
+  html {
+    font-size: 112.5%;
+  }
+
   body {
     font-family: var(--font-body);
     font-weight: 400;

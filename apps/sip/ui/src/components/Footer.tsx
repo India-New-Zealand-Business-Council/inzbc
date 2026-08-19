@@ -20,7 +20,7 @@ const SOCIAL_LINKS = [
 export function Footer() {
   return (
     <footer className="bg-inzbc-navy text-white">
-      <div className="mx-auto max-w-4xl px-4 py-6 text-sm">
+      <div className="mx-auto max-w-7xl px-4 py-6 text-sm">
         <a href="/" aria-label="INZBC home" className="inline-block rounded-sm">
           <img src={LOGO_URL} alt="INZBC" className="h-8 w-auto" />
         </a>
