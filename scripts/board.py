@@ -46,7 +46,9 @@ COLORS = ["GRAY", "BLUE", "GREEN", "PURPLE", "YELLOW", "ORANGE", "RED", "PINK"]
 
 def gh(args: list[str]) -> str:
     """Run a gh command, failing loudly. Never swallow the error: see docstring, failure 2."""
-    result = subprocess.run(["gh", *args], capture_output=True, text=True)
+    # check=False deliberately: the returncode is inspected below so the error message can
+    # name the failing gh command, which CalledProcessError would not.
+    result = subprocess.run(["gh", *args], capture_output=True, text=True, check=False)
     if result.returncode != 0:
         raise RuntimeError(f"gh {' '.join(args[:3])} failed: {result.stderr.strip()[:300]}")
     return result.stdout
@@ -114,7 +116,7 @@ def restore(path: Path = SNAPSHOT) -> int:
             result = subprocess.run(
                 ["gh", "project", "item-edit", "--project-id", PROJECT_ID, "--id", row["id"],
                  "--field-id", field_id, "--single-select-option-id", option_id],
-                capture_output=True, text=True)
+                capture_output=True, text=True, check=False)
             if result.returncode == 0:
                 applied += 1
             else:

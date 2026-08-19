@@ -23,7 +23,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from apps.comms.draft import BlankBriefError, ContentType, generate_draft
-from services.api.auth import REVIEWER, SECRETARIAT, SIP_OWNER, STAFF_READ, Principal, SelfApprovalError
+from services.api.auth import (
+    REVIEWER,
+    SECRETARIAT,
+    SIP_OWNER,
+    STAFF_READ,
+    Principal,
+    SelfApprovalError,
+)
 from services.api.comms_persistence import (
     CommsDraftRecord,
     CommsDraftRepository,

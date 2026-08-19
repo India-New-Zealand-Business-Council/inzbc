@@ -6,7 +6,7 @@ crossing a human gate without a recorded decision, and no resurrecting a stopped
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -343,7 +343,7 @@ def test_from_history_refuses_a_gated_transition_with_no_recorded_decision() -> 
         from_state=RunState.DRAFT,
         to_state=RunState.RUN_AUTHORISED,
         actor="agent",
-        at=datetime(2026, 8, 13, tzinfo=timezone.utc),
+        at=datetime(2026, 8, 13, tzinfo=UTC),
         human_decision=None,
     )
 
@@ -357,7 +357,7 @@ def test_from_history_refuses_an_illegal_jump() -> None:
         from_state=RunState.DRAFT,
         to_state=RunState.DISTRIBUTED,
         actor="agent",
-        at=datetime(2026, 8, 13, tzinfo=timezone.utc),
+        at=datetime(2026, 8, 13, tzinfo=UTC),
         human_decision=CEO,
     )
 
@@ -402,7 +402,7 @@ def test_from_history_refuses_a_record_whose_states_are_not_run_states() -> None
         from_state="Draft",
         to_state="Run Authorised",
         actor="agent",
-        at=datetime(2026, 8, 13, tzinfo=timezone.utc),
+        at=datetime(2026, 8, 13, tzinfo=UTC),
         human_decision=None,
     )
 

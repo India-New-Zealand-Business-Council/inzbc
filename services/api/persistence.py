@@ -45,7 +45,6 @@ from apps.sip.core.orchestrator import (
 from apps.sip.pipeline.models import RunState
 from services.api.audit import record_audit
 
-
 # The two human gates that happen before a report version exists, so ADR-0005's decision streams
 # (all keyed to `report_version_id`) cannot record them. They are verified against
 # `run_authorisations`, which is keyed to the run, and this maps each gate to the kind of authority

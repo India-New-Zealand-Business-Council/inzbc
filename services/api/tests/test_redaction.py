@@ -59,7 +59,7 @@ class _RecordingClient:
         self.seen: list[str] = []
         self.responses = self
 
-    def create(self, model: str, input: str):  # noqa: A002 - matches the provider's kwarg
+    def create(self, model: str, input: str):
         self.seen.append(input)
         return type("Response", (), {"output_text": "ok"})()
 

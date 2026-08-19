@@ -24,7 +24,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from types import MappingProxyType
 
 from apps.sip.pipeline.models import RunState
@@ -317,7 +317,7 @@ class Orchestrator:
             from_state=current,
             to_state=target,
             actor=actor,
-            at=datetime.now(timezone.utc),
+            at=datetime.now(UTC),
             human_decision=human_decision,
         )
         # __history is mutated in place (list.append), not reassigned, so the __setattr__ seal is
