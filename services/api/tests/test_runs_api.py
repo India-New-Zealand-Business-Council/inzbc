@@ -20,11 +20,12 @@ from apps.sip.core.orchestrator import IllegalTransition
 from apps.sip.pipeline.models import RunState
 from services.api.main import app
 from services.api.persistence import (
+    AuditEntry,
     ConcurrentModificationError,
     HumanGateNotSatisfied,
     RunRecord,
 )
-from services.api.runs import get_run_repository
+from services.api.runs import get_audit_repository, get_run_repository
 
 
 class FakeRunRepository:
@@ -120,7 +121,6 @@ def _create(client: TestClient) -> dict:
             "prompt_version": "SIP-050 v1.1",
             "coverage_start_utc": "2026-07-27T07:00:00+12:00",
             "coverage_end_utc": "2026-07-28T07:00:00+12:00",
-            "initiated_by": str(uuid.uuid4()),
         },
     )
     assert response.status_code == 201
@@ -175,7 +175,6 @@ def test_each_lifecycle_route_maps_to_its_own_target_state(
         f"/api/runs/{created['id']}/{route}",
         json={
             "expected_version": 0,
-            "actor_id": str(uuid.uuid4()),
             "reason": f"{route} run",
             "approval_ref": "recorded-authority",
         },
@@ -192,7 +191,7 @@ def test_unknown_run_returns_404_on_every_lifecycle_route(
 ) -> None:
     response = client.post(
         f"/api/runs/{uuid.uuid4()}/{route}",
-        json={"expected_version": 0, "actor_id": str(uuid.uuid4()), "reason": "n/a"},
+        json={"expected_version": 0, "reason": "n/a"},
     )
     assert response.status_code == 404
 
@@ -204,7 +203,7 @@ def test_stale_version_returns_409(
     fake_repo.next_error = ConcurrentModificationError("stale")
     response = client.post(
         f"/api/runs/{created['id']}/start",
-        json={"expected_version": 0, "actor_id": str(uuid.uuid4()), "reason": "authorise run"},
+        json={"expected_version": 0, "reason": "authorise run"},
     )
     assert response.status_code == 409
 
@@ -216,7 +215,7 @@ def test_illegal_transition_returns_400(
     fake_repo.next_error = IllegalTransition("not reachable")
     response = client.post(
         f"/api/runs/{created['id']}/complete",
-        json={"expected_version": 0, "actor_id": str(uuid.uuid4()), "reason": "close run"},
+        json={"expected_version": 0, "reason": "close run"},
     )
     assert response.status_code == 400
 
@@ -228,7 +227,7 @@ def test_missing_human_gate_authority_returns_403(
     fake_repo.next_error = HumanGateNotSatisfied("needs approval_ref")
     response = client.post(
         f"/api/runs/{created['id']}/start",
-        json={"expected_version": 0, "actor_id": str(uuid.uuid4()), "reason": "authorise run"},
+        json={"expected_version": 0, "reason": "authorise run"},
     )
     assert response.status_code == 403
 
@@ -245,7 +244,6 @@ def test_create_run_rejects_an_unknown_field() -> None:
                 "prompt_version": "SIP-050 v1.1",
                 "coverage_start_utc": "2026-07-27T07:00:00+12:00",
                 "coverage_end_utc": "2026-07-28T07:00:00+12:00",
-                "initiated_by": str(uuid.uuid4()),
                 "not_a_real_field": "x",
             },
         )
@@ -257,7 +255,7 @@ def test_create_run_rejects_an_unknown_field() -> None:
 def test_the_caller_s_authority_reaches_the_repository(
     client: TestClient, fake_repo: FakeRunRepository
 ) -> None:
-    """The router must hand down what the caller sent, not something of its own.
+    """The router must hand down the authenticated identity, not something of its own.
 
     The 403 test above proves the error mapping by injecting the exception, so it never exercises
     the argument. Replacing `approval_ref=body.approval_ref` with a hardcoded string passed every
@@ -266,13 +264,11 @@ def test_the_caller_s_authority_reaches_the_repository(
     cannot be verified against `decision_records` (#227).
     """
     created = _create(client)
-    actor = str(uuid.uuid4())
 
     client.post(
         f"/api/runs/{created['id']}/start",
         json={
             "expected_version": 0,
-            "actor_id": actor,
             "reason": "authorise run",
             "approval_ref": "launch-authority-2026-08-05",
         },
@@ -281,5 +277,174 @@ def test_the_caller_s_authority_reaches_the_repository(
     handed_down = fake_repo.last_transition
     assert handed_down is not None
     assert handed_down["approval_ref"] == "launch-authority-2026-08-05"
-    assert handed_down["actor_id"] == actor
     assert handed_down["reason"] == "authorise run"
+    # The actor is the authenticated session's, not anything the request body could set. The
+    # body no longer has an actor_id field at all, so an impersonation attempt is a 422 rather
+    # than a silently accepted identity.
+    assert handed_down["actor_id"] == "00000000-0000-0000-0000-0000000000aa"
+
+
+@pytest.mark.parametrize(
+    ("route", "expected_state"),
+    [("fail-qa", "QA Failed"), ("stop", "Stopped")],
+)
+def test_the_new_lifecycle_routes_map_to_their_own_states(
+    client: TestClient, route: str, expected_state: str
+) -> None:
+    """Neither route existed. The reviewer could record QA findings without being able to stop
+    the run, and the CEO's Stop decision had no way to be recorded at all: a run they wanted
+    stopped could only be paused, which says something different and leaves it resumable."""
+    created = _create(client)
+    response = client.post(
+        f"/api/runs/{created['id']}/{route}",
+        json={"expected_version": 0, "reason": f"{route} run",
+              "approval_ref": "recorded-authority"},
+    )
+    assert response.status_code == 200
+    assert response.json()["state"] == expected_state
+
+
+def test_fail_qa_is_the_reviewers_authority_and_stop_is_not() -> None:
+    """REQ-U-01 gives the reviewer a Critical failure that blocks progression to the CEO.
+    REQ-U-02 reserves Stop for the CEO decision screen.
+
+    A reviewer who could terminate the run outright would be taking a decision the requirements
+    give to the CEO, so the two routes carry different authority. Asserted against the dependency
+    graph rather than by calling them, because the roles are the point.
+    """
+    from fastapi.routing import APIRoute
+
+    from services.api.main import app
+
+    def walk(routes) -> list[APIRoute]:
+        found = []
+        for route in routes:
+            if isinstance(route, APIRoute):
+                found.append(route)
+            elif hasattr(route, "original_router"):
+                found.extend(walk(route.original_router.routes))
+        return found
+
+    def roles_for(path: str) -> set[str]:
+        route = next(r for r in walk(app.routes) if r.path == path)
+        names: set[str] = set()
+        for dependant in [route.dependant, *route.dependant.dependencies]:
+            for cell in getattr(dependant.call, "__closure__", None) or ():
+                contents = cell.cell_contents
+                if isinstance(contents, tuple) and all(isinstance(c, str) for c in contents):
+                    names.update(contents)
+        return names
+
+    assert "Reviewer" in roles_for("/api/runs/{run_id}/fail-qa")
+    assert "Reviewer" not in roles_for("/api/runs/{run_id}/stop")
+
+
+class FakeAuditRepository:
+    """Returns whatever it was seeded with, and records how it was asked.
+
+    `last_query` exists for the same reason `FakeRunRepository.last_transition` does: without it a
+    router that dropped `limit` or `before_id`, or hardcoded one, would still pass every test here.
+    """
+
+    def __init__(self) -> None:
+        self.entries: list[AuditEntry] = []
+        self.last_query: dict | None = None
+
+    def for_run(self, run_id: str, *, limit: int = 100, before_id: int | None = None
+                ) -> list[AuditEntry]:
+        self.last_query = {"run_id": run_id, "limit": limit, "before_id": before_id}
+        return self.entries
+
+
+def _entry(entry_id: int) -> AuditEntry:
+    return AuditEntry(
+        id=entry_id,
+        at="2026-08-13T09:00:00+00:00",
+        user_id="00000000-0000-0000-0000-0000000000aa",
+        action="run.transition",
+        record_type="runs",
+        record_id="a-run",
+        old_value="Draft",
+        new_value="Run Authorised",
+        reason="authorise run",
+        approval_ref="an-authorisation-id",
+    )
+
+
+@pytest.fixture
+def fake_audit() -> FakeAuditRepository:
+    audit = FakeAuditRepository()
+    app.dependency_overrides[get_audit_repository] = lambda: audit
+    yield audit
+    app.dependency_overrides.pop(get_audit_repository, None)
+
+
+def test_audit_returns_the_runs_entries(client: TestClient, fake_audit: FakeAuditRepository):
+    run = _create(client)
+    fake_audit.entries = [_entry(3), _entry(2)]
+
+    response = client.get(f"/api/runs/{run['id']}/audit")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert [e["id"] for e in body["entries"]] == [3, 2]
+    assert body["entries"][0]["action"] == "run.transition"
+
+
+def test_audit_asks_for_the_run_it_was_given(client: TestClient, fake_audit: FakeAuditRepository):
+    """A router that passed the wrong id would return another run's trail, which is the worst
+    possible failure for this endpoint and would look completely normal."""
+    run = _create(client)
+
+    client.get(f"/api/runs/{run['id']}/audit")
+
+    assert fake_audit.last_query["run_id"] == run["id"]
+
+
+def test_audit_hands_down_limit_and_cursor(client: TestClient, fake_audit: FakeAuditRepository):
+    run = _create(client)
+
+    client.get(f"/api/runs/{run['id']}/audit?limit=25&before_id=90")
+
+    assert fake_audit.last_query["limit"] == 25
+    assert fake_audit.last_query["before_id"] == 90
+
+
+def test_audit_offers_a_cursor_only_when_the_page_is_full(
+    client: TestClient, fake_audit: FakeAuditRepository
+):
+    """A short page is the last one. Handing back a cursor there invites a request that can only
+    return nothing, and a caller looping until the cursor is null would make one extra round trip
+    on every trail."""
+    run = _create(client)
+    fake_audit.entries = [_entry(9), _entry(8)]
+
+    full = client.get(f"/api/runs/{run['id']}/audit?limit=2").json()
+    short = client.get(f"/api/runs/{run['id']}/audit?limit=3").json()
+
+    assert full["next_before_id"] == 8
+    assert short["next_before_id"] is None
+
+
+def test_audit_is_404_for_an_unknown_run(client: TestClient, fake_audit: FakeAuditRepository):
+    """Not an empty page. A run with no audit rows cannot exist, because create_run writes one in
+    the same transaction, so an empty result means the id is wrong and saying so is more useful."""
+    response = client.get(f"/api/runs/{uuid.uuid4()}/audit")
+
+    assert response.status_code == 404
+    assert fake_audit.last_query is None, "the trail was read before the run was known to exist"
+
+
+@pytest.mark.parametrize(
+    "query", ["limit=0", "limit=501", "before_id=0", "limit=abc"],
+    ids=["limit-too-small", "limit-too-large", "cursor-zero", "limit-not-a-number"],
+)
+def test_audit_refuses_an_out_of_range_query(
+    client: TestClient, fake_audit: FakeAuditRepository, query: str
+):
+    """Bounded at the edge as well as in the adapter. The adapter clamps, which protects the
+    database; refusing here tells the caller its request was wrong rather than silently returning
+    something it did not ask for."""
+    run = _create(client)
+
+    assert client.get(f"/api/runs/{run['id']}/audit?{query}").status_code == 422

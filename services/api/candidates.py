@@ -24,9 +24,15 @@ from pydantic import BaseModel, ConfigDict
 
 from apps.sip.collector.verification import UnverifiedHighSignalError
 from apps.sip.pipeline.models import SignalStrength, SourceConfidence, VerificationState
-from services.api.candidate_persistence import CandidateRecord, CandidateRepository
+from services.api.auth import ANALYST, REVIEWER, SIP_OWNER, STAFF_READ, Principal
+from services.api.candidate_persistence import (
+    CandidateRecord,
+    CandidateRepository,
+    SelfVerificationError,
+)
+from services.api.session import AUTH_RESPONSES, read_access, write_access
 
-router = APIRouter(prefix="/api/candidates", tags=["Candidates"])
+router = APIRouter(prefix="/api/candidates", tags=["Candidates"], responses=AUTH_RESPONSES)
 
 
 def get_candidate_repository() -> CandidateRepository:
@@ -94,15 +100,17 @@ class CaptureCandidateIn(BaseModel):
     summary: str | None = None
     published_at: str | None = None
     in_coverage_window: bool | None = None
-    actor_id: str
 
 
 class VerifyIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     verification: VerificationState
-    actor_id: str
     reason: str
+    # Cited only when the verifier captured or assessed this candidate. INZBC is one person
+    # holding every role, so that is the normal case rather than the exceptional one, and the
+    # exception is recorded rather than the control being disabled.
+    sod_exception_id: str | None = None
 
 
 class ScoreIn(BaseModel):
@@ -113,7 +121,6 @@ class ScoreIn(BaseModel):
     member_relevance: int | None = None
     signal: SignalStrength | None = None
     confidence: SourceConfidence | None = None
-    actor_id: str
     reason: str
 
 
@@ -122,7 +129,6 @@ class RouteIn(BaseModel):
 
     proposed_routing: str | None = None
     included: bool | None = None
-    actor_id: str
     reason: str
 
 
@@ -130,7 +136,6 @@ class MergeIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     duplicate_of: str
-    actor_id: str
     reason: str
 
 
@@ -140,7 +145,9 @@ def _not_found(candidate_id: str) -> HTTPException:
 
 @router.post("", response_model=CandidateOut, status_code=status.HTTP_201_CREATED)
 def capture_candidate(
-    body: CaptureCandidateIn, repo: CandidateRepository = Depends(get_candidate_repository)
+    body: CaptureCandidateIn,
+    principal: Principal = Depends(write_access(ANALYST, SIP_OWNER)),
+    repo: CandidateRepository = Depends(get_candidate_repository),
 ) -> CandidateOut:
     candidate = repo.capture(
         run_id=body.run_id,
@@ -150,7 +157,7 @@ def capture_candidate(
         summary=body.summary,
         published_at=body.published_at,
         in_coverage_window=body.in_coverage_window,
-        actor_id=body.actor_id,
+        actor_id=principal.user_id,
     )
     return _candidate_out(candidate)
 
@@ -158,6 +165,7 @@ def capture_candidate(
 @router.get("", response_model=list[CandidateOut])
 def list_candidates(
     run: str = Query(..., description="Run id to list candidates for."),
+    principal: Principal = Depends(read_access(*STAFF_READ)),
     repo: CandidateRepository = Depends(get_candidate_repository),
 ) -> list[CandidateOut]:
     return [_candidate_out(c) for c in repo.list_for_run(run)]
@@ -165,7 +173,9 @@ def list_candidates(
 
 @router.get("/{candidate_id}", response_model=CandidateOut)
 def get_candidate(
-    candidate_id: str, repo: CandidateRepository = Depends(get_candidate_repository)
+    candidate_id: str,
+    principal: Principal = Depends(read_access(*STAFF_READ)),
+    repo: CandidateRepository = Depends(get_candidate_repository),
 ) -> CandidateOut:
     try:
         return _candidate_out(repo.get(candidate_id))
@@ -177,14 +187,23 @@ def get_candidate(
 def verify_candidate(
     candidate_id: str,
     body: VerifyIn,
+    principal: Principal = Depends(write_access(REVIEWER, SIP_OWNER)),
     repo: CandidateRepository = Depends(get_candidate_repository),
 ) -> CandidateOut:
     try:
         candidate = repo.record_verification(
-            candidate_id, body.verification, actor_id=body.actor_id, reason=body.reason
+            candidate_id,
+            body.verification,
+            actor_id=principal.user_id,
+            reason=body.reason,
+            sod_exception_id=body.sod_exception_id,
         )
     except KeyError as error:
         raise _not_found(candidate_id) from error
+    except SelfVerificationError as error:
+        # 403 like the other refusals, but a distinct message: the caller is permitted to verify
+        # in general and refused for this candidate specifically.
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail=str(error)) from error
     except UnverifiedHighSignalError as error:
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail=str(error)) from error
     return _candidate_out(candidate)
@@ -194,6 +213,7 @@ def verify_candidate(
 def score_candidate(
     candidate_id: str,
     body: ScoreIn,
+    principal: Principal = Depends(write_access(ANALYST, SIP_OWNER)),
     repo: CandidateRepository = Depends(get_candidate_repository),
 ) -> CandidateOut:
     try:
@@ -204,7 +224,7 @@ def score_candidate(
             member_relevance=body.member_relevance,
             signal=body.signal,
             confidence=body.confidence,
-            actor_id=body.actor_id,
+            actor_id=principal.user_id,
             reason=body.reason,
         )
     except KeyError as error:
@@ -218,6 +238,7 @@ def score_candidate(
 def route_candidate(
     candidate_id: str,
     body: RouteIn,
+    principal: Principal = Depends(write_access(ANALYST, SIP_OWNER)),
     repo: CandidateRepository = Depends(get_candidate_repository),
 ) -> CandidateOut:
     try:
@@ -225,11 +246,15 @@ def route_candidate(
             candidate_id,
             proposed_routing=body.proposed_routing,
             included=body.included,
-            actor_id=body.actor_id,
+            actor_id=principal.user_id,
             reason=body.reason,
         )
     except KeyError as error:
         raise _not_found(candidate_id) from error
+    except UnverifiedHighSignalError as error:
+        # REQ-G-02: a High or Critical claim cannot be included on unverified evidence. 403
+        # rather than 422, because the request is well formed and the refusal is a control.
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail=str(error)) from error
     return _candidate_out(candidate)
 
 
@@ -237,11 +262,12 @@ def route_candidate(
 def merge_candidate(
     candidate_id: str,
     body: MergeIn,
+    principal: Principal = Depends(write_access(ANALYST, SIP_OWNER)),
     repo: CandidateRepository = Depends(get_candidate_repository),
 ) -> CandidateOut:
     try:
         candidate = repo.merge(
-            candidate_id, body.duplicate_of, actor_id=body.actor_id, reason=body.reason
+            candidate_id, body.duplicate_of, actor_id=principal.user_id, reason=body.reason
         )
     except KeyError as error:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail=str(error)) from error

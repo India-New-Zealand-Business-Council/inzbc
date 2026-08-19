@@ -15,7 +15,7 @@ Read the status column before using anything here.
 `apps/site/content/*.md` draws on this file. Anything carried into content keeps a
 `[[proposed — pending INZBC confirmation]]` marker until Sunil signs it off, because
 `production_enabled` stays `false` and every member-facing line needs a named reviewer
-([CLAUDE.md](../CLAUDE.md)).
+([PROJECT-RULES.md](../PROJECT-RULES.md)).
 
 Numbering matches the client-asks list so replies can be pasted straight back.
 

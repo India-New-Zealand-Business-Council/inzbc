@@ -60,7 +60,6 @@ describe('createRun', () => {
       prompt_version: 'SIP-050 v1.1',
       coverage_start_utc: '2026-08-08T00:00:00Z',
       coverage_end_utc: '2026-08-08T23:59:59Z',
-      initiated_by: '34f4237b-ecd0-470c-8b2e-424ab745eb62',
     })
     const [url, init] = firstCall(spy)
     expect(url).toBe('/api/runs')
@@ -71,7 +70,7 @@ describe('createRun', () => {
 })
 
 describe('lifecycle transitions', () => {
-  const body = { expected_version: 0, actor_id: '34f4237b-ecd0-470c-8b2e-424ab745eb62', reason: 'go' }
+  const body = { expected_version: 0, reason: 'go' }
 
   it.each([
     ['start', startRun, 'Run Authorised'],

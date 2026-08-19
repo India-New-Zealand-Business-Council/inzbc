@@ -1,3 +1,5 @@
+import { getCsrfToken } from './session'
+
 export type ContentType = 'newsletter' | 'linkedin_post' | 'event_announcement' | 'member_spotlight'
 
 export interface CommsDraftRequest {
@@ -14,18 +16,18 @@ export class CommsDraftError extends Error {}
 /**
  * Calls the Comms Assistant drafting endpoint.
  *
- * `POST /api/comms/draft` is a **proposed** contract, not a built one: `services/api/main.py`
- * implements only the FTA Explainer read path today, and the Comms Assistant's own endpoint is
- * tracked as unbuilt work (`docs/workstreams/bhanu.md` issue #65, streaming SSE variant;
- * `docs/api-integration-spec.md` "What's specified but not built"). This client targets the
- * request/response shape that spec describes — content type + free-text brief in, a rendered
- * draft out — synchronous rather than SSE, matching what `ModelGateway.complete()` actually
- * offers server-side today. Calling this against a real deployment will 404 until the endpoint
- * lands; that is expected, not a bug in this client.
+ * `POST /api/comms/draft` is built and mounted (#53, PR #261), synchronous rather than SSE; the
+ * streaming variant is still unbuilt work (#65).
  *
  * `credentials: 'same-origin'` because the Comms Assistant is a staff-only, same-origin surface
  * authenticated by session cookie (ADR-0004) — never a bearer token or API key from the browser
  * (NFR-01, `docs/api-integration-spec.md` "Cross-cutting rules").
+ *
+ * **The CSRF token is required, not optional.** The endpoint is behind `write_access`, which
+ * refuses a state-changing request with no `X-CSRF-Token` header. Sending the cookie alone is
+ * authenticated and refused, so this fetches the token first and every draft request carries it.
+ * A `NotSignedInError` or `SessionUnavailableError` from that step propagates unchanged, because
+ * "you are not signed in" needs a different answer from "the drafting service failed".
  */
 export async function requestCommsDraft(
   { contentType, brief }: CommsDraftRequest,
@@ -34,13 +36,19 @@ export async function requestCommsDraft(
   const { signal, baseUrl = '' } = options
   const url = `${baseUrl}/api/comms/draft`
 
+  const csrfToken = await getCsrfToken(baseUrl)
+
   let response: Response
   try {
     response = await fetch(url, {
       method: 'POST',
       signal,
       credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        'X-CSRF-Token': csrfToken,
+      },
       body: JSON.stringify({ content_type: contentType, brief }),
     })
   } catch (cause) {

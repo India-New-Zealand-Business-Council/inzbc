@@ -15,9 +15,15 @@ mutable singleton nothing references, so "the recipient has not changed since au
 unprovable. `schemas/api-contract.md` records both as follow-up. Anything calling `authorise` must
 therefore still enforce that predicate itself, and this docstring is the warning that it must.
 
-Separation of duties is likewise not enforced here. `decision_sod_role_pairs` is configuration that
-nothing consults, so an unrecorded self-approval is refused only by the FK to `sod_exceptions` when
-one is cited, not by comparing actors across records. That is ADR-0005 required follow-up 4.
+**Separation of duties, and what is and is not enforced.** `record` refuses when the actor created
+the report version being decided on, unless they cite an approved, unexpired `sod_exceptions` row
+that covers exactly this act and was approved by someone else. That is the case needing no client
+input, and it is enforced inside the transaction.
+
+`decision_sod_role_pairs` remains unconsulted, so conflicts expressed as role pairs rather than
+authorship are not caught. The table is deliberately unseeded pending client-answers B8, and
+enforcing an empty rule set would refuse every decision. That part of ADR-0005 required follow-up 4
+is still open, and this docstring is the warning that it is.
 """
 
 from __future__ import annotations
@@ -29,6 +35,8 @@ from datetime import date, datetime
 
 import psycopg
 from psycopg.rows import dict_row
+
+from services.api.auth import canonical_actor
 
 # The three streams a submitted report version carries. Opened by a trigger on insert, so a
 # decision can never arrive for a stream nobody created.
@@ -139,6 +147,86 @@ class DecisionRepository:
             revisions=dict(row["revisions"] or {}),
         )
 
+    @staticmethod
+    def _require_valid_exception(
+        conn: psycopg.Connection,
+        *,
+        sod_exception_id: str | None,
+        report_version_id: str,
+        kind: str,
+        actor_id: str,
+        actor_role_id: int,
+    ) -> None:
+        """Refuses a self-approval unless a recorded, still-valid exception permits this one.
+
+        `sod_exceptions` existed and `decision_records.sod_exception_id` was written, but nothing
+        ever read either: the self-approval check refused unconditionally, so the exception could
+        never be exercised, and no other path required one. The column was recording a citation
+        nobody had checked.
+
+        The composite foreign key already binds a cited exception to this exact report version,
+        kind, actor and role, and `unique (sod_exception_id)` stops one being reused. Both fire at
+        insert time as constraint violations. Checking here instead means the refusal is the
+        control saying no, with a reason, rather than the database rejecting a malformed row.
+
+        Two things the schema does not express and this does:
+
+        - **An expired exception does not authorise.** `review_date` is the date the exception was
+          to be revisited; past it, it is a lapsed approval rather than a current one.
+        - **Nobody approves their own exception.** `approved_by` is a plain FK to `users`, so
+          without this an actor could record an exception permitting themselves and then cite it.
+          That is self-approval with an extra step, and it would have looked like a control.
+        """
+        if sod_exception_id is None:
+            raise DecisionNotPermittedError(
+                f"{actor_id!r} created report version {report_version_id!r} and may not also "
+                f"record a {kind!r} decision on it. Separation of duties is the control this "
+                "record exists to evidence; a decision one person can take end to end does not "
+                "evidence anything. Cite an approved sod_exceptions row if this is deliberate."
+            )
+
+        # The approver is joined through `users` rather than merely read, so an exception
+        # naming a deactivated account cannot authorise anything. `approved_by` is a plain
+        # foreign key to `users`, so nothing in the schema stops an inactive or roleless account
+        # being named; an approval from someone who no longer works here is not an approval.
+        exception = conn.execute(
+            "select e.approved_by, e.review_date, "
+            "       e.review_date < current_date as lapsed, "
+            "       u.active as approver_active "
+            "from sod_exceptions e join users u on u.id = e.approved_by "
+            "where e.id = %s and e.report_version_id = %s and e.kind = %s "
+            "  and e.actor_id = %s and e.actor_role_id = %s",
+            (sod_exception_id, report_version_id, kind, actor_id, actor_role_id),
+        ).fetchone()
+        if exception is None:
+            raise DecisionNotPermittedError(
+                f"exception {sod_exception_id!r} does not cover {actor_id!r} recording a "
+                f"{kind!r} decision as role {actor_role_id} on report version "
+                f"{report_version_id!r}. An exception authorises one act, not a category."
+            )
+
+        if canonical_actor(exception["approved_by"]) == canonical_actor(actor_id):
+            raise DecisionNotPermittedError(
+                f"exception {sod_exception_id!r} was approved by the same person it exempts. "
+                "A self-approved exception is self-approval with an extra step."
+            )
+
+        # Compared against the database's clock, not the application server's: expiry is a
+        # property of the record, and two app instances in different timezones must not disagree
+        # about whether an approval has lapsed.
+        if not exception["approver_active"]:
+            raise DecisionNotPermittedError(
+                f"exception {sod_exception_id!r} was approved by an account that is no longer "
+                "active. An approval from someone who has left is not a current approval."
+            )
+
+        if exception["lapsed"]:
+            raise DecisionNotPermittedError(
+                f"exception {sod_exception_id!r} was to be reviewed by "
+                f"{exception['review_date'].isoformat()} and has lapsed. A lapsed approval is "
+                "not a current one."
+            )
+
     def record(
         self,
         *,
@@ -196,6 +284,36 @@ class DecisionRepository:
                         f"{actor_role_id}. Either the permission is disabled, the actor does not "
                         "hold that role, the role assignment is disabled, or the account is "
                         "inactive. Absence is a refusal, not a gap to fill."
+                    )
+
+                # Separation of duties (#42, BR8, ADR-0005): nobody decides on their own output.
+                # Holding the role is necessary and not sufficient, and the steady state after
+                # the placement is one person holding every role, so the role check above cannot
+                # carry this on its own. Checked inside the transaction against the version being
+                # decided, so it cannot be raced.
+                #
+                # This covers the case that needs no client input. The wider role-pair rule in
+                # `decision_sod_role_pairs` stays unenforced because that table is deliberately
+                # unseeded pending client-answers B8, and enforcing an empty rule set would
+                # refuse everything.
+                author = conn.execute(
+                    "select created_by from report_versions where id = %s",
+                    (report_version_id,),
+                ).fetchone()
+                # Canonicalised, not compared as raw strings. Postgres accepts an uppercase or
+                # unhyphenated UUID for the foreign key, so the permission check above passes
+                # while a raw string comparison here does not match - and the author approves
+                # their own version. `canonical_actor` was written in `auth.py` for exactly this
+                # and then not used here, which is the bug this line fixes.
+                author_id = canonical_actor(author["created_by"]) if author else None
+                if author_id is not None and author_id == canonical_actor(actor_id):
+                    self._require_valid_exception(
+                        conn,
+                        sod_exception_id=sod_exception_id,
+                        report_version_id=report_version_id,
+                        kind=kind,
+                        actor_id=actor_id,
+                        actor_role_id=actor_role_id,
                     )
 
                 stream = conn.execute(
@@ -264,3 +382,150 @@ class DecisionRepository:
             decided_at=inserted["decided_at"].isoformat(),
             reason=inserted["reason"],
         )
+
+
+class ReportVersionConflict(RuntimeError):
+    """Two submissions raced for the same version number on one run.
+
+    Its own type because the caller's move is to retry, not to change anything. `unique (run_id,
+    version_number)` is what catches it: the next number is computed in the insert, and under
+    `READ COMMITTED` two concurrent submissions can both read the same maximum.
+    """
+
+
+@dataclass(frozen=True)
+class ReportVersion:
+    """One submitted report version. Immutable, like the row: `report_versions` is append-only."""
+
+    id: str
+    run_id: str
+    version_number: int
+    created_by: str
+    content_sha256: str
+    created_at: str
+    submitted_at: str
+
+
+class ReportRepository:
+    """Submitting and reading report versions (#124).
+
+    Kept beside `DecisionRepository` rather than in `persistence.py` because the two are one
+    subject: submitting a version is what opens its three decision streams, and reading a version
+    without its current decisions tells a reviewer nothing they can act on.
+
+    **Submitting is the act that makes a report decidable.** A trigger on insert opens the CEO
+    Ruling, Report Approval and Distribution Authority streams, so a decision can never arrive for
+    a stream nobody created. That is why there is no separate "open the streams" call to forget.
+    """
+
+    def __init__(self, database_url: str | None = None) -> None:
+        self._database_url = database_url or os.environ["DATABASE_URL"]
+
+    def submit(
+        self,
+        *,
+        run_id: str,
+        content_sha256: str,
+        actor_id: str,
+        role_names: tuple[str, ...],
+        created_at: datetime,
+    ) -> ReportVersion:
+        """Appends the next version of a run's report, and returns it.
+
+        **The version number is computed in the insert**, not read and then written, so the value
+        and the row that uses it come from one statement. That still races: two concurrent
+        submissions can read the same maximum under `READ COMMITTED`. `unique (run_id,
+        version_number)` is what actually prevents the duplicate, and this raises
+        `ReportVersionConflict` so the caller retries rather than seeing an opaque database error.
+
+        **`created_at` is supplied by the caller, `submitted_at` by the database.** They are
+        different facts: when the content was produced, and when it was handed over for decision.
+        The schema requires `submitted_at >= created_at`, so a `created_at` in the future is
+        refused rather than quietly accepted.
+        """
+        with psycopg.connect(self._database_url, row_factory=dict_row) as conn, conn.transaction():
+            # Resolved inside the same transaction as the insert, not before it. Two connections
+            # left a window: the composite foreign key proves the `user_roles` row exists, not that
+            # it is still enabled, so a role disabled between the lookup and the write would be
+            # recorded as the role the act was performed in.
+            actor_role_id = _role_id_for(conn, actor_id, role_names)
+            try:
+                row = conn.execute(
+                    "insert into report_versions "
+                    "(run_id, version_number, created_by, created_by_role_id, content_sha256, "
+                    " created_at) "
+                    "values (%s, (select coalesce(max(version_number), 0) + 1 from report_versions "
+                    "             where run_id = %s), %s, %s, %s, %s) "
+                    "returning id, run_id, version_number, created_by, content_sha256, "
+                    "          created_at, submitted_at",
+                    (run_id, run_id, actor_id, actor_role_id, content_sha256, created_at),
+                ).fetchone()
+            except psycopg.errors.UniqueViolation as error:
+                raise ReportVersionConflict(
+                    f"another version of run {run_id!r} was submitted at the same moment; "
+                    "re-read and submit again"
+                ) from error
+        return _to_report_version(row)
+
+    def get(self, report_version_id: str) -> ReportVersion:
+        with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
+            row = conn.execute(
+                "select id, run_id, version_number, created_by, content_sha256, created_at, "
+                "       submitted_at from report_versions where id = %s",
+                (report_version_id,),
+            ).fetchone()
+        if row is None:
+            raise KeyError(f"no report version {report_version_id!r}")
+        return _to_report_version(row)
+
+    def role_id_for(self, actor_id: str, role_names: tuple[str, ...]) -> int:
+        """The actor's enabled role id for the first of `role_names` they actually hold.
+
+        Standalone form of the resolution `submit` performs inside its own transaction. Both go
+        through `_role_id_for`, so there is one answer to "which role was this act performed in"
+        rather than two that can disagree.
+        """
+        with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
+            return _role_id_for(conn, actor_id, role_names)
+
+
+def _to_report_version(row: dict) -> ReportVersion:
+    return ReportVersion(
+        id=str(row["id"]),
+        run_id=str(row["run_id"]),
+        version_number=row["version_number"],
+        created_by=str(row["created_by"]),
+        content_sha256=row["content_sha256"],
+        created_at=row["created_at"].isoformat(),
+        submitted_at=row["submitted_at"].isoformat(),
+    )
+
+
+def _role_id_for(conn: psycopg.Connection, actor_id: str, role_names: tuple[str, ...]) -> int:
+    """The actor's enabled role id for the first of `role_names` they hold, on the caller's
+    connection.
+
+    `report_versions.created_by_role_id` records the role an act was performed in, and `Principal`
+    carries role *names* while the column takes an id. Resolving here rather than in the router
+    keeps the database's vocabulary out of the HTTP layer.
+
+    **Ordered, not arbitrary.** The caller passes the roles in precedence order, so a principal
+    holding several gets a deterministic answer rather than whichever the database returned first.
+    That matters for the steady state after this placement, where one person holds every role and
+    an arbitrary pick would make the recorded role meaningless.
+
+    **Takes a connection so the caller can resolve and write in one transaction.** The foreign key
+    proves the `user_roles` row exists, not that it is still enabled, so resolving on a separate
+    connection leaves a window where a role disabled in between is still recorded as the one the
+    act was performed in.
+    """
+    rows = conn.execute(
+        "select r.name, ur.role_id from user_roles ur join roles r on r.id = ur.role_id "
+        "where ur.user_id = %s and ur.enabled",
+        (actor_id,),
+    ).fetchall()
+    held = {row["name"]: row["role_id"] for row in rows}
+    for name in role_names:
+        if name in held:
+            return held[name]
+    raise DecisionNotPermittedError(f"actor {actor_id!r} holds none of {', '.join(role_names)}")

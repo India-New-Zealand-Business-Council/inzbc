@@ -24,6 +24,7 @@ from services.api.persistence import (
     HumanGateNotSatisfied,
     RunRepository,
 )
+from services.api.tests.role_seed import authorise_run, grant
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
@@ -44,24 +45,34 @@ def initiated_by() -> str:
     through any app code, since seeding a user isn't this adapter's concern.
     """
     with psycopg.connect(DATABASE_URL) as conn:
-        conn.execute(
-            "insert into roles (id, name) values (1, 'Analyst') on conflict do nothing"
-        )
         row = conn.execute(
             "insert into users (name, email) values (%s, %s) returning id",
             (f"Test User {uuid.uuid4()}", f"{uuid.uuid4()}@example.com"),
         ).fetchone()
         # ADR-0005 replaced users.role_id with user_roles: one principal may hold several roles,
         # because the steady state after the placement is one person holding every one of them.
-        conn.execute(
-            "insert into user_roles (user_id, role_id) values (%s, 1)", (row[0],)
-        )
+        # Seeded by name rather than by a hardcoded id: `roles.id` is not coordinated between the
+        # suites sharing this database, and role enforcement reads `roles.name` to decide
+        # authority, so a fixed id gives whichever name another suite claimed first.
+        grant(conn, row[0], "Analyst")
         conn.commit()
     return str(row[0])
 
 
 def _run_number() -> str:
     return f"RUN-TEST-{uuid.uuid4().hex[:12]}"
+
+
+def _authorise(run_id: str, actor_id: str, kind: str = "Launch") -> str:
+    """Records a real run authorisation and returns its id, for use as `approval_ref`.
+
+    Every test here used to pass the string `'launch-authority-recorded'`, which was accepted
+    because launch and resumption authority had nowhere to be recorded and the adapter could only
+    check that *something* was supplied (#227). The suite was therefore documenting the hole while
+    appearing to test the gate.
+    """
+    with psycopg.connect(DATABASE_URL) as conn:
+        return authorise_run(conn, run_id, actor_id, kind)
 
 
 def test_create_run_starts_at_version_zero_in_draft(
@@ -152,7 +163,7 @@ def test_apply_transition_commits_and_advances_version(
         run.id,
         expected_version=0,
         new_state=RunState.RUN_AUTHORISED,
-        approval_ref="launch-authority-recorded",
+        approval_ref=_authorise(run.id, initiated_by),
         actor_id=initiated_by,
         reason="authorise run",
     )
@@ -176,7 +187,7 @@ def test_apply_transition_raises_when_version_is_stale(
         run.id,
         expected_version=0,
         new_state=RunState.RUN_AUTHORISED,
-        approval_ref="launch-authority-recorded",
+        approval_ref=_authorise(run.id, initiated_by),
         actor_id=initiated_by,
         reason="authorise run",
     )
@@ -221,7 +232,7 @@ def test_a_stale_caller_is_told_it_is_stale_not_that_its_transition_is_illegal(
         run.id,
         expected_version=0,
         new_state=RunState.RUN_AUTHORISED,
-        approval_ref="launch-authority-recorded",
+        approval_ref=_authorise(run.id, initiated_by),
         actor_id=initiated_by,
         reason="authorise run",
     )
@@ -233,7 +244,7 @@ def test_a_stale_caller_is_told_it_is_stale_not_that_its_transition_is_illegal(
             run.id,
             expected_version=0,
             new_state=RunState.RUN_AUTHORISED,
-            approval_ref="launch-authority-recorded",
+            approval_ref=_authorise(run.id, initiated_by),
             actor_id=initiated_by,
             reason="authorise run",
         )
@@ -258,7 +269,7 @@ def test_a_stale_caller_is_told_it_is_stale_not_that_its_transition_is_illegal(
             run.id,
             expected_version=1,
             new_state=RunState.RUN_AUTHORISED,
-            approval_ref="launch-authority-recorded",
+            approval_ref=_authorise(run.id, initiated_by),
             actor_id=initiated_by,
             reason="authorise run",
         )
@@ -341,7 +352,7 @@ def test_two_concurrent_transitions_cannot_both_commit(
                 run.id,
                 expected_version=0,
                 new_state=RunState.RUN_AUTHORISED,
-                approval_ref="launch-authority-recorded",
+                approval_ref=_authorise(run.id, initiated_by),
                 actor_id=initiated_by,
                 reason="authorise run",
             )
@@ -394,14 +405,116 @@ def test_a_human_gated_transition_is_refused_without_authority(repo, initiated_b
     assert repo.get_run(run.id).version == 0
 
 
+def test_a_run_level_gate_needs_a_real_authorisation(repo, initiated_by) -> None:
+    """Free text cannot authorise a launch either, which it could until #227.
+
+    Launch and resumption authority happen before any report version exists, so ADR-0005's three
+    streams (all keyed to `report_version_id`) had nowhere to record them and this layer could only
+    check that *something* was supplied. The two gates deciding whether a run may run at all were
+    the two that accepted anything a caller typed. They now point at `run_authorisations`.
+    """
+    run = repo.create_run(
+        run_number=_run_number(),
+        prompt_version="SIP-050 v1.1",
+        coverage_start_utc="2026-07-27T07:00:00+12:00",
+        coverage_end_utc="2026-07-28T07:00:00+12:00",
+        initiated_by=initiated_by,
+    )
+
+    with pytest.raises(HumanGateNotSatisfied, match="not a launch authorisation"):
+        repo.apply_transition(
+            run.id, expected_version=0, new_state=RunState.RUN_AUTHORISED,
+            actor_id=initiated_by, reason="authorise run",
+            approval_ref="launch-authority-recorded",
+        )
+
+    assert repo.get_run(run.id).state == RunState.DRAFT
+
+
+def test_an_authorisation_for_another_run_does_not_authorise_this_one(repo, initiated_by) -> None:
+    """An authorisation covers one act, not a category.
+
+    Without the run_id match the check would only ask whether *an* authorisation exists, so one
+    recorded for yesterday's run would launch today's. That is the same failure the
+    separation-of-duties exceptions refuse: authority is granted for a specific act.
+    """
+    def _new_run():
+        return repo.create_run(
+            run_number=_run_number(),
+            prompt_version="SIP-050 v1.1",
+            coverage_start_utc="2026-07-27T07:00:00+12:00",
+            coverage_end_utc="2026-07-28T07:00:00+12:00",
+            initiated_by=initiated_by,
+        )
+
+    authorised_run, other_run = _new_run(), _new_run()
+    borrowed = _authorise(authorised_run.id, initiated_by)
+
+    with pytest.raises(HumanGateNotSatisfied, match="not a launch authorisation"):
+        repo.apply_transition(
+            other_run.id, expected_version=0, new_state=RunState.RUN_AUTHORISED,
+            actor_id=initiated_by, reason="borrow someone else's authority",
+            approval_ref=borrowed,
+        )
+
+    assert repo.get_run(other_run.id).state == RunState.DRAFT
+
+
+def test_a_resumption_authorisation_cannot_authorise_a_launch(repo, initiated_by) -> None:
+    """The kind is matched, not just the run.
+
+    Both gates are run level, so checking only that the reference is a run authorisation for this
+    run would let a resumption authorise a launch. "Somebody authorised something about this run"
+    is not the claim the state change makes.
+    """
+    run = repo.create_run(
+        run_number=_run_number(),
+        prompt_version="SIP-050 v1.1",
+        coverage_start_utc="2026-07-27T07:00:00+12:00",
+        coverage_end_utc="2026-07-28T07:00:00+12:00",
+        initiated_by=initiated_by,
+    )
+    wrong_kind = _authorise(run.id, initiated_by, kind="Resumption")
+
+    with pytest.raises(HumanGateNotSatisfied, match="not a launch authorisation"):
+        repo.apply_transition(
+            run.id, expected_version=0, new_state=RunState.RUN_AUTHORISED,
+            actor_id=initiated_by, reason="wrong kind of authority",
+            approval_ref=wrong_kind,
+        )
+
+    assert repo.get_run(run.id).state == RunState.DRAFT
+
+
+def test_a_run_authorisation_cannot_be_edited_after_the_fact(repo, initiated_by) -> None:
+    """Append-only, so the evidence cannot be rewritten to match what happened afterwards."""
+    run = repo.create_run(
+        run_number=_run_number(),
+        prompt_version="SIP-050 v1.1",
+        coverage_start_utc="2026-07-27T07:00:00+12:00",
+        coverage_end_utc="2026-07-28T07:00:00+12:00",
+        initiated_by=initiated_by,
+    )
+    authorisation = _authorise(run.id, initiated_by)
+
+    # `psycopg.Error` and then the message, matching test_audit.py. The trigger raises with
+    # errcode 55000, which psycopg maps to ObjectNotInPrerequisiteState rather than
+    # RaiseException, so naming a subclass here pins an implementation detail of the mapping
+    # instead of the behaviour under test.
+    with psycopg.connect(DATABASE_URL) as conn, pytest.raises(psycopg.Error) as exc:
+        conn.execute(
+            "update run_authorisations set reason = %s where id = %s",
+            ("a different reason", authorisation),
+        )
+    assert "append-only" in str(exc.value)
+
+
 def test_a_report_level_gate_needs_a_real_decision_record(repo, initiated_by) -> None:
     """Free text cannot authorise a gated transition that has somewhere to point.
 
-    Run-level authority (launch, resumption) has no home in ADR-0005's streams yet, because those
-    are keyed to a report version that does not exist at that point, so those two gates accept an
-    unverifiable reference and #227 tracks giving them one. Every other gate is checked against
-    `decision_records`, which is append-only, so the reference cannot later be edited into saying
-    something else.
+    The report-level gates are checked against `decision_records`, which is append-only, so the
+    reference cannot later be edited into saying something else. The run-level gates get the same
+    treatment against `run_authorisations`, tested above.
     """
     run = repo.create_run(
         run_number=_run_number(),
@@ -413,7 +526,7 @@ def test_a_report_level_gate_needs_a_real_decision_record(repo, initiated_by) ->
 
     # Walk to the first gate that is not run level. Only the first move is gated on the way.
     walk = [
-        (RunState.RUN_AUTHORISED, "launch-authority-recorded"),
+        (RunState.RUN_AUTHORISED, _authorise(run.id, initiated_by)),
         (RunState.COVERAGE_LOCKED, None),
         (RunState.SCANNING, None),
         (RunState.CANDIDATE_REVIEW, None),

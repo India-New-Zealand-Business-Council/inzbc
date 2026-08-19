@@ -35,4 +35,4 @@
 ## The live site
 Do not edit or publish `inzbc.org`. Build on the duplicate site (`docs/discovery.md` OI-9);
 go-live needs Sunil's written sign-off and is his to press. Log every Wix editor session in
-`docs/wix-changes-log.md`. Full rules in [CLAUDE.md](./CLAUDE.md).
+`docs/wix-changes-log.md`. Full rules in [PROJECT-RULES.md](./PROJECT-RULES.md).

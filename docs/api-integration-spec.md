@@ -85,7 +85,10 @@ Full endpoint list from `schemas/api-contract.md` (v0.1 draft — shapes may sti
 `POST /api/reports/:id/{approve,request-changes}`, `POST /api/reports/:id/decision`,
 `GET /api/registers/:name`, `POST /api/registers/:name`, `GET /api/dashboard`.
 
-**Cross-cutting:** `GET /api/audit` (append-only, read), `GET /api/config` (server-side flags,
+**Cross-cutting:** `GET /api/audit` (append-only, read; **built as
+`GET /api/runs/{run_id}/audit`**, scoped to one run with keyset pagination, because an unscoped
+read of an append-only table grows without bound and the question people actually ask is what
+happened on a given run), `GET /api/config` (server-side flags,
 read).
 
 > **Superseded, 31 July 2026.** The control list above is the v0.1 contract. ADR-0005 replaced it
@@ -148,22 +151,42 @@ Assistant API (SSE)"):
 ```
 Staff user (authenticated, same-origin)
   → submits a drafting request (channel: email | website | social; context/prompt)
-  → [REDACTION LAYER — strips member/Board/confidential data before any model call]
+  → [BOUNDARY REFUSAL — the call declares a PromptSource; a member record, CRM note,
+     Board paper or private message is refused outright. Structured records are built
+     through minimise(), which keeps only allowlisted fields]
+  → [REDACTION — masks formatted identifiers. It does NOT strip a name, job title or
+     employer in prose, and no set of regexes will]
   → ModelGateway.complete() (or a streaming equivalent)
   → SSE token stream back to the UI as the draft generates
   → draft rendered in the UI — never sent, never published
   → named human reviewer edits/approves (docs/modules/comms-assistant.md "Definition of done")
+    [API built: POST /api/comms/drafts/{id}/approve records who approved, when, and refuses the
+    draft's own author (BR8). The review UI that calls it (#60) is not built yet — this is the
+    endpoint it will call, not the reviewer's screen.]
   → only on approval: handoff to the actual send/publish channel (mechanism not specified —
     see Open items)
 ```
 
-**A gap worth flagging prominently, not softening:** the redaction step above is
-**non-negotiable** per `docs/modules/comms-assistant.md` ("Prohibited by default: no
-member/sponsor/stakeholder personal data... no confidential government/commercial data") and per
-the SIP redaction rule this reuses. But `bhanu.md`'s Next Up list records it as **"currently
-unowned."** No request should reach the model gateway from the Comms Assistant until this has an
-owner and an implementation — that's not a nice-to-have gap, it's the one control that makes the
-"drafts only, adversarially tested" promise in `comms-assistant.md` actually true.
+**A gap worth flagging prominently, not softening.** Both controls above are built and enforced on
+every call: `POST /api/comms/draft` exists at `services/api/comms.py` and goes through
+`ModelGateway.complete()`, which refuses a prohibited source and then redacts. That closes the
+structured case.
+
+**It does not close the prose case, and this is the live gap.** The Comms brief is free text a
+staff member types, so there is no record to minimise and nothing can tell a member's name from any
+other words. The call declares `STAFF_AUTHORED`, which records where the text came from and not
+that it is clean, so an operator who pastes
+
+    Board minutes: Priya Sharma, Chief Executive at Koru Exports, opposed the offer.
+
+into a brief sends exactly that. It satisfies `check_source`, survives redaction untouched, and
+violates ADR-0006 §1 and §3 while every automated control reports success.
+
+What bounds it today is the operator being told not to, in `operator-guide.md` §3. That is a
+procedure, not a boundary, and `comms-assistant.md`'s "Prohibited by default: no
+member/sponsor/stakeholder personal data... no confidential government/commercial data" asks for a
+boundary. Closing it properly means the Comms request carrying named fields rather than prose, so
+there is something to minimise. Tracked as #303.
 
 **Also not yet true:** the adversarial/security review `comms-assistant.md` requires "before
 staff use" hasn't happened (nothing built yet to review) — this flow cannot ship to real staff

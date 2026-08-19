@@ -1,4 +1,4 @@
-// Placeholder rows only — CLAUDE.md: never invent statistics, board names, or FTA details. No
+// Placeholder rows only — PROJECT-RULES.md: never invent statistics, board names, or FTA details. No
 // sourced document lists actual INZBC announcements for this portal, so none are invented; this
 // is copy showing the intended layout until a real content source exists.
 // In its own module, not exported from NotificationsSection.tsx: a component file that also

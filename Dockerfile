@@ -43,7 +43,8 @@ RUN pip install --no-cache-dir \
       "fastapi>=0.115" \
       "uvicorn[standard]>=0.32" \
       "pydantic>=2.0" \
-      "psycopg[binary]>=3.1"
+      "psycopg[binary]>=3.1" \
+      "httpx>=0.27"
 
 COPY apps/ apps/
 COPY services/ services/

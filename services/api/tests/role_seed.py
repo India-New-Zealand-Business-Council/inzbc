@@ -1,0 +1,97 @@
+"""Seeding roles for the database-backed suites, keyed on name rather than id.
+
+Every suite here shares one database, and `roles.name` is unique while `roles.id` is not
+coordinated between them. Three suites claim id 1 as `Analyst`; `test_decisions.py` claims id 1 as
+`SIP Owner`. With `on conflict do nothing`, whichever suite runs first wins the name at that id and
+the others silently get a role called something else.
+
+That was harmless while nothing read `roles.name`: the foreign key only needs the id to exist. Role
+enforcement reads the name to decide authority, so the same seed now produces a principal whose
+permissions depend on test execution order.
+
+Seeding by name fixes it: ask for the role you want, get its real id back whatever id it happens to
+live at.
+"""
+
+from __future__ import annotations
+
+import psycopg
+
+
+def role_id(conn: psycopg.Connection, name: str) -> int:
+    """Returns the id of the role called `name`, creating it if absent.
+
+    `on conflict (name) do update` rather than `do nothing`, because `do nothing` suppresses the
+    `returning` clause when the row already exists and hands back `None`. The update is a no-op
+    write whose only job is to make the existing row's id available.
+    """
+    # Each attempt runs in its own savepoint. An earlier version called `conn.rollback()` on a
+    # unique violation, which rolls back the whole transaction rather than the failed statement:
+    # fixtures that insert a user and then call `grant` would lose the user, and the following
+    # `user_roles` insert would fail its foreign key against a row that no longer existed.
+    # `conn.transaction()` opens a nested transaction here, so only the failed attempt is undone.
+    #
+    # `max(id) + 1` is computed inside the insert, so two connections creating different role
+    # names cannot both read the same maximum first. The retry covers the remaining window where
+    # another connection commits that id between this statement's snapshot and its write.
+    for attempt in range(3):
+        try:
+            with conn.transaction():
+                row = conn.execute(
+                    "insert into roles (id, name) values "
+                    "((select coalesce(max(id), 0) + 1 from roles), %s) "
+                    "on conflict (name) do update set name = excluded.name returning id",
+                    (name,),
+                ).fetchone()
+            break
+        except psycopg.errors.UniqueViolation:
+            if attempt == 2:
+                raise
+    return row[0] if not isinstance(row, dict) else row["id"]
+
+
+def grant(conn: psycopg.Connection, user_id: str, *names: str) -> list[int]:
+    """Gives `user_id` each named role, enabling any assignment that already exists."""
+    ids = []
+    for name in names:
+        rid = role_id(conn, name)
+        conn.execute(
+            "insert into user_roles (user_id, role_id) values (%s, %s) "
+            "on conflict (user_id, role_id) do update set enabled = true",
+            (user_id, rid),
+        )
+        ids.append(rid)
+    return ids
+
+
+def authorise_run(
+    conn: psycopg.Connection, run_id: str, actor_id: str, kind: str = "Launch"
+) -> str:
+    """Records a run authorisation and returns its id, for use as `approval_ref`.
+
+    Launch and resumption authority happen before any report version exists, so ADR-0005's decision
+    streams cannot record them and `apply_transition` checks them against `run_authorisations`
+    instead (#227). Before that table existed the suites passed strings like
+    `'launch-authority-recorded'` and `'AUTH-2026-07-27'`, which were accepted, so three suites were
+    documenting the hole while appearing to test the gate.
+
+    Shared rather than copied into each suite: the last thing three near-identical seed helpers
+    need is three chances to drift apart on what a valid authorisation looks like.
+
+    Grants the actor a role if they hold none, because the `(actor_id, actor_role_id)` foreign key
+    means an authorisation cannot be recorded by a principal with no role at all.
+    """
+    role = conn.execute(
+        "select role_id from user_roles where user_id = %s and enabled limit 1", (actor_id,)
+    ).fetchone()
+    role_key = (role[0] if not isinstance(role, dict) else role["role_id"]) if role else (
+        grant(conn, actor_id, "SIP Owner")[0]
+    )
+    row = conn.execute(
+        "insert into run_authorisations (run_id, kind, actor_id, actor_role_id, decided_at, "
+        "reason, evidence_ref) values (%s, %s, %s, %s, now(), %s, %s) returning id",
+        (run_id, kind, actor_id, role_key,
+         f"{kind.lower()} authorised for the controlled run", "SIP-184 run record"),
+    ).fetchone()
+    conn.commit()
+    return str(row[0] if not isinstance(row, dict) else row["id"])

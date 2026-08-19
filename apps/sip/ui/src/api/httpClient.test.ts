@@ -99,3 +99,77 @@ describe('isUuid', () => {
     expect(isUuid('34f4237b-ecd0-470c-8b2e-424ab745eb6')).toBe(false)
   })
 })
+
+describe('CSRF', () => {
+  it('adds the token to a write', async () => {
+    // `write_access` refuses any non-GET with no `X-CSRF-Token`, so without this every write on
+    // these screens is authenticated and refused. Added in `apiRequest` rather than in each
+    // client so a new write cannot forget it.
+    const spy = mockFetch({ ok: true })
+
+    await apiRequest('/api/runs', { method: 'POST', body: '{}' })
+
+    const [, init] = spy.mock.calls[0] as [string, RequestInit]
+    expect((init.headers as Record<string, string>)['X-CSRF-Token']).toBe('a-real-token')
+  })
+
+  it('preserves the headers the caller set', async () => {
+    const spy = mockFetch({ ok: true })
+
+    await apiRequest('/api/runs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    })
+
+    const [, init] = spy.mock.calls[0] as [string, RequestInit]
+    expect(init.headers).toMatchObject({
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': 'a-real-token',
+    })
+  })
+
+  it.each(['GET', 'HEAD', 'OPTIONS'])('leaves a %s alone', async (method) => {
+    // Requiring a token on a read would train callers to send it everywhere, and would make every
+    // read depend on a second request it does not need.
+    const spy = mockFetch([])
+
+    await apiRequest('/api/runs', { method })
+
+    const [, init] = spy.mock.calls[0] as [string, RequestInit]
+    expect((init.headers as Record<string, string> | undefined)?.['X-CSRF-Token']).toBeUndefined()
+  })
+
+  it('treats a request with no method as a read', async () => {
+    // `fetch` defaults to GET, so an omitted method must not be assumed to be a write.
+    const spy = mockFetch([])
+
+    await apiRequest('/api/runs', {})
+
+    const [, init] = spy.mock.calls[0] as [string, RequestInit]
+    expect((init.headers as Record<string, string> | undefined)?.['X-CSRF-Token']).toBeUndefined()
+  })
+
+  it('reads the session from the same origin the request goes to', async () => {
+    // A caller using `baseUrl` for a cross-origin deployment must read its token from that host,
+    // not from whatever page happens to be open.
+    const { clearSession } = await import('./session')
+    clearSession()
+    const spy = vi.fn(async (url: string) =>
+      url.endsWith('/api/session')
+        ? {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              user_id: 'u', name: 'n', roles: [], csrf_token: 'from-that-host',
+            }),
+          }
+        : { ok: true, status: 200, json: async () => ({}) },
+    )
+    vi.stubGlobal('fetch', spy)
+
+    await apiRequest('https://api.example.test/api/runs', { method: 'POST', body: '{}' })
+
+    expect(spy.mock.calls[0]?.[0]).toBe('https://api.example.test/api/session')
+  })
+})

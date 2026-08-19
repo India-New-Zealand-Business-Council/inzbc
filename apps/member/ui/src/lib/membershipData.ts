@@ -13,7 +13,7 @@ export const MEMBER_JUNGLE_URL = 'https://inzbc.memberjungle.club'
 // is the membership system of record and the register must not exist in two places. Opt-in fields
 // only." Also docs/client-answers.md C1 (retain-and-integrate, no second membership register) and
 // C5 (link, don't copy/embed the directory) — both `[[proposed — pending INZBC confirmation]]`,
-// and CLAUDE.md's standing rule: do not rebuild membership on Wix before the retain/integrate/
+// and PROJECT-RULES.md's standing rule: do not rebuild membership on Wix before the retain/integrate/
 // replace assessment; link out, do not duplicate.
 export const MEMBERSHIP_ACTIONS = [
   {

@@ -11,7 +11,7 @@ why if you skip one. Move finished items to **Done**.
 /apps/comms/ui/**
 /apps/fta/ui/**       (the Explainer's embedded UI; Roshan owns its service)
 ```
-Design: follow `DESIGN.local.md`. Do not invent a look; brand tokens come from INZBC's kit.
+Design: follow `docs/design-direction.md`. Do not invent a look; brand tokens come from INZBC's kit.
 
 ## Modules I own (see [docs/modules](../modules/README.md))
 [Public website](../modules/website.md) + [Member portal](../modules/member-portal.md) +
@@ -22,7 +22,8 @@ SIP review/approval UI + Comms Assistant UI + FTA Explainer embed.
 The shared API + auth for anything that reads/writes data. Roshan's FTA service for the Explainer UI.
 
 ## Next up
-- [ ] Design system from `DESIGN.local.md` (not yet created): token-driven component library on
+- [ ] Design system from `docs/design-direction.md` (the system is what's outstanding, not the
+      source doc): token-driven component library on
       the real brand tokens documented in `docs/design-decisions.md` (#155) (colours, typography,
       logo rules from the INZBC Brand Guidelines 2026 — no placeholder swap needed, kit already
       arrived), WCAG 2.2 AA behaviour — focus order, contrast, keyboard paths — built into each
@@ -103,7 +104,7 @@ The shared API + auth for anything that reads/writes data. Roshan's FTA service 
   a11y, loading skeletons). Read against `docs/modules/member-portal-spec.md`'s own "Build
   gate" first: login forms, a dashboard/profile carrying real membership status, and a
   member directory are all explicitly named there as "not buildable until the
-  retain/integrate/replace assessment is approved" — the same rule `CLAUDE.md` and
+  retain/integrate/replace assessment is approved" — the same rule `PROJECT-RULES.md` and
   `docs/modules/membership-crm.md` state (do not rebuild membership on Wix, link out, don't
   duplicate the register; that assessment is still `PROPOSED`, not confirmed). Flagged the
   conflict rather than building against it; scoped down to what the spec's own carve-out
@@ -119,7 +120,7 @@ The shared API + auth for anything that reads/writes data. Roshan's FTA service 
   `client-answers.md` C1/C5); Events section (link out per event to Member Jungle or Zoho per
   C6/C7, using the confirmed "INZBC Summit" name only where illustrative, never a fabricated
   date); Resources and Notifications sections (placeholder-labelled rows only — no invented
-  report titles or announcements, per `CLAUDE.md`'s "never invent" rule); a mobile pass
+  report titles or announcements, per `PROJECT-RULES.md`'s "never invent" rule); a mobile pass
   (Header's four nav links didn't fit one row under 375px — restructured into a logo+CTA row
   plus a horizontally-scrollable nav strip, the same pattern `apps/sip/ui`'s `AppShell.tsx`
   already uses for its screen switcher); a WCAG 2.2 AA pass that found and fixed three real

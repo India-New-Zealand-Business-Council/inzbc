@@ -24,6 +24,7 @@ from pydantic import Field, ValidationError
 from apps.sip.collector.assessment import CandidateAssessment
 from apps.sip.pipeline.models import SignalStrength, SipModel, SourceConfidence
 from services.api.model_gateway import ModelGateway
+from services.api.prompt_boundary import PromptSource
 
 
 class ScoringParseError(RuntimeError):
@@ -107,8 +108,12 @@ def score_candidate(
     """One gateway call, strict parse. Raises `ScoringParseError` on any deviation from the
     contract; raises the gateway's own errors unchanged when the call itself fails.
     """
+    # PUBLIC_SOURCE: every field here comes from a published article - its headline, summary, URL,
+    # publication date and the outlet that ran it. Nothing member-derived reaches this prompt, and
+    # if that ever changes the declaration has to change with it.
     result = gateway.complete(
-        build_scoring_prompt(headline, source, published, url, summary)
+        build_scoring_prompt(headline, source, published, url, summary),
+        source=PromptSource.PUBLIC_SOURCE,
     )
     try:
         # object_pairs_hook rejects duplicate keys, which json.loads would otherwise collapse to

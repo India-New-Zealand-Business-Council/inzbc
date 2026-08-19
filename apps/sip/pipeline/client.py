@@ -29,12 +29,27 @@ class SipApiError(RuntimeError):
 
 
 class SipPipelineClient:
-    """Bearer-token REST client for the pipeline endpoints. One instance per run/session."""
+    """Session-cookie REST client for the pipeline endpoints. One instance per run/session.
 
-    def __init__(self, base_url: str, token: str, timeout: float = 30.0):
+    ADR-0004's session cookie + CSRF double-submit (`services/api/session.py`) replaced the
+    caller-supplied `actor_id`/`initiated_by` fields this client used to send: the server now
+    derives the audit identity from the session, and `require_csrf` refuses any state-changing
+    request without a matching `X-CSRF-Token` header. `session_cookie`/`csrf_token` come from
+    `SessionRepository.establish_session` (see `scripts/dev_session.py`) - there is no sign-in
+    route this client can call itself.
+    """
+
+    def __init__(
+        self,
+        base_url: str,
+        session_cookie: str,
+        csrf_token: str,
+        timeout: float = 30.0,
+    ):
         self.base_url = base_url.rstrip("/")
         self._session = requests.Session()
-        self._session.headers.update({"Authorization": f"Bearer {token}"})
+        self._session.cookies.set("inzbc_session", session_cookie)
+        self._session.headers.update({"X-CSRF-Token": csrf_token})
         self.timeout = timeout
 
     def _request(self, method: str, path: str, **kwargs: Any) -> Any:
@@ -48,7 +63,27 @@ class SipPipelineClient:
     # ---------- runs ----------
 
     def create_run(self, run: Run) -> dict:
-        return self._request("POST", "/api/runs", json=_model_json(run))
+        """POSTs the run-creation fields only.
+
+        `Run` also carries server-controlled fields (`id`, `state`, `version`,
+        `production_enabled`, `coverage_timezone`) that `services/api/runs.py`'s `CreateRunIn`
+        deliberately does not accept - `production_enabled` in particular is never client-settable
+        at creation (the server always creates `False`, per the SIP non-negotiable). Sending the
+        full `Run.model_dump()` 422s against that `extra="forbid"` model the moment a caller
+        supplies any `Run` field with a non-None default (e.g. `coverage_timezone`), which is
+        every caller - `Run()` sets it by default. Caught by actually running #55's dry run
+        against a real server, not by the fake-client tests, which don't validate extra fields.
+
+        `run.initiated_by` is not sent: `CreateRunIn` no longer accepts it (ADR-0004) - the server
+        derives it from this client's session instead of trusting a caller-supplied value.
+        """
+        payload = {
+            "run_number": run.run_number,
+            "prompt_version": run.prompt_version,
+            "coverage_start_utc": run.coverage_start_utc,
+            "coverage_end_utc": run.coverage_end_utc,
+        }
+        return self._request("POST", "/api/runs", json=payload)
 
     def list_runs(self) -> list[dict]:
         return self._request("GET", "/api/runs")
@@ -83,10 +118,18 @@ class SipPipelineClient:
         return self._request("GET", f"/api/runs/{run_id}/source-checks")
 
     def record_source_check(self, run_id: str, source_check: SourceCheck) -> dict:
+        """`run_id` is in the URL, not the body - `RecordSourceCheckIn`
+        (`services/api/source_checks.py`) doesn't accept it (`extra="forbid"`), same shape as
+        `create_run`'s fix. `source_check.run_id` must still be set for callers building the
+        `SourceCheck` model directly (it mirrors the `source_checks` table), so it's dropped here
+        rather than removed from the model.
+        """
+        payload = _model_json(source_check)
+        payload.pop("run_id", None)
         return self._request(
             "POST",
             f"/api/runs/{run_id}/source-checks",
-            json=_model_json(source_check),
+            json=payload,
         )
 
     # ---------- candidates ----------
@@ -95,7 +138,30 @@ class SipPipelineClient:
         return self._request("GET", "/api/candidates", params={"run": run_id})
 
     def create_candidate(self, candidate: Candidate) -> dict:
-        return self._request("POST", "/api/candidates", json=_model_json(candidate))
+        """POSTs the capture fields `CaptureCandidateIn` (`services/api/candidates.py`) accepts.
+
+        No `actor_id`: it was never a `Candidate`/`candidates`-table field, only audit-only input
+        (`services/api/candidate_persistence.py`'s `capture()` passed it straight to
+        `record_audit`) - `CaptureCandidateIn` no longer accepts it (ADR-0004), since the server
+        derives the audit identity from this client's session instead.
+
+        Whitelisted the same way `create_run` is, not `_model_json(candidate)` verbatim:
+        `Candidate.verification` defaults to `Unverified` (not `None`), so it survives
+        `exclude_none=True` and 422s against `CaptureCandidateIn`'s `extra="forbid"` - the same
+        bug class as `create_run`'s `coverage_timezone`, caught the same way, by actually running
+        #55's dry run against a live server rather than trusting the fake-client tests.
+        """
+        payload = {
+            "run_id": candidate.run_id,
+            "headline": candidate.headline,
+            "source_id": candidate.source_id,
+            "url": candidate.url,
+            "summary": candidate.summary,
+            "published_at": candidate.published_at,
+            "in_coverage_window": candidate.in_coverage_window,
+        }
+        payload = {k: v for k, v in payload.items() if v is not None}
+        return self._request("POST", "/api/candidates", json=payload)
 
     def patch_candidate(self, candidate_id: str, fields: dict) -> dict:
         return self._request("PATCH", f"/api/candidates/{candidate_id}", json=fields)

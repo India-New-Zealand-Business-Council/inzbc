@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "WebFetch(domain:www.inzbc.org)",
-      "Bash(gh pr *)",
-      "Bash(node *)"
-    ]
-  }
-}

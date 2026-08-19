@@ -69,7 +69,6 @@ describe('getCandidate / captureCandidate', () => {
     await captureCandidate({
       run_id: 'run-1',
       headline: 'Test candidate',
-      actor_id: '34f4237b-ecd0-470c-8b2e-424ab745eb62',
     })
     const [url, init] = firstCall(spy)
     expect(url).toBe('/api/candidates')
@@ -79,7 +78,7 @@ describe('getCandidate / captureCandidate', () => {
 })
 
 describe('candidate commands', () => {
-  const actor = { actor_id: '34f4237b-ecd0-470c-8b2e-424ab745eb62', reason: 'go' }
+  const actor = { reason: 'go' }
 
   it('verify posts to /verify', async () => {
     const spy = mockFetch({ ...CANDIDATE, verification: 'Verified' })

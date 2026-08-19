@@ -100,6 +100,64 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/runs/{run_id}/fail-qa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Fail Qa
+         * @description QA in Progress -> QA Failed. The Quality Reviewer's stop.
+         *
+         *     REQ-U-01: "A Critical failure blocks progression to the CEO decision." This is that block,
+         *     and it is the reviewer's independent authority: it is the one lifecycle move they can make
+         *     without the SIP Owner, and it prevents a brief they consider unsound from reaching the CEO at
+         *     all. Without this route the reviewer could record findings and still had no way to stop the
+         *     run, which made the QA gate advisory.
+         *
+         *     Deliberately not `Stopped`. REQ-U-02 reserves Stop for the CEO decision screen, so a reviewer
+         *     who terminates the run outright would be taking a decision the requirements give to the CEO.
+         *     QA Failed routes back to Report Drafted for correction, which is the documented path.
+         */
+        post: operations["fail_qa_api_runs__run_id__fail_qa_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/runs/{run_id}/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stop Run
+         * @description Awaiting CEO Decision -> Stopped. Terminal, and the CEO's decision alone.
+         *
+         *     REQ-U-02 lists the CEO's four options as Continue, Continue with Correction, Pause and Stop.
+         *     Pause was mounted and Stop was not, so the only terminal refusal in the state machine had no
+         *     way to be exercised: a run the CEO wanted stopped could only be paused, which says something
+         *     different and leaves it resumable.
+         *
+         *     `Stopped` has no outbound transitions. Human gated, so `approval_ref` must name the
+         *     `decision_records` row carrying the decision.
+         */
+        post: operations["stop_run_api_runs__run_id__stop_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/runs/{run_id}/complete": {
         parameters: {
             query?: never;
@@ -114,6 +172,37 @@ export interface paths {
          * @description Distributed -> Closed. Mechanical closeout; not human gated.
          */
         post: operations["complete_run_api_runs__run_id__complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/runs/{run_id}/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Run Audit
+         * @description The run's audit trail, newest first. Every staff role may read it.
+         *
+         *     **Readable by all seven roles deliberately.** An audit trail nobody can read is not an audit
+         *     trail, and the Auditor and Board Viewer roles exist precisely to read it. Restricting it to the
+         *     owner would mean the person most likely to be audited controls who sees the record.
+         *
+         *     **404 for an unknown run, not an empty page.** A run with no audit rows cannot exist, because
+         *     `create_run` writes one in the same transaction, so an empty result means the run id is wrong
+         *     and saying so is more useful than returning `[]`. The run is looked up first for that reason.
+         *
+         *     Ordered by `id`, so rows written in one transaction keep their real order: `at` is transaction
+         *     start time and would tie.
+         */
+        get: operations["read_run_audit_api_runs__run_id__audit_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -223,6 +312,537 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/comms/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Draft
+         * @description Generates a draft and persists it. Never sends or publishes anything - see
+         *     `apps/comms/draft.py`'s module docstring for why "nothing publishable without a recorded
+         *     reviewer" holds by construction.
+         *
+         *     Failure mapping is deliberately specific, not a blanket 500:
+         *     - `GatewayNotConfiguredError` / `RedactionNotConfiguredError` -> 503. Deployment configuration
+         *       is missing (no API key, or - per ADR-0006 - no approved `REDACTION_POLICY_PATH`). Expected,
+         *       correct refusal in any environment that hasn't been configured yet, not a bug to alert on
+         *       the same way as a real failure.
+         *     - `GatewayCallError` -> 502. The provider call itself failed after a retry - genuinely down,
+         *       distinct from "not configured".
+         */
+        post: operations["draft_api_comms_draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/comms/drafts/{draft_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve Draft
+         * @description The named-reviewer approval gate #60 depends on. BR8: the author of a draft may not also
+         *     approve it, enforced by `refuse_self_review` inside `CommsDraftRepository.approve`.
+         */
+        post: operations["approve_draft_api_comms_drafts__draft_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/comms/drafts/{draft_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Draft */
+        get: operations["get_draft_api_comms_drafts__draft_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/comms/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Drafts */
+        get: operations["list_drafts_api_comms_drafts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Dashboard
+         * @description Current run, candidate coverage, and open actions.
+         *
+         *     **200 with `run: null` when no run exists**, rather than 404. "No run yet" is a state the
+         *     dashboard renders, not an error: a 404 would make an empty system indistinguishable from a
+         *     broken one, and the open-actions panel is still worth showing.
+         */
+        get: operations["read_dashboard_api_dashboard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit Report
+         * @description Submits the next version of a run's report.
+         *
+         *     The version number is assigned by the database, not by the caller. A caller-supplied number
+         *     would be a second opinion about the sequence, and the one that disagreed would win.
+         *
+         *     **409 on a concurrent submission**, not 500. Two submissions racing for the same version number
+         *     is a retry, and saying so is the difference between a caller that recovers and one that gives
+         *     up.
+         */
+        post: operations["submit_report_api_reports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/{report_version_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Report
+         * @description A report version and everything currently decided about it.
+         *
+         *     Every staff role may read it, for the same reason every staff role may read the audit trail: a
+         *     record only the decider can see is not evidence anyone else can rely on.
+         */
+        get: operations["read_report_api_reports__report_version_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Whoami
+         * @description Who the current session belongs to, and the CSRF token to send with writes.
+         *
+         *     A UI needs this to know which controls to show. It is not the authorisation check: the server
+         *     re-checks on every write, because a hidden button is a hint and not a control.
+         */
+        get: operations["whoami_api_session_get"];
+        put?: never;
+        post?: never;
+        /**
+         * Sign Out
+         * @description Ends the session server-side and clears the cookie.
+         *
+         *     Deliberately not behind the CSRF check. A forged sign-out is a nuisance rather than a breach,
+         *     and refusing to sign someone out because a token was missing is the worse failure.
+         */
+        delete: operations["sign_out_api_session_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/github": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Begin Github Sign In
+         * @description Starts the handshake: mint a state value, set it as a cookie, redirect to GitHub.
+         */
+        get: operations["begin_github_sign_in_api_auth_github_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/github/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Complete Github Sign In
+         * @description Completes the handshake and issues a session, or refuses.
+         *
+         *     Checked in this order, and the order is the point: the state before the code, because
+         *     validating an attacker-supplied code first would mean exchanging it with GitHub before
+         *     discovering the request was forged.
+         */
+        get: operations["complete_github_sign_in_api_auth_github_callback_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/source-library": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Source Library */
+        get: operations["list_source_library_api_source_library_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/runs/{run_id}/source-checks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Source Checks */
+        get: operations["list_source_checks_api_runs__run_id__source_checks_get"];
+        put?: never;
+        /** Record Source Check */
+        post: operations["record_source_check_api_runs__run_id__source_checks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/action-register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Actions */
+        get: operations["list_actions_api_action_register_get"];
+        put?: never;
+        /** Create Action */
+        post: operations["create_action_api_action_register_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/action-register/{action_id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update Action Status */
+        post: operations["update_action_status_api_action_register__action_id__status_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/action-register/{action_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Action */
+        get: operations["get_action_api_action_register__action_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/watch-lists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Watches */
+        get: operations["list_watches_api_watch_lists_get"];
+        put?: never;
+        /** Create Watch */
+        post: operations["create_watch_api_watch_lists_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/watch-lists/{watch_id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update Watch Status */
+        post: operations["update_watch_status_api_watch_lists__watch_id__status_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/watch-lists/{watch_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Watch */
+        get: operations["get_watch_api_watch_lists__watch_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/exceptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Exceptions */
+        get: operations["list_exceptions_api_exceptions_get"];
+        put?: never;
+        /** Record Exception */
+        post: operations["record_exception_api_exceptions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/exceptions/{exception_id}/correct": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Correct Exception
+         * @description 201, not 200: this inserts a new row (the correction) rather than modifying the one named
+         *     in the path - the append-only guarantee `registers_persistence.py` documents, visible in the
+         *     HTTP contract too.
+         */
+        post: operations["correct_exception_api_exceptions__exception_id__correct_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/exceptions/{exception_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Exception */
+        get: operations["get_exception_api_exceptions__exception_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/facts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Draft Fact */
+        post: operations["draft_fact_api_facts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/facts/{fact_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve Fact */
+        post: operations["approve_fact_api_facts__fact_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/facts/{fact_id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Archive Fact */
+        post: operations["archive_fact_api_facts__fact_id__archive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/facts/{fact_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Fact */
+        get: operations["get_fact_api_facts__fact_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/facts/by-key/{fact_key}/latest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Latest Approved Fact */
+        get: operations["get_latest_approved_fact_api_facts_by_key__fact_key__latest_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/facts/by-key/{fact_key}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Fact History */
+        get: operations["get_fact_history_api_facts_by_key__fact_key__history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/fta/query": {
         parameters: {
             query?: never;
@@ -271,6 +891,35 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ActionOut */
+        ActionOut: {
+            /** Id */
+            id: string;
+            /** Action Code */
+            action_code: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string | null;
+            /** Owner Id */
+            owner_id: string | null;
+            /** Owner Text */
+            owner_text: string | null;
+            /** Priority */
+            priority: string | null;
+            /** Due Date */
+            due_date: string | null;
+            /** Review Date */
+            review_date: string | null;
+            /** Status */
+            status: string;
+            /** Evidence Ref */
+            evidence_ref: string | null;
+            /** Closed At */
+            closed_at: string | null;
+            /** Created At */
+            created_at: string;
+        };
         /**
          * ActionRequiredOut
          * @description The escalation state. Carries no topic, treatment or citation, by design.
@@ -330,6 +979,47 @@ export interface components {
             /** Notes */
             notes?: string | null;
         };
+        /** ApproveIn */
+        ApproveIn: {
+            /** Reason */
+            reason?: string | null;
+        };
+        /** AuditEntryOut */
+        AuditEntryOut: {
+            /** Id */
+            id: number;
+            /** At */
+            at: string;
+            /** User Id */
+            user_id: string | null;
+            /** Action */
+            action: string;
+            /** Record Type */
+            record_type: string | null;
+            /** Record Id */
+            record_id: string | null;
+            /** Old Value */
+            old_value: string | null;
+            /** New Value */
+            new_value: string | null;
+            /** Reason */
+            reason: string | null;
+            /** Approval Ref */
+            approval_ref: string | null;
+        };
+        /**
+         * AuditPageOut
+         * @description A page of audit entries plus the cursor for the next one.
+         *
+         *     `next_before_id` rather than a page number, so a caller pages by passing back what it was
+         *     given instead of computing an offset. `null` means this is the last page.
+         */
+        AuditPageOut: {
+            /** Entries */
+            entries: components["schemas"]["AuditEntryOut"][];
+            /** Next Before Id */
+            next_before_id: number | null;
+        };
         /** CandidateOut */
         CandidateOut: {
             /** Id */
@@ -387,8 +1077,80 @@ export interface components {
             published_at?: string | null;
             /** In Coverage Window */
             in_coverage_window?: boolean | null;
-            /** Actor Id */
-            actor_id: string;
+        };
+        /** CommsDraftOut */
+        CommsDraftOut: {
+            /** Id */
+            id: string;
+            /** Content Type */
+            content_type: string;
+            /** Brief */
+            brief: string;
+            /** Draft */
+            draft: string;
+            /** Status */
+            status: string;
+            /** Authored By */
+            authored_by: string;
+            /** Approved By */
+            approved_by: string | null;
+            /** Approved At */
+            approved_at: string | null;
+            /** Approval Reason */
+            approval_reason: string | null;
+            /** Created At */
+            created_at: string;
+        };
+        /** CorrectExceptionIn */
+        CorrectExceptionIn: {
+            /** Exception Type */
+            exception_type: string;
+            /** Severity */
+            severity: string;
+            /** Status */
+            status: string;
+            /** Reason */
+            reason: string;
+        };
+        /**
+         * CoverageOut
+         * @description Candidate coverage for the current run.
+         *
+         *     `by_verification` carries every state, including zeros, so the panel can render from this
+         *     alone without knowing the enum.
+         */
+        CoverageOut: {
+            /** Total */
+            total: number;
+            /** Included */
+            included: number;
+            /** By Verification */
+            by_verification: {
+                [key: string]: number;
+            };
+        };
+        /** CreateActionIn */
+        CreateActionIn: {
+            /** Action Code */
+            action_code: string;
+            /** Title */
+            title: string;
+            /** Status */
+            status: string;
+            /** Description */
+            description?: string | null;
+            /** Owner Id */
+            owner_id?: string | null;
+            /** Owner Text */
+            owner_text?: string | null;
+            /** Priority */
+            priority?: string | null;
+            /** Due Date */
+            due_date?: string | null;
+            /** Review Date */
+            review_date?: string | null;
+            /** Evidence Ref */
+            evidence_ref?: string | null;
         };
         /** CreateRunIn */
         CreateRunIn: {
@@ -400,8 +1162,157 @@ export interface components {
             coverage_start_utc: string;
             /** Coverage End Utc */
             coverage_end_utc: string;
-            /** Initiated By */
-            initiated_by: string;
+        };
+        /** CreateWatchIn */
+        CreateWatchIn: {
+            /** Watch Code */
+            watch_code: string;
+            /** Title */
+            title: string;
+            /** Status */
+            status: string;
+            /** Category */
+            category?: string | null;
+            /** Frequency */
+            frequency?: string | null;
+            /** Escalation */
+            escalation?: string | null;
+            /** Next Review */
+            next_review?: string | null;
+        };
+        /** DashboardOut */
+        DashboardOut: {
+            run: components["schemas"]["RunOut"] | null;
+            gates: components["schemas"]["GateStatusOut"];
+            coverage: components["schemas"]["CoverageOut"];
+            /** Open Actions */
+            open_actions: components["schemas"]["OpenActionOut"][];
+            /** Open Actions Truncated */
+            open_actions_truncated: boolean;
+        };
+        /**
+         * DecisionsOut
+         * @description The current decision on each stream, plus the revision each was read at.
+         *
+         *     A `null` value means undecided *after submission*, which is a different fact from an explicit
+         *     refusal: `Not Authorised` is a decision, `null` is the absence of one. Keeping them distinct is
+         *     the whole reason the mutable approvals row was replaced.
+         *
+         *     `revisions` is not decoration. A caller recording a decision passes back the revision it read,
+         *     and that is what makes a decision built on a superseded ruling detectable.
+         */
+        DecisionsOut: {
+            /** Ceo Ruling */
+            ceo_ruling: string | null;
+            /** Report Approval */
+            report_approval: string | null;
+            /** Distribution Authority */
+            distribution_authority: string | null;
+            /** Distribution Recipient */
+            distribution_recipient: string | null;
+            /** Revisions */
+            revisions: {
+                [key: string]: number;
+            };
+        };
+        /** DraftFactIn */
+        DraftFactIn: {
+            /** Fact Key */
+            fact_key: string;
+            /** Content */
+            content: string;
+            /** Source */
+            source: string;
+            /** Owner Id */
+            owner_id?: string | null;
+            /** Owner Text */
+            owner_text?: string | null;
+            /** Verified At */
+            verified_at?: string | null;
+            /** Review Due At */
+            review_due_at?: string | null;
+            /** Supersedes Id */
+            supersedes_id?: string | null;
+        };
+        /** DraftIn */
+        DraftIn: {
+            /**
+             * Content Type
+             * @enum {string}
+             */
+            content_type: "newsletter" | "linkedin_post" | "event_announcement" | "member_spotlight";
+            /** Brief */
+            brief: string;
+        };
+        /**
+         * DraftOut
+         * @description `draft` is what `apps/comms/ui/src/api/client.ts`'s `isCommsDraftResult` guard checks -
+         *     a non-empty string, nothing more required. `id`/`status` are additive: present for a client
+         *     that wants to fetch or approve the persisted row, ignored by a client that does not.
+         */
+        DraftOut: {
+            /** Draft */
+            draft: string;
+            /** Id */
+            id: string;
+            /** Status */
+            status: string;
+        };
+        /** ExceptionOut */
+        ExceptionOut: {
+            /** Id */
+            id: string;
+            /** Run Id */
+            run_id: string | null;
+            /** Exception Type */
+            exception_type: string;
+            /** Severity */
+            severity: string;
+            /** Owner Id */
+            owner_id: string | null;
+            /** Status */
+            status: string;
+            /** Original Preserved */
+            original_preserved: boolean;
+            /** Correction Ref */
+            correction_ref: string | null;
+            /** Created At */
+            created_at: string;
+        };
+        /** FactOut */
+        FactOut: {
+            /** Id */
+            id: string;
+            /** Fact Key */
+            fact_key: string;
+            /** Content */
+            content: string;
+            /** Owner Id */
+            owner_id: string | null;
+            /** Owner Text */
+            owner_text: string | null;
+            /** Status */
+            status: string;
+            /** Source */
+            source: string;
+            /** Verified At */
+            verified_at: string | null;
+            /** Review Due At */
+            review_due_at: string | null;
+            /** Version */
+            version: number;
+            /** Supersedes Id */
+            supersedes_id: string | null;
+            /** Created By */
+            created_by: string;
+            /** Created At */
+            created_at: string;
+            /** Approved By */
+            approved_by: string | null;
+            /** Approved At */
+            approved_at: string | null;
+            /** Archived At */
+            archived_at: string | null;
         };
         /**
          * FtaQueryResponse
@@ -423,6 +1334,24 @@ export interface components {
             answers: components["schemas"]["AnswerOut"][];
             action_required?: components["schemas"]["ActionRequiredOut"] | null;
         };
+        /**
+         * GateStatusOut
+         * @description QA and release status for the current run.
+         *
+         *     Every field is nullable, and null means "not reached yet" rather than "unknown". The two
+         *     decision values are keyed to a report version (ADR-0005), so they stay null until the run has
+         *     one.
+         */
+        GateStatusOut: {
+            /** Qa Status */
+            qa_status: string | null;
+            /** Report Approval */
+            report_approval: string | null;
+            /** Distribution Authority */
+            distribution_authority: string | null;
+            /** Distribution Recipient */
+            distribution_recipient: string | null;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -432,10 +1361,82 @@ export interface components {
         MergeIn: {
             /** Duplicate Of */
             duplicate_of: string;
-            /** Actor Id */
-            actor_id: string;
             /** Reason */
             reason: string;
+        };
+        /** OpenActionOut */
+        OpenActionOut: {
+            /** Action Code */
+            action_code: string;
+            /** Title */
+            title: string;
+            /** Owner */
+            owner: string | null;
+            /** Priority */
+            priority: string | null;
+            /** Due Date */
+            due_date: string | null;
+            /** Status */
+            status: string;
+            /** Overdue */
+            overdue: boolean;
+        };
+        /** RecordExceptionIn */
+        RecordExceptionIn: {
+            /** Exception Type */
+            exception_type: string;
+            /** Severity */
+            severity: string;
+            /** Status */
+            status: string;
+            /** Run Id */
+            run_id?: string | null;
+            /** Owner Id */
+            owner_id?: string | null;
+            /**
+             * Original Preserved
+             * @default true
+             */
+            original_preserved: boolean;
+        };
+        /** RecordSourceCheckIn */
+        RecordSourceCheckIn: {
+            /** Source Id */
+            source_id: string;
+            outcome: components["schemas"]["SourceOutcome"];
+            /** Method */
+            method?: string | null;
+            /**
+             * Fallback Used
+             * @default false
+             */
+            fallback_used: boolean;
+            /** Access Error */
+            access_error?: string | null;
+            /** Notes */
+            notes?: string | null;
+        };
+        /** ReportOut */
+        ReportOut: {
+            report: components["schemas"]["ReportVersionOut"];
+            decisions: components["schemas"]["DecisionsOut"];
+        };
+        /** ReportVersionOut */
+        ReportVersionOut: {
+            /** Id */
+            id: string;
+            /** Run Id */
+            run_id: string;
+            /** Version Number */
+            version_number: number;
+            /** Created By */
+            created_by: string;
+            /** Content Sha256 */
+            content_sha256: string;
+            /** Created At */
+            created_at: string;
+            /** Submitted At */
+            submitted_at: string;
         };
         /** RouteIn */
         RouteIn: {
@@ -443,8 +1444,6 @@ export interface components {
             proposed_routing?: string | null;
             /** Included */
             included?: boolean | null;
-            /** Actor Id */
-            actor_id: string;
             /** Reason */
             reason: string;
         };
@@ -477,21 +1476,76 @@ export interface components {
             member_relevance?: number | null;
             signal?: components["schemas"]["SignalStrength"] | null;
             confidence?: components["schemas"]["SourceConfidence"] | null;
-            /** Actor Id */
-            actor_id: string;
             /** Reason */
             reason: string;
+        };
+        /** SessionOut */
+        SessionOut: {
+            /** User Id */
+            user_id: string;
+            /** Name */
+            name: string;
+            /** Roles */
+            roles: string[];
+            /** Csrf Token */
+            csrf_token: string;
         };
         /**
          * SignalStrength
          * @enum {string}
          */
         SignalStrength: "Low" | "Medium" | "High" | "Critical";
+        /** SourceCheckOut */
+        SourceCheckOut: {
+            /** Id */
+            id: string;
+            /** Run Id */
+            run_id: string;
+            /** Source Id */
+            source_id: string;
+            outcome: components["schemas"]["SourceOutcome"];
+            /** Checked At */
+            checked_at: string;
+            /** Method */
+            method: string | null;
+            /** Fallback Used */
+            fallback_used: boolean;
+            /** Access Error */
+            access_error: string | null;
+            /** Notes */
+            notes: string | null;
+        };
         /**
          * SourceConfidence
          * @enum {string}
          */
         SourceConfidence: "High" | "Medium" | "Low" | "Unverified";
+        /** SourceLibraryOut */
+        SourceLibraryOut: {
+            /** Id */
+            id: string;
+            /** Sip185 Code */
+            sip185_code: string | null;
+            /** Name */
+            name: string;
+        };
+        /**
+         * SourceOutcome
+         * @enum {string}
+         */
+        SourceOutcome: "Included" | "Context" | "Suppressed" | "Inaccessible" | "Excluded" | "No Qualifying Item";
+        /** SubmitReportIn */
+        SubmitReportIn: {
+            /** Run Id */
+            run_id: string;
+            /** Content Sha256 */
+            content_sha256: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /**
          * TransitionIn
          * @description Body shared by all four lifecycle commands. `approval_ref` is optional at the schema level
@@ -502,12 +1556,24 @@ export interface components {
         TransitionIn: {
             /** Expected Version */
             expected_version: number;
-            /** Actor Id */
-            actor_id: string;
             /** Reason */
             reason: string;
             /** Approval Ref */
             approval_ref?: string | null;
+        };
+        /** UpdateActionStatusIn */
+        UpdateActionStatusIn: {
+            /** Status */
+            status: string;
+            /** Evidence Ref */
+            evidence_ref?: string | null;
+        };
+        /** UpdateWatchStatusIn */
+        UpdateWatchStatusIn: {
+            /** Status */
+            status: string;
+            /** Next Review */
+            next_review?: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -530,10 +1596,29 @@ export interface components {
         /** VerifyIn */
         VerifyIn: {
             verification: components["schemas"]["VerificationState"];
-            /** Actor Id */
-            actor_id: string;
             /** Reason */
             reason: string;
+            /** Sod Exception Id */
+            sod_exception_id?: string | null;
+        };
+        /** WatchOut */
+        WatchOut: {
+            /** Id */
+            id: string;
+            /** Watch Code */
+            watch_code: string;
+            /** Title */
+            title: string;
+            /** Category */
+            category: string | null;
+            /** Frequency */
+            frequency: string | null;
+            /** Escalation */
+            escalation: string | null;
+            /** Status */
+            status: string;
+            /** Next Review */
+            next_review: string | null;
         };
     };
     responses: never;
@@ -562,6 +1647,20 @@ export interface operations {
                     "application/json": components["schemas"]["RunOut"][];
                 };
             };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     create_run_api_runs_post: {
@@ -585,6 +1684,20 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["RunOut"];
                 };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -616,6 +1729,20 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["RunOut"];
                 };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -652,6 +1779,20 @@ export interface operations {
                     "application/json": components["schemas"]["RunOut"];
                 };
             };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -686,6 +1827,20 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["RunOut"];
                 };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -722,6 +1877,118 @@ export interface operations {
                     "application/json": components["schemas"]["RunOut"];
                 };
             };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    fail_qa_api_runs__run_id__fail_qa_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransitionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stop_run_api_runs__run_id__stop_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransitionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -757,6 +2024,68 @@ export interface operations {
                     "application/json": components["schemas"]["RunOut"];
                 };
             };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_run_audit_api_runs__run_id__audit_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                before_id?: number | null;
+            };
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditPageOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -788,6 +2117,20 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CandidateOut"][];
                 };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -822,6 +2165,20 @@ export interface operations {
                     "application/json": components["schemas"]["CandidateOut"];
                 };
             };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -852,6 +2209,20 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CandidateOut"];
                 };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -888,6 +2259,20 @@ export interface operations {
                     "application/json": components["schemas"]["CandidateOut"];
                 };
             };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -922,6 +2307,20 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CandidateOut"];
                 };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -958,6 +2357,20 @@ export interface operations {
                     "application/json": components["schemas"]["CandidateOut"];
                 };
             };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -992,6 +2405,1340 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CandidateOut"];
                 };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    draft_api_comms_draft_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DraftOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_draft_api_comms_drafts__draft_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                draft_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApproveIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommsDraftOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_draft_api_comms_drafts__draft_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                draft_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommsDraftOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_drafts_api_comms_drafts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommsDraftOut"][];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    read_dashboard_api_dashboard_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    submit_report_api_reports_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitReportIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportVersionOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_report_api_reports__report_version_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    whoami_api_session_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionOut"];
+                };
+            };
+        };
+    };
+    sign_out_api_session_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    begin_github_sign_in_api_auth_github_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            307: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    complete_github_sign_in_api_auth_github_callback_get: {
+        parameters: {
+            query: {
+                code: string;
+                state: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                inzbc_oauth_state?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_source_library_api_source_library_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceLibraryOut"][];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_source_checks_api_runs__run_id__source_checks_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceCheckOut"][];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_source_check_api_runs__run_id__source_checks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordSourceCheckIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceCheckOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_actions_api_action_register_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActionOut"][];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    create_action_api_action_register_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateActionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActionOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_action_status_api_action_register__action_id__status_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                action_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateActionStatusIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActionOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_action_api_action_register__action_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                action_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActionOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_watches_api_watch_lists_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchOut"][];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    create_watch_api_watch_lists_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateWatchIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_watch_status_api_watch_lists__watch_id__status_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                watch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateWatchStatusIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_watch_api_watch_lists__watch_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                watch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_exceptions_api_exceptions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExceptionOut"][];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    record_exception_api_exceptions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordExceptionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExceptionOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    correct_exception_api_exceptions__exception_id__correct_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                exception_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CorrectExceptionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExceptionOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_exception_api_exceptions__exception_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                exception_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExceptionOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    draft_fact_api_facts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftFactIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_fact_api_facts__fact_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                fact_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    archive_fact_api_facts__fact_id__archive_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                fact_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_fact_api_facts__fact_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                fact_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_latest_approved_fact_api_facts_by_key__fact_key__latest_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                fact_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_fact_history_api_facts_by_key__fact_key__history_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                fact_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactOut"][];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

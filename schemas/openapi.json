@@ -27,8 +27,19 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
           }
-        }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ]
       },
       "post": {
         "tags": [
@@ -57,6 +68,12 @@
               }
             }
           },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -67,7 +84,13 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ]
       }
     },
     "/api/runs/{run_id}": {
@@ -77,6 +100,11 @@
         ],
         "summary": "Get Run",
         "operationId": "get_run_api_runs__run_id__get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
         "parameters": [
           {
             "name": "run_id",
@@ -98,6 +126,12 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
           },
           "422": {
             "description": "Validation Error",
@@ -120,6 +154,12 @@
         "summary": "Start Run",
         "description": "Draft -> Run Authorised. Launch authority; human gated (run-level, #227).",
         "operationId": "start_run_api_runs__run_id__start_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
         "parameters": [
           {
             "name": "run_id",
@@ -151,6 +191,12 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
           },
           "422": {
             "description": "Validation Error",
@@ -173,6 +219,12 @@
         "summary": "Pause Run",
         "description": "Awaiting CEO Decision -> Paused. CEO decision; `approval_ref` must name a\n`decision_records` row.",
         "operationId": "pause_run_api_runs__run_id__pause_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
         "parameters": [
           {
             "name": "run_id",
@@ -204,6 +256,12 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
           },
           "422": {
             "description": "Validation Error",
@@ -226,6 +284,12 @@
         "summary": "Resume Run",
         "description": "Paused -> Coverage Locked. Resumption authority; human gated (run-level, #227).",
         "operationId": "resume_run_api_runs__run_id__resume_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
         "parameters": [
           {
             "name": "run_id",
@@ -257,6 +321,142 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/runs/{run_id}/fail-qa": {
+      "post": {
+        "tags": [
+          "Runs"
+        ],
+        "summary": "Fail Qa",
+        "description": "QA in Progress -> QA Failed. The Quality Reviewer's stop.\n\nREQ-U-01: \"A Critical failure blocks progression to the CEO decision.\" This is that block,\nand it is the reviewer's independent authority: it is the one lifecycle move they can make\nwithout the SIP Owner, and it prevents a brief they consider unsound from reaching the CEO at\nall. Without this route the reviewer could record findings and still had no way to stop the\nrun, which made the QA gate advisory.\n\nDeliberately not `Stopped`. REQ-U-02 reserves Stop for the CEO decision screen, so a reviewer\nwho terminates the run outright would be taking a decision the requirements give to the CEO.\nQA Failed routes back to Report Drafted for correction, which is the documented path.",
+        "operationId": "fail_qa_api_runs__run_id__fail_qa_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransitionIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/runs/{run_id}/stop": {
+      "post": {
+        "tags": [
+          "Runs"
+        ],
+        "summary": "Stop Run",
+        "description": "Awaiting CEO Decision -> Stopped. Terminal, and the CEO's decision alone.\n\nREQ-U-02 lists the CEO's four options as Continue, Continue with Correction, Pause and Stop.\nPause was mounted and Stop was not, so the only terminal refusal in the state machine had no\nway to be exercised: a run the CEO wanted stopped could only be paused, which says something\ndifferent and leaves it resumable.\n\n`Stopped` has no outbound transitions. Human gated, so `approval_ref` must name the\n`decision_records` row carrying the decision.",
+        "operationId": "stop_run_api_runs__run_id__stop_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransitionIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
           },
           "422": {
             "description": "Validation Error",
@@ -279,6 +479,12 @@
         "summary": "Complete Run",
         "description": "Distributed -> Closed. Mechanical closeout; not human gated.",
         "operationId": "complete_run_api_runs__run_id__complete_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
         "parameters": [
           {
             "name": "run_id",
@@ -311,6 +517,95 @@
               }
             }
           },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/runs/{run_id}/audit": {
+      "get": {
+        "tags": [
+          "Runs"
+        ],
+        "summary": "Read Run Audit",
+        "description": "The run's audit trail, newest first. Every staff role may read it.\n\n**Readable by all seven roles deliberately.** An audit trail nobody can read is not an audit\ntrail, and the Auditor and Board Viewer roles exist precisely to read it. Restricting it to the\nowner would mean the person most likely to be audited controls who sees the record.\n\n**404 for an unknown run, not an empty page.** A run with no audit rows cannot exist, because\n`create_run` writes one in the same transaction, so an empty result means the run id is wrong\nand saying so is more useful than returning `[]`. The run is looked up first for that reason.\n\nOrdered by `id`, so rows written in one transaction keep their real order: `at` is transaction\nstart time and would tie.",
+        "operationId": "read_run_audit_api_runs__run_id__audit_get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "before_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Before Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditPageOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -331,6 +626,12 @@
         ],
         "summary": "Capture Candidate",
         "operationId": "capture_candidate_api_candidates_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -352,6 +653,12 @@
               }
             }
           },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -370,6 +677,11 @@
         ],
         "summary": "List Candidates",
         "operationId": "list_candidates_api_candidates_get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
         "parameters": [
           {
             "name": "run",
@@ -398,6 +710,12 @@
               }
             }
           },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -418,6 +736,11 @@
         ],
         "summary": "Get Candidate",
         "operationId": "get_candidate_api_candidates__candidate_id__get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
         "parameters": [
           {
             "name": "candidate_id",
@@ -440,6 +763,12 @@
               }
             }
           },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -460,6 +789,12 @@
         ],
         "summary": "Verify Candidate",
         "operationId": "verify_candidate_api_candidates__candidate_id__verify_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
         "parameters": [
           {
             "name": "candidate_id",
@@ -492,6 +827,12 @@
               }
             }
           },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -512,6 +853,12 @@
         ],
         "summary": "Score Candidate",
         "operationId": "score_candidate_api_candidates__candidate_id__score_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
         "parameters": [
           {
             "name": "candidate_id",
@@ -544,6 +891,12 @@
               }
             }
           },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -564,6 +917,12 @@
         ],
         "summary": "Route Candidate",
         "operationId": "route_candidate_api_candidates__candidate_id__route_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
         "parameters": [
           {
             "name": "candidate_id",
@@ -596,6 +955,12 @@
               }
             }
           },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -616,6 +981,12 @@
         ],
         "summary": "Merge Candidate",
         "operationId": "merge_candidate_api_candidates__candidate_id__merge_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
         "parameters": [
           {
             "name": "candidate_id",
@@ -647,6 +1018,1592 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/comms/draft": {
+      "post": {
+        "tags": [
+          "Comms Assistant"
+        ],
+        "summary": "Draft",
+        "description": "Generates a draft and persists it. Never sends or publishes anything - see\n`apps/comms/draft.py`'s module docstring for why \"nothing publishable without a recorded\nreviewer\" holds by construction.\n\nFailure mapping is deliberately specific, not a blanket 500:\n- `GatewayNotConfiguredError` / `RedactionNotConfiguredError` -> 503. Deployment configuration\n  is missing (no API key, or - per ADR-0006 - no approved `REDACTION_POLICY_PATH`). Expected,\n  correct refusal in any environment that hasn't been configured yet, not a bug to alert on\n  the same way as a real failure.\n- `GatewayCallError` -> 502. The provider call itself failed after a retry - genuinely down,\n  distinct from \"not configured\".",
+        "operationId": "draft_api_comms_draft_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ]
+      }
+    },
+    "/api/comms/drafts/{draft_id}/approve": {
+      "post": {
+        "tags": [
+          "Comms Assistant"
+        ],
+        "summary": "Approve Draft",
+        "description": "The named-reviewer approval gate #60 depends on. BR8: the author of a draft may not also\napprove it, enforced by `refuse_self_review` inside `CommsDraftRepository.approve`.",
+        "operationId": "approve_draft_api_comms_drafts__draft_id__approve_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "draft_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Draft Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommsDraftOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/comms/drafts/{draft_id}": {
+      "get": {
+        "tags": [
+          "Comms Assistant"
+        ],
+        "summary": "Get Draft",
+        "operationId": "get_draft_api_comms_drafts__draft_id__get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "draft_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Draft Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommsDraftOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/comms/drafts": {
+      "get": {
+        "tags": [
+          "Comms Assistant"
+        ],
+        "summary": "List Drafts",
+        "operationId": "list_drafts_api_comms_drafts_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CommsDraftOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Drafts Api Comms Drafts Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ]
+      }
+    },
+    "/api/dashboard": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Read Dashboard",
+        "description": "Current run, candidate coverage, and open actions.\n\n**200 with `run: null` when no run exists**, rather than 404. \"No run yet\" is a state the\ndashboard renders, not an error: a 404 would make an empty system indistinguishable from a\nbroken one, and the open-actions panel is still worth showing.",
+        "operationId": "read_dashboard_api_dashboard_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ]
+      }
+    },
+    "/api/reports": {
+      "post": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Submit Report",
+        "description": "Submits the next version of a run's report.\n\nThe version number is assigned by the database, not by the caller. A caller-supplied number\nwould be a second opinion about the sequence, and the one that disagreed would win.\n\n**409 on a concurrent submission**, not 500. Two submissions racing for the same version number\nis a retry, and saying so is the difference between a caller that recovers and one that gives\nup.",
+        "operationId": "submit_report_api_reports_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitReportIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportVersionOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ]
+      }
+    },
+    "/api/reports/{report_version_id}": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Read Report",
+        "description": "A report version and everything currently decided about it.\n\nEvery staff role may read it, for the same reason every staff role may read the audit trail: a\nrecord only the decider can see is not evidence anyone else can rely on.",
+        "operationId": "read_report_api_reports__report_version_id__get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "report_version_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Report Version Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/session": {
+      "get": {
+        "tags": [
+          "Session"
+        ],
+        "summary": "Whoami",
+        "description": "Who the current session belongs to, and the CSRF token to send with writes.\n\nA UI needs this to know which controls to show. It is not the authorisation check: the server\nre-checks on every write, because a hidden button is a hint and not a control.",
+        "operationId": "whoami_api_session_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Session"
+        ],
+        "summary": "Sign Out",
+        "description": "Ends the session server-side and clears the cookie.\n\nDeliberately not behind the CSRF check. A forged sign-out is a nuisance rather than a breach,\nand refusing to sign someone out because a token was missing is the worse failure.",
+        "operationId": "sign_out_api_session_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ]
+      }
+    },
+    "/api/auth/github": {
+      "get": {
+        "tags": [
+          "Session"
+        ],
+        "summary": "Begin Github Sign In",
+        "description": "Starts the handshake: mint a state value, set it as a cookie, redirect to GitHub.",
+        "operationId": "begin_github_sign_in_api_auth_github_get",
+        "responses": {
+          "307": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/github/callback": {
+      "get": {
+        "tags": [
+          "Session"
+        ],
+        "summary": "Complete Github Sign In",
+        "description": "Completes the handshake and issues a session, or refuses.\n\nChecked in this order, and the order is the point: the state before the code, because\nvalidating an attacker-supplied code first would mean exchanging it with GitHub before\ndiscovering the request was forged.",
+        "operationId": "complete_github_sign_in_api_auth_github_callback_get",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "title": "Code"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "title": "State"
+            }
+          },
+          {
+            "name": "inzbc_oauth_state",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Inzbc Oauth State"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Complete Github Sign In Api Auth Github Callback Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/source-library": {
+      "get": {
+        "tags": [
+          "Source library"
+        ],
+        "summary": "List Source Library",
+        "operationId": "list_source_library_api_source_library_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SourceLibraryOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Source Library Api Source Library Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ]
+      }
+    },
+    "/api/runs/{run_id}/source-checks": {
+      "post": {
+        "tags": [
+          "Source checks"
+        ],
+        "summary": "Record Source Check",
+        "operationId": "record_source_check_api_runs__run_id__source_checks_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordSourceCheckIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceCheckOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Source checks"
+        ],
+        "summary": "List Source Checks",
+        "operationId": "list_source_checks_api_runs__run_id__source_checks_get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SourceCheckOut"
+                  },
+                  "title": "Response List Source Checks Api Runs  Run Id  Source Checks Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/action-register": {
+      "get": {
+        "tags": [
+          "Action register"
+        ],
+        "summary": "List Actions",
+        "operationId": "list_actions_api_action_register_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ActionOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Actions Api Action Register Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Action register"
+        ],
+        "summary": "Create Action",
+        "operationId": "create_action_api_action_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateActionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ]
+      }
+    },
+    "/api/action-register/{action_id}/status": {
+      "post": {
+        "tags": [
+          "Action register"
+        ],
+        "summary": "Update Action Status",
+        "operationId": "update_action_status_api_action_register__action_id__status_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "action_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Action Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateActionStatusIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/action-register/{action_id}": {
+      "get": {
+        "tags": [
+          "Action register"
+        ],
+        "summary": "Get Action",
+        "operationId": "get_action_api_action_register__action_id__get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "action_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Action Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/watch-lists": {
+      "get": {
+        "tags": [
+          "Watch lists"
+        ],
+        "summary": "List Watches",
+        "operationId": "list_watches_api_watch_lists_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/WatchOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Watches Api Watch Lists Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Watch lists"
+        ],
+        "summary": "Create Watch",
+        "operationId": "create_watch_api_watch_lists_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WatchOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ]
+      }
+    },
+    "/api/watch-lists/{watch_id}/status": {
+      "post": {
+        "tags": [
+          "Watch lists"
+        ],
+        "summary": "Update Watch Status",
+        "operationId": "update_watch_status_api_watch_lists__watch_id__status_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "watch_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Watch Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWatchStatusIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WatchOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/watch-lists/{watch_id}": {
+      "get": {
+        "tags": [
+          "Watch lists"
+        ],
+        "summary": "Get Watch",
+        "operationId": "get_watch_api_watch_lists__watch_id__get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "watch_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Watch Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WatchOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/exceptions": {
+      "get": {
+        "tags": [
+          "Exceptions"
+        ],
+        "summary": "List Exceptions",
+        "operationId": "list_exceptions_api_exceptions_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ExceptionOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Exceptions Api Exceptions Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Exceptions"
+        ],
+        "summary": "Record Exception",
+        "operationId": "record_exception_api_exceptions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordExceptionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ]
+      }
+    },
+    "/api/exceptions/{exception_id}/correct": {
+      "post": {
+        "tags": [
+          "Exceptions"
+        ],
+        "summary": "Correct Exception",
+        "description": "201, not 200: this inserts a new row (the correction) rather than modifying the one named\nin the path - the append-only guarantee `registers_persistence.py` documents, visible in the\nHTTP contract too.",
+        "operationId": "correct_exception_api_exceptions__exception_id__correct_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "exception_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Exception Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorrectExceptionIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/exceptions/{exception_id}": {
+      "get": {
+        "tags": [
+          "Exceptions"
+        ],
+        "summary": "Get Exception",
+        "operationId": "get_exception_api_exceptions__exception_id__get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "exception_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Exception Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/facts": {
+      "post": {
+        "tags": [
+          "Approved facts"
+        ],
+        "summary": "Draft Fact",
+        "operationId": "draft_fact_api_facts_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftFactIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FactOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ]
+      }
+    },
+    "/api/facts/{fact_id}/approve": {
+      "post": {
+        "tags": [
+          "Approved facts"
+        ],
+        "summary": "Approve Fact",
+        "operationId": "approve_fact_api_facts__fact_id__approve_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "fact_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Fact Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FactOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/facts/{fact_id}/archive": {
+      "post": {
+        "tags": [
+          "Approved facts"
+        ],
+        "summary": "Archive Fact",
+        "operationId": "archive_fact_api_facts__fact_id__archive_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "fact_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Fact Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FactOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/facts/{fact_id}": {
+      "get": {
+        "tags": [
+          "Approved facts"
+        ],
+        "summary": "Get Fact",
+        "operationId": "get_fact_api_facts__fact_id__get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "fact_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Fact Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FactOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/facts/by-key/{fact_key}/latest": {
+      "get": {
+        "tags": [
+          "Approved facts"
+        ],
+        "summary": "Get Latest Approved Fact",
+        "operationId": "get_latest_approved_fact_api_facts_by_key__fact_key__latest_get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "fact_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Fact Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FactOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/facts/by-key/{fact_key}/history": {
+      "get": {
+        "tags": [
+          "Approved facts"
+        ],
+        "summary": "Get Fact History",
+        "operationId": "get_fact_history_api_facts_by_key__fact_key__history_get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "fact_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Fact Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FactOut"
+                  },
+                  "title": "Response Get Fact History Api Facts By Key  Fact Key  History Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
           },
           "422": {
             "description": "Validation Error",
@@ -736,6 +2693,136 @@
   },
   "components": {
     "schemas": {
+      "ActionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "action_code": {
+            "type": "string",
+            "title": "Action Code"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id"
+          },
+          "owner_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Text"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "review_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Date"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "evidence_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Ref"
+          },
+          "closed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed At"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "action_code",
+          "title",
+          "description",
+          "owner_id",
+          "owner_text",
+          "priority",
+          "due_date",
+          "review_date",
+          "status",
+          "evidence_ref",
+          "closed_at",
+          "created_at"
+        ],
+        "title": "ActionOut"
+      },
       "ActionRequiredOut": {
         "properties": {
           "message": {
@@ -872,6 +2959,162 @@
         ],
         "title": "AnswerOut",
         "description": "A sourced FTA finding. Every field is evidence or the presentation it must carry."
+      },
+      "ApproveIn": {
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ApproveIn"
+      },
+      "AuditEntryOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "at": {
+            "type": "string",
+            "title": "At"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "record_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Record Type"
+          },
+          "record_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Record Id"
+          },
+          "old_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Old Value"
+          },
+          "new_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Value"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "approval_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approval Ref"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "at",
+          "user_id",
+          "action",
+          "record_type",
+          "record_id",
+          "old_value",
+          "new_value",
+          "reason",
+          "approval_ref"
+        ],
+        "title": "AuditEntryOut"
+      },
+      "AuditPageOut": {
+        "properties": {
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/AuditEntryOut"
+            },
+            "type": "array",
+            "title": "Entries"
+          },
+          "next_before_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Before Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "entries",
+          "next_before_id"
+        ],
+        "title": "AuditPageOut",
+        "description": "A page of audit entries plus the cursor for the next one.\n\n`next_before_id` rather than a page number, so a caller pages by passing back what it was\ngiven instead of computing an offset. `null` means this is the last page."
       },
       "CandidateOut": {
         "properties": {
@@ -1139,20 +3382,253 @@
               }
             ],
             "title": "In Coverage Window"
-          },
-          "actor_id": {
-            "type": "string",
-            "title": "Actor Id"
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
           "run_id",
-          "headline",
-          "actor_id"
+          "headline"
         ],
         "title": "CaptureCandidateIn"
+      },
+      "CommsDraftOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "content_type": {
+            "type": "string",
+            "title": "Content Type"
+          },
+          "brief": {
+            "type": "string",
+            "title": "Brief"
+          },
+          "draft": {
+            "type": "string",
+            "title": "Draft"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "authored_by": {
+            "type": "string",
+            "title": "Authored By"
+          },
+          "approved_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved By"
+          },
+          "approved_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "approval_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approval Reason"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "content_type",
+          "brief",
+          "draft",
+          "status",
+          "authored_by",
+          "approved_by",
+          "approved_at",
+          "approval_reason",
+          "created_at"
+        ],
+        "title": "CommsDraftOut"
+      },
+      "CorrectExceptionIn": {
+        "properties": {
+          "exception_type": {
+            "type": "string",
+            "title": "Exception Type"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "exception_type",
+          "severity",
+          "status",
+          "reason"
+        ],
+        "title": "CorrectExceptionIn"
+      },
+      "CoverageOut": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "included": {
+            "type": "integer",
+            "title": "Included"
+          },
+          "by_verification": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "By Verification"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "total",
+          "included",
+          "by_verification"
+        ],
+        "title": "CoverageOut",
+        "description": "Candidate coverage for the current run.\n\n`by_verification` carries every state, including zeros, so the panel can render from this\nalone without knowing the enum."
+      },
+      "CreateActionIn": {
+        "properties": {
+          "action_code": {
+            "type": "string",
+            "title": "Action Code"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id"
+          },
+          "owner_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Text"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "review_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Date"
+          },
+          "evidence_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Ref"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "action_code",
+          "title",
+          "status"
+        ],
+        "title": "CreateActionIn"
       },
       "CreateRunIn": {
         "properties": {
@@ -1171,10 +3647,6 @@
           "coverage_end_utc": {
             "type": "string",
             "title": "Coverage End Utc"
-          },
-          "initiated_by": {
-            "type": "string",
-            "title": "Initiated By"
           }
         },
         "additionalProperties": false,
@@ -1183,10 +3655,535 @@
           "run_number",
           "prompt_version",
           "coverage_start_utc",
-          "coverage_end_utc",
-          "initiated_by"
+          "coverage_end_utc"
         ],
         "title": "CreateRunIn"
+      },
+      "CreateWatchIn": {
+        "properties": {
+          "watch_code": {
+            "type": "string",
+            "title": "Watch Code"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "frequency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frequency"
+          },
+          "escalation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Escalation"
+          },
+          "next_review": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Review"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "watch_code",
+          "title",
+          "status"
+        ],
+        "title": "CreateWatchIn"
+      },
+      "DashboardOut": {
+        "properties": {
+          "run": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RunOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "gates": {
+            "$ref": "#/components/schemas/GateStatusOut"
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/CoverageOut"
+          },
+          "open_actions": {
+            "items": {
+              "$ref": "#/components/schemas/OpenActionOut"
+            },
+            "type": "array",
+            "title": "Open Actions"
+          },
+          "open_actions_truncated": {
+            "type": "boolean",
+            "title": "Open Actions Truncated"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "run",
+          "gates",
+          "coverage",
+          "open_actions",
+          "open_actions_truncated"
+        ],
+        "title": "DashboardOut"
+      },
+      "DecisionsOut": {
+        "properties": {
+          "ceo_ruling": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ceo Ruling"
+          },
+          "report_approval": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Approval"
+          },
+          "distribution_authority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distribution Authority"
+          },
+          "distribution_recipient": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distribution Recipient"
+          },
+          "revisions": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Revisions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "ceo_ruling",
+          "report_approval",
+          "distribution_authority",
+          "distribution_recipient",
+          "revisions"
+        ],
+        "title": "DecisionsOut",
+        "description": "The current decision on each stream, plus the revision each was read at.\n\nA `null` value means undecided *after submission*, which is a different fact from an explicit\nrefusal: `Not Authorised` is a decision, `null` is the absence of one. Keeping them distinct is\nthe whole reason the mutable approvals row was replaced.\n\n`revisions` is not decoration. A caller recording a decision passes back the revision it read,\nand that is what makes a decision built on a superseded ruling detectable."
+      },
+      "DraftFactIn": {
+        "properties": {
+          "fact_key": {
+            "type": "string",
+            "title": "Fact Key"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id"
+          },
+          "owner_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Text"
+          },
+          "verified_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verified At"
+          },
+          "review_due_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Due At"
+          },
+          "supersedes_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supersedes Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "fact_key",
+          "content",
+          "source"
+        ],
+        "title": "DraftFactIn"
+      },
+      "DraftIn": {
+        "properties": {
+          "content_type": {
+            "type": "string",
+            "enum": [
+              "newsletter",
+              "linkedin_post",
+              "event_announcement",
+              "member_spotlight"
+            ],
+            "title": "Content Type"
+          },
+          "brief": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Brief"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "content_type",
+          "brief"
+        ],
+        "title": "DraftIn"
+      },
+      "DraftOut": {
+        "properties": {
+          "draft": {
+            "type": "string",
+            "title": "Draft"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "draft",
+          "id",
+          "status"
+        ],
+        "title": "DraftOut",
+        "description": "`draft` is what `apps/comms/ui/src/api/client.ts`'s `isCommsDraftResult` guard checks -\na non-empty string, nothing more required. `id`/`status` are additive: present for a client\nthat wants to fetch or approve the persisted row, ignored by a client that does not."
+      },
+      "ExceptionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "exception_type": {
+            "type": "string",
+            "title": "Exception Type"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity"
+          },
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "original_preserved": {
+            "type": "boolean",
+            "title": "Original Preserved"
+          },
+          "correction_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correction Ref"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "run_id",
+          "exception_type",
+          "severity",
+          "owner_id",
+          "status",
+          "original_preserved",
+          "correction_ref",
+          "created_at"
+        ],
+        "title": "ExceptionOut"
+      },
+      "FactOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "fact_key": {
+            "type": "string",
+            "title": "Fact Key"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id"
+          },
+          "owner_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Text"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "verified_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verified At"
+          },
+          "review_due_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Due At"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "supersedes_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supersedes Id"
+          },
+          "created_by": {
+            "type": "string",
+            "title": "Created By"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "approved_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved By"
+          },
+          "approved_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "archived_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "fact_key",
+          "content",
+          "owner_id",
+          "owner_text",
+          "status",
+          "source",
+          "verified_at",
+          "review_due_at",
+          "version",
+          "supersedes_id",
+          "created_by",
+          "created_at",
+          "approved_by",
+          "approved_at",
+          "archived_at"
+        ],
+        "title": "FactOut"
       },
       "FtaQueryResponse": {
         "properties": {
@@ -1230,6 +4227,64 @@
         "title": "FtaQueryResponse",
         "description": "`status` is the field a client branches on \u2014 not the length of `answers`.\n\nA client that only checked `answers` would render an empty results list for a no-match and\nsilently drop the escalation path, which is the outcome docs/modules/fta-centre.md exists to\nprevent."
       },
+      "GateStatusOut": {
+        "properties": {
+          "qa_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qa Status"
+          },
+          "report_approval": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Approval"
+          },
+          "distribution_authority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distribution Authority"
+          },
+          "distribution_recipient": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distribution Recipient"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "qa_status",
+          "report_approval",
+          "distribution_authority",
+          "distribution_recipient"
+        ],
+        "title": "GateStatusOut",
+        "description": "QA and release status for the current run.\n\nEvery field is nullable, and null means \"not reached yet\" rather than \"unknown\". The two\ndecision values are keyed to a report version (ADR-0005), so they stay null until the run has\none."
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1249,10 +4304,6 @@
             "type": "string",
             "title": "Duplicate Of"
           },
-          "actor_id": {
-            "type": "string",
-            "title": "Actor Id"
-          },
           "reason": {
             "type": "string",
             "title": "Reason"
@@ -1262,10 +4313,242 @@
         "type": "object",
         "required": [
           "duplicate_of",
-          "actor_id",
           "reason"
         ],
         "title": "MergeIn"
+      },
+      "OpenActionOut": {
+        "properties": {
+          "action_code": {
+            "type": "string",
+            "title": "Action Code"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "owner": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "overdue": {
+            "type": "boolean",
+            "title": "Overdue"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "action_code",
+          "title",
+          "owner",
+          "priority",
+          "due_date",
+          "status",
+          "overdue"
+        ],
+        "title": "OpenActionOut"
+      },
+      "RecordExceptionIn": {
+        "properties": {
+          "exception_type": {
+            "type": "string",
+            "title": "Exception Type"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id"
+          },
+          "original_preserved": {
+            "type": "boolean",
+            "title": "Original Preserved",
+            "default": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "exception_type",
+          "severity",
+          "status"
+        ],
+        "title": "RecordExceptionIn"
+      },
+      "RecordSourceCheckIn": {
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "title": "Source Id"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/SourceOutcome"
+          },
+          "method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method"
+          },
+          "fallback_used": {
+            "type": "boolean",
+            "title": "Fallback Used",
+            "default": false
+          },
+          "access_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access Error"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source_id",
+          "outcome"
+        ],
+        "title": "RecordSourceCheckIn"
+      },
+      "ReportOut": {
+        "properties": {
+          "report": {
+            "$ref": "#/components/schemas/ReportVersionOut"
+          },
+          "decisions": {
+            "$ref": "#/components/schemas/DecisionsOut"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "report",
+          "decisions"
+        ],
+        "title": "ReportOut"
+      },
+      "ReportVersionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "version_number": {
+            "type": "integer",
+            "title": "Version Number"
+          },
+          "created_by": {
+            "type": "string",
+            "title": "Created By"
+          },
+          "content_sha256": {
+            "type": "string",
+            "title": "Content Sha256"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "submitted_at": {
+            "type": "string",
+            "title": "Submitted At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "run_id",
+          "version_number",
+          "created_by",
+          "content_sha256",
+          "created_at",
+          "submitted_at"
+        ],
+        "title": "ReportVersionOut"
       },
       "RouteIn": {
         "properties": {
@@ -1291,10 +4574,6 @@
             ],
             "title": "Included"
           },
-          "actor_id": {
-            "type": "string",
-            "title": "Actor Id"
-          },
           "reason": {
             "type": "string",
             "title": "Reason"
@@ -1303,7 +4582,6 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "actor_id",
           "reason"
         ],
         "title": "RouteIn"
@@ -1412,10 +4690,6 @@
               }
             ]
           },
-          "actor_id": {
-            "type": "string",
-            "title": "Actor Id"
-          },
           "reason": {
             "type": "string",
             "title": "Reason"
@@ -1424,10 +4698,40 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "actor_id",
           "reason"
         ],
         "title": "ScoreIn"
+      },
+      "SessionOut": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Roles"
+          },
+          "csrf_token": {
+            "type": "string",
+            "title": "Csrf Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "name",
+          "roles",
+          "csrf_token"
+        ],
+        "title": "SessionOut"
       },
       "SignalStrength": {
         "type": "string",
@@ -1439,6 +4743,80 @@
         ],
         "title": "SignalStrength"
       },
+      "SourceCheckOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "source_id": {
+            "type": "string",
+            "title": "Source Id"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/SourceOutcome"
+          },
+          "checked_at": {
+            "type": "string",
+            "title": "Checked At"
+          },
+          "method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method"
+          },
+          "fallback_used": {
+            "type": "boolean",
+            "title": "Fallback Used"
+          },
+          "access_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access Error"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "run_id",
+          "source_id",
+          "outcome",
+          "checked_at",
+          "method",
+          "fallback_used",
+          "access_error",
+          "notes"
+        ],
+        "title": "SourceCheckOut"
+      },
       "SourceConfidence": {
         "type": "string",
         "enum": [
@@ -1449,15 +4827,80 @@
         ],
         "title": "SourceConfidence"
       },
+      "SourceLibraryOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "sip185_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sip185 Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "sip185_code",
+          "name"
+        ],
+        "title": "SourceLibraryOut"
+      },
+      "SourceOutcome": {
+        "type": "string",
+        "enum": [
+          "Included",
+          "Context",
+          "Suppressed",
+          "Inaccessible",
+          "Excluded",
+          "No Qualifying Item"
+        ],
+        "title": "SourceOutcome"
+      },
+      "SubmitReportIn": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "content_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Content Sha256"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "run_id",
+          "content_sha256",
+          "created_at"
+        ],
+        "title": "SubmitReportIn"
+      },
       "TransitionIn": {
         "properties": {
           "expected_version": {
             "type": "integer",
             "title": "Expected Version"
-          },
-          "actor_id": {
-            "type": "string",
-            "title": "Actor Id"
           },
           "reason": {
             "type": "string",
@@ -1479,11 +4922,60 @@
         "type": "object",
         "required": [
           "expected_version",
-          "actor_id",
           "reason"
         ],
         "title": "TransitionIn",
         "description": "Body shared by all four lifecycle commands. `approval_ref` is optional at the schema level\nbecause only three of the four transitions are human-gated (`complete` is not) - `RunRepository`\nis still the sole enforcer of which ones actually require it; this model does not duplicate\nthat rule."
+      },
+      "UpdateActionStatusIn": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "evidence_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Ref"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "UpdateActionStatusIn"
+      },
+      "UpdateWatchStatusIn": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "next_review": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Review"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "UpdateWatchStatusIn"
       },
       "ValidationError": {
         "properties": {
@@ -1541,23 +5033,120 @@
           "verification": {
             "$ref": "#/components/schemas/VerificationState"
           },
-          "actor_id": {
-            "type": "string",
-            "title": "Actor Id"
-          },
           "reason": {
             "type": "string",
             "title": "Reason"
+          },
+          "sod_exception_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sod Exception Id"
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
           "verification",
-          "actor_id",
           "reason"
         ],
         "title": "VerifyIn"
+      },
+      "WatchOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "watch_code": {
+            "type": "string",
+            "title": "Watch Code"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "frequency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frequency"
+          },
+          "escalation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Escalation"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "next_review": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Review"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "watch_code",
+          "title",
+          "category",
+          "frequency",
+          "escalation",
+          "status",
+          "next_review"
+        ],
+        "title": "WatchOut"
+      }
+    },
+    "securitySchemes": {
+      "SessionCookie": {
+        "type": "apiKey",
+        "description": "Opaque server-side session, issued out of band. HttpOnly, Secure, SameSite=Lax and host-only, so it is not readable by script and does not cross an origin. Only its SHA-256 digest is stored.",
+        "in": "cookie",
+        "name": "inzbc_session"
+      },
+      "CsrfToken": {
+        "type": "apiKey",
+        "description": "Double-submit token, returned by GET /api/session. Required on every state-changing request: SameSite=Lax still permits a top-level cross-site POST, which is the shape of a form-submission CSRF.",
+        "in": "header",
+        "name": "X-CSRF-Token"
       }
     }
   }

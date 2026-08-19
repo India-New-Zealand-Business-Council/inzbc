@@ -13,11 +13,24 @@ several roles, because the steady state after the placement is one person holdin
 them.
 
 Separation of duties is enforced server-side and binds to the **role held at the time of the act**,
-not to a person. The required-distinct pairs are configuration (`decision_sod_role_pairs`), so a
-staffing change is a data change. `runs.analyst_id <> runs.reviewer_id` is a database constraint and
-still holds. Where one principal necessarily holds both sides of a required-distinct pair, the
-decision still commits, but only against a recorded `sod_exceptions` row naming the approver, the
-reason and a review date. An unrecorded self-approval is refused.
+not to a person. `runs.analyst_id <> runs.reviewer_id` is a database constraint and still holds.
+Where one principal necessarily holds both sides, the decision still commits, but only against a
+recorded `sod_exceptions` row naming the approver, the reason and a review date. An unrecorded
+self-approval is refused.
+
+**Two halves, and only one of them is enforced today.** Saying otherwise would overstate the
+control, which is worse than the gap.
+
+*Enforced:* authorship. `DecisionRepository.record` reads `report_versions.created_by`,
+canonicalises both identities so a differently-spelled UUID cannot slip past, and refuses when the
+decider created the version being decided on. Candidate acts are checked the same way, against
+`captured_by` and `assessed_by` rather than against role membership.
+
+*Not enforced:* the role pairs. `decision_sod_role_pairs` is designed as configuration, so a
+staffing change would be a data change, but **nothing consults the table**. It is deliberately
+unseeded pending client answers B8, and enforcing an empty rule set would refuse every decision. So
+a conflict expressed as a role pair rather than as authorship is not currently caught, and will not
+be until the table is both seeded and read. ADR-0005 required follow-up 4.
 
 ## Pipeline (Roshan) — data in
 ```
@@ -33,10 +46,35 @@ PATCH  /api/candidates/:id
 POST   /api/candidates/:id/verify | /score | /route | /merge
 ```
 
+## Registers (#209 — API is Roshan's, `docs/sip/build-plan.md`'s "Registers UI" is Paras's)
+```
+POST   /api/action-register              record an action; a named owner (owner_id or owner_text)
+POST   /api/action-register/:id/status   Open / Closed / Controlled Monitoring; closed_at set only on Closed
+GET    /api/action-register  /api/action-register/:id
+POST   /api/watch-lists                  Opportunity/Threat/ongoing watch, distinguished by category
+POST   /api/watch-lists/:id/status
+GET    /api/watch-lists  /api/watch-lists/:id
+POST   /api/exceptions                   append-only: never updated in place
+POST   /api/exceptions/:id/correct       inserts a new row, correction_ref = the id it corrects
+GET    /api/exceptions  /api/exceptions/:id
+```
+## Approved facts library (#188 — Roshan's)
+```
+POST   /api/facts                        draft a fact; a named owner (owner_id or owner_text)
+POST   /api/facts/:id/approve            Reviewer/SIP Owner only; refuses self-approval
+POST   /api/facts/:id/archive            retires a fact; any writer role
+GET    /api/facts/:id
+GET    /api/facts/by-key/:fact_key/latest    latest *approved* revision, 404 if none approved yet
+GET    /api/facts/by-key/:fact_key/history   every revision, newest version first
+```
+Drafting a new version of an existing fact passes `supersedes_id`; the prior row is never edited,
+only chained.
+
 ## Control (Paras) — data out + human gates
 ```
+POST   /api/reports                  submit a report version for a run  [BUILT]
+GET    /api/reports/:id              the version plus every current decision on it  [BUILT]
 POST   /api/reports/daily            build the SIP-186 brief from selected candidates
-GET    /api/reports/:id
 POST   /api/reports/:id/qa           record SIP-188 QA result (blocks release on Critical)
 POST   /api/reports/:id/submit
 POST   /api/reports/:id/approval     report-approval stream: Approved | Rejected |
@@ -47,8 +85,72 @@ POST   /api/reports/:id/distribution distribution authority only: Authorised | N
 POST   /api/reports/:id/delivery     records an actual send against a current Authorised decision
 GET    /api/registers/:name          action | watch | opportunities | threats | exceptions
 POST   /api/registers/:name
-GET    /api/dashboard                control state, open actions, QA/distribution status
+GET    /api/dashboard                control state, open actions, QA/distribution status  [BUILT]
 ```
+
+**`GET /api/dashboard` shape**, built for #47:
+
+```json
+{
+  "run": { "id": "...", "run_number": "RUN-20260813-01", "state": "Candidate Review",
+           "version": 3, "prompt_version": "...", "coverage_start_utc": "...",
+           "coverage_end_utc": "...", "initiated_by": "..." },
+  "gates": { "qa_status": "Passed", "report_approval": "Approved",
+             "distribution_authority": "Authorised", "distribution_recipient": "..." },
+  "coverage": { "total": 7, "included": 2,
+                "by_verification": { "Verified": 5, "Partially Verified": 0,
+                                     "Unverified": 2, "Not Required": 0, "Rejected": 0 } },
+  "open_actions": [ { "action_code": "ACT-016", "title": "...", "owner": "Executive Sponsor",
+                      "priority": "High", "due_date": "2026-08-01", "status": "Open",
+                      "overdue": true } ],
+  "open_actions_truncated": false
+}
+```
+
+Three guarantees the UI may rely on, each of which is a rule the client would otherwise own:
+
+**`by_verification` always carries every verification state**, including the ones at zero. A state
+absent from the map would force the caller to know the full enum to render the panel.
+
+**`run` is `null` when no run exists, and the status is still 200.** "No run yet" is a state the
+dashboard renders, not an error, and the open-actions panel is worth showing regardless.
+
+**`overdue` is computed by the database**, so a client with a wrong clock cannot make a late action
+look on time. Actions are ordered overdue first, then by due date with nulls last.
+
+**Every `gates` field is nullable, and null means "not reached yet" rather than "unknown".**
+`qa_status` comes from the run; `report_approval` and `distribution_authority` come from the run's
+newest report version, because ADR-0005 keys those decision streams to a report version, so they
+stay null until one exists.
+
+**Open actions are capped at 200, and `open_actions_truncated` says when the cap bit.**
+`action_register` has no retention rule, so nothing in the schema stops it growing. A silently cut
+list would read as "these are all the open actions", which is wrong for a screen used to decide
+what to work on.
+
+`extra="forbid"` on every model in the response, so a field added server-side cannot reach the UI
+unannounced.
+
+**What is built, and what the decision-writing endpoints are waiting on.**
+
+`POST /api/reports` and `GET /api/reports/:id` are mounted. Submitting a version is what makes a
+report decidable: a trigger opens the CEO Ruling, Report Approval and Distribution Authority
+streams on insert, so a decision can never arrive for a stream nobody created, and there is no
+separate call to forget. The version number is assigned by the database, because a caller-supplied
+number is a second opinion about the sequence and the one that disagreed would win.
+
+The read returns the version **and** its current decisions **and** the revision each was read at,
+in one response. A reviewer cannot act on a version without knowing what has already been decided,
+and a caller recording a decision has to pass back the revision it read. Two calls would let a
+decision commit in between, which is the race `DecisionRepository.current` closes in a single
+statement, so splitting them over HTTP would reopen it one layer up.
+
+`/approval`, `/ruling` and `/distribution` are **specified and deliberately not mounted**.
+`decision_role_permissions` is unseeded, and no row means nobody may act, so the repository refuses
+every decision by design. Mounting them now would ship three endpoints that answer 403 until INZBC
+decides who may approve what. That is a client decision (ADR-0005 required follow-up 4, client
+answers B8), not an engineering one, and an endpoint that looks built is worse than one that is
+honestly absent.
 
 **Why ruling and distribution are separate commands.** REQ-U-02 requires distribution authority to
 be captured as a separate action, and ADR-0005 records the three facts as independent immutable

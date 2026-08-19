@@ -141,11 +141,12 @@ Priority uses MoSCoW.
 **Committed build — the four modules the client selected**
 
 - FTA Opportunity Explainer, with the tariff database and three levels of information depth.
-  Sector coverage is **not settled**. The Digital System Overview lists ten (wool, wine, seafood,
-  primary industries, tourism, education, defence and security, investment, immigration, sports);
-  `client-answers.md` D19 proposes a different order and set; `requirements.md` and
-  `fta-source-corpus.md` both still record it as awaiting INZBC. One list has to win before build,
-  and closing it updates those documents in the same change.
+  Sector coverage settled 9 Aug 2026 (#219, `docs/client-answers-relayed-2026-08-09.md`) by scope
+  rather than by picking one of the Digital System Overview's ten or `client-answers.md` D19's
+  proposed set — they are different kinds of thing (broad sectors vs. this corpus's tariff-outcome
+  categories). Build now on the goods sectors already sourced; add tourism/education/investment
+  next once sourced from the agreement text; defence and security, immigration and sports are
+  named but not sourced and do not gate the build.
 - Trade Intelligence Digest produced by SIP: collection, source register, scoring, review, QA,
   approval, distribution and audit.
 - AI Communications Assistant for staff drafting, adversarially tested before use.
@@ -290,10 +291,11 @@ gate.
   The routing is a convention the team keeps, not a control the platform enforces.
 - Reviews correct the content in dispute rather than annotating it. A specification carrying a note
   that says it is wrong is still wrong for the next person who reads it.
-- Linting, type checking, tests, coverage, secret scanning, link checking and workflow linting run
-  on every pull request and block the merge. Static analysis runs report-only until its baseline is
-  confirmed clean, and dependency updates come from Dependabot rather than a blocking audit job.
-  Both are tracked as work to tighten, and neither is claimed as enforcement today.
+- Linting, type checking, tests, coverage, secret scanning, static analysis, link checking and
+  workflow linting run on every pull request and block the merge. Static analysis started
+  report-only and became blocking once its baseline was confirmed clean, so it is enforcement now
+  rather than a report. Dependency updates still come from Dependabot rather than a blocking audit
+  job, and that one is tracked as work to tighten rather than claimed as enforcement.
 - Security-touching changes get an adversarial review, and findings are reproduced by execution
   before they are accepted or dismissed.
 - Decisions that shape the system are recorded as ADRs with consequences and rejected alternatives.

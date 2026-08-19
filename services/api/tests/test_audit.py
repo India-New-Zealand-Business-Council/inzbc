@@ -21,10 +21,12 @@ import uuid
 import psycopg
 import pytest
 
+from apps.sip.core.orchestrator import CorruptHistory
 from apps.sip.pipeline.models import RunState
 from services.api import persistence as persistence_module
 from services.api.audit import record_audit
-from services.api.persistence import RunRepository
+from services.api.persistence import AuditRepository, RunRepository
+from services.api.tests.role_seed import authorise_run
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
@@ -154,13 +156,16 @@ def test_record_audit_writes_inside_the_callers_transaction_and_does_not_commit(
 def test_apply_transition_writes_a_matching_audit_row(
     repo: RunRepository, run_id: str, actor_id: str
 ) -> None:
+    with psycopg.connect(DATABASE_URL) as conn:
+        authorisation = authorise_run(conn, run_id, actor_id)
+
     repo.apply_transition(
         run_id,
         expected_version=0,
         new_state=RunState.RUN_AUTHORISED,
         actor_id=actor_id,
         reason="authorise the daily run",
-        approval_ref="AUTH-2026-07-27",
+        approval_ref=authorisation,
     )
 
     with psycopg.connect(DATABASE_URL) as conn:
@@ -180,7 +185,9 @@ def test_apply_transition_writes_a_matching_audit_row(
     assert old_value == RunState.DRAFT.value
     assert new_value == RunState.RUN_AUTHORISED.value
     assert reason == "authorise the daily run"
-    assert approval_ref == "AUTH-2026-07-27"
+    # The recorded reference is the authorisation's own id, which is the point: the audit row
+    # points at an append-only record rather than repeating a string somebody typed.
+    assert approval_ref == authorisation
 
 
 def test_a_failed_audit_write_rolls_back_the_state_change(
@@ -190,6 +197,9 @@ def test_a_failed_audit_write_rolls_back_the_state_change(
     to raise after the UPDATE and confirm the run is untouched and no audit row exists — the state
     change and its audit record commit together or not at all.
     """
+
+    with psycopg.connect(DATABASE_URL) as conn:
+        authorisation = authorise_run(conn, run_id, actor_id)
 
     def boom(*_args: object, **_kwargs: object) -> int:
         raise RuntimeError("audit write failed")
@@ -201,7 +211,7 @@ def test_a_failed_audit_write_rolls_back_the_state_change(
             run_id,
             expected_version=0,
             new_state=RunState.RUN_AUTHORISED,
-            approval_ref="launch-authority-recorded",
+            approval_ref=authorisation,
             actor_id=actor_id,
             reason="authorise the daily run",
         )
@@ -220,3 +230,177 @@ def test_a_failed_audit_write_rolls_back_the_state_change(
             (run_id,),
         ).fetchone()[0]
     assert count == 0
+
+
+# ---------- read path (#126) ----------
+
+
+def test_the_trail_reads_back_newest_first(repo: RunRepository, run_id: str, actor_id: str) -> None:
+    """Ordered by id, not by `at`.
+
+    `at` defaults to `now()`, which in Postgres is transaction start time, so rows written in one
+    transaction share a timestamp and ordering by it leaves their real order undefined. `create_run`
+    and its transition are separate transactions here, but a run that moved twice inside one would
+    tie, and that is exactly the sequence the trail exists to record.
+    """
+    with psycopg.connect(DATABASE_URL) as conn:
+        authorisation = authorise_run(conn, run_id, actor_id)
+    repo.apply_transition(
+        run_id, expected_version=0, new_state=RunState.RUN_AUTHORISED,
+        actor_id=actor_id, reason="authorise", approval_ref=authorisation,
+    )
+
+    entries = AuditRepository(DATABASE_URL).for_run(run_id)
+
+    assert [e.action for e in entries] == ["run.transition", "run.create"]
+    assert entries[0].id > entries[1].id
+
+
+def test_the_trail_only_returns_this_runs_rows(
+    repo: RunRepository, run_id: str, actor_id: str
+) -> None:
+    """`record_id` is text and holds ids from several tables, so filtering on it alone could
+    return a candidate that happened to share a uuid string."""
+    other = repo.create_run(
+        run_number=f"RUN-AUDIT-{uuid.uuid4().hex[:12]}",
+        prompt_version="SIP-050 v1.1",
+        coverage_start_utc="2026-07-27T07:00:00+12:00",
+        coverage_end_utc="2026-07-28T07:00:00+12:00",
+        initiated_by=actor_id,
+    )
+
+    entries = AuditRepository(DATABASE_URL).for_run(run_id)
+
+    assert entries, "the run's own create row must be there"
+    assert all(e.record_id == run_id for e in entries)
+    assert other.id not in {e.record_id for e in entries}
+
+
+def test_the_cursor_pages_without_repeating_or_skipping(
+    repo: RunRepository, run_id: str, actor_id: str
+) -> None:
+    """Keyset pagination over an append-only table: every row appears exactly once."""
+    with psycopg.connect(DATABASE_URL) as conn:
+        for _ in range(4):
+            record_audit(conn, action="test.page", record_type="runs", record_id=run_id)
+        conn.commit()
+
+    audit = AuditRepository(DATABASE_URL)
+    first = audit.for_run(run_id, limit=2)
+    second = audit.for_run(run_id, limit=2, before_id=first[-1].id)
+
+    ids = [e.id for e in first + second]
+    assert len(ids) == 4
+    assert len(set(ids)) == 4, "a row was returned on both pages"
+    assert ids == sorted(ids, reverse=True)
+
+
+def test_an_unreasonable_limit_is_clamped_not_obeyed(
+    repo: RunRepository, run_id: str, actor_id: str
+) -> None:
+    """The adapter bounds the read itself. The router validates too, but an unbounded scan is the
+    kind of thing a later caller reaches for directly."""
+    audit = AuditRepository(DATABASE_URL)
+
+    assert len(audit.for_run(run_id, limit=10_000)) <= 500
+    assert audit.for_run(run_id, limit=0), "a nonsense limit must not return nothing"
+
+
+def test_rehydrate_rebuilds_the_run_from_its_stored_transitions(
+    repo: RunRepository, run_id: str, actor_id: str
+) -> None:
+    """The whole point of #116: the database is the source of truth after a restart.
+
+    Written against real rows rather than a fake, because the thing under test is that what
+    `apply_transition` *wrote* is what `from_history` can *read*. A fake would only prove the two
+    halves of my own assumption agree.
+    """
+    with psycopg.connect(DATABASE_URL) as conn:
+        authorisation = authorise_run(conn, run_id, actor_id)
+    repo.apply_transition(
+        run_id, expected_version=0, new_state=RunState.RUN_AUTHORISED,
+        actor_id=actor_id, reason="authorise", approval_ref=authorisation,
+    )
+    repo.apply_transition(
+        run_id, expected_version=1, new_state=RunState.COVERAGE_LOCKED,
+        actor_id=actor_id, reason="lock coverage",
+    )
+
+    resumed = AuditRepository(DATABASE_URL).rehydrate(run_id)
+
+    assert resumed.state is RunState.COVERAGE_LOCKED
+    assert resumed.run_id == run_id
+    assert [r.to_state for r in resumed.history] == [
+        RunState.RUN_AUTHORISED, RunState.COVERAGE_LOCKED
+    ]
+
+
+def test_rehydrate_preserves_when_each_transition_happened(
+    repo: RunRepository, run_id: str, actor_id: str
+) -> None:
+    """A trail whose timestamps move to boot time on every restart is not a trail."""
+    with psycopg.connect(DATABASE_URL) as conn:
+        authorisation = authorise_run(conn, run_id, actor_id)
+    repo.apply_transition(
+        run_id, expected_version=0, new_state=RunState.RUN_AUTHORISED,
+        actor_id=actor_id, reason="authorise", approval_ref=authorisation,
+    )
+
+    with psycopg.connect(DATABASE_URL) as conn:
+        stored_at = conn.execute(
+            "select at from audit_log where record_id = %s and action = 'run.transition'",
+            (run_id,),
+        ).fetchone()[0]
+
+    resumed = AuditRepository(DATABASE_URL).rehydrate(run_id)
+
+    assert resumed.history[0].at == stored_at
+    assert str(resumed.history[0].actor) == actor_id
+
+
+def test_rehydrating_a_run_that_never_moved_gives_a_draft(
+    repo: RunRepository, run_id: str
+) -> None:
+    """A created run has a `run.create` row and no transitions. Refusing that would make the first
+    resume after creation fail, which is the most common case of all."""
+    resumed = AuditRepository(DATABASE_URL).rehydrate(run_id)
+
+    assert resumed.state is RunState.DRAFT
+    assert resumed.history == ()
+
+
+def test_rehydrate_refuses_a_gated_transition_with_no_recorded_authority(
+    repo: RunRepository, run_id: str, actor_id: str
+) -> None:
+    """Replay must not manufacture the decision the gate exists to require.
+
+    `apply_transition` will not commit a gated transition without an `approval_ref` it has
+    verified, so a stored row missing one was not written by that path. Filling the gap with a
+    placeholder would wave through exactly the history that proves something went wrong.
+
+    Written directly through `record_audit`, which is the shape of the problem: `audit_log` is
+    append-only, not append-*validated*, so a row can exist that no legitimate path would write.
+    """
+    with psycopg.connect(DATABASE_URL) as conn:
+        record_audit(
+            conn,
+            user_id=actor_id,
+            action="run.transition",
+            record_type="runs",
+            record_id=run_id,
+            old_value=RunState.DRAFT.value,
+            new_value=RunState.RUN_AUTHORISED.value,
+            reason="forged: no approval reference",
+        )
+        conn.commit()
+
+    with pytest.raises(CorruptHistory, match="no approval reference"):
+        AuditRepository(DATABASE_URL).rehydrate(run_id)
+
+
+def test_rehydrate_refuses_a_run_that_does_not_exist(repo: RunRepository) -> None:
+    """An unknown id used to replay to an empty history and come back as a valid Draft run, so a
+    typo produced a run rather than an error. `create_run` writes the row and its audit entry in
+    one transaction, so a run that exists always has one."""
+    with pytest.raises(KeyError):
+        AuditRepository(DATABASE_URL).rehydrate(str(uuid.uuid4()))
