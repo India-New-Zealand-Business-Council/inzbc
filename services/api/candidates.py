@@ -216,14 +216,23 @@ def score_candidate(
     principal: Principal = Depends(write_access(ANALYST, SIP_OWNER)),
     repo: CandidateRepository = Depends(get_candidate_repository),
 ) -> CandidateOut:
+    # Only forward the fields the caller actually sent. `ScoreIn` defaults them all to `None`, so
+    # forwarding unconditionally wrote NULL over every field a partial update left out (#323).
+    # `model_fields_set` is the only place that distinction survives, so it has to be read here.
+    scored = {
+        field: getattr(body, field)
+        for field in ("nz_relevance", "india_relevance", "member_relevance", "signal", "confidence")
+        if field in body.model_fields_set
+    }
+    if not scored:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Supply at least one scoring field; a reason alone records nothing.",
+        )
     try:
         candidate = repo.record_score(
             candidate_id,
-            nz_relevance=body.nz_relevance,
-            india_relevance=body.india_relevance,
-            member_relevance=body.member_relevance,
-            signal=body.signal,
-            confidence=body.confidence,
+            **scored,
             actor_id=principal.user_id,
             reason=body.reason,
         )
