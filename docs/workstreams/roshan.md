@@ -264,6 +264,12 @@ come back.
   and an additive helper.
 
 ## Blocked / decisions needed
+- **Flagged by Paras, 19 Aug 2026, for standup:** the FTA corpus (`apps/fta/corpus.py`) is a
+  static Python file, not a database — no per-entry owner, version, approval status, review date
+  or correction history, though `docs/modules/fta-centre.md`'s Content lifecycle section requires
+  all of that. Today a tariff-figure fix or new entry means a code PR, not something INZBC staff
+  can update themselves. Not touching this lane's code — raising for a standup decision on whether
+  it moves to DB-backed storage and when.
 - FTA sectors in scope + disclaimer wording (INZBC to confirm).
 - Collection-engine secrets in the org repo (needs the values) — blocks running the collector
   end-to-end even though the mapping is written. (Bhanu owns org-repo secrets setup + rotation —
