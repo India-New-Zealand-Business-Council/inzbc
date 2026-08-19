@@ -16,6 +16,7 @@ from fastapi.testclient import TestClient
 from services.api.decisions import (
     CurrentDecisions,
     DecisionNotPermittedError,
+    QaSelfReviewError,
     ReportVersion,
     ReportVersionConflict,
 )
@@ -44,6 +45,7 @@ class FakeReportRepository:
         self.next_error: Exception | None = None
         self.role_error: Exception | None = None
         self.last_submit: dict | None = None
+        self.last_qa: dict | None = None
 
     def submit(self, **kwargs) -> ReportVersion:
         self.last_submit = kwargs
@@ -59,6 +61,17 @@ class FakeReportRepository:
             error, self.next_error = self.next_error, None
             raise error
         return _version()
+
+    def record_qa(self, report_version_id: str, **kwargs) -> str:
+        self.last_qa = {"report_version_id": report_version_id, **kwargs}
+        if self.next_error is not None:
+            error, self.next_error = self.next_error, None
+            raise error
+        # Mirrors the real repository: the validation lives there, so the fake performs it too
+        # rather than letting a contradiction through that Postgres would have refused.
+        if kwargs["result"] == "Pass" and kwargs["critical_failures"] > 0:
+            raise ValueError("a Pass cannot record Critical failures")
+        return "Passed" if kwargs["result"] == "Pass" else "Failed"
 
 
 class FakeDecisionRepository:
@@ -249,3 +262,75 @@ def test_a_version_whose_streams_are_missing_is_not_reported_as_absent(
     # message survives it matters: an unhandled exception is replaced with a generic string, so a
     # reason that reads well in the source is worth nothing unless it reaches the caller.
     assert "trigger" in response.json()["error"]["message"]
+
+
+def _qa(client: TestClient, **overrides) -> object:
+    body = {"result": "Pass", "critical_failures": 0, "notes": "SIP-188 worked"}
+    body.update(overrides)
+    return client.post(f"/api/reports/{VERSION_ID}/qa", json=body)
+
+
+def test_recording_a_qa_pass_returns_the_stored_status(client: TestClient) -> None:
+    response = _qa(client)
+    assert response.status_code == 200
+    assert response.json() == {
+        "report_version_id": VERSION_ID,
+        "qa_status": "Passed",
+        "critical_failures": 0,
+    }
+
+
+def test_a_fail_is_stored_as_failed_with_its_critical_count(client: TestClient) -> None:
+    response = _qa(client, result="Fail", critical_failures=2, notes="two mandatory sources blank")
+    assert response.status_code == 200
+    assert response.json()["qa_status"] == "Failed"
+    assert response.json()["critical_failures"] == 2
+
+
+def test_a_pass_carrying_a_critical_failure_is_refused(client: TestClient) -> None:
+    """SIP-188 blocks release on any Critical, so Pass plus a Critical is a contradiction rather
+    than a judgement call. Allowing it would leave `qa_status` saying releasable while the
+    checklist says it is not.
+    """
+    response = _qa(client, result="Pass", critical_failures=1)
+    assert response.status_code == 422
+
+
+def test_a_fail_with_no_criticals_is_allowed(client: TestClient) -> None:
+    """The ordinary case: non-critical findings still fail the checklist."""
+    assert _qa(client, result="Fail", critical_failures=0, notes="minor wording").status_code == 200
+
+
+def test_the_qa_actor_comes_from_the_session_not_the_body(
+    client: TestClient, fake_reports: FakeReportRepository
+) -> None:
+    _qa(client)
+    assert fake_reports.last_qa["actor_id"] == "00000000-0000-0000-0000-0000000000aa"
+
+
+def test_an_analyst_recording_qa_on_their_own_run_is_403(
+    client: TestClient, fake_reports: FakeReportRepository
+) -> None:
+    fake_reports.next_error = QaSelfReviewError("you are the analyst on this run")
+    assert _qa(client).status_code == 403
+
+
+def test_qa_on_an_unknown_version_is_404(
+    client: TestClient, fake_reports: FakeReportRepository
+) -> None:
+    fake_reports.next_error = KeyError("no report version")
+    assert _qa(client).status_code == 404
+
+
+@pytest.mark.parametrize("result", ["Passed", "pass", "FAIL", "Unknown", ""])
+def test_a_result_outside_pass_or_fail_is_refused(client: TestClient, result: str) -> None:
+    assert _qa(client, result=result).status_code == 422
+
+
+def test_a_negative_critical_count_is_refused(client: TestClient) -> None:
+    assert _qa(client, critical_failures=-1).status_code == 422
+
+
+def test_qa_notes_are_required(client: TestClient) -> None:
+    """A QA result with no note records an outcome nobody can act on or dispute."""
+    assert _qa(client, notes="").status_code == 422
