@@ -231,6 +231,35 @@ create table candidate_sod_exceptions (
   unique (candidate_id, actor_id)
 );
 
+-- ---------- comms assistant (#193/#60/#65 dependency: "Comms Assistant service side") ----------
+-- Dedicated enums rather than reusing `approval_state`: that type carries Rejected/Returned for
+-- Correction/Superseded, none of which this module has a code path for. Storing a value the API
+-- can never write would let a reader assume a capability that does not exist. This narrows to
+-- exactly what is built: a draft becomes Approved, once, or it does not.
+create type comms_content_type as enum ('newsletter','linkedin_post','event_announcement','member_spotlight');
+create type comms_draft_status as enum ('Draft','Approved');
+
+create table comms_drafts (
+  id              uuid primary key default gen_random_uuid(),
+  content_type    comms_content_type not null,
+  brief           text not null,
+  draft_text      text not null,
+  status          comms_draft_status not null default 'Draft',
+  -- NOT NULL from day one, not backfilled later - same precedent as candidates.captured_by
+  -- above and the same reasoning: a nullable authorship column is the one INSERT an
+  -- attacker needs to omit to defeat the self-approval check below. No production database
+  -- exists yet for this table either, so there is nothing to strand by requiring it now.
+  authored_by     uuid not null references users(id),
+  approved_by     uuid references users(id),
+  approved_at     timestamptz,
+  approval_reason text,
+  created_at      timestamptz not null default now(),
+  -- Keeps the status column and the approval columns from disagreeing with each other -
+  -- Approved with no approver, or a recorded approver on a row still marked Draft, are both
+  -- states the API must never be able to produce, so the database refuses them outright.
+  check ((status = 'Approved') = (approved_by is not null))
+);
+
 -- ---------- registers (Intelligence Database is the authority) ----------
 create table action_register (
   id             uuid primary key default gen_random_uuid(),

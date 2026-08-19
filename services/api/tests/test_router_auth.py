@@ -321,6 +321,13 @@ EXPECTED_ROLES: dict[tuple[str, str], set[str]] = {
     ("GET", "/api/facts/{fact_id}"): set(STAFF_READ),
     ("GET", "/api/facts/by-key/{fact_key}/latest"): set(STAFF_READ),
     ("GET", "/api/facts/by-key/{fact_key}/history"): set(STAFF_READ),
+    # The named-reviewer approval gate #60 depends on. BR8: refuse_self_review checks the author
+    # against the approver regardless of role, so Reviewer/SIP Owner here is "may approve
+    # something", not "may approve their own draft" - that second check lives in the repository,
+    # not in the role map, the same split as /api/candidates/{id}/verify.
+    ("POST", "/api/comms/drafts/{draft_id}/approve"): {"Reviewer", "SIP Owner"},
+    ("GET", "/api/comms/drafts/{draft_id}"): set(STAFF_READ),
+    ("GET", "/api/comms/drafts"): set(STAFF_READ),
 }
 
 

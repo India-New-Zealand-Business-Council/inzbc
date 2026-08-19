@@ -323,8 +323,9 @@ export interface paths {
         put?: never;
         /**
          * Draft
-         * @description Generates a draft. Never sends or publishes anything - see `apps/comms/draft.py`'s module
-         *     docstring for why "nothing publishable without a recorded reviewer" holds by construction.
+         * @description Generates a draft and persists it. Never sends or publishes anything - see
+         *     `apps/comms/draft.py`'s module docstring for why "nothing publishable without a recorded
+         *     reviewer" holds by construction.
          *
          *     Failure mapping is deliberately specific, not a blanket 500:
          *     - `GatewayNotConfiguredError` / `RedactionNotConfiguredError` -> 503. Deployment configuration
@@ -335,6 +336,61 @@ export interface paths {
          *       distinct from "not configured".
          */
         post: operations["draft_api_comms_draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/comms/drafts/{draft_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve Draft
+         * @description The named-reviewer approval gate #60 depends on. BR8: the author of a draft may not also
+         *     approve it, enforced by `refuse_self_review` inside `CommsDraftRepository.approve`.
+         */
+        post: operations["approve_draft_api_comms_drafts__draft_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/comms/drafts/{draft_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Draft */
+        get: operations["get_draft_api_comms_drafts__draft_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/comms/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Drafts */
+        get: operations["list_drafts_api_comms_drafts_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -698,6 +754,11 @@ export interface components {
             /** Notes */
             notes?: string | null;
         };
+        /** ApproveIn */
+        ApproveIn: {
+            /** Reason */
+            reason?: string | null;
+        };
         /** AuditEntryOut */
         AuditEntryOut: {
             /** Id */
@@ -791,6 +852,29 @@ export interface components {
             published_at?: string | null;
             /** In Coverage Window */
             in_coverage_window?: boolean | null;
+        };
+        /** CommsDraftOut */
+        CommsDraftOut: {
+            /** Id */
+            id: string;
+            /** Content Type */
+            content_type: string;
+            /** Brief */
+            brief: string;
+            /** Draft */
+            draft: string;
+            /** Status */
+            status: string;
+            /** Authored By */
+            authored_by: string;
+            /** Approved By */
+            approved_by: string | null;
+            /** Approved At */
+            approved_at: string | null;
+            /** Approval Reason */
+            approval_reason: string | null;
+            /** Created At */
+            created_at: string;
         };
         /**
          * CoverageOut
@@ -886,12 +970,17 @@ export interface components {
         };
         /**
          * DraftOut
-         * @description Matches `apps/comms/ui/src/api/client.ts`'s `isCommsDraftResult` guard exactly: one
-         *     required non-empty `draft` string, nothing else the UI reads today.
+         * @description `draft` is what `apps/comms/ui/src/api/client.ts`'s `isCommsDraftResult` guard checks -
+         *     a non-empty string, nothing more required. `id`/`status` are additive: present for a client
+         *     that wants to fetch or approve the persisted row, ignored by a client that does not.
          */
         DraftOut: {
             /** Draft */
             draft: string;
+            /** Id */
+            id: string;
+            /** Status */
+            status: string;
         };
         /** FactOut */
         FactOut: {
@@ -1987,6 +2076,134 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    approve_draft_api_comms_drafts__draft_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                draft_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApproveIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommsDraftOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_draft_api_comms_drafts__draft_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                draft_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommsDraftOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_drafts_api_comms_drafts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommsDraftOut"][];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

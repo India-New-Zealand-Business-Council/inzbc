@@ -160,6 +160,9 @@ Staff user (authenticated, same-origin)
   → SSE token stream back to the UI as the draft generates
   → draft rendered in the UI — never sent, never published
   → named human reviewer edits/approves (docs/modules/comms-assistant.md "Definition of done")
+    [API built: POST /api/comms/drafts/{id}/approve records who approved, when, and refuses the
+    draft's own author (BR8). The review UI that calls it (#60) is not built yet — this is the
+    endpoint it will call, not the reviewer's screen.]
   → only on approval: handoff to the actual send/publish channel (mechanism not specified —
     see Open items)
 ```

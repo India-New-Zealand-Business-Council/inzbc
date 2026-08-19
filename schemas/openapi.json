@@ -1044,7 +1044,7 @@
           "Comms Assistant"
         ],
         "summary": "Draft",
-        "description": "Generates a draft. Never sends or publishes anything - see `apps/comms/draft.py`'s module\ndocstring for why \"nothing publishable without a recorded reviewer\" holds by construction.\n\nFailure mapping is deliberately specific, not a blanket 500:\n- `GatewayNotConfiguredError` / `RedactionNotConfiguredError` -> 503. Deployment configuration\n  is missing (no API key, or - per ADR-0006 - no approved `REDACTION_POLICY_PATH`). Expected,\n  correct refusal in any environment that hasn't been configured yet, not a bug to alert on\n  the same way as a real failure.\n- `GatewayCallError` -> 502. The provider call itself failed after a retry - genuinely down,\n  distinct from \"not configured\".",
+        "description": "Generates a draft and persists it. Never sends or publishes anything - see\n`apps/comms/draft.py`'s module docstring for why \"nothing publishable without a recorded\nreviewer\" holds by construction.\n\nFailure mapping is deliberately specific, not a blanket 500:\n- `GatewayNotConfiguredError` / `RedactionNotConfiguredError` -> 503. Deployment configuration\n  is missing (no API key, or - per ADR-0006 - no approved `REDACTION_POLICY_PATH`). Expected,\n  correct refusal in any environment that hasn't been configured yet, not a bug to alert on\n  the same way as a real failure.\n- `GatewayCallError` -> 502. The provider call itself failed after a retry - genuinely down,\n  distinct from \"not configured\".",
         "operationId": "draft_api_comms_draft_post",
         "requestBody": {
           "content": {
@@ -1088,6 +1088,160 @@
           {
             "SessionCookie": [],
             "CsrfToken": []
+          }
+        ]
+      }
+    },
+    "/api/comms/drafts/{draft_id}/approve": {
+      "post": {
+        "tags": [
+          "Comms Assistant"
+        ],
+        "summary": "Approve Draft",
+        "description": "The named-reviewer approval gate #60 depends on. BR8: the author of a draft may not also\napprove it, enforced by `refuse_self_review` inside `CommsDraftRepository.approve`.",
+        "operationId": "approve_draft_api_comms_drafts__draft_id__approve_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "draft_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Draft Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommsDraftOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/comms/drafts/{draft_id}": {
+      "get": {
+        "tags": [
+          "Comms Assistant"
+        ],
+        "summary": "Get Draft",
+        "operationId": "get_draft_api_comms_drafts__draft_id__get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "draft_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Draft Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommsDraftOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/comms/drafts": {
+      "get": {
+        "tags": [
+          "Comms Assistant"
+        ],
+        "summary": "List Drafts",
+        "operationId": "list_drafts_api_comms_drafts_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CommsDraftOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Drafts Api Comms Drafts Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
           }
         ]
       }
@@ -1908,6 +2062,24 @@
         "title": "AnswerOut",
         "description": "A sourced FTA finding. Every field is evidence or the presentation it must carry."
       },
+      "ApproveIn": {
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ApproveIn"
+      },
       "AuditEntryOut": {
         "properties": {
           "id": {
@@ -2322,6 +2494,86 @@
         ],
         "title": "CaptureCandidateIn"
       },
+      "CommsDraftOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "content_type": {
+            "type": "string",
+            "title": "Content Type"
+          },
+          "brief": {
+            "type": "string",
+            "title": "Brief"
+          },
+          "draft": {
+            "type": "string",
+            "title": "Draft"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "authored_by": {
+            "type": "string",
+            "title": "Authored By"
+          },
+          "approved_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved By"
+          },
+          "approved_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "approval_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approval Reason"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "content_type",
+          "brief",
+          "draft",
+          "status",
+          "authored_by",
+          "approved_by",
+          "approved_at",
+          "approval_reason",
+          "created_at"
+        ],
+        "title": "CommsDraftOut"
+      },
       "CoverageOut": {
         "properties": {
           "total": {
@@ -2597,15 +2849,25 @@
           "draft": {
             "type": "string",
             "title": "Draft"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "draft"
+          "draft",
+          "id",
+          "status"
         ],
         "title": "DraftOut",
-        "description": "Matches `apps/comms/ui/src/api/client.ts`'s `isCommsDraftResult` guard exactly: one\nrequired non-empty `draft` string, nothing else the UI reads today."
+        "description": "`draft` is what `apps/comms/ui/src/api/client.ts`'s `isCommsDraftResult` guard checks -\na non-empty string, nothing more required. `id`/`status` are additive: present for a client\nthat wants to fetch or approve the persisted row, ignored by a client that does not."
       },
       "FactOut": {
         "properties": {
