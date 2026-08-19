@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 import json
 
 import pytest
@@ -26,7 +25,7 @@ class _FakeResponses:
         self._outputs = outputs
         self.calls: list[dict] = []
 
-    def create(self, **kwargs) -> _FakeResponse:  # noqa: ANN003
+    def create(self, **kwargs) -> _FakeResponse:
         self.calls.append(kwargs)
         result = self._outputs.pop(0)
         if isinstance(result, Exception):

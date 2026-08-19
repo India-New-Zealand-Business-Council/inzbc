@@ -95,7 +95,7 @@ def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
     articles = json.loads(args.articles_file.read_text(encoding="utf-8"))
     if not isinstance(articles, list):
-        raise ValueError(f"{args.articles_file} must contain a JSON list of article dicts")
+        raise TypeError(f"{args.articles_file} must contain a JSON list of article dicts")
 
     client = SipPipelineClient(args.base_url, args.session_cookie, args.csrf_token)
     now = datetime.now(UTC)

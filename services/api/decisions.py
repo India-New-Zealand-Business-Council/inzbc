@@ -262,8 +262,10 @@ class DecisionRepository:
         Passing the current revision is therefore an assertion, not a formality: "I read this
         ruling, and I am deciding in response to it."
         """
-        with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
-            with conn.transaction():
+        with (
+            psycopg.connect(self._database_url, row_factory=dict_row) as conn,
+            conn.transaction(),
+        ):
                 # The foreign key on (kind, actor_role_id) proves a permission row exists. It does
                 # not prove the row is enabled, that the actor still holds the role, or that the
                 # account is active, because a foreign key cannot look at a column it does not

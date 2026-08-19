@@ -13,7 +13,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-import apps.sip.collector.run_dry_run as run_dry_run
+from apps.sip.collector import run_dry_run
 from apps.sip.pipeline.client import SipApiError
 
 FIXTURE = Path(__file__).parents[1] / "data" / "dry_run_fixture_articles.json"
@@ -35,7 +35,7 @@ class _FakeClient:
         self._next_id += 1
         return f"{prefix}-{self._next_id}"
 
-    def create_run(self, run) -> dict:  # noqa: ANN001 - duck-typed fake
+    def create_run(self, run) -> dict:
         payload = run.model_dump(mode="json", exclude_none=True)
         payload["id"] = self._new_id("run")
         self.runs.append(payload)
@@ -46,7 +46,7 @@ class _FakeClient:
             raise SipApiError(self.source_library_status, "not found")
         return []
 
-    def create_candidate(self, candidate) -> dict:  # noqa: ANN001
+    def create_candidate(self, candidate) -> dict:
         payload = candidate.model_dump(mode="json", exclude_none=True)
         payload["id"] = self._new_id("cand")
         self.candidates[payload["id"]] = payload
@@ -55,7 +55,7 @@ class _FakeClient:
 
 def test_locked_coverage_window_is_exact_24h_previous_day_0700_to_today_0700():
     now_utc = datetime(2026, 8, 8, 3, 0, tzinfo=UTC)  # 15:00 NZST, well after 07:00
-    start, end = run_dry_run._locked_coverage_window(now_utc)
+    _start, end = run_dry_run._locked_coverage_window(now_utc)
 
     start_nz = datetime.fromisoformat(start).astimezone(ZoneInfo("Pacific/Auckland"))
     end_nz = datetime.fromisoformat(end).astimezone(ZoneInfo("Pacific/Auckland"))

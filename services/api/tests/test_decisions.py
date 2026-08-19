@@ -112,9 +112,9 @@ def seeded() -> dict:
 
 
 def _kwargs(seeded: dict, **overrides) -> dict:
-    base = dict(
-        report_version_id=seeded["report_version_id"],
-        actor_id=seeded["user_id"],
+    base = {
+        "report_version_id": seeded["report_version_id"],
+        "actor_id": seeded["user_id"],
         actor_role_id=seeded["role_id"],
         reason="recorded by the integration test",
         evidence_ref="SIP-184 s12",
