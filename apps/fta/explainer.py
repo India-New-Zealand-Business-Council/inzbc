@@ -20,7 +20,7 @@ import re
 from dataclasses import dataclass
 from datetime import date
 
-from .corpus import CORPUS, FTA_STATUS_LINE, TariffOutcome
+from .corpus import CORPUS, FTA_STATUS_LINE, TariffOutcome, TradeDirection
 from .standards import AI_INFORMATION_STANDARD, Confidence
 
 DISCLAIMER = AI_INFORMATION_STANDARD
@@ -121,6 +121,16 @@ class ExplainerAnswer:
     confidence: Confidence
     confidence_meaning: str
     notes: str | None = None
+    # Structured tariff fields (#185): a member asking "what's the current tariff on wool" needs
+    # a queryable value, not `treatment` re-parsed. Passed through from TariffOutcome exactly as
+    # sourced - None means "not yet sourced for this entry", never "zero" or "unchanged". See
+    # TariffOutcome's docstring in corpus.py for why these are free text, not parsed percentages.
+    direction: TradeDirection | None = None
+    current_tariff: str | None = None
+    fta_commencement_tariff: str | None = None
+    staged_reductions: str | None = None
+    final_tariff: str | None = None
+    implementation_period_years: int | None = None
 
 
 _NEXT_STEP = (
@@ -158,6 +168,12 @@ def _to_answer(entry: TariffOutcome) -> ExplainerAnswer:
         confidence=confidence,
         confidence_meaning=confidence.meaning,
         notes=entry.notes,
+        direction=entry.direction,
+        current_tariff=entry.current_tariff,
+        fta_commencement_tariff=entry.fta_commencement_tariff,
+        staged_reductions=entry.staged_reductions,
+        final_tariff=entry.final_tariff,
+        implementation_period_years=entry.implementation_period_years,
     )
 
 

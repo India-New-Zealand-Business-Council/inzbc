@@ -8,6 +8,7 @@ from apps.fta.corpus import (
     TIER_1_SOURCES,
     TIER_2_SOURCES,
     TariffOutcome,
+    TradeDirection,
     stale_entries,
 )
 
@@ -98,3 +99,83 @@ def test_ids_are_safe_as_html_ids() -> None:
         assert re.fullmatch(r"[A-Za-z][A-Za-z0-9\-_]*", entry.id), (
             f"{entry.id!r} is not a valid HTML id — no spaces or punctuation"
         )
+
+
+# ---------- structured tariff fields (#185) ----------
+
+
+def test_wool_has_the_sourced_current_and_final_tariff() -> None:
+    # Real figures from the NIA's Key Tariff Outcomes table (p.13), not placeholders - the
+    # whole point of #185 is that these are queryable, not just prose.
+    entry = next(e for e in CORPUS if e.topic == "Wool")
+    assert entry.direction is TradeDirection.NZ_EXPORTS_TO_INDIA
+    assert entry.current_tariff == "2.75%"
+    assert entry.final_tariff == "0% (eliminated)"
+    assert entry.implementation_period_years == 0
+
+
+def test_kiwifruit_and_apples_are_split_with_different_structured_outcomes() -> None:
+    # They used to be one combined entry; combining them under a single current/final tariff
+    # pair would misrepresent one of the two (apples is never fully eliminated).
+    kiwifruit = next(e for e in CORPUS if e.topic == "Kiwifruit")
+    apples = next(e for e in CORPUS if e.topic == "Apples")
+    assert kiwifruit.id != apples.id
+    assert kiwifruit.current_tariff == "33%"
+    assert apples.current_tariff == "50%"
+    assert "never fully eliminated" in apples.final_tariff.lower()
+
+
+def test_cherries_and_avocados_split_from_the_unconfirmed_pair() -> None:
+    confirmed_pair = next(e for e in CORPUS if e.topic == "Cherries and avocados")
+    unconfirmed_pair = next(e for e in CORPUS if e.topic == "Blueberries and persimmons")
+
+    assert confirmed_pair.current_tariff == "33%"
+    assert confirmed_pair.final_tariff == "0% (eliminated)"
+
+    # No product-specific line exists for these two - structured fields must stay unset
+    # rather than silently borrowing the cherries/avocados figures.
+    assert unconfirmed_pair.current_tariff is None
+    assert unconfirmed_pair.final_tariff is None
+    assert unconfirmed_pair.confirmed is True  # the qualitative claim is still sourced
+
+
+def test_peptones_does_not_borrow_bulk_infant_formulas_current_tariff() -> None:
+    peptones = next(e for e in CORPUS if e.topic == "Dairy - peptones")
+    bulk_infant_formula = next(
+        e for e in CORPUS if "bulk infant formula" in e.topic.lower()
+    )
+
+    assert bulk_infant_formula.current_tariff == "33%"
+    assert peptones.current_tariff is None
+    # The qualitative "phases out over 7 years" claim stays, it just isn't tied to a
+    # borrowed baseline.
+    assert peptones.implementation_period_years == 7
+
+
+def test_excluded_dairy_has_no_current_tariff_figure() -> None:
+    excluded = next(e for e in CORPUS if e.topic == "Dairy - milk, cheese, butter")
+    assert excluded.current_tariff is None
+    assert excluded.final_tariff is None
+
+
+def test_aggregate_entries_carry_no_product_level_tariff_figures() -> None:
+    # "95% of exports" is not a single product's tariff line - current/final tariff fields
+    # must stay unset for cross-sector aggregates, not populated with something misleading.
+    for topic in (
+        "India tariffs on NZ exports (overall)",
+        "India tariff-line count (~70% of ~12,500 lines)",
+        "Two-way trade value",
+        "Independent GDP modelling",
+    ):
+        entry = next(e for e in CORPUS if e.topic == topic)
+        assert entry.current_tariff is None
+        assert entry.final_tariff is None
+
+
+def test_iron_steel_and_industrial_products_are_not_added() -> None:
+    # The source table gives these a current-tariff range too, but neither is one of the ten
+    # sectors either client document names (docs/project-charter.md §6, still unsettled) -
+    # deliberately out of scope for this pass.
+    topics = {entry.topic.lower() for entry in CORPUS}
+    assert not any("iron" in t or "steel" in t for t in topics)
+    assert not any("industrial product" in t for t in topics)
