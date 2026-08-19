@@ -55,7 +55,7 @@ class _FakeClient:
 
 def test_locked_coverage_window_is_exact_24h_previous_day_0700_to_today_0700():
     now_utc = datetime(2026, 8, 8, 3, 0, tzinfo=UTC)  # 15:00 NZST, well after 07:00
-    _start, end = run_dry_run._locked_coverage_window(now_utc)
+    start, end = run_dry_run._locked_coverage_window(now_utc)
 
     start_nz = datetime.fromisoformat(start).astimezone(ZoneInfo("Pacific/Auckland"))
     end_nz = datetime.fromisoformat(end).astimezone(ZoneInfo("Pacific/Auckland"))
@@ -70,7 +70,7 @@ def test_locked_coverage_window_before_0700_nz_uses_previous_boundary():
     # 02:00 NZST is before the 07:00 boundary, so "today's" window hasn't opened yet.
     now_utc = datetime(2026, 8, 7, 13, 0, tzinfo=UTC)  # 01:00 NZST next day... use a clean case
     now_utc = datetime(2026, 8, 8, 12, 0, tzinfo=UTC)  # 00:00 NZST 9 Aug -> before 07:00
-    start, end = run_dry_run._locked_coverage_window(now_utc)
+    _start, end = run_dry_run._locked_coverage_window(now_utc)
     end_nz = datetime.fromisoformat(end).astimezone(ZoneInfo("Pacific/Auckland"))
     assert end_nz.date() < now_utc.astimezone(ZoneInfo("Pacific/Auckland")).date()
 

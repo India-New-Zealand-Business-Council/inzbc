@@ -116,7 +116,7 @@ def restore(path: Path = SNAPSHOT) -> int:
             result = subprocess.run(
                 ["gh", "project", "item-edit", "--project-id", PROJECT_ID, "--id", row["id"],
                  "--field-id", field_id, "--single-select-option-id", option_id],
-                capture_output=True, text=True)
+                capture_output=True, text=True, check=False)
             if result.returncode == 0:
                 applied += 1
             else:

@@ -115,15 +115,15 @@ def _kwargs(seeded: dict, **overrides) -> dict:
     base = {
         "report_version_id": seeded["report_version_id"],
         "actor_id": seeded["user_id"],
-        actor_role_id=seeded["role_id"],
-        reason="recorded by the integration test",
-        evidence_ref="SIP-184 s12",
-        owner_id=seeded["user_id"],
-        next_review=date(2026, 9, 1),
-        decided_at=datetime.now(UTC),
-        idempotency_key=uuid.uuid4(),
-        expected_head_revision=0,
-    )
+        "actor_role_id": seeded["role_id"],
+        "reason": "recorded by the integration test",
+        "evidence_ref": "SIP-184 s12",
+        "owner_id": seeded["user_id"],
+        "next_review": date(2026, 9, 1),
+        "decided_at": datetime.now(UTC),
+        "idempotency_key": uuid.uuid4(),
+        "expected_head_revision": 0,
+    }
     base.update(overrides)
     return base
 

@@ -140,9 +140,9 @@ class ModelGateway:
                 )
             except GatewayNotConfiguredError:
                 raise
-            # noqa rather than a narrower except: the whole point is that provider and network
-            # error types differ by SDK version, so naming them would silently stop retrying
-            # when a dependency bump renames one.
+            # Deliberately broad, rather than a narrower except: provider and network error
+            # types differ by SDK version, so naming them would silently stop retrying when a
+            # dependency bump renames one.
             except Exception as error:  # noqa: BLE001
                 last_error = error
                 if attempt + 1 < _RETRYABLE_ATTEMPTS:
