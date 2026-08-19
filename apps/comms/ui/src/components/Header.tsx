@@ -1,44 +1,50 @@
-import inzbcLogoAcronymWhite from '../assets/inzbc-logo-acronym-white.svg'
+import { ArrowUpRight } from 'lucide-react'
 
-// Navy background + white text per INZBC Brand Guidelines 2026 v1.0 (Colour Palette, p.16):
-// Navy Blue #160933 is the brand's primary base, ~50% of colour use. Applied here via the
-// --color-inzbc-navy token (src/index.css), not a raw hex, so it stays in sync with the rest
-// of the app if the token ever changes.
-//
-// Logo: the acronym lockup, white variant — sourced from Drive (Brand/Logo Files/Export/SVG -
-// Vector/INZBC_Logo_Acronym_White.svg), not fabricated. The guide (p.8) recommends the acronym
-// logo specifically "at small scales, where 'India New Zealand Business Council' might become
-// illegible" — exactly this header's use case.
+// Floating glass-pill header, matching the live inzview build
+// (India-New-Zealand-Business-Council/inzview, src/components/inzbc/motion.tsx's StickyHeader)
+// rather than the flat solid-navy bar this used to be. Simplified from that component: inzview's
+// version is multi-page (react-router links, a collapsing mobile menu) — this app is a single
+// page, so there's no link list to collapse and no router to depend on. The logo URL is the same
+// one inzview's content.ts uses, pulled straight from the Wix Media Manager — sourced, not
+// re-hosted, so it stays in sync with whatever INZBC uploads there.
+const LOGO_URL = 'https://static.wixstatic.com/media/df219d_0b8e6333d53841efaf66f675038a0798~mv2.jpg'
+
 export function Header() {
   return (
-    <header className="bg-inzbc-navy text-white">
+    // pointer-events-none on the wrapper + pointer-events-auto on the pill (inzview's own
+    // pattern): the fixed strip spans the full viewport width, but only the pill itself should
+    // ever intercept a click — everything outside it passes through to the page beneath.
+    <header className="pointer-events-none fixed inset-x-0 top-0 z-50 p-4 sm:p-5">
       <a
         href="#main-content"
-        className="sr-only focus-visible:not-sr-only focus-visible:absolute focus-visible:left-4 focus-visible:top-4 focus-visible:z-50 focus-visible:rounded-md focus-visible:bg-white focus-visible:px-3 focus-visible:py-2 focus-visible:text-inzbc-navy"
+        className="sr-only focus-visible:not-sr-only focus-visible:pointer-events-auto focus-visible:absolute focus-visible:left-4 focus-visible:top-4 focus-visible:z-50 focus-visible:rounded-md focus-visible:bg-white focus-visible:px-3 focus-visible:py-2 focus-visible:text-inzbc-ink"
       >
         Skip to main content
       </a>
-      <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-4">
+      <div className="pointer-events-auto relative mx-auto flex w-full max-w-2xl min-h-[64px] items-center justify-between gap-4 rounded-[1.2rem] border border-white/60 bg-white/80 px-4 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.78),0_18px_60px_rgba(9,3,24,0.14)] backdrop-blur-2xl backdrop-saturate-150">
         <a
           href="/"
-          className="rounded-sm transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-lavender"
+          className="inline-flex min-h-11 items-center rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-lime"
         >
-          {/* Guide, p.11: acronym logo minimum size is 8mm / 25px wide — h-6 (24px tall) renders
-              this ~81px wide at its native aspect ratio, comfortably above that floor. */}
-          <img src={inzbcLogoAcronymWhite} alt="INZBC" className="h-6 w-auto" />
+          <img src={LOGO_URL} alt="INZBC" className="h-auto w-[clamp(120px,16vw,150px)]" />
         </a>
-        <nav aria-label="Primary">
-          {/* Lavender, not Blue, for the current-page accent: the guide pairs Lavender with Navy
-              (p.18, "Lavender > Blue > Navy Blue" is its featured gradient) precisely because
-              Blue #261866 on Navy #160933 is two dark colours with ~1.5:1 contrast — unreadable
-              against this background, unlike on the light body where Blue is used for links. */}
+        <nav aria-label="Primary" className="flex items-center">
           <span
             aria-current="page"
-            className="border-b-2 border-inzbc-lavender text-sm font-medium text-white"
+            className="border-b-2 border-inzbc-lime pb-0.5 text-sm font-medium text-inzbc-ink"
           >
             Comms Assistant
           </span>
         </nav>
+        <a
+          href="https://inzbc.memberjungle.club/index.cfm?module=membership_v2&kat=add_register"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hidden min-h-11 items-center gap-1.5 rounded-full bg-inzbc-ink px-4 py-2.5 text-sm font-semibold text-white transition-transform active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-lime sm:inline-flex"
+        >
+          Join INZBC
+          <ArrowUpRight aria-hidden="true" size={16} />
+        </a>
       </div>
     </header>
   )
