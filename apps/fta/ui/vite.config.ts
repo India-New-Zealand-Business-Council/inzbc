@@ -1,5 +1,6 @@
 /// <reference types="vitest/config" />
 import { reticle } from '@reticlehq/vite-plugin'
+import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
@@ -15,7 +16,7 @@ const devOnlyPlugins = (command: string) =>
   command === 'serve' && !process.env.VITEST ? [reticle()] : []
 
 export default defineConfig(({ command }) => ({
-  plugins: [...devOnlyPlugins(command), react()],
+  plugins: [...devOnlyPlugins(command), react(), tailwindcss()],
   server: {
     // The API runs on its own origin in development. In deployment the public UI is served
     // from Cloudflare Pages and calls the Fly-hosted API cross-origin (ADR-0004), so the dev

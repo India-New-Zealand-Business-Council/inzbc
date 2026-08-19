@@ -14,10 +14,20 @@ import type { ActionRequired as ActionRequiredModel } from '../api/client'
 export function ActionRequired({ result }: { result: ActionRequiredModel }) {
   const headingId = useId()
   return (
-    <section className="fta-action-required" aria-labelledby={headingId}>
-      <h3 id={headingId}>No verified answer — action required</h3>
-      <p>{result.message}</p>
-      <dl>
+    // Dashed crimson border on a near-white crimson tint — deliberately not Answer's solid
+    // navy/tangerine card (see this component's doc comment above): the dashed border and the
+    // brand's alert colour (docs/design-decisions.md; the same token apps/sip/ui uses for
+    // Critical-fail states) make the "this is not a finding" distinction legible before anyone
+    // reads a word, not just via the heading text.
+    <section
+      className="mt-4 rounded-md border-2 border-dashed border-inzbc-crimson bg-inzbc-crimson/5 p-4"
+      aria-labelledby={headingId}
+    >
+      <h3 id={headingId} className="text-base font-bold text-inzbc-crimson sm:text-lg">
+        No verified answer — action required
+      </h3>
+      <p className="mt-1 text-slate-800">{result.message}</p>
+      <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm [&_dd]:text-slate-700 [&_dt]:font-semibold [&_dt]:text-inzbc-crimson">
         <dt>Confidence</dt>
         <dd>
           {result.confidence} — {result.confidence_meaning}
@@ -29,7 +39,7 @@ export function ActionRequired({ result }: { result: ActionRequiredModel }) {
         <dt>Status</dt>
         <dd>{result.status_line}</dd>
       </dl>
-      <p className="fta-disclaimer">{result.disclaimer}</p>
+      <p className="mt-3 border-t border-inzbc-crimson/20 pt-2 text-xs text-slate-500">{result.disclaimer}</p>
     </section>
   )
 }
