@@ -129,6 +129,12 @@ platform did. It is still an allowlist: a user holding no role reads nothing.
 | `GET /api/dashboard` | all staff roles |
 | `POST /api/reports` | Analyst, SIP Owner |
 | `GET /api/reports/{id}` | all staff roles |
+| `POST /api/action-register`, `POST /api/action-register/{id}/status` | Analyst, SIP Owner |
+| `GET /api/action-register/{id}`, `GET /api/action-register` | all staff roles |
+| `POST /api/watch-lists`, `POST /api/watch-lists/{id}/status` | Analyst, SIP Owner |
+| `GET /api/watch-lists/{id}`, `GET /api/watch-lists` | all staff roles |
+| `POST /api/exceptions`, `POST /api/exceptions/{id}/correct` | Analyst, SIP Owner |
+| `GET /api/exceptions/{id}`, `GET /api/exceptions` | all staff roles |
 | `POST /api/facts` | Analyst, SIP Owner |
 | `POST /api/facts/{id}/approve` | **Reviewer**, SIP Owner |
 | `POST /api/facts/{id}/archive` | Analyst, Reviewer, SIP Owner |
@@ -150,6 +156,10 @@ stop. A quality gate that only the owner can pull is not independent of the owne
 for precisely this. Narrowing it to the owner would mean the person most likely to be audited
 controls who sees the record, and an audit trail nobody can read is not an audit trail.
 
+**The registers (action-register, watch-lists, exceptions) carry Analyst/SIP Owner on every
+write, including `exceptions/{id}/correct`.** A correction inserts a new row rather than editing
+the one it corrects, but it is still the analyst's act of recording what they found - same
+authority as the write it follows, not a Reviewer-gated act like `verify`.
 **`facts/{id}/approve` is Reviewer-gated, like `candidates/{id}/verify`.** Drafting a fact is
 capture (Analyst), but approving one asserts it is correct enough for the Explainer, Digest and
 Comms Assistant to state as fact - the same verification/capture split `verify` already draws.

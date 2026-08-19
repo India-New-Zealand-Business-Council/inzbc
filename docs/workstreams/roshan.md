@@ -41,6 +41,19 @@ the local Postgres verification (114 passed) in the PR body. Worth a standup men
 same branch-level fault hits someone else's PR later; not otherwise unresolved.
 
 ## In review (opened, awaiting merge)
+- [ ] Registers: action-register, watch-lists, exceptions (#209): the controlled launch recorded
+  source outcomes, exceptions and carried-forward actions by hand — schema for all three has
+  existed since DB schema v0.1 (Bhanu's Workstream A), nothing wrote to it. Built persistence +
+  API only, explicitly not `docs/sip/build-plan.md`'s "Registers UI" (Paras's Workstream C) —
+  recorded so the lane split stays visible, same pattern as `source_checks.py`/
+  `comms_persistence.py` this week. `exceptions` is append-only per SIP-050's own rule
+  (`record()`/`correct()` both insert, `correct()` never touches the row it corrects —
+  `correction_ref` carries the original id forward, same shape as `decision_records.
+  supersedes_id`); `action_register`/`watch_lists` update in place since they're operational
+  trackers, not evidence — `closed_at` set only on exactly `Closed`, verified by mutating that
+  check and confirming the test written for it fails. 842 passed against a real local Postgres,
+  ruff clean, `EXPECTED_ROLES` map caught all 12 new routes on first run as designed, `pnpm -r
+  lint`/`typecheck` clean, OpenAPI + TS clients regenerated, `schemas/api-contract.md` updated.
 - [ ] Approved facts library (#188, PR #321): `approved_facts` table + `FactRepository`
   (draft/approve/archive, self-approval refused at both the app layer and a schema CHECK
   constraint) + `/api/facts` (Analyst drafts, Reviewer/SIP Owner approves - same split as

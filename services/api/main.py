@@ -29,6 +29,11 @@ from services.api.dashboard import router as dashboard_router
 from services.api.facts import facts_router
 from services.api.hardening import install as install_hardening
 from services.api.oauth import router as oauth_router
+from services.api.registers import (
+    action_register_router,
+    exceptions_router,
+    watch_list_router,
+)
 from services.api.reports import router as reports_router
 from services.api.runs import router as runs_router
 from services.api.session import router as session_router
@@ -50,6 +55,9 @@ app.include_router(dashboard_router)
 app.include_router(reports_router)
 app.include_router(session_router)
 app.include_router(oauth_router)
+app.include_router(action_register_router)
+app.include_router(watch_list_router)
+app.include_router(exceptions_router)
 app.include_router(facts_router)
 
 
