@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+/* Big Shoulders Display and Merriweather are the two brand fonts (Typography Breakdown, p.20 of
+   INZBC Brand Guidelines 2026 v1.0) — unlike the logo, these are open Google Fonts, not a
+   proprietary INZBC asset, so self-hosting them via @fontsource (offline, no external request at
+   runtime) doesn't need to wait on INZBC to supply anything. Same package set and weights as
+   apps/comms/ui/src/index.css and apps/sip/ui/src/index.css so all three staff/public tools share
+   one visual language. */
+@import "@fontsource/big-shoulders-display/latin-500";
+@import "@fontsource/big-shoulders-display/latin-700";
+@import "@fontsource/big-shoulders-display/latin-800";
+@import "@fontsource/merriweather/latin-300";
+@import "@fontsource/merriweather/latin-400";
+@import "@fontsource/merriweather/latin-500";
+@import "@fontsource/merriweather/latin-700";
+
+@theme {
+  /* Brand palette — INZBC Brand Guidelines 2026 v1.0 (docs/design-decisions.md), same tokens as
+     apps/comms/ui and apps/sip/ui. */
+  --color-inzbc-navy: #160933;
+  --color-inzbc-blue: #261866;
+  --color-inzbc-purple: #61145f;
+  --color-inzbc-crimson: #7e0030;
+  --color-inzbc-tangerine: #f05b29;
+  --color-inzbc-forest: #1b4640;
+  --color-inzbc-lavender: #c1acfb;
+  --color-inzbc-lime: #b8f07c;
+
+  --font-heading: "Big Shoulders Display", system-ui, sans-serif;
+  --font-body: "Merriweather", Georgia, serif;
+}
+
+@layer base {
+  /* Guide, p.20: Merriweather "should be used for all other copy" — set as the body default so
+     every element inherits it (including form controls, which Tailwind's preflight already sets
+     to `font: inherit`), then h1–h3 opt back into the display face below. */
+  body {
+    font-family: var(--font-body);
+    font-weight: 300;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+}

@@ -1,9 +1,10 @@
 /// <reference types="vitest/config" />
+import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   server: {
     // The API runs on its own origin in development. In deployment the public UI is served
     // from Cloudflare Pages and calls the Fly-hosted API cross-origin (ADR-0004), so the dev
