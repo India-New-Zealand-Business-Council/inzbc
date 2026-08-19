@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date
 
 from apps.fta import explainer
-from apps.fta.corpus import TariffOutcome
+from apps.fta.corpus import TariffOutcome, TradeDirection
 
 from apps.fta.explainer import (
     DISCLAIMER,
@@ -189,3 +189,43 @@ def test_empty_and_stopword_queries_route_to_no_match() -> None:
     for query in ("", "   ", "the and of"):
         assert answer_query(query) == []
         assert no_match(query).confidence is Confidence.ACTION_REQUIRED
+
+
+def test_answer_surfaces_structured_tariff_fields_when_sourced() -> None:
+    # #185: a member asking "what's the current tariff on wool" needs a queryable value, not
+    # `treatment` re-parsed. Wool (FTA-005) has every structured field sourced.
+    answers = answer_query("wool")
+    assert len(answers) == 1
+    answer = answers[0]
+    assert answer.direction is TradeDirection.NZ_EXPORTS_TO_INDIA
+    assert answer.current_tariff == "2.75%"
+    assert answer.fta_commencement_tariff == "0% (eliminated day 1)"
+    assert answer.final_tariff == "0% (eliminated)"
+    assert answer.implementation_period_years == 0
+
+
+def test_answer_carries_staged_reductions_when_phase_in_is_not_immediate() -> None:
+    # Forestry (FTA-004) phases in over years rather than eliminating day one, so
+    # staged_reductions is the field that distinguishes "0% now" from "0% in 7 years".
+    answers = answer_query("forestry")
+    assert len(answers) == 1
+    assert answers[0].staged_reductions == (
+        "Remainder of forestry trade interests phased out over 5-7 years"
+    )
+    assert answers[0].implementation_period_years == 7
+
+
+def test_answer_passes_through_none_for_unsourced_tariff_fields() -> None:
+    # Milk/cheese/butter (FTA-013) is excluded from concessions and has no current-tariff
+    # callout in the source table (corpus.py docstring: "current_tariff stays unset rather than
+    # guessed"). None here must mean "not yet sourced", not "0%" or silently omitted.
+    answers = answer_query("milk cheese butter")
+    matches = [a for a in answers if a.topic == "Dairy - milk, cheese, butter"]
+    assert len(matches) == 1
+    answer = matches[0]
+    assert answer.current_tariff is None
+    assert answer.fta_commencement_tariff is None
+    assert answer.staged_reductions is None
+    assert answer.final_tariff is None
+    assert answer.implementation_period_years is None
+    assert answer.direction is TradeDirection.NZ_EXPORTS_TO_INDIA

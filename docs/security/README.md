@@ -132,6 +132,19 @@ platform did. It is still an allowlist: a user holding no role reads nothing.
 | `GET /api/source-library` | all staff roles |
 | `POST /api/runs/{id}/source-checks` | Analyst, SIP Owner |
 | `GET /api/runs/{id}/source-checks` | all staff roles |
+| `POST /api/action-register`, `POST /api/action-register/{id}/status` | Analyst, SIP Owner |
+| `GET /api/action-register/{id}`, `GET /api/action-register` | all staff roles |
+| `POST /api/watch-lists`, `POST /api/watch-lists/{id}/status` | Analyst, SIP Owner |
+| `GET /api/watch-lists/{id}`, `GET /api/watch-lists` | all staff roles |
+| `POST /api/exceptions`, `POST /api/exceptions/{id}/correct` | Analyst, SIP Owner |
+| `GET /api/exceptions/{id}`, `GET /api/exceptions` | all staff roles |
+| `POST /api/facts` | Analyst, SIP Owner |
+| `POST /api/facts/{id}/approve` | **Reviewer**, SIP Owner |
+| `POST /api/facts/{id}/archive` | Analyst, Reviewer, SIP Owner |
+| `GET /api/facts/{id}`, `GET /api/facts/by-key/{key}/latest`, `GET /api/facts/by-key/{key}/history` | all staff roles |
+| `POST /api/comms/drafts/{id}/approve` | **Reviewer**, SIP Owner |
+| `GET /api/comms/drafts/{id}` | all staff roles |
+| `GET /api/comms/drafts` | all staff roles |
 
 Five rows are deliberate rather than obvious.
 
@@ -152,6 +165,23 @@ states what they found — so it carries the same authority as `POST /api/candid
 the Reviewer instead would make the reviewer author the evidence they are supposed to verify. The
 read side follows `{id}/audit`'s reasoning: coverage is exactly what an auditor checks a run
 against, so restricting it to the role being audited defeats the purpose.
+**The registers (action-register, watch-lists, exceptions) carry Analyst/SIP Owner on every
+write, including `exceptions/{id}/correct`.** A correction inserts a new row rather than editing
+the one it corrects, but it is still the analyst's act of recording what they found - same
+authority as the write it follows, not a Reviewer-gated act like `verify`.
+**`facts/{id}/approve` is Reviewer-gated, like `candidates/{id}/verify`.** Drafting a fact is
+capture (Analyst), but approving one asserts it is correct enough for the Explainer, Digest and
+Comms Assistant to state as fact - the same verification/capture split `verify` already draws.
+Widening this to Analyst would make the role check meaningless against `FactRepository.approve`'s
+own self-approval refusal, which checks the *acting* user, not their role: a drafter with Reviewer
+too could still not approve their own draft, but two different Analysts could approve each other's
+in a loop the role split alone cannot see. Archiving is not gated the same way because it retires
+a claim rather than asserting a new one.
+**`comms/drafts/{id}/approve` requires Reviewer or SIP Owner, and that role check is only half the
+control.** Holding Reviewer says a principal may approve *something*; it does not say they may
+approve *their own* draft. `CommsDraftRepository.approve` refuses that specifically
+(`refuse_self_review`, BR8), independent of role — the same split as `/api/candidates/{id}/verify`,
+where the role map and the self-review check are two separate gates rather than one.
 
 **How this is enforced, and how it stays enforced.** `read_access(*roles)` and
 `write_access(*roles)` are dependency factories, so a route declares its authority *in its own

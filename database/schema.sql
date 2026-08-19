@@ -231,6 +231,35 @@ create table candidate_sod_exceptions (
   unique (candidate_id, actor_id)
 );
 
+-- ---------- comms assistant (#193/#60/#65 dependency: "Comms Assistant service side") ----------
+-- Dedicated enums rather than reusing `approval_state`: that type carries Rejected/Returned for
+-- Correction/Superseded, none of which this module has a code path for. Storing a value the API
+-- can never write would let a reader assume a capability that does not exist. This narrows to
+-- exactly what is built: a draft becomes Approved, once, or it does not.
+create type comms_content_type as enum ('newsletter','linkedin_post','event_announcement','member_spotlight');
+create type comms_draft_status as enum ('Draft','Approved');
+
+create table comms_drafts (
+  id              uuid primary key default gen_random_uuid(),
+  content_type    comms_content_type not null,
+  brief           text not null,
+  draft_text      text not null,
+  status          comms_draft_status not null default 'Draft',
+  -- NOT NULL from day one, not backfilled later - same precedent as candidates.captured_by
+  -- above and the same reasoning: a nullable authorship column is the one INSERT an
+  -- attacker needs to omit to defeat the self-approval check below. No production database
+  -- exists yet for this table either, so there is nothing to strand by requiring it now.
+  authored_by     uuid not null references users(id),
+  approved_by     uuid references users(id),
+  approved_at     timestamptz,
+  approval_reason text,
+  created_at      timestamptz not null default now(),
+  -- Keeps the status column and the approval columns from disagreeing with each other -
+  -- Approved with no approver, or a recorded approver on a row still marked Draft, are both
+  -- states the API must never be able to produce, so the database refuses them outright.
+  check ((status = 'Approved') = (approved_by is not null))
+);
+
 -- ---------- registers (Intelligence Database is the authority) ----------
 create table action_register (
   id             uuid primary key default gen_random_uuid(),
@@ -270,6 +299,41 @@ create table exceptions (
   correction_ref text,
   created_at    timestamptz not null default now()
 );
+
+-- ---------- approved facts library (#188) ----------
+-- Client's INZBC Digital System Overview (3 Aug 2026) proposes a Digital Knowledge Vault; the
+-- full Vault is out of scope, but the Explainer, Digest and Comms Assistant all draw on facts
+-- that must have exactly one approved version - the same statistic has already appeared with
+-- two conflicting values in two places on the homepage. `fact_key` groups every revision of "the
+-- same fact" (a stable identifier, not the row id); `supersedes_id` chains revisions the same way
+-- `decision_records.supersedes_id` does, so history is never overwritten, only superseded.
+create table approved_facts (
+  id            uuid primary key default gen_random_uuid(),
+  fact_key      text not null,       -- stable identifier grouping revisions, e.g. FTA-TARIFF-WOOL
+  content       text not null,
+  owner_id      uuid references users(id),
+  owner_text    text,
+  status        text not null check (status in ('draft', 'approved', 'archived')),
+  source        text not null,
+  verified_at   date,
+  review_due_at date,
+  version       integer not null default 1,
+  supersedes_id uuid references approved_facts(id),
+  created_by    uuid not null references users(id),
+  created_at    timestamptz not null default now(),
+  approved_by   uuid references users(id),
+  approved_at   timestamptz,
+  archived_at   timestamptz,
+  -- A named owner: a real user or an external name, never neither.
+  check (owner_id is not null or owner_text is not null),
+  -- Approved status carries who approved it and when, together, or neither.
+  check (status <> 'approved' or (approved_by is not null and approved_at is not null)),
+  -- No self-approval: the person who drafted a fact cannot be the one who approves it.
+  check (approved_by is null or approved_by <> created_by),
+  unique (supersedes_id)
+);
+
+create index approved_facts_key_status_idx on approved_facts (fact_key, status);
 
 -- ---------- decisions (ADR-0005) ----------
 -- The old `approvals` table stored one mutable row per run. It could not tell an explicit CEO

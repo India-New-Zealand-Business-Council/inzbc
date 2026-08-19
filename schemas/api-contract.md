@@ -46,6 +46,30 @@ PATCH  /api/candidates/:id
 POST   /api/candidates/:id/verify | /score | /route | /merge
 ```
 
+## Registers (#209 — API is Roshan's, `docs/sip/build-plan.md`'s "Registers UI" is Paras's)
+```
+POST   /api/action-register              record an action; a named owner (owner_id or owner_text)
+POST   /api/action-register/:id/status   Open / Closed / Controlled Monitoring; closed_at set only on Closed
+GET    /api/action-register  /api/action-register/:id
+POST   /api/watch-lists                  Opportunity/Threat/ongoing watch, distinguished by category
+POST   /api/watch-lists/:id/status
+GET    /api/watch-lists  /api/watch-lists/:id
+POST   /api/exceptions                   append-only: never updated in place
+POST   /api/exceptions/:id/correct       inserts a new row, correction_ref = the id it corrects
+GET    /api/exceptions  /api/exceptions/:id
+```
+## Approved facts library (#188 — Roshan's)
+```
+POST   /api/facts                        draft a fact; a named owner (owner_id or owner_text)
+POST   /api/facts/:id/approve            Reviewer/SIP Owner only; refuses self-approval
+POST   /api/facts/:id/archive            retires a fact; any writer role
+GET    /api/facts/:id
+GET    /api/facts/by-key/:fact_key/latest    latest *approved* revision, 404 if none approved yet
+GET    /api/facts/by-key/:fact_key/history   every revision, newest version first
+```
+Drafting a new version of an existing fact passes `supersedes_id`; the prior row is never edited,
+only chained.
+
 ## Control (Paras) — data out + human gates
 ```
 POST   /api/reports                  submit a report version for a run  [BUILT]

@@ -324,6 +324,39 @@ EXPECTED_ROLES: dict[tuple[str, str], set[str]] = {
     # Read side of the same record, and the Auditor's view of coverage. Same reasoning as
     # `/api/runs/{run_id}/audit`: restricting it to the role being audited defeats the point.
     ("GET", "/api/runs/{run_id}/source-checks"): set(STAFF_READ),
+    # Registers (#209): operational trackers and the append-only exceptions log. Same authority
+    # shape as source-checks - the analyst working the run records what they found; the register
+    # is reference/evidence every staff role needs to read.
+    ("POST", "/api/action-register"): {"Analyst", "SIP Owner"},
+    ("POST", "/api/action-register/{action_id}/status"): {"Analyst", "SIP Owner"},
+    ("GET", "/api/action-register/{action_id}"): set(STAFF_READ),
+    ("GET", "/api/action-register"): set(STAFF_READ),
+    ("POST", "/api/watch-lists"): {"Analyst", "SIP Owner"},
+    ("POST", "/api/watch-lists/{watch_id}/status"): {"Analyst", "SIP Owner"},
+    ("GET", "/api/watch-lists/{watch_id}"): set(STAFF_READ),
+    ("GET", "/api/watch-lists"): set(STAFF_READ),
+    ("POST", "/api/exceptions"): {"Analyst", "SIP Owner"},
+    # Inserts a new row rather than editing the one named in the path (append-only), but it is
+    # still the analyst's act of recording what they found, same authority as the write above.
+    ("POST", "/api/exceptions/{exception_id}/correct"): {"Analyst", "SIP Owner"},
+    ("GET", "/api/exceptions/{exception_id}"): set(STAFF_READ),
+    ("GET", "/api/exceptions"): set(STAFF_READ),
+    # Approved facts library (#188): drafting is capture (Analyst), approving is verification and
+    # must be a different actor than the drafter - Reviewer or SIP Owner, never Analyst alone.
+    # Archiving retires a claim rather than asserting one, so any writer role may do it.
+    ("POST", "/api/facts"): {"Analyst", "SIP Owner"},
+    ("POST", "/api/facts/{fact_id}/approve"): {"Reviewer", "SIP Owner"},
+    ("POST", "/api/facts/{fact_id}/archive"): {"Analyst", "Reviewer", "SIP Owner"},
+    ("GET", "/api/facts/{fact_id}"): set(STAFF_READ),
+    ("GET", "/api/facts/by-key/{fact_key}/latest"): set(STAFF_READ),
+    ("GET", "/api/facts/by-key/{fact_key}/history"): set(STAFF_READ),
+    # The named-reviewer approval gate #60 depends on. BR8: refuse_self_review checks the author
+    # against the approver regardless of role, so Reviewer/SIP Owner here is "may approve
+    # something", not "may approve their own draft" - that second check lives in the repository,
+    # not in the role map, the same split as /api/candidates/{id}/verify.
+    ("POST", "/api/comms/drafts/{draft_id}/approve"): {"Reviewer", "SIP Owner"},
+    ("GET", "/api/comms/drafts/{draft_id}"): set(STAFF_READ),
+    ("GET", "/api/comms/drafts"): set(STAFF_READ),
 }
 
 

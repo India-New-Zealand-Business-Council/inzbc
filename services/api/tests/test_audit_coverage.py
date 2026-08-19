@@ -73,6 +73,20 @@ def persistence_modules() -> list[Path]:
         for path in (REPO_ROOT / "services" / "api").glob("*.py")
         if not path.name.startswith("_") and path.name not in NOT_SCANNED
     )
+# Modules that own writes. Routers are excluded: they delegate, and a router that wrote directly
+# would be the bug this test is meant to make visible in whichever module it landed in.
+PERSISTENCE_MODULES = [
+    REPO_ROOT / "services" / "api" / "persistence.py",
+    REPO_ROOT / "services" / "api" / "candidate_persistence.py",
+    REPO_ROOT / "services" / "api" / "decisions.py",
+    REPO_ROOT / "services" / "api" / "auth.py",
+    # #188: this hand-written list already missed one write path once (PR #264's
+    # source_checks.py gap) precisely because a new module can land without anyone remembering to
+    # add it here. Adding this explicitly rather than leaving it out silently, same failure mode,
+    # until #264's glob-based rewrite of this scanner lands on main and this branch rebases onto
+    # it.
+    REPO_ROOT / "services" / "api" / "facts_persistence.py",
+]
 
 WRITE_STATEMENT = re.compile(r"\b(insert\s+into|update\s+|delete\s+from)\b", re.IGNORECASE)
 
