@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import fields
 from datetime import date
 
 from apps.fta import explainer
@@ -7,8 +8,12 @@ from apps.fta.corpus import TariffOutcome, TradeDirection
 from apps.fta.explainer import (
     DISCLAIMER,
     NO_MATCH_CONFIDENCE,
+    Depth,
     ExplainerAnswer,
+    InternalAnswer,
+    PublicAnswer,
     answer_query,
+    answer_query_at_depth,
     no_match,
 )
 from apps.fta.standards import AI_INFORMATION_STANDARD, Confidence
@@ -228,3 +233,88 @@ def test_answer_passes_through_none_for_unsourced_tariff_fields() -> None:
     assert answer.final_tariff is None
     assert answer.implementation_period_years is None
     assert answer.direction is TradeDirection.NZ_EXPORTS_TO_INDIA
+
+
+# --- #187: three-audience depth split -------------------------------------------------------
+
+
+def test_depth_defaults_to_member_and_matches_answer_query() -> None:
+    assert answer_query_at_depth("dairy") == answer_query("dairy")
+
+
+def test_member_depth_explicit_matches_answer_query() -> None:
+    assert answer_query_at_depth("dairy", Depth.MEMBER) == answer_query("dairy")
+
+
+def test_public_depth_returns_public_answer_shape() -> None:
+    answers = answer_query_at_depth("wool", Depth.PUBLIC)
+    assert len(answers) == 1
+    assert isinstance(answers[0], PublicAnswer)
+    assert answers[0].topic == "Wool"
+
+
+def test_public_answer_excludes_evidence_fields() -> None:
+    # Structural, not conventional: a public-tier renderer physically cannot access citation,
+    # verified_at or id, the same discipline NoMatch already uses in this module.
+    field_names = {f.name for f in fields(PublicAnswer)}
+    assert "citation" not in field_names
+    assert "verified_at" not in field_names
+    assert "id" not in field_names
+    assert "notes" not in field_names
+    assert "source_tier" not in field_names
+
+
+def test_public_answer_carries_status_line_and_disclaimer() -> None:
+    for answer in answer_query_at_depth("wine", Depth.PUBLIC):
+        assert answer.disclaimer == DISCLAIMER == AI_INFORMATION_STANDARD
+        assert "not yet in force" in answer.status_line.lower()
+
+
+def test_internal_depth_returns_internal_answer_shape() -> None:
+    answers = answer_query_at_depth("wool", Depth.INTERNAL)
+    assert len(answers) == 1
+    assert isinstance(answers[0], InternalAnswer)
+    assert answers[0].topic == "Wool"
+    assert answers[0].confirmed is True
+
+
+def test_internal_answer_carries_full_evidence_trail() -> None:
+    member = answer_query("dairy")[0]
+    internal = answer_query_at_depth("dairy", Depth.INTERNAL)[0]
+    assert internal.id == member.id
+    assert internal.citation == member.citation
+    assert internal.verified_at == member.verified_at
+    assert internal.source_tier in (1, 2)
+    # notes is whatever the corpus entry carries (often None) — presence of the field, not a
+    # specific value, is what #187 asks for at this tier.
+    assert hasattr(internal, "notes")
+
+
+def test_all_three_depths_preserve_ranking_order() -> None:
+    member = answer_query("dairy")
+    public = answer_query_at_depth("dairy", Depth.PUBLIC)
+    internal = answer_query_at_depth("dairy", Depth.INTERNAL)
+    assert [a.topic for a in member] == [a.topic for a in public] == [a.topic for a in internal]
+    assert len(member) > 1  # guards against a query that only ever ties one entry
+
+
+def test_no_match_is_depth_independent() -> None:
+    for depth in (Depth.PUBLIC, Depth.MEMBER, Depth.INTERNAL):
+        assert answer_query_at_depth("semiconductor export controls", depth) == []
+
+
+def test_unconfirmed_entry_suppressed_at_every_depth() -> None:
+    for depth in (Depth.PUBLIC, Depth.MEMBER, Depth.INTERNAL):
+        assert answer_query_at_depth("tariff line", depth) == []
+
+
+def test_structured_tariff_fields_reach_public_and_internal_answers() -> None:
+    # #185's structured tariff fields are answer content, not evidence - a public reader asking
+    # "what's the tariff on wool" needs the same queryable value a member gets, unlike
+    # citation/verified_at/source_tier which stay evidence-tier only.
+    member = answer_query("wool")[0]
+    public = answer_query_at_depth("wool", Depth.PUBLIC)[0]
+    internal = answer_query_at_depth("wool", Depth.INTERNAL)[0]
+    for field in ("current_tariff", "fta_commencement_tariff", "final_tariff", "direction"):
+        assert getattr(public, field) == getattr(member, field)
+        assert getattr(internal, field) == getattr(member, field)
