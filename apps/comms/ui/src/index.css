@@ -36,6 +36,13 @@
 }
 
 @layer base {
+  /* App now renders at max-w-7xl instead of max-w-4xl — a wider, website-style layout. Every
+     Tailwind text-* size is rem-based, so bumping the root size scales all of them
+     proportionally, matching apps/sip/ui/src/index.css's same fix for the same reason. */
+  html {
+    font-size: 112.5%;
+  }
+
   body {
     font-family: var(--font-body);
     font-weight: 400;
