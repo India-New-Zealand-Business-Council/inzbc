@@ -24,56 +24,59 @@ export function AppShell() {
     // bottom of short pages without overlapping content on tall ones — same sticky-footer
     // layout as apps/comms/ui's App.tsx.
     <div className="flex min-h-screen flex-col bg-slate-50">
-      {/* Navy background + white text, matching the live inzview build's header/CTA colour
-          (India-New-Zealand-Business-Council/inzview uses lime as its one accent throughout —
-          applied below to the active tab and focus rings, replacing the old tangerine/lavender
-          pairing). Not rebuilt as inzview's floating glass-pill nav (see apps/fta/ui's and
-          apps/comms/ui's Header.tsx): that pattern fits a single-row marketing nav, not a dense,
-          horizontally-scrollable 4-tab dashboard toolbar — docking it in normal flow keeps the
-          tabs reliably visible instead of floating over screen content. Logo: pulled from the
-          same Wix Media asset inzview's content.ts uses, not the old locally-committed SVG. */}
-      <header className="bg-inzbc-navy text-white">
+      {/* Floating glass-pill header, matching the live inzview build
+          (India-New-Zealand-Business-Council/inzview, src/components/inzbc/motion.tsx's
+          StickyHeader) — same treatment as apps/fta/ui's and apps/comms/ui's Header.tsx. The
+          4-tab screen switcher takes the centre nav slot inzview's page links use; there's no
+          "Join INZBC"-equivalent action for a staff tool, so the right-hand CTA slot is dropped
+          rather than filled with something that doesn't belong here. Logo: pulled from the same
+          Wix Media asset inzview's content.ts uses, not the old locally-committed SVG. */}
+      <header className="pointer-events-none fixed inset-x-0 top-0 z-50 p-4 sm:p-5">
         <a
           href="#main-content"
-          className="sr-only focus-visible:not-sr-only focus-visible:absolute focus-visible:left-4 focus-visible:top-4 focus-visible:z-50 focus-visible:rounded-md focus-visible:bg-white focus-visible:px-3 focus-visible:py-2 focus-visible:text-inzbc-navy"
+          className="sr-only focus-visible:not-sr-only focus-visible:pointer-events-auto focus-visible:absolute focus-visible:left-4 focus-visible:top-4 focus-visible:z-50 focus-visible:rounded-md focus-visible:bg-white focus-visible:px-3 focus-visible:py-2 focus-visible:text-inzbc-ink"
         >
           Skip to main content
         </a>
-        <div className="mx-auto max-w-7xl px-4 py-4 sm:py-6">
-          <div className="flex items-center gap-2">
-            <img src={LOGO_URL} alt="INZBC" className="h-6 w-auto" />
-            <span aria-hidden="true" className="h-4 w-px bg-white/30" />
-            {/* font-family/weight come from the h1 rule in index.css's @layer base. */}
-            <h1 className="text-xl text-white sm:text-2xl">SIP Review</h1>
+        <div className="pointer-events-auto relative mx-auto flex w-full max-w-7xl min-h-[64px] items-center justify-between gap-4 rounded-[1.2rem] border border-white/60 bg-white/80 px-4 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.78),0_18px_60px_rgba(9,3,24,0.14)] backdrop-blur-2xl backdrop-saturate-150">
+          <div className="flex shrink-0 items-center gap-2">
+            <img src={LOGO_URL} alt="INZBC" className="h-auto w-[clamp(120px,16vw,150px)]" />
+            <span aria-hidden="true" className="h-4 w-px bg-inzbc-ink/20" />
+            <span className="hidden text-sm font-medium text-inzbc-ink sm:inline">SIP Review</span>
           </div>
-          <p className="mt-1 text-sm text-white/80">
+          <nav aria-label="Screens" className="overflow-x-auto">
+            <ul className="flex gap-1">
+              {SCREENS.map((option) => (
+                <li key={option.id}>
+                  <button
+                    type="button"
+                    aria-current={screen === option.id ? 'page' : undefined}
+                    onClick={() => setScreen(option.id)}
+                    className={`whitespace-nowrap rounded-md border-b-2 px-3 py-2 text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-lime ${
+                      screen === option.id
+                        ? 'border-inzbc-lime text-inzbc-ink'
+                        : 'border-transparent text-inzbc-ink/60 hover:text-inzbc-ink'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </div>
+      </header>
+
+      {/* pt-24/pt-28 clears the fixed floating header above — it no longer sits in normal flow,
+          so the page has to make its own room for it. */}
+      <main id="main-content" className="mx-auto w-full max-w-7xl flex-1 px-4 pb-6 pt-24 sm:pt-28">
+        <div className="mb-6">
+          <h1 className="text-2xl font-extrabold text-inzbc-navy sm:text-3xl">SIP Review</h1>
+          <p className="mt-2 text-slate-700">
             Staff review and approval for the Trade Intelligence Platform's daily brief — brief
             builder, QA, CEO decision, distribution status (docs/sip-ui-spec.md).
           </p>
         </div>
-        <nav aria-label="Screens" className="mx-auto max-w-7xl overflow-x-auto px-4">
-          <ul className="flex gap-1">
-            {SCREENS.map((option) => (
-              <li key={option.id}>
-                <button
-                  type="button"
-                  aria-current={screen === option.id ? 'page' : undefined}
-                  onClick={() => setScreen(option.id)}
-                  className={`whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-lime ${
-                    screen === option.id
-                      ? 'border-inzbc-lime text-white'
-                      : 'border-transparent text-white/70 hover:text-white'
-                  }`}
-                >
-                  {option.label}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      </header>
-
-      <main id="main-content" className="mx-auto w-full max-w-7xl flex-1 px-4 py-6">
         {screen === 'brief-builder' ? <BriefBuilderScreen report={report} onChange={setReport} /> : null}
         {screen === 'qa-review' ? <QaReviewScreen report={report} onChange={setReport} /> : null}
         {screen === 'ceo-decision' ? <CeoDecisionScreen report={report} onChange={setReport} /> : null}
