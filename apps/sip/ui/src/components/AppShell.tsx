@@ -52,7 +52,7 @@ export function AppShell() {
                     type="button"
                     aria-current={screen === option.id ? 'page' : undefined}
                     onClick={() => setScreen(option.id)}
-                    className={`whitespace-nowrap rounded-md border-b-2 px-3 py-2 text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-lime ${
+                    className={`whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-lime ${
                       screen === option.id
                         ? 'border-inzbc-lime text-inzbc-ink'
                         : 'border-transparent text-inzbc-ink/60 hover:text-inzbc-ink'
