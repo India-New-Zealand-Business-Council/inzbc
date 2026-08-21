@@ -36,6 +36,7 @@ from datetime import date, datetime
 import psycopg
 from psycopg.rows import dict_row
 
+from services.api.audit import record_audit
 from services.api.auth import canonical_actor
 
 # The three streams a submitted report version carries. Opened by a trigger on insert, so a
@@ -262,8 +263,10 @@ class DecisionRepository:
         Passing the current revision is therefore an assertion, not a formality: "I read this
         ruling, and I am deciding in response to it."
         """
-        with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
-            with conn.transaction():
+        with (
+            psycopg.connect(self._database_url, row_factory=dict_row) as conn,
+            conn.transaction(),
+        ):
                 # The foreign key on (kind, actor_role_id) proves a permission row exists. It does
                 # not prove the row is enabled, that the actor still holds the role, or that the
                 # account is active, because a foreign key cannot look at a column it does not
@@ -384,6 +387,15 @@ class DecisionRepository:
         )
 
 
+class QaSelfReviewError(RuntimeError):
+    """The actor recording a QA result is the analyst on the run being checked.
+
+    Its own type, like `SelfVerificationError`, so a caller can say which control refused. This is
+    SIP-188's reviewer requirement, not a permissions problem, and answering "forbidden" would
+    send an operator to ask for a role they already hold.
+    """
+
+
 class ReportVersionConflict(RuntimeError):
     """Two submissions raced for the same version number on one run.
 
@@ -477,6 +489,74 @@ class ReportRepository:
         if row is None:
             raise KeyError(f"no report version {report_version_id!r}")
         return _to_report_version(row)
+
+    def record_qa(
+        self,
+        report_version_id: str,
+        *,
+        result: str,
+        critical_failures: int,
+        actor_id: str,
+        notes: str,
+    ) -> str:
+        """Records a SIP-188 QA result against the report version's run (#124).
+
+        Writes `runs.qa_status`, which is the field `GET /api/dashboard` already reads, so the
+        gate a reviewer sees is the one this wrote rather than a second copy of it.
+
+        **The reviewer may not be the run's analyst.** SIP-188 says so in its own first paragraph,
+        and it is the same separation the candidate commands enforce: QA is the check on the work,
+        so the person who did the work cannot be the check on it. Enforced against
+        `runs.analyst_id` rather than against whoever happens to hold the Analyst role, because
+        the question is who did *this* run, not who could have.
+
+        **A Pass cannot carry a Critical failure.** SIP-188 makes any Critical failure block
+        release, so the two together are a contradiction rather than a judgement call, and
+        recording it would leave `qa_status` saying the run is releasable while the checklist says
+        it is not. A Fail with no Critical failures is allowed: that is the ordinary case of
+        non-critical findings.
+        """
+        if result not in ("Pass", "Fail"):
+            raise ValueError(f"QA result must be 'Pass' or 'Fail', not {result!r}")
+        if critical_failures < 0:
+            raise ValueError("critical_failures cannot be negative")
+        if result == "Pass" and critical_failures > 0:
+            raise ValueError(
+                "a Pass cannot record Critical failures: SIP-188 blocks release on any Critical, "
+                "so record it as a Fail"
+            )
+
+        with psycopg.connect(self._database_url, row_factory=dict_row) as conn, conn.transaction():
+            row = conn.execute(
+                "select rv.run_id, r.analyst_id, r.qa_status from report_versions rv "
+                "join runs r on r.id = rv.run_id where rv.id = %s for update of r",
+                (report_version_id,),
+            ).fetchone()
+            if row is None:
+                raise KeyError(f"no report version {report_version_id!r}")
+
+            analyst = canonical_actor(row["analyst_id"])
+            if analyst is not None and analyst == canonical_actor(actor_id):
+                raise QaSelfReviewError(
+                    f"{actor_id!r} is the analyst on this run and may not also record its QA "
+                    "result. SIP-188 requires the reviewer to be someone other than the analyst."
+                )
+
+            # `Failed` rather than `Fail` because `runs.qa_status` feeds the dashboard's gate
+            # display, and the run-state vocabulary in schema.sql already says 'QA Failed'.
+            qa_status = "Passed" if result == "Pass" else "Failed"
+            conn.execute("update runs set qa_status = %s where id = %s", (qa_status, row["run_id"]))
+            record_audit(
+                conn,
+                user_id=actor_id,
+                action="report.qa",
+                record_type="runs",
+                record_id=str(row["run_id"]),
+                old_value=row["qa_status"],
+                new_value=qa_status,
+                reason=notes,
+            )
+        return qa_status
 
     def role_id_for(self, actor_id: str, role_names: tuple[str, ...]) -> int:
         """The actor's enabled role id for the first of `role_names` they actually hold.

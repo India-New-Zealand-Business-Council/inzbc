@@ -88,6 +88,19 @@ class AnswerOut(BaseModel):
     confidence: str
     confidence_meaning: str
     notes: str | None = None
+    # The structured tariff fields (#185). They reached `ExplainerAnswer` in #273 but stopped
+    # there, so every HTTP caller still got `treatment` prose and had to re-parse it, which is the
+    # thing #185 exists to stop. `extra="forbid"` meant they could not arrive by accident.
+    #
+    # Free text, not parsed percentages, because the source states some as ranges ("5.5%-11%") and
+    # others as within-quota figures that lose meaning as one number. `None` means "not sourced
+    # for this entry", never "zero" or "unchanged" - see `TariffOutcome` in apps/fta/corpus.py.
+    direction: str | None = None
+    current_tariff: str | None = None
+    fta_commencement_tariff: str | None = None
+    staged_reductions: str | None = None
+    final_tariff: str | None = None
+    implementation_period_years: int | None = None
 
 
 class ActionRequiredOut(BaseModel):
@@ -151,6 +164,15 @@ def _answer_out(answer: ExplainerAnswer) -> AnswerOut:
         confidence=answer.confidence.value,
         confidence_meaning=answer.confidence_meaning,
         notes=answer.notes,
+        # `.value` on the enum, so the wire carries "NZ exports to India" rather than a Python
+        # member name. The direction is not decoration: "NZ removes all tariffs on Indian imports"
+        # and "India phases out its tariff on NZ wool" are both true and are not the same fact.
+        direction=answer.direction.value if answer.direction else None,
+        current_tariff=answer.current_tariff,
+        fta_commencement_tariff=answer.fta_commencement_tariff,
+        staged_reductions=answer.staged_reductions,
+        final_tariff=answer.final_tariff,
+        implementation_period_years=answer.implementation_period_years,
     )
 
 

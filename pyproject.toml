@@ -33,7 +33,7 @@ dev = [
   "pytest>=8.0",
   "pytest-cov>=5.0",
   # ruff pinned: version bumps are deliberate, with any new-rule fixes in the same PR.
-  "ruff==0.15.22",
+  "ruff==0.16.0",
 ]
 
 # B008 flags a function call in a default argument, which is how FastAPI declares a dependency:
@@ -45,6 +45,8 @@ dev = [
 "services/api/candidates.py" = ["B008"]
 "services/api/comms.py" = ["B008"]
 "services/api/dashboard.py" = ["B008"]
+"services/api/facts.py" = ["B008"]
+"services/api/registers.py" = ["B008"]
 "services/api/reports.py" = ["B008"]
 "services/api/runs.py" = ["B008"]
 "services/api/session.py" = ["B008"]

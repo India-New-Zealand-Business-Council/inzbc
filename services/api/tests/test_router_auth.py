@@ -312,6 +312,10 @@ EXPECTED_ROLES: dict[tuple[str, str], set[str]] = {
     ("POST", "/api/reports"): {"Analyst", "SIP Owner"},
     # A decision record only its decider can read is not evidence anyone else can rely on.
     ("GET", "/api/reports/{report_version_id}"): set(STAFF_READ),
+    # SIP-188 QA result. Reviewer or SIP Owner may record one; the repository separately refuses
+    # the analyst on that particular run, the same two-gate split as candidates/{id}/verify.
+    # Analyst is absent on purpose: QA is the check on the analyst's work.
+    ("POST", "/api/reports/{report_version_id}/qa"): {"Reviewer", "SIP Owner"},
     # The SIP-185 mandatory-source register. Reference data every role needs to read to know
     # which sources a run was obliged to cover; nothing personal in it and no write path here,
     # but it is the register an auditor checks a run against, so it is not public either.

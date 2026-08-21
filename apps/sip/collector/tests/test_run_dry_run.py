@@ -13,7 +13,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-import apps.sip.collector.run_dry_run as run_dry_run
+from apps.sip.collector import run_dry_run
 from apps.sip.pipeline.client import SipApiError
 
 FIXTURE = Path(__file__).parents[1] / "data" / "dry_run_fixture_articles.json"
@@ -35,7 +35,7 @@ class _FakeClient:
         self._next_id += 1
         return f"{prefix}-{self._next_id}"
 
-    def create_run(self, run) -> dict:  # noqa: ANN001 - duck-typed fake
+    def create_run(self, run) -> dict:
         payload = run.model_dump(mode="json", exclude_none=True)
         payload["id"] = self._new_id("run")
         self.runs.append(payload)
@@ -46,7 +46,7 @@ class _FakeClient:
             raise SipApiError(self.source_library_status, "not found")
         return []
 
-    def create_candidate(self, candidate) -> dict:  # noqa: ANN001
+    def create_candidate(self, candidate) -> dict:
         payload = candidate.model_dump(mode="json", exclude_none=True)
         payload["id"] = self._new_id("cand")
         self.candidates[payload["id"]] = payload
@@ -70,7 +70,7 @@ def test_locked_coverage_window_before_0700_nz_uses_previous_boundary():
     # 02:00 NZST is before the 07:00 boundary, so "today's" window hasn't opened yet.
     now_utc = datetime(2026, 8, 7, 13, 0, tzinfo=UTC)  # 01:00 NZST next day... use a clean case
     now_utc = datetime(2026, 8, 8, 12, 0, tzinfo=UTC)  # 00:00 NZST 9 Aug -> before 07:00
-    start, end = run_dry_run._locked_coverage_window(now_utc)
+    _start, end = run_dry_run._locked_coverage_window(now_utc)
     end_nz = datetime.fromisoformat(end).astimezone(ZoneInfo("Pacific/Auckland"))
     assert end_nz.date() < now_utc.astimezone(ZoneInfo("Pacific/Auckland")).date()
 

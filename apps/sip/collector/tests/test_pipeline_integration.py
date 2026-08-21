@@ -57,7 +57,7 @@ class FakeSipApi:
 
     # ---------- the subset of SipPipelineClient's surface this suite exercises ----------
 
-    def create_candidate(self, candidate) -> dict:  # noqa: ANN001 - duck-typed fake
+    def create_candidate(self, candidate) -> dict:
         payload = candidate.model_dump(mode="json", exclude_none=True)
         payload["id"] = self._new_id("cand")
         self.candidates[payload["id"]] = payload
@@ -72,7 +72,7 @@ class FakeSipApi:
         self.candidates[candidate_id].update(fields)
         return self.candidates[candidate_id]
 
-    def record_source_check(self, run_id: str, source_check) -> dict:  # noqa: ANN001
+    def record_source_check(self, run_id: str, source_check) -> dict:
         payload = source_check.model_dump(mode="json", exclude_none=True)
         payload["id"] = self._new_id("check")
         self.source_checks.append(payload)

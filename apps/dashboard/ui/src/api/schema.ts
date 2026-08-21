@@ -448,6 +448,45 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/reports/{report_version_id}/qa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record Qa
+         * @description Records the SIP-188 QA result for the run this report version belongs to.
+         *
+         *     Writes `runs.qa_status`, the field `GET /api/dashboard` already reports, so the gate a
+         *     reviewer sees is the one this wrote. There is deliberately no second QA table: ADR-0005's
+         *     release predicate wants "no open Critical QA failure" and a durable per-finding table is the
+         *     follow-up recorded in `schemas/api-contract.md`. This endpoint records the checklist's own
+         *     output, which is a Pass or a Fail with a count, and does not pretend to more granularity than
+         *     SIP-188 collects.
+         *
+         *     **Reviewer or SIP Owner only, and never the run's analyst.** The role check says the actor may
+         *     record a QA result at all; `record_qa` separately refuses the analyst on that particular run.
+         *     Two gates, same split as `/api/candidates/{id}/verify`, because holding Reviewer does not make
+         *     checking your own run someone else's check.
+         *
+         *     **This is not `POST /api/runs/{run_id}/fail-qa`, and neither replaces the other.** That route
+         *     moves the run's lifecycle state to `QA Failed`; this one records what the checklist found.
+         *     Recording a Fail here deliberately does not move the run, because the transition carries its
+         *     own guards and an optimistic-concurrency version the caller has to pass, and firing it as a
+         *     side effect would take a lifecycle decision out of the reviewer's hands and skip that check.
+         *     The reviewer records the result, then stops the run. Two acts, because they are two acts.
+         */
+        post: operations["record_qa_api_reports__report_version_id__qa_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/reports/{report_version_id}": {
         parameters: {
             query?: never;
@@ -978,6 +1017,18 @@ export interface components {
             confidence_meaning: string;
             /** Notes */
             notes?: string | null;
+            /** Direction */
+            direction?: string | null;
+            /** Current Tariff */
+            current_tariff?: string | null;
+            /** Fta Commencement Tariff */
+            fta_commencement_tariff?: string | null;
+            /** Staged Reductions */
+            staged_reductions?: string | null;
+            /** Final Tariff */
+            final_tariff?: string | null;
+            /** Implementation Period Years */
+            implementation_period_years?: number | null;
         };
         /** ApproveIn */
         ApproveIn: {
@@ -1381,6 +1432,15 @@ export interface components {
             /** Overdue */
             overdue: boolean;
         };
+        /** QaResultOut */
+        QaResultOut: {
+            /** Report Version Id */
+            report_version_id: string;
+            /** Qa Status */
+            qa_status: string;
+            /** Critical Failures */
+            critical_failures: number;
+        };
         /** RecordExceptionIn */
         RecordExceptionIn: {
             /** Exception Type */
@@ -1398,6 +1458,25 @@ export interface components {
              * @default true
              */
             original_preserved: boolean;
+        };
+        /**
+         * RecordQaIn
+         * @description A SIP-188 QA result. `Pass`/`Fail` and a Critical count is exactly what the checklist's own
+         *     result block collects, so the request carries that and not a richer shape nobody fills in.
+         */
+        RecordQaIn: {
+            /**
+             * Result
+             * @enum {string}
+             */
+            result: "Pass" | "Fail";
+            /**
+             * Critical Failures
+             * @default 0
+             */
+            critical_failures: number;
+            /** Notes */
+            notes: string;
         };
         /** RecordSourceCheckIn */
         RecordSourceCheckIn: {
@@ -2660,6 +2739,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReportVersionOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_qa_api_reports__report_version_id__qa_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordQaIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QaResultOut"];
                 };
             };
             /** @description No session, or the session has expired or been idle too long. */

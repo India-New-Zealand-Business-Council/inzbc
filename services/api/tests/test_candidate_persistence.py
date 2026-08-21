@@ -15,7 +15,7 @@ import psycopg
 import pytest
 
 from apps.sip.collector.verification import UnverifiedHighSignalError
-from apps.sip.pipeline.models import SignalStrength, VerificationState
+from apps.sip.pipeline.models import SignalStrength, SourceConfidence, VerificationState
 from services.api.candidate_persistence import (
     CandidateRepository,
     SelfVerificationError,
@@ -599,3 +599,66 @@ def test_an_exception_approved_by_a_deactivated_account_is_refused(
             candidate.id, VerificationState.VERIFIED, actor_id=user_id,
             reason="citing a lapsed authority", sod_exception_id=exception,
         )
+
+
+def test_partial_score_leaves_unsupplied_fields_alone(
+    repo: CandidateRepository, run_id: str, user_id: str
+) -> None:
+    """#323: an omitted scoring field is not written, so a partial correction cannot erase the rest.
+
+    Before the fix every field was assigned unconditionally and `ScoreIn` defaulted them all to
+    None, so scoring one number wrote NULL over the other four. This is the property that makes a
+    one-field correction safe.
+    """
+    candidate = repo.capture(
+        run_id=run_id, headline="x", source_id=None, url=None, summary=None,
+        published_at=None, in_coverage_window=None, actor_id=user_id,
+    )
+    repo.record_score(
+        candidate.id,
+        nz_relevance=4, india_relevance=3, member_relevance=5,
+        signal=SignalStrength.LOW, confidence=SourceConfidence.MEDIUM,
+        actor_id=user_id, reason="first pass",
+    )
+
+    repo.record_score(candidate.id, nz_relevance=2, actor_id=user_id, reason="NZ score only")
+
+    after = repo.get(candidate.id)
+    assert after.nz_relevance == 2
+    assert after.india_relevance == 3
+    assert after.member_relevance == 5
+    assert after.signal is SignalStrength.LOW
+    assert after.confidence is SourceConfidence.MEDIUM
+
+
+def test_score_still_clears_a_field_when_none_is_passed_explicitly(
+    repo: CandidateRepository, run_id: str, user_id: str
+) -> None:
+    """Clearing remains expressible. It is just no longer what saying nothing means."""
+    candidate = repo.capture(
+        run_id=run_id, headline="x", source_id=None, url=None, summary=None,
+        published_at=None, in_coverage_window=None, actor_id=user_id,
+    )
+    repo.record_score(
+        candidate.id,
+        signal=SignalStrength.LOW, confidence=SourceConfidence.MEDIUM,
+        actor_id=user_id, reason="first pass",
+    )
+
+    repo.record_score(candidate.id, signal=None, actor_id=user_id, reason="retracting the signal")
+
+    after = repo.get(candidate.id)
+    assert after.signal is None
+    assert after.confidence is SourceConfidence.MEDIUM
+
+
+def test_score_with_no_fields_is_refused(
+    repo: CandidateRepository, run_id: str, user_id: str
+) -> None:
+    """A call that writes nothing should say so rather than silently touch only `assessed_by`."""
+    candidate = repo.capture(
+        run_id=run_id, headline="x", source_id=None, url=None, summary=None,
+        published_at=None, in_coverage_window=None, actor_id=user_id,
+    )
+    with pytest.raises(ValueError):
+        repo.record_score(candidate.id, actor_id=user_id, reason="nothing to say")

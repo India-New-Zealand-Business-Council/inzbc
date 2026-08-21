@@ -1333,6 +1333,71 @@
         ]
       }
     },
+    "/api/reports/{report_version_id}/qa": {
+      "post": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Record Qa",
+        "description": "Records the SIP-188 QA result for the run this report version belongs to.\n\nWrites `runs.qa_status`, the field `GET /api/dashboard` already reports, so the gate a\nreviewer sees is the one this wrote. There is deliberately no second QA table: ADR-0005's\nrelease predicate wants \"no open Critical QA failure\" and a durable per-finding table is the\nfollow-up recorded in `schemas/api-contract.md`. This endpoint records the checklist's own\noutput, which is a Pass or a Fail with a count, and does not pretend to more granularity than\nSIP-188 collects.\n\n**Reviewer or SIP Owner only, and never the run's analyst.** The role check says the actor may\nrecord a QA result at all; `record_qa` separately refuses the analyst on that particular run.\nTwo gates, same split as `/api/candidates/{id}/verify`, because holding Reviewer does not make\nchecking your own run someone else's check.\n\n**This is not `POST /api/runs/{run_id}/fail-qa`, and neither replaces the other.** That route\nmoves the run's lifecycle state to `QA Failed`; this one records what the checklist found.\nRecording a Fail here deliberately does not move the run, because the transition carries its\nown guards and an optimistic-concurrency version the caller has to pass, and firing it as a\nside effect would take a lifecycle decision out of the reviewer's hands and skip that check.\nThe reviewer records the result, then stops the run. Two acts, because they are two acts.",
+        "operationId": "record_qa_api_reports__report_version_id__qa_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "report_version_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Report Version Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordQaIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QaResultOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/reports/{report_version_id}": {
       "get": {
         "tags": [
@@ -2938,6 +3003,72 @@
               }
             ],
             "title": "Notes"
+          },
+          "direction": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direction"
+          },
+          "current_tariff": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Tariff"
+          },
+          "fta_commencement_tariff": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fta Commencement Tariff"
+          },
+          "staged_reductions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Staged Reductions"
+          },
+          "final_tariff": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Final Tariff"
+          },
+          "implementation_period_years": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Implementation Period Years"
           }
         },
         "additionalProperties": false,
@@ -4382,6 +4513,30 @@
         ],
         "title": "OpenActionOut"
       },
+      "QaResultOut": {
+        "properties": {
+          "report_version_id": {
+            "type": "string",
+            "title": "Report Version Id"
+          },
+          "qa_status": {
+            "type": "string",
+            "title": "Qa Status"
+          },
+          "critical_failures": {
+            "type": "integer",
+            "title": "Critical Failures"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "report_version_id",
+          "qa_status",
+          "critical_failures"
+        ],
+        "title": "QaResultOut"
+      },
       "RecordExceptionIn": {
         "properties": {
           "exception_type": {
@@ -4432,6 +4587,38 @@
           "status"
         ],
         "title": "RecordExceptionIn"
+      },
+      "RecordQaIn": {
+        "properties": {
+          "result": {
+            "type": "string",
+            "enum": [
+              "Pass",
+              "Fail"
+            ],
+            "title": "Result"
+          },
+          "critical_failures": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Critical Failures",
+            "default": 0
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Notes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "result",
+          "notes"
+        ],
+        "title": "RecordQaIn",
+        "description": "A SIP-188 QA result. `Pass`/`Fail` and a Critical count is exactly what the checklist's own\nresult block collects, so the request carries that and not a richer shape nobody fills in."
       },
       "RecordSourceCheckIn": {
         "properties": {
