@@ -5,8 +5,6 @@ import { signalBadgeClass, verificationBadgeClass } from '../lib/candidateState'
 
 interface Props {
   runId: string
-  /** UUID of the acting user — see RunsListScreen.tsx's Props doc for why this is caller-supplied. */
-  actorId: string
   onSelectCandidate: (candidateId: string) => void
 }
 
@@ -22,7 +20,7 @@ type LoadState =
  * RunDetailScreen rather than reachable on its own, but kept as its own component/file so it's
  * independently reusable and testable.
  */
-export function CandidatesListScreen({ runId, actorId, onSelectCandidate }: Props) {
+export function CandidatesListScreen({ runId, onSelectCandidate }: Props) {
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
 
   /** Replaces one candidate in place after a successful action, rather than re-fetching the whole
@@ -127,7 +125,7 @@ export function CandidatesListScreen({ runId, actorId, onSelectCandidate }: Prop
                 View and review
               </button>
               <div className="mt-3">
-                <CandidateActionPanel candidate={candidate} actorId={actorId} onUpdated={updateCandidate} />
+                <CandidateActionPanel candidate={candidate} onUpdated={updateCandidate} />
               </div>
             </li>
           ))}

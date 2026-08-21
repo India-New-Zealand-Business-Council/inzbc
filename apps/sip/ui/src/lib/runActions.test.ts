@@ -15,7 +15,7 @@ const RUN = {
   initiated_by: '34f4237b-ecd0-470c-8b2e-424ab745eb62',
 }
 
-const BODY = { expected_version: 0, actor_id: RUN.initiated_by, reason: 'go', approval_ref: null }
+const BODY = { expected_version: 0, reason: 'go', approval_ref: null }
 
 /**
  * Each branch calls through the live export directly (not a captured dispatch table — see this

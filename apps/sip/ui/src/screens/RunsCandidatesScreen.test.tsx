@@ -41,17 +41,6 @@ const CANDIDATE = {
 }
 
 describe('RunsCandidatesScreen', () => {
-  it('warns about an invalid "acting as" id and does not warn once it is valid', async () => {
-    vi.spyOn(runsClient, 'listRuns').mockResolvedValue([])
-    render(<RunsCandidatesScreen />)
-    await userEvent.type(screen.getByLabelText('Acting as (user id)'), 'not-a-uuid')
-    expect(screen.getByText(/Not a valid id/)).toBeInTheDocument()
-
-    await userEvent.clear(screen.getByLabelText('Acting as (user id)'))
-    await userEvent.type(screen.getByLabelText('Acting as (user id)'), '34f4237b-ecd0-470c-8b2e-424ab745eb62')
-    expect(screen.queryByText(/Not a valid id/)).not.toBeInTheDocument()
-  })
-
   it('navigates runs list -> run detail -> candidate detail and back again', async () => {
     vi.spyOn(runsClient, 'listRuns').mockResolvedValue([RUN])
     vi.spyOn(runsClient, 'getRun').mockResolvedValue(RUN)

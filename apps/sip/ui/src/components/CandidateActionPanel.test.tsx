@@ -7,8 +7,6 @@ import { CandidateActionPanel } from './CandidateActionPanel'
 
 afterEach(() => vi.restoreAllMocks())
 
-const ACTOR_ID = '34f4237b-ecd0-470c-8b2e-424ab745eb62'
-
 const CANDIDATE = {
   id: 'cand-1',
   run_id: 'run-1',
@@ -32,18 +30,8 @@ const CANDIDATE = {
 }
 
 describe('CandidateActionPanel', () => {
-  it('requires an "acting as" id before any action can submit', async () => {
-    const verifySpy = vi.spyOn(candidatesClient, 'verifyCandidate')
-    render(<CandidateActionPanel candidate={CANDIDATE} actorId="not-a-uuid" onUpdated={vi.fn()} />)
-    await userEvent.click(screen.getByRole('button', { name: 'Verify' }))
-    await userEvent.type(screen.getByLabelText('Reason'), 'go')
-    await userEvent.click(screen.getByRole('button', { name: 'Confirm Verify' }))
-    expect(await screen.findByRole('alert')).toHaveTextContent('Acting as')
-    expect(verifySpy).not.toHaveBeenCalled()
-  })
-
   it('requires a reason before any action can submit', async () => {
-    render(<CandidateActionPanel candidate={CANDIDATE} actorId={ACTOR_ID} onUpdated={vi.fn()} />)
+    render(<CandidateActionPanel candidate={CANDIDATE} onUpdated={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: 'Verify' }))
     await userEvent.click(screen.getByRole('button', { name: 'Confirm Verify' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('A reason is required.')
@@ -52,22 +40,21 @@ describe('CandidateActionPanel', () => {
   it('submits verify with the selected verification state', async () => {
     const spy = vi.spyOn(candidatesClient, 'verifyCandidate').mockResolvedValue({ ...CANDIDATE, verification: 'Rejected' })
     const onUpdated = vi.fn()
-    render(<CandidateActionPanel candidate={CANDIDATE} actorId={ACTOR_ID} onUpdated={onUpdated} />)
+    render(<CandidateActionPanel candidate={CANDIDATE} onUpdated={onUpdated} />)
     await userEvent.click(screen.getByRole('button', { name: 'Verify' }))
     await userEvent.selectOptions(screen.getByLabelText('Verification'), 'Rejected')
     await userEvent.type(screen.getByLabelText('Reason'), 'source is not credible')
     await userEvent.click(screen.getByRole('button', { name: 'Confirm Verify' }))
     expect(spy).toHaveBeenCalledWith('cand-1', {
       verification: 'Rejected',
-      actor_id: ACTOR_ID,
       reason: 'source is not credible',
     })
     expect(onUpdated).toHaveBeenCalledWith({ ...CANDIDATE, verification: 'Rejected' })
   })
 
-  it('submits score with relevance clamped to 0-5 and clears unset fields to null', async () => {
+  it('submits score with relevance clamped to 0-5, and reason plus what was actually set', async () => {
     const spy = vi.spyOn(candidatesClient, 'scoreCandidate').mockResolvedValue(CANDIDATE)
-    render(<CandidateActionPanel candidate={CANDIDATE} actorId={ACTOR_ID} onUpdated={vi.fn()} />)
+    render(<CandidateActionPanel candidate={CANDIDATE} onUpdated={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: 'Score' }))
     await userEvent.type(screen.getByLabelText('NZ relevance (0-5)'), '9')
     await userEvent.type(screen.getByLabelText('India relevance (0-5)'), '2')
@@ -76,19 +63,35 @@ describe('CandidateActionPanel', () => {
     expect(spy).toHaveBeenCalledWith('cand-1', {
       nz_relevance: 5,
       india_relevance: 2,
-      member_relevance: null,
-      signal: null,
-      confidence: null,
-      actor_id: ACTOR_ID,
       reason: 'scoring',
     })
+  })
+
+  // #324: every ScoreIn field is optional so the server can tell "not supplied" from "supplied
+  // as null" — the request this panel sends has to actually omit the untouched keys on the wire,
+  // not send them as null, or "Unchanged" silently overwrites the candidate's existing score/
+  // signal/confidence with nothing. Checked against `JSON.stringify`'s output, not the plain
+  // object `scoreCandidate` was called with: a key set to `undefined` is still a key
+  // (`toHaveProperty` finds it regardless of value), but `JSON.stringify` drops it — the wire
+  // format is what the server actually receives, so that is what this has to prove.
+  it('leaves member_relevance, signal and confidence off the wire when their fields are left "Unchanged"', async () => {
+    const spy = vi.spyOn(candidatesClient, 'scoreCandidate').mockResolvedValue(CANDIDATE)
+    render(<CandidateActionPanel candidate={CANDIDATE} onUpdated={vi.fn()} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Score' }))
+    await userEvent.type(screen.getByLabelText('NZ relevance (0-5)'), '5')
+    await userEvent.type(screen.getByLabelText('Reason'), 'nz only')
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm Score' }))
+    const sent = JSON.parse(JSON.stringify(spy.mock.calls[0]![1]))
+    expect(sent).not.toHaveProperty('member_relevance')
+    expect(sent).not.toHaveProperty('signal')
+    expect(sent).not.toHaveProperty('confidence')
   })
 
   it('surfaces the verification-gate 403 message from the server on score', async () => {
     vi.spyOn(candidatesClient, 'scoreCandidate').mockRejectedValue(
       new SipApiError('High signal requires a verified source (got verification=Unverified)', { status: 403 }),
     )
-    render(<CandidateActionPanel candidate={CANDIDATE} actorId={ACTOR_ID} onUpdated={vi.fn()} />)
+    render(<CandidateActionPanel candidate={CANDIDATE} onUpdated={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: 'Score' }))
     await userEvent.selectOptions(screen.getByLabelText('Signal'), 'High')
     await userEvent.type(screen.getByLabelText('Reason'), 'scoring')
@@ -98,7 +101,7 @@ describe('CandidateActionPanel', () => {
 
   it('submits route with proposed routing and included', async () => {
     const spy = vi.spyOn(candidatesClient, 'routeCandidate').mockResolvedValue({ ...CANDIDATE, included: true })
-    render(<CandidateActionPanel candidate={CANDIDATE} actorId={ACTOR_ID} onUpdated={vi.fn()} />)
+    render(<CandidateActionPanel candidate={CANDIDATE} onUpdated={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: 'Route' }))
     await userEvent.type(screen.getByLabelText('Proposed routing'), 'weekly-digest')
     await userEvent.click(screen.getByLabelText('Include in the brief'))
@@ -107,14 +110,13 @@ describe('CandidateActionPanel', () => {
     expect(spy).toHaveBeenCalledWith('cand-1', {
       proposed_routing: 'weekly-digest',
       included: true,
-      actor_id: ACTOR_ID,
       reason: 'routing',
     })
   })
 
   it('requires a duplicate-of id before merge can submit', async () => {
     const spy = vi.spyOn(candidatesClient, 'mergeCandidate')
-    render(<CandidateActionPanel candidate={CANDIDATE} actorId={ACTOR_ID} onUpdated={vi.fn()} />)
+    render(<CandidateActionPanel candidate={CANDIDATE} onUpdated={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: 'Merge' }))
     await userEvent.type(screen.getByLabelText('Reason'), 'duplicate')
     await userEvent.click(screen.getByRole('button', { name: 'Confirm Merge' }))
@@ -122,18 +124,32 @@ describe('CandidateActionPanel', () => {
     expect(spy).not.toHaveBeenCalled()
   })
 
+  it('requires the duplicate-of id to be a valid UUID before merge can submit', async () => {
+    const spy = vi.spyOn(candidatesClient, 'mergeCandidate')
+    render(<CandidateActionPanel candidate={CANDIDATE} onUpdated={vi.fn()} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Merge' }))
+    await userEvent.type(screen.getByLabelText('Duplicate of (candidate id)'), 'not-a-uuid')
+    await userEvent.type(screen.getByLabelText('Reason'), 'duplicate')
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm Merge' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('must be a valid UUID')
+    expect(spy).not.toHaveBeenCalled()
+  })
+
   it('submits merge with the duplicate-of id', async () => {
     const spy = vi.spyOn(candidatesClient, 'mergeCandidate').mockResolvedValue({ ...CANDIDATE, duplicate_of: 'cand-2' })
-    render(<CandidateActionPanel candidate={CANDIDATE} actorId={ACTOR_ID} onUpdated={vi.fn()} />)
+    render(<CandidateActionPanel candidate={CANDIDATE} onUpdated={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: 'Merge' }))
-    await userEvent.type(screen.getByLabelText('Duplicate of (candidate id)'), 'cand-2')
+    await userEvent.type(screen.getByLabelText('Duplicate of (candidate id)'), '34f4237b-ecd0-470c-8b2e-424ab745eb62')
     await userEvent.type(screen.getByLabelText('Reason'), 'same story')
     await userEvent.click(screen.getByRole('button', { name: 'Confirm Merge' }))
-    expect(spy).toHaveBeenCalledWith('cand-1', { duplicate_of: 'cand-2', actor_id: ACTOR_ID, reason: 'same story' })
+    expect(spy).toHaveBeenCalledWith('cand-1', {
+      duplicate_of: '34f4237b-ecd0-470c-8b2e-424ab745eb62',
+      reason: 'same story',
+    })
   })
 
   it('switching actions clears the previous action’s panel', async () => {
-    render(<CandidateActionPanel candidate={CANDIDATE} actorId={ACTOR_ID} onUpdated={vi.fn()} />)
+    render(<CandidateActionPanel candidate={CANDIDATE} onUpdated={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: 'Verify' }))
     expect(screen.getByLabelText('Verification')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Score' }))

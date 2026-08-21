@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useId, useState } from 'react'
-import { isUuid } from '../api/httpClient'
 import { getRun, nextAction, type RunOut, SipApiError } from '../api/runsClient'
 import { RUN_ACTION_LABEL as ACTION_LABEL, RUN_APPROVAL_REF_LABEL as APPROVAL_REF_LABEL, submitRunAction } from '../lib/runActions'
 import { stateBadgeClass } from '../lib/runState'
@@ -7,8 +6,6 @@ import { CandidatesListScreen } from './CandidatesListScreen'
 
 interface Props {
   runId: string
-  /** UUID of the acting user — see RunsListScreen.tsx's Props doc for why this is caller-supplied. */
-  actorId: string
   onBack: () => void
   onSelectCandidate: (candidateId: string) => void
 }
@@ -31,7 +28,7 @@ type ActionState = { kind: 'idle' } | { kind: 'loading' } | { kind: 'error'; mes
  * of function indirection (unlike RunsListScreen.tsx's fetch, which only ever runs once and never
  * needs that reset).
  */
-export function RunDetailScreen({ runId, actorId, onBack, onSelectCandidate }: Props) {
+export function RunDetailScreen({ runId, onBack, onSelectCandidate }: Props) {
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
   const [actionOpen, setActionOpen] = useState(false)
   const [reason, setReason] = useState('')
@@ -68,10 +65,6 @@ export function RunDetailScreen({ runId, actorId, onBack, onSelectCandidate }: P
   }
 
   async function confirmAction(run: RunOut, action: 'start' | 'pause' | 'resume' | 'complete') {
-    if (!isUuid(actorId)) {
-      setActionState({ kind: 'error', message: 'Enter a valid "Acting as" user id above before taking any action.' })
-      return
-    }
     if (!reason.trim()) {
       setActionState({ kind: 'error', message: 'A reason is required.' })
       return
@@ -83,7 +76,6 @@ export function RunDetailScreen({ runId, actorId, onBack, onSelectCandidate }: P
     setActionState({ kind: 'loading' })
     const body = {
       expected_version: run.version,
-      actor_id: actorId,
       reason: reason.trim(),
       approval_ref: action === 'complete' ? null : approvalRef.trim(),
     }
@@ -236,7 +228,7 @@ export function RunDetailScreen({ runId, actorId, onBack, onSelectCandidate }: P
             ) : null}
           </div>
 
-          <CandidatesListScreen runId={state.run.id} actorId={actorId} onSelectCandidate={onSelectCandidate} />
+          <CandidatesListScreen runId={state.run.id} onSelectCandidate={onSelectCandidate} />
         </>
       ) : null}
     </section>

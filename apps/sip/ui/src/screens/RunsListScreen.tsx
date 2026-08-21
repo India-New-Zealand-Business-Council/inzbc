@@ -1,13 +1,9 @@
 import { useCallback, useEffect, useId, useState } from 'react'
-import { isUuid } from '../api/httpClient'
 import { listRuns, nextAction, type RunOut, SipApiError } from '../api/runsClient'
 import { RUN_ACTION_LABEL as ACTION_LABEL, RUN_APPROVAL_REF_LABEL as APPROVAL_REF_LABEL, submitRunAction } from '../lib/runActions'
 import { stateBadgeClass } from '../lib/runState'
 
 interface Props {
-  /** UUID of the acting user (`database/schema.sql`: `initiated_by`/`actor_id` are real `users`
-   * foreign keys, no session auth exists to derive this from yet — see httpClient.ts's isUuid). */
-  actorId: string
   onSelectRun: (runId: string) => void
 }
 
@@ -17,7 +13,7 @@ type ActionState = { kind: 'idle' } | { kind: 'loading' } | { kind: 'error'; mes
 
 
 /** Runs list (#237): fetches on mount, and every lifecycle action (start/pause/resume/complete). */
-export function RunsListScreen({ actorId, onSelectRun }: Props) {
+export function RunsListScreen({ onSelectRun }: Props) {
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
   // Only one run's action panel open at a time, mirroring QaReviewScreen's editingId pattern.
   const [openRunId, setOpenRunId] = useState<string | null>(null)
@@ -64,10 +60,6 @@ export function RunsListScreen({ actorId, onSelectRun }: Props) {
   }
 
   async function confirmAction(run: RunOut, action: 'start' | 'pause' | 'resume' | 'complete') {
-    if (!isUuid(actorId)) {
-      setActionState({ kind: 'error', message: 'Enter a valid "Acting as" user id above before taking any action.' })
-      return
-    }
     if (!reason.trim()) {
       setActionState({ kind: 'error', message: 'A reason is required.' })
       return
@@ -79,7 +71,6 @@ export function RunsListScreen({ actorId, onSelectRun }: Props) {
     setActionState({ kind: 'loading' })
     const body = {
       expected_version: run.version,
-      actor_id: actorId,
       reason: reason.trim(),
       approval_ref: action === 'complete' ? null : approvalRef.trim(),
     }

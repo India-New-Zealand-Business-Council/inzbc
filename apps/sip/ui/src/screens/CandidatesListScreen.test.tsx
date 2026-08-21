@@ -7,8 +7,6 @@ import { CandidatesListScreen } from './CandidatesListScreen'
 
 afterEach(() => vi.restoreAllMocks())
 
-const ACTOR_ID = '34f4237b-ecd0-470c-8b2e-424ab745eb62'
-
 const CANDIDATE = {
   id: 'cand-1',
   run_id: 'run-1',
@@ -34,21 +32,21 @@ const CANDIDATE = {
 describe('CandidatesListScreen', () => {
   it('lists candidates for the given run', async () => {
     const spy = vi.spyOn(candidatesClient, 'listCandidates').mockResolvedValue([CANDIDATE])
-    render(<CandidatesListScreen runId="run-1" actorId={ACTOR_ID} onSelectCandidate={vi.fn()} />)
+    render(<CandidatesListScreen runId="run-1" onSelectCandidate={vi.fn()} />)
     expect(await screen.findByText('A candidate headline')).toBeInTheDocument()
     expect(spy).toHaveBeenCalledWith('run-1', expect.anything())
   })
 
   it('shows an error message on fetch failure', async () => {
     vi.spyOn(candidatesClient, 'listCandidates').mockRejectedValue(new SipApiError('run not found', { status: 404 }))
-    render(<CandidatesListScreen runId="run-1" actorId={ACTOR_ID} onSelectCandidate={vi.fn()} />)
+    render(<CandidatesListScreen runId="run-1" onSelectCandidate={vi.fn()} />)
     expect(await screen.findByRole('alert')).toHaveTextContent('run not found')
   })
 
   it('calls onSelectCandidate when "View and review" is clicked', async () => {
     vi.spyOn(candidatesClient, 'listCandidates').mockResolvedValue([CANDIDATE])
     const onSelectCandidate = vi.fn()
-    render(<CandidatesListScreen runId="run-1" actorId={ACTOR_ID} onSelectCandidate={onSelectCandidate} />)
+    render(<CandidatesListScreen runId="run-1" onSelectCandidate={onSelectCandidate} />)
     await userEvent.click(await screen.findByRole('button', { name: 'View and review' }))
     expect(onSelectCandidate).toHaveBeenCalledWith('cand-1')
   })
@@ -57,7 +55,7 @@ describe('CandidatesListScreen', () => {
     const listSpy = vi.spyOn(candidatesClient, 'listCandidates').mockResolvedValue([CANDIDATE])
     vi.spyOn(candidatesClient, 'verifyCandidate').mockResolvedValue({ ...CANDIDATE, verification: 'Verified' })
 
-    render(<CandidatesListScreen runId="run-1" actorId={ACTOR_ID} onSelectCandidate={vi.fn()} />)
+    render(<CandidatesListScreen runId="run-1" onSelectCandidate={vi.fn()} />)
     await screen.findByText('A candidate headline')
     await userEvent.click(screen.getByRole('button', { name: 'Verify' }))
     await userEvent.type(screen.getByLabelText('Reason'), 'confirmed via primary source')

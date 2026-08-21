@@ -17,8 +17,6 @@ import {
 
 interface Props {
   candidate: CandidateOut
-  /** UUID of the acting user — see RunsListScreen.tsx's Props doc for why this is caller-supplied. */
-  actorId: string
   onUpdated: (updated: CandidateOut) => void
 }
 
@@ -34,11 +32,16 @@ const ACTION_PANEL_LABEL: Record<ActionKind, string> = {
 }
 
 /** 0-5 in `apps/sip/pipeline/models.py` (`Field(ge=0, le=5)`), not enforced by `ScoreIn` itself —
- * clamped here since the API will otherwise accept and store an out-of-range value unchanged. */
-function clampScore(value: string): number | null {
-  if (!value.trim()) return null
+ * clamped here since the API will otherwise accept and store an out-of-range value unchanged.
+ * `undefined` for a blank field, not `null`: every `ScoreIn` field is optional so the server can
+ * tell "not supplied, leave alone" from "supplied as null, clear it" (#324) — an omitted key
+ * preserves the stored value, but `null` would overwrite it. Sending `undefined` in an object
+ * literal omits the key from `JSON.stringify`'s output, so the two states have to be kept apart
+ * this early rather than folded into one "no value" case. */
+function clampScore(value: string): number | undefined {
+  if (!value.trim()) return undefined
   const parsed = Math.round(Number(value))
-  if (Number.isNaN(parsed)) return null
+  if (Number.isNaN(parsed)) return undefined
   return Math.min(5, Math.max(0, parsed))
 }
 
@@ -50,7 +53,7 @@ function clampScore(value: string): number | null {
  * would otherwise be duplicated verbatim in both places, which is worse than one shared component
  * (same reasoning as lib/runActions.ts sharing logic between RunsListScreen/RunDetailScreen).
  */
-export function CandidateActionPanel({ candidate, actorId, onUpdated }: Props) {
+export function CandidateActionPanel({ candidate, onUpdated }: Props) {
   const [openAction, setOpenAction] = useState<ActionKind | null>(null)
   const [reason, setReason] = useState('')
   const [verification, setVerification] = useState<VerificationState>('Verified')
@@ -81,10 +84,6 @@ export function CandidateActionPanel({ candidate, actorId, onUpdated }: Props) {
   }
 
   async function submit(action: ActionKind) {
-    if (!isUuid(actorId)) {
-      setPanelState({ kind: 'error', message: 'Enter a valid "Acting as" user id above before taking any action.' })
-      return
-    }
     if (!reason.trim()) {
       setPanelState({ kind: 'error', message: 'A reason is required.' })
       return
@@ -93,10 +92,17 @@ export function CandidateActionPanel({ candidate, actorId, onUpdated }: Props) {
       setPanelState({ kind: 'error', message: 'The duplicate-of candidate id is required.' })
       return
     }
+    // `duplicate_of` is a real `candidates.id` foreign key (`database/schema.sql`), same as the
+    // now-removed actor id used to be — malformed input should fail here with a clear message,
+    // not reach the server as a bare 500 from Postgres's own type check.
+    if (action === 'merge' && !isUuid(duplicateOf.trim())) {
+      setPanelState({ kind: 'error', message: 'The duplicate-of candidate id must be a valid UUID.' })
+      return
+    }
     setPanelState({ kind: 'loading' })
     try {
       let updated: CandidateOut
-      const common = { actor_id: actorId, reason: reason.trim() }
+      const common = { reason: reason.trim() }
       if (action === 'verify') {
         updated = await verifyCandidate(candidate.id, { verification, ...common })
       } else if (action === 'score') {
@@ -104,8 +110,8 @@ export function CandidateActionPanel({ candidate, actorId, onUpdated }: Props) {
           nz_relevance: clampScore(nzRelevance),
           india_relevance: clampScore(indiaRelevance),
           member_relevance: clampScore(memberRelevance),
-          signal: signal || null,
-          confidence: confidence || null,
+          signal: signal || undefined,
+          confidence: confidence || undefined,
           ...common,
         })
       } else if (action === 'route') {

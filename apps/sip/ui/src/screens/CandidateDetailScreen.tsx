@@ -5,8 +5,6 @@ import { signalBadgeClass, verificationBadgeClass } from '../lib/candidateState'
 
 interface Props {
   candidateId: string
-  /** UUID of the acting user — see RunsListScreen.tsx's Props doc for why this is caller-supplied. */
-  actorId: string
   onBack: () => void
 }
 
@@ -20,7 +18,7 @@ type LoadState = { kind: 'loading' } | { kind: 'error'; message: string } | { ki
  * selected candidate remounts rather than needing an effect-triggered `setState` reset — see that
  * file's Props doc for why.
  */
-export function CandidateDetailScreen({ candidateId, actorId, onBack }: Props) {
+export function CandidateDetailScreen({ candidateId, onBack }: Props) {
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
 
   const fetchCandidate = useCallback(
@@ -158,7 +156,6 @@ export function CandidateDetailScreen({ candidateId, actorId, onBack }: Props) {
           <div className="mt-4">
             <CandidateActionPanel
               candidate={state.candidate}
-              actorId={actorId}
               onUpdated={(updated) => setState({ kind: 'loaded', candidate: updated })}
             />
           </div>

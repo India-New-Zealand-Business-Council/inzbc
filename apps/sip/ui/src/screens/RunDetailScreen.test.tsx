@@ -29,7 +29,7 @@ describe('RunDetailScreen', () => {
   it('renders the run info and its (empty) candidates list', async () => {
     vi.spyOn(runsClient, 'getRun').mockResolvedValue(RUN)
     stubCandidates()
-    render(<RunDetailScreen runId="run-1" actorId={ACTOR_ID} onBack={vi.fn()} onSelectCandidate={vi.fn()} />)
+    render(<RunDetailScreen runId="run-1" onBack={vi.fn()} onSelectCandidate={vi.fn()} />)
     expect(await screen.findByRole('heading', { name: 'RUN-20260808-01' })).toBeInTheDocument()
     expect(screen.getByText('SIP-050 v1.1')).toBeInTheDocument()
     expect(await screen.findByText('No candidates captured for this run yet.')).toBeInTheDocument()
@@ -37,7 +37,7 @@ describe('RunDetailScreen', () => {
 
   it('shows an error message when the run fails to load', async () => {
     vi.spyOn(runsClient, 'getRun').mockRejectedValue(new SipApiError("no run 'run-1'", { status: 404 }))
-    render(<RunDetailScreen runId="run-1" actorId={ACTOR_ID} onBack={vi.fn()} onSelectCandidate={vi.fn()} />)
+    render(<RunDetailScreen runId="run-1" onBack={vi.fn()} onSelectCandidate={vi.fn()} />)
     expect(await screen.findByRole('alert')).toHaveTextContent("no run 'run-1'")
   })
 
@@ -45,7 +45,7 @@ describe('RunDetailScreen', () => {
     vi.spyOn(runsClient, 'getRun').mockResolvedValue(RUN)
     stubCandidates()
     const onBack = vi.fn()
-    render(<RunDetailScreen runId="run-1" actorId={ACTOR_ID} onBack={onBack} onSelectCandidate={vi.fn()} />)
+    render(<RunDetailScreen runId="run-1" onBack={onBack} onSelectCandidate={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: '← Back to runs' }))
     expect(onBack).toHaveBeenCalled()
   })
@@ -55,7 +55,7 @@ describe('RunDetailScreen', () => {
     stubCandidates()
     vi.spyOn(runsClient, 'startRun').mockResolvedValue({ ...RUN, state: 'Run Authorised', version: 1 })
 
-    render(<RunDetailScreen runId="run-1" actorId={ACTOR_ID} onBack={vi.fn()} onSelectCandidate={vi.fn()} />)
+    render(<RunDetailScreen runId="run-1" onBack={vi.fn()} onSelectCandidate={vi.fn()} />)
     await userEvent.click(await screen.findByRole('button', { name: 'Start' }))
     await userEvent.type(screen.getByLabelText('Reason'), 'go')
     await userEvent.type(screen.getByLabelText(/Approval reference/), 'ref-1')
@@ -90,7 +90,7 @@ describe('RunDetailScreen', () => {
       },
     ])
     const onSelectCandidate = vi.fn()
-    render(<RunDetailScreen runId="run-1" actorId={ACTOR_ID} onBack={vi.fn()} onSelectCandidate={onSelectCandidate} />)
+    render(<RunDetailScreen runId="run-1" onBack={vi.fn()} onSelectCandidate={onSelectCandidate} />)
     await userEvent.click(await screen.findByRole('button', { name: 'View and review' }))
     expect(onSelectCandidate).toHaveBeenCalledWith('cand-1')
   })

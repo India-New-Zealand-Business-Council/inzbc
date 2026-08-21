@@ -119,13 +119,15 @@ export async function apiRequest<T>(url: string, init: RequestInit): Promise<T> 
 }
 
 /**
- * `initiated_by`/`actor_id` are `uuid not null references users(id)` columns (`database/schema.sql`)
- * with no session auth to derive them from yet (ADR-0004 not implemented) — the API accepts any
- * string at the schema level and only fails at the database, as a bare, unhelpful 500 (a
- * non-UUID value fails Postgres's type check before the foreign key is even reached). Checking
- * the format client-side turns that into a clear, immediate message instead of a round trip to
- * a 500. It cannot confirm the id belongs to a real `users` row — there is no endpoint to check
- * that against — only that it is shaped like one.
+ * For the UUID foreign keys this UI still takes as free-text input from the caller — e.g.
+ * `duplicate_of` (`candidates.id`, `database/schema.sql`). `initiated_by`/`actor_id` no longer
+ * need this: #278 moved them to session-derived identity, so no request model accepts them from
+ * the client at all. What remains applies the same reasoning: the API accepts any string at the
+ * schema level and only fails at the database, as a bare, unhelpful 500 (a non-UUID value fails
+ * Postgres's type check before the foreign key is even reached). Checking the format client-side
+ * turns that into a clear, immediate message instead of a round trip to a 500. It cannot confirm
+ * the id belongs to a real row — there is no endpoint to check that against — only that it is
+ * shaped like one.
  */
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
