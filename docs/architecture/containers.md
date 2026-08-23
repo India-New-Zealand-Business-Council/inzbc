@@ -73,10 +73,10 @@ graph TB
 ## What this diagram does not cover
 
 - **How** each UI-to-API edge actually authenticates (cookie presence, CSRF header, ordering) —
-  that is `docs/architecture/containers.md`'s companion diagram, "UI-to-API integration patterns"
-  (#330), one level more detailed than a container diagram should go.
-- **Which SIP screen drives which run-state transition** — also #330, since that is a flow within
-  one container, not a relationship between containers.
+  that's "UI-to-API integration patterns" below, one level more detailed than a container diagram
+  should go.
+- **Which SIP screen drives which run-state transition** — that's "SIP screen flow against run
+  states" below, since that is a flow within one container, not a relationship between containers.
 - Every count on the `services/api` and Postgres boxes — routes, routers, cross-cutting layers,
   tables, indexes, foreign keys, CHECK constraints, enum types, triggers — is sourced from
   `docs/backend-engineering-evidence.md`, including the exact command or query that produced each
@@ -88,10 +88,83 @@ graph TB
 - Internal module boundaries within `services/api` or `apps/sip` (collector, core, persistence) —
   that's `docs/architecture.md` §2's job, at component level, one level below this page.
 
+## UI-to-API integration patterns
+
+The five interfaces talk to the API in four genuinely different ways, plus one that doesn't talk to
+it at all. These are security decisions, not inconsistency: a public read needs no credentials; a
+staff write needs both cookie and CSRF token because `SameSite=Lax` alone still permits a
+top-level cross-site POST — the shape of a form-submission CSRF — so the token is the control
+rather than belt-and-braces (`apps/comms/ui/src/api/session.ts`, `apps/sip/ui/src/api/session.ts`).
+
+```mermaid
+flowchart LR
+    subgraph fta["FTA — anonymous read"]
+        FTA1["client.ts"] -->|"GET /api/fta/query<br/>no cookie, no header"| FTA2["services/api/facts.py"]
+    end
+
+    subgraph dash["Dashboard — authenticated read"]
+        D1["candidatesClient.ts<br/>runsClient.ts"] -->|"GET /api/candidates, GET /api/runs<br/>cookie, no CSRF token"| D2["services/api/candidates.py<br/>services/api/runs.py"]
+    end
+
+    subgraph comms["Comms — authenticated write"]
+        C1["session.ts"] -->|"GET /api/session (cookie)<br/>fetched first, cached"| C2(["csrf token"])
+        C2 --> C3["client.ts"]
+        C3 -->|"POST /api/comms/draft<br/>cookie + X-CSRF-Token"| C4["services/api/comms.py"]
+    end
+
+    subgraph sip["SIP — authenticated write, 2 of 5 report actions"]
+        S1["session.ts"] -->|"GET /api/session (cookie)<br/>fetched first, cached"| S2(["csrf token"])
+        S2 --> S3["reportsStore.ts"]
+        S3 -->|"POST /api/reports<br/>POST /api/reports/:id/qa<br/>POST /api/runs/:id/fail-qa<br/>cookie + X-CSRF-Token"| S4["services/api/reports.py<br/>services/api/runs.py"]
+    end
+
+    MEMBER["apps/member/ui — no api/ directory<br/>static local data, no pattern to show"]
+```
+
+Every client file above lives under `apps/<app>/ui/src/api/`. The CSRF path (Comms, SIP) always
+fetches `/api/session` before the write, not alongside it — that ordering is the control: the token
+comes from a same-origin response an attacker's cross-site request cannot read, so it can only be
+learned by a browser that already holds the session cookie for this origin.
+
+Anonymous read (FTA) is a deliberate choice, not a missing control: `GET /api/fta/query` answers
+only from the sourced FTA corpus (`docs/architecture.md` §1 — "no model call"), the same information
+for every caller, with no write capability behind it. There is nothing a cookie or token would
+protect, so requiring one would add friction without adding security.
+
+Dashboard's authenticated read sits between the two: it needs the cookie because run and candidate
+data isn't public, but has no CSRF exposure to defend against because it never writes.
+
+## SIP screen flow against run states
+
+Which of the four SIP UI screens (`apps/sip/ui/src/screens/`) drives which `schemas/state-machine.md`
+transition, and which of those transitions cannot be crossed without a recorded human decision.
+`Draft` through `Candidate Review` have no screen at all — those five states are pipeline/agent-driven
+(`apps/sip/core/orchestrator.py`), not something a person moves through this UI.
+
+```mermaid
+flowchart TD
+    RD["Report Drafted"] -->|"BriefBuilderScreen: Submit for QA<br/>submitReportForQa → POST /api/reports"| QIP["QA In Progress"]
+    QIP -->|"QaReviewScreen: Record QA result, every item passes<br/>submitQaResult → POST /api/reports/:id/qa<br/>human — reviewer"| ACD["Awaiting CEO Decision"]
+    QIP -->|"QaReviewScreen: Record QA result, Critical fail<br/>submitQaResult → POST /api/reports/:id/qa<br/>+ POST /api/runs/:id/fail-qa<br/>human — reviewer"| QF["QA Failed"]
+    QF -->|"QaReviewScreen: Send back for correction<br/>returnForCorrection — no endpoint yet, fixture-stubbed<br/>human — reviewer"| RD
+    ACD -->|"CeoDecisionScreen: record report decision<br/>recordCeoDecision — no endpoint yet, fixture-stubbed<br/>human — CEO"| CONT["Continue / Continue With Correction<br/>/ Paused / Stopped"]
+    ACD -->|"CeoDecisionScreen: authorise distribution (separate action)<br/>authoriseDistribution — no endpoint yet, fixture-stubbed<br/>human — CEO"| AMD["Approved for Manual Distribution"]
+    AMD -->|"DistributionStatusScreen: read-only view<br/>no state-changing action on this screen"| DIST["Distributed → Closed"]
+```
+
+Every transition drawn above is a human gate — `schemas/state-machine.md` marks every one of them
+"(human)" already, none of the four screens can cross one alone, and issue #336's own scope is why
+two of the five report actions call a real endpoint while three stay fixture-stubbed: there is no
+HTTP route yet for `QA Failed → Report Drafted` or for either CEO decision (ADR-0005 follow-up 4,
+pending the client's answer on `decision_role_permissions`) — see `apps/sip/ui/src/api/reportsStore.ts`'s
+doc comments on `returnForCorrection`, `recordCeoDecision` and `authoriseDistribution` for the
+per-function reasoning.
+
 ## Related documents
 - `docs/backend-engineering-evidence.md` — every count this diagram's `services/api` and Postgres
   boxes carry, with the command or query that produced it
 - `docs/architecture.md` — system context (Level 1) and SIP component diagram (Level 3)
 - `schemas/api-contract.md` — the 50-route contract this diagram counts against
+- `schemas/state-machine.md` — the authoritative transition list the SIP screen-flow diagram encodes
 - `docs/decisions/` — ADR-0004 (session transport), ADR-0005 (decision permissions, the reason
   SIP's decision endpoints aren't mounted)
