@@ -10,6 +10,7 @@ import {
   submitReportForQa,
 } from './reportsStore'
 import { stubReportsFetch } from './reportsStore.testSupport'
+import { clearSession } from './session'
 
 function submittableReport() {
   const report = newDraftReportFixture()
@@ -62,6 +63,16 @@ describe('submitReportForQa', () => {
     const promise = submitReportForQa(submittableReport(), { signal: controller.signal })
     controller.abort()
     await expect(promise).rejects.toMatchObject({ name: 'AbortError' })
+  })
+
+  it('reports "not signed in" distinctly, rather than a generic unreachable-service message', async () => {
+    clearSession()
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url === '/api/session') return { ok: false, status: 401, json: async () => null } as Response
+      throw new Error(`Unexpected fetch in test: ${url}`)
+    }))
+
+    await expect(submitReportForQa(submittableReport())).rejects.toThrow(/not signed in/i)
   })
 
   it('only carries signals for the candidates actually selected, not a fixed pair', async () => {

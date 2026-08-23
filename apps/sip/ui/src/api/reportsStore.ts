@@ -1,7 +1,7 @@
 import type { CeoDecisionRecord, DailyBriefReport, QaChecklistGroup, ReportDecisionType } from '../domain'
 import { candidatesFixture, generatedDigestContent, qaChecklistFixture } from '../lib/fixtures'
 import { validateBrief } from '../lib/validation'
-import { getCsrfToken } from './session'
+import { getCsrfToken, NotSignedInError, SessionUnavailableError } from './session'
 
 export class ReportsApiError extends Error {}
 
@@ -51,11 +51,26 @@ async function errorFromResponse(response: Response, fallback: string): Promise<
   return new ReportsApiError(`${fallback} (${response.status}).`)
 }
 
+/** Surfaces the two session failures by name rather than letting them fall through as a bare
+ * network error — "you're not signed in" and "the reports service is unreachable" call for
+ * different next actions from the person reading the message, and a caller can't act correctly on
+ * a message that conflates them. */
 async function authedFetch(
   url: string,
   init: { method: 'POST'; body: unknown; signal?: AbortSignal },
 ): Promise<Response> {
-  const csrfToken = await getCsrfToken()
+  let csrfToken: string
+  try {
+    csrfToken = await getCsrfToken()
+  } catch (cause) {
+    if (cause instanceof NotSignedInError) {
+      throw new ReportsApiError('You are not signed in. Sign in and try again.', { cause })
+    }
+    if (cause instanceof SessionUnavailableError) {
+      throw new ReportsApiError('Could not check your session. Try again in a moment.', { cause })
+    }
+    throw cause
+  }
   return fetch(url, {
     method: init.method,
     signal: init.signal,
@@ -136,6 +151,7 @@ export async function submitReportForQa(
     })
   } catch (cause) {
     if (cause instanceof DOMException && cause.name === 'AbortError') throw cause
+    if (cause instanceof ReportsApiError) throw cause
     throw new ReportsApiError('Could not reach the reports service.', { cause })
   }
   if (!response.ok) {
@@ -244,6 +260,7 @@ export async function submitQaResult(
     })
   } catch (cause) {
     if (cause instanceof DOMException && cause.name === 'AbortError') throw cause
+    if (cause instanceof ReportsApiError) throw cause
     throw new ReportsApiError('Could not reach the reports service.', { cause })
   }
   if (!qaResponse.ok) {
@@ -266,6 +283,7 @@ export async function submitQaResult(
       })
     } catch (cause) {
       if (cause instanceof DOMException && cause.name === 'AbortError') throw cause
+      if (cause instanceof ReportsApiError) throw cause
       throw new ReportsApiError('Recorded the QA result, but could not reach the run service to stop the run.', {
         cause,
       })
