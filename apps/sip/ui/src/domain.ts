@@ -175,6 +175,11 @@ export interface DistributionRecord {
 
 export interface DailyBriefReport {
   id: string
+  // A run number in every fixture ('RUN-20260730-01'), not `runs.id`. `reportsStore.submitReportForQa`
+  // sends this as `SubmitReportIn.run_id`, which the server validates as a UUID — known gap, see
+  // that function's doc comment. Not renamed to something like `runNumber` here because nothing in
+  // this UI can supply the real UUID it would need instead; renaming the field without a source for
+  // the value it should hold would just move the confusion, not remove it.
   runId: string
   // Optimistic-concurrency version of `runId`'s row in `runs` (`services/api/runs.py`'s
   // `TransitionIn.expected_version`) — a fixture never needed this, since nothing else could race
