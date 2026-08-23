@@ -179,7 +179,19 @@ interface RunOut {
  * the version the server just wrote, not the one it started this call with.
  *
  * `notes` is new here — `RecordQaIn.notes` is required server-side (min length 1) and this
- * fixture never collected it, because nothing consumed it. QaReviewScreen now has a field for it. */
+ * fixture never collected it, because nothing consumed it. QaReviewScreen now has a field for it.
+ *
+ * **Known gap, found by manual testing, Fail path only — Pass verified working end-to-end:**
+ * `POST /api/runs/:id/fail-qa` refuses with 400 ("not a legal transition per
+ * schemas/state-machine.md") unless the run is already in `QA In Progress`. Nothing anywhere calls
+ * an HTTP endpoint that puts a run into that state — `ReportRepository.submit`
+ * (`services/api/decisions.py`) only inserts a `report_versions` row, it never touches
+ * `runs.state`. In the real pipeline that transition happens automatically
+ * (`apps/sip/core/orchestrator.py`), so this only surfaces when the SIP UI drives a run that has
+ * no agent behind it, which is every run today, since nothing in this UI talks to the
+ * orchestrator either. Same "known limitation, not silently broken" treatment as the `run_id` gap
+ * on `submitReportForQa` above — not fixed here, since fixing it means deciding how a UI-only run
+ * reaches `QA In Progress` at all, which is a bigger question than #336. */
 export async function submitQaResult(
   report: DailyBriefReport,
   checklist: QaChecklistGroup[],
