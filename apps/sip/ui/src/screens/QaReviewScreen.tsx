@@ -37,8 +37,12 @@ export function QaReviewScreen({ report, onChange }: Props) {
   // unsaved edit in a section they've scrolled away from.
   const [editingId, setEditingId] = useState<string | null>(null)
   const [submitState, setSubmitState] = useState<SubmitState>({ kind: 'idle' })
+  // RecordQaIn.notes is required server-side (min length 1) — this screen never collected it
+  // before there was a real endpoint to send it to.
+  const [notes, setNotes] = useState('')
   const inFlight = useRef<AbortController | null>(null)
   const editFieldId = useId()
+  const notesFieldId = useId()
 
   const sectionBreakdown = useMemo(() => {
     const approved = report.sections.filter((s) => s.reviewStatus === 'approved').length
@@ -75,15 +79,18 @@ export function QaReviewScreen({ report, onChange }: Props) {
   }
 
   async function onRecordResult() {
-    if (!allAnswered) return
+    if (!allAnswered || !notes.trim()) return
     inFlight.current?.abort()
     const controller = new AbortController()
     inFlight.current = controller
     setSubmitState({ kind: 'loading' })
     try {
-      const updated = await submitQaResult(report, report.qaChecklist, report.reviewer, { signal: controller.signal })
+      const updated = await submitQaResult(report, report.qaChecklist, report.reviewer, notes, {
+        signal: controller.signal,
+      })
       if (inFlight.current !== controller) return
       setSubmitState({ kind: 'idle' })
+      setNotes('')
       onChange(updated)
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return
@@ -392,6 +399,21 @@ export function QaReviewScreen({ report, onChange }: Props) {
           switches to the crimson, correction-labelled button before submission, not only after
           (reportsStore.submitQaResult still computes pass/fail from the checklist and enforces
           this server-side too; this is the client-side half of "fail closed"). */}
+      {report.state !== 'QA Failed' ? (
+        <div>
+          <label htmlFor={notesFieldId} className="text-sm font-semibold text-inzbc-navy">
+            QA notes
+          </label>
+          <textarea
+            id={notesFieldId}
+            className="mt-1 min-h-16 w-full rounded-md border border-inzbc-navy/20 p-2 text-sm text-slate-700 transition-colors hover:border-inzbc-navy/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
+            value={notes}
+            placeholder="What was checked, and why this result — required to record a QA result."
+            onChange={(event) => setNotes(event.target.value)}
+          />
+        </div>
+      ) : null}
+
       <div className="space-y-2">
         {report.state === 'QA Failed' ? (
           <button
@@ -406,7 +428,7 @@ export function QaReviewScreen({ report, onChange }: Props) {
           <button
             type="button"
             onClick={() => void onRecordResult()}
-            disabled={!allAnswered || submitState.kind === 'loading'}
+            disabled={!allAnswered || !notes.trim() || submitState.kind === 'loading'}
             className="rounded-md bg-inzbc-crimson px-4 py-2 font-semibold text-white disabled:cursor-progress disabled:opacity-60"
           >
             {submitState.kind === 'loading'
@@ -417,7 +439,7 @@ export function QaReviewScreen({ report, onChange }: Props) {
           <button
             type="button"
             onClick={() => void onRecordResult()}
-            disabled={!allAnswered || submitState.kind === 'loading'}
+            disabled={!allAnswered || !notes.trim() || submitState.kind === 'loading'}
             className="rounded-md bg-inzbc-tangerine px-4 py-2 font-semibold text-inzbc-navy transition-colors hover:enabled:bg-inzbc-tangerine/90 disabled:cursor-progress disabled:opacity-60"
           >
             {submitState.kind === 'loading' ? 'Recording…' : 'Record QA result'}
@@ -428,6 +450,9 @@ export function QaReviewScreen({ report, onChange }: Props) {
             {checklistItems.length - answeredCount} checklist item(s) still need Pass/Fail/N/A before a result
             can be recorded.
           </p>
+        ) : null}
+        {allAnswered && !notes.trim() && report.state !== 'QA Failed' ? (
+          <p className="text-xs text-slate-500">QA notes are required before a result can be recorded.</p>
         ) : null}
         {submitState.kind === 'error' ? (
           <p role="alert" className="text-sm text-inzbc-crimson">

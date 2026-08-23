@@ -1,6 +1,7 @@
 import type { CeoDecisionRecord, DailyBriefReport, QaChecklistGroup, ReportDecisionType } from '../domain'
 import { candidatesFixture, generatedDigestContent, qaChecklistFixture } from '../lib/fixtures'
 import { validateBrief } from '../lib/validation'
+import { getCsrfToken } from './session'
 
 export class ReportsApiError extends Error {}
 
@@ -21,44 +22,84 @@ function delay(ms: number, signal?: AbortSignal): Promise<void> {
 }
 
 /**
- * Contract-fixture-backed stand-ins for schemas/api-contract.md's Control endpoints
- * (`POST /api/reports/:id/submit`, `POST /api/reports/:id/qa`, `POST /api/reports/:id/decision`,
- * `GET /api/dashboard`). None of these are live: `services/api/main.py` implements only the FTA
- * read path today, and the SIP endpoints "land once the database and orchestrator's persistence
- * exist" (docs/api-integration-spec.md, issue #44). Per the worklog's own instruction to build
- * against contract fixtures, every function here resolves against the in-memory report object the
- * UI already holds, with a simulated network delay so loading states are real and testable,
- * rather than issuing a `fetch()` that would just 404 against nothing. Swapping a function's body
- * for a real `fetch()` call once an endpoint exists is a small, contained change — each exported
- * signature already matches the shape schemas/api-contract.md describes (report in, updated
- * report out), and `ReportsApiError` mirrors the typed-error pattern in
- * apps/comms/ui/src/api/client.ts and apps/fta/ui/src/api/client.ts.
+ * `POST /api/reports`, `POST /api/reports/{id}/qa` and `POST /api/runs/{id}/fail-qa` are live
+ * (#124, #285) and `submitReportForQa`/`submitQaResult` below call them for real — issue #336.
+ * `returnForCorrection`, `recordCeoDecision` and `authoriseDistribution` stay fixture-backed:
+ * there is no HTTP route for any of the three, for two different reasons documented at each
+ * function below, not because nobody got to them yet.
+ *
+ * Every real call needs `credentials: 'same-origin'` plus an `X-CSRF-Token` header fetched from
+ * `GET /api/session` first — the same pattern apps/comms/ui/src/api/client.ts already proved,
+ * reused via ./session rather than reinvented.
  */
 
-/** Numeric suffix of a "v<N>" version string, bumped by one — "v1" -> "v2". Falls back to "v2" for
- * anything that doesn't parse, so a resubmission always visibly advances rather than silently
- * repeating the same version string. */
-function bumpReportVersion(version: string): string {
-  const match = /^v(\d+)$/.exec(version.trim())
-  const next = match ? Number(match[1]) + 1 : 2
-  return `v${next}`
+const JSON_HEADERS = { 'Content-Type': 'application/json', Accept: 'application/json' } as const
+
+/** Extracts FastAPI's standard `{"detail": "..."}` shape when present, so a 403/409/422 reaches
+ * the user as the server's own explanation (a self-review refusal, a stale version) rather than a
+ * bare status code. Falls back to the status code when the body isn't in that shape or can't be
+ * parsed at all — still fails closed, just with less to say. */
+async function errorFromResponse(response: Response, fallback: string): Promise<ReportsApiError> {
+  try {
+    const body: unknown = await response.json()
+    if (body && typeof body === 'object' && typeof (body as { detail?: unknown }).detail === 'string') {
+      return new ReportsApiError((body as { detail: string }).detail)
+    }
+  } catch {
+    // Body wasn't JSON, or wasn't readable — the fallback below still says something.
+  }
+  return new ReportsApiError(`${fallback} (${response.status}).`)
 }
 
-/** POST /api/reports/:id/submit — Report Drafted -> QA In Progress. Re-validates server-side in
- * the real system; this fixture re-runs the same client-side rule so the stub can't be tricked by
- * a caller that bypasses the UI's own disabled-button gate.
+async function authedFetch(
+  url: string,
+  init: { method: 'POST'; body: unknown; signal?: AbortSignal },
+): Promise<Response> {
+  const csrfToken = await getCsrfToken()
+  return fetch(url, {
+    method: init.method,
+    signal: init.signal,
+    credentials: 'same-origin',
+    headers: { ...JSON_HEADERS, 'X-CSRF-Token': csrfToken },
+    body: JSON.stringify(init.body),
+  })
+}
+
+/** Lowercase hex SHA-256, matching `SubmitReportIn.content_sha256`'s `^[0-9a-f]{64}$` pattern.
+ * Hashes the generated digest content, not the whole report object — fields like `focusNote` or
+ * `selectedCandidateIds` describe how the brief was assembled, not what's in it; hashing the
+ * assembled output is what makes "the thing approved is the thing distributed" checkable. */
+async function sha256Hex(value: string): Promise<string> {
+  const bytes = new TextEncoder().encode(value)
+  const digest = await crypto.subtle.digest('SHA-256', bytes)
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('')
+}
+
+interface ReportVersionOut {
+  id: string
+  run_id: string
+  version_number: number
+  created_by: string
+  content_sha256: string
+  created_at: string
+  submitted_at: string
+}
+
+/** POST /api/reports/:id/submit — Report Drafted -> QA In Progress.
  *
- * Takes only `report` — `report.selectedCandidateIds` is the boundary, not a count. An earlier
- * version took a bare `selectedCandidateCount`, so the actual selected candidates never reached
- * `generatedDigestContent`, which returned the same two hardcoded signals regardless of what was
- * selected. Resolving ids to candidates here (rather than requiring the caller to pass full
- * candidate objects) mirrors how a real endpoint would look them up server-side from an id list.
+ * Client-side validation stays exactly as it was: `SubmitReportIn` carries only a run id, a
+ * content hash and a timestamp, so the server has nothing to check the brief's actual content
+ * against — this check is the only one that exists, not a redundant mirror of a server-side rule.
  *
- * A resubmission (this report already carries a `qa` record from a prior round returned for
- * correction) bumps `reportVersion` and starts the checklist and QA result fresh — an earlier
- * version regenerated the digest but left the previous round's checklist answers and Fail record
- * in place, so the reviewer's second pass silently inherited a stale, already-failed result
- * instead of reviewing the corrected content on its own terms. */
+ * Real versioning replaces the old client-side `bumpReportVersion` — `POST /api/reports` assigns
+ * `version_number` itself (`services/api/reports.py`: "not by the caller"), so a resubmission's
+ * next version number comes from the response, not from incrementing a string here. The checklist
+ * and prior QA result still reset locally on a resubmission (`report.qa !== null`), since that's
+ * this UI's own behaviour, not the server's — a reviewer's second pass should review the corrected
+ * content on its own terms rather than inherit a stale, already-failed result.
+ */
 export async function submitReportForQa(
   report: DailyBriefReport,
   options: { signal?: AbortSignal } = {},
@@ -70,34 +111,71 @@ export async function submitReportForQa(
   if (report.state !== 'Report Drafted') {
     throw new ReportsApiError(`Cannot submit for QA from state "${report.state}".`)
   }
-  await delay(SIMULATED_LATENCY_MS, options.signal)
   const selectedCandidates = candidatesFixture().filter((candidate) =>
     report.selectedCandidateIds.includes(candidate.id),
   )
+  const digest = generatedDigestContent(selectedCandidates)
+  const contentSha256 = await sha256Hex(JSON.stringify(digest))
+  const createdAt = new Date().toISOString()
+
+  let response: Response
+  try {
+    response = await authedFetch('/api/reports', {
+      method: 'POST',
+      signal: options.signal,
+      body: { run_id: report.runId, content_sha256: contentSha256, created_at: createdAt },
+    })
+  } catch (cause) {
+    if (cause instanceof DOMException && cause.name === 'AbortError') throw cause
+    throw new ReportsApiError('Could not reach the reports service.', { cause })
+  }
+  if (!response.ok) {
+    throw await errorFromResponse(response, 'Submitting the report for QA failed')
+  }
+  const version = (await response.json()) as ReportVersionOut
+
   const isResubmission = report.qa !== null
   return {
     ...report,
-    ...generatedDigestContent(selectedCandidates),
+    ...digest,
     state: 'QA In Progress',
-    generatedAt: report.generatedAt || new Date().toISOString(),
-    reportVersion: isResubmission ? bumpReportVersion(report.reportVersion) : report.reportVersion,
+    generatedAt: report.generatedAt || createdAt,
+    reportVersion: `v${version.version_number}`,
+    reportVersionId: version.id,
     qaChecklist: isResubmission ? qaChecklistFixture() : report.qaChecklist,
     qa: isResubmission ? null : report.qa,
   }
 }
 
-/** POST /api/reports/:id/qa — records the SIP-188 result; Critical fail routes to QA Failed.
+interface QaResultOut {
+  report_version_id: string
+  qa_status: string
+  critical_failures: number
+}
+
+interface RunOut {
+  id: string
+  state: string
+  version: number
+}
+
+/** POST /api/reports/:id/qa — records the SIP-188 result, then, on a Fail, calls
+ * `POST /api/runs/:id/fail-qa` to actually stop the run.
  *
- * Fails closed on three paths that previously reached `Awaiting CEO Decision` with a `Pass`:
- * a blank reviewer (the `reviewer &&` guard below made the analyst-check a no-op for one), an
- * empty or malformed checklist (nothing to disprove a pass), and `na` on a Critical item (not a
- * recorded Fail, so it slipped past the Critical-fail check entirely). None of SIP-188's Critical
- * items (a2, b2, c3, d4, e1 in lib/fixtures.ts) describe a check that can legitimately not apply
- * to a run, so Critical + `na` is treated as a failure rather than invented as a fourth outcome. */
+ * Two calls, not one, because they're two different acts (`services/api/reports.py`'s own
+ * docstring on `record_qa`): recording a result is the reviewer's finding; failing the run is the
+ * reviewer's independent lifecycle authority (REQ-U-01) and needs the run's `expected_version` so
+ * a stale transition is refused rather than silently applied. `report.runVersion` carries that;
+ * it's bumped here from the `fail-qa` response so the next transition this report attempts has
+ * the version the server just wrote, not the one it started this call with.
+ *
+ * `notes` is new here — `RecordQaIn.notes` is required server-side (min length 1) and this
+ * fixture never collected it, because nothing consumed it. QaReviewScreen now has a field for it. */
 export async function submitQaResult(
   report: DailyBriefReport,
   checklist: QaChecklistGroup[],
   reviewer: string,
+  notes: string,
   options: { signal?: AbortSignal } = {},
 ): Promise<DailyBriefReport> {
   if (report.state !== 'QA In Progress') {
@@ -106,8 +184,6 @@ export async function submitQaResult(
   if (!reviewer.trim()) {
     throw new ReportsApiError('A reviewer is required to record a QA result.')
   }
-  // The UI's job is to make the illegal path (reviewer === analyst) impossible to reach, not to
-  // be the only thing preventing it (docs/sip-ui-spec.md) — re-checked here too, fail-closed.
   if (reviewer === report.analyst) {
     throw new ReportsApiError('The reviewer cannot be this run\'s analyst.')
   }
@@ -115,34 +191,101 @@ export async function submitQaResult(
   if (allItems.length === 0) {
     throw new ReportsApiError('The QA checklist is empty — nothing has been reviewed.')
   }
-  await delay(SIMULATED_LATENCY_MS, options.signal)
+  if (!notes.trim()) {
+    throw new ReportsApiError('QA notes are required to record a result.')
+  }
+  if (!report.reportVersionId) {
+    throw new ReportsApiError('This report has not been submitted yet — nothing to record QA against.')
+  }
 
   const isCriticalFailure = (item: QaChecklistGroup['items'][number]) =>
     item.critical && (item.answer === 'fail' || item.answer === 'na')
   const hasCriticalFail = allItems.some(isCriticalFailure)
   const anyUnanswered = allItems.some((item) => item.answer === null)
   const passed = !hasCriticalFail && !anyUnanswered
+  const criticalFailuresFound = hasCriticalFail
+    ? allItems
+        .filter(isCriticalFailure)
+        .map((item) => item.text)
+        .join('; ')
+    : ''
+
+  let qaResponse: Response
+  try {
+    qaResponse = await authedFetch(`/api/reports/${encodeURIComponent(report.reportVersionId)}/qa`, {
+      method: 'POST',
+      signal: options.signal,
+      body: {
+        result: passed ? 'Pass' : 'Fail',
+        critical_failures: hasCriticalFail ? allItems.filter(isCriticalFailure).length : 0,
+        notes: notes.trim(),
+      },
+    })
+  } catch (cause) {
+    if (cause instanceof DOMException && cause.name === 'AbortError') throw cause
+    throw new ReportsApiError('Could not reach the reports service.', { cause })
+  }
+  if (!qaResponse.ok) {
+    throw await errorFromResponse(qaResponse, 'Recording the QA result failed')
+  }
+  await (qaResponse.json() as Promise<QaResultOut>) // consumed for its status code; nothing here changes the local view beyond what's built below.
+
+  let runVersion = report.runVersion
+  if (!passed) {
+    let runResponse: Response
+    try {
+      runResponse = await authedFetch(`/api/runs/${encodeURIComponent(report.runId)}/fail-qa`, {
+        method: 'POST',
+        signal: options.signal,
+        body: {
+          expected_version: report.runVersion,
+          reason: criticalFailuresFound || 'QA checklist not fully passed.',
+          approval_ref: null,
+        },
+      })
+    } catch (cause) {
+      if (cause instanceof DOMException && cause.name === 'AbortError') throw cause
+      throw new ReportsApiError('Recorded the QA result, but could not reach the run service to stop the run.', {
+        cause,
+      })
+    }
+    if (!runResponse.ok) {
+      throw await errorFromResponse(
+        runResponse,
+        'The QA result was recorded, but stopping the run failed',
+      )
+    }
+    const run = (await runResponse.json()) as RunOut
+    runVersion = run.version
+  }
 
   return {
     ...report,
     qaChecklist: checklist,
     state: passed ? 'Awaiting CEO Decision' : 'QA Failed',
+    runVersion,
     qa: {
       reviewer,
       timestamp: new Date().toISOString(),
       result: passed ? 'Pass' : 'Fail',
-      criticalFailuresFound: hasCriticalFail
-        ? allItems
-            .filter(isCriticalFailure)
-            .map((item) => item.text)
-            .join('; ')
-        : '',
+      criticalFailuresFound,
       correctionsRequired: passed ? '' : 'See flagged Critical items above.',
     },
   }
 }
 
-/** QA Failed -> Report Drafted — the only exit from a failed QA (docs/sip-ui-spec.md Screen 2). */
+/**
+ * QA Failed -> Report Drafted — **no live endpoint**, and not for the same reason as the two
+ * decision functions below.
+ *
+ * `services/api/runs.py`'s own module docstring draws the line: `start`/`pause`/`resume`/
+ * `fail-qa`/`stop`/`complete` are "the one HTTP-triggered move" in their edge's position — the
+ * mechanical steps in between, including Report Drafted, are "driven by the pipeline/agent loop
+ * ... not this router." A human sending a run from QA Failed back to Report Drafted isn't one of
+ * this router's edges; the correction itself (editing the digest, per this screen) is manual, but
+ * re-entering Report Drafted is not a control a person exercises over HTTP today. Stays
+ * fixture-backed until that's built, which is separate work from wiring the calls that do exist.
+ */
 export async function returnForCorrection(
   report: DailyBriefReport,
   options: { signal?: AbortSignal } = {},
@@ -157,13 +300,19 @@ export async function returnForCorrection(
 /**
  * POST /api/reports/:id/decision (decision 1 of 2) — the report decision only.
  *
+ * **No live endpoint, and this is a client decision pending, not an engineering gap.**
+ * `services/api/reports.py`'s own docstring: "The decision-writing endpoints are deliberately
+ * absent ... `decision_role_permissions` is unseeded: no row means nobody may act ... Mounting
+ * them now would ship three endpoints that answer 403 until INZBC decides who may approve what."
+ * Tracked as ADR-0005 required follow-up 4 / client answers B8. Stays fixture-backed until INZBC
+ * answers who may record a CEO ruling, report approval and distribution authority — wiring this
+ * function to a 403-only endpoint would not make the screen more real, only slower to fail.
+ *
  * docs/sip-ui-spec.md Screen 3: "Two separate, sequential decisions — never presented as one
  * combined control ... The UI must not let the CEO set [distribution authorisation] in the same
- * submit as decision 1." An earlier version of this function accepted a full `CeoDecisionRecord`
- * including `distributionAuthorised` in the same call, which made that illegal combination
- * possible to construct even if the UI never rendered it that way — the parameter type now
- * excludes those fields outright so the two decisions can't be recombined by a future caller
- * either. `authoriseDistribution` below is the separate, second action.
+ * submit as decision 1." The parameter type excludes those fields outright so the two decisions
+ * can't be recombined by a future caller either. `authoriseDistribution` below is the separate,
+ * second action.
  */
 export async function recordCeoDecision(
   report: DailyBriefReport,
@@ -178,11 +327,6 @@ export async function recordCeoDecision(
       'A report decision (Continue / Continue With Correction / Pause / Stop) is required.',
     )
   }
-  // Fail-closed re-check of the same required fields CeoDecisionScreen's disabled-button gate
-  // enforces (`conditions` is the one genuinely optional field, per its "if any" label) — an
-  // earlier version only checked `decision` here, so a caller bypassing the UI could record a
-  // decision with a blank reason, owner, evidence reference, next review date or version, or a
-  // null timestamp.
   if (!decision.reportVersion.trim()) {
     throw new ReportsApiError('A report version is required.')
   }
@@ -218,11 +362,12 @@ function resolveStateAfterDecision(decision: ReportDecisionType): DailyBriefRepo
 /**
  * POST /api/reports/:id/decision (decision 2 of 2) — distribution authorisation.
  *
- * Only reachable once a report decision is already recorded, and only from the two states a
- * distribution question is meaningful for (`Continue` / `Continue With Correction`) — a Paused or
- * Stopped run doesn't reach this question. `authorised: false` is a complete, valid outcome
- * (docs/sip-ui-spec.md: "not an error or incomplete state") — the run simply stays in its current
- * state, proceeding to close-out with distribution skipped, rather than needing a further
+ * Same "no live endpoint" reason as `recordCeoDecision` immediately above — see that function's
+ * doc comment. Only reachable once a report decision is already recorded, and only from the two
+ * states a distribution question is meaningful for (`Continue` / `Continue With Correction`) — a
+ * Paused or Stopped run doesn't reach this question. `authorised: false` is a complete, valid
+ * outcome (docs/sip-ui-spec.md: "not an error or incomplete state") — the run simply stays in its
+ * current state, proceeding to close-out with distribution skipped, rather than needing a further
  * transition.
  */
 export async function authoriseDistribution(
