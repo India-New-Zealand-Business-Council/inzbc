@@ -95,9 +95,18 @@ graph LR
 
 ## 3. Run state machine
 
-The SIP-184 daily run. Transitions are enforced in code by `apps/sip/core/orchestrator.py`;
-`advance()` is the only path that mutates run state. Dashed transitions require a **recorded human
-decision** — an agent can never cross them alone.
+The SIP-184 daily run. Run state is mutated in exactly one place: `RunRepository.apply_transition`
+(`services/api/persistence.py`), which issues the compare-and-swap
+`update runs set state = ..., version = version + 1 where id = ... and version = ...`.
+
+That is not a bypass of the state machine. `persistence.py` imports `is_legal_transition` and
+`is_human_gated` from `apps/sip/core/orchestrator.py` and refuses an illegal jump, or a gated
+transition with no approval, before it writes. `Orchestrator.advance()` enforces the same table
+in memory and is exercised by the tests and by audit-log replay; it has no production callers
+today, so it is the second implementation of the rule rather than the path that applies it.
+
+Transitions labelled **(human)** below require a decision recorded in `decision_records`, named by
+`approval_ref`. An agent can never cross them alone.
 
 ```mermaid
 stateDiagram-v2
