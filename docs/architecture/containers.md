@@ -15,24 +15,28 @@ itself, not hidden behind the tag.
 graph TB
     subgraph external["External"]
         AGENT["daily-india-nz-news-agent — built<br/>separate repo<br/>writes candidates into the pipeline"]
-        MODEL["Model provider — built<br/>OpenAI, via services/api/model_gateway.py"]
+        MODEL["Model provider — built<br/>OpenAI · exactly 3 call sites, one gateway module<br/>(services/api/model_gateway.py) — not a central component"]
         SOURCES["112 mandatory sources<br/>SIP-185 register"]
     end
 
     subgraph uis["User interfaces — apps/*/ui, React + Vite + TypeScript"]
-        FTA["FTA Opportunity Explainer — built<br/>apps/fta/ui<br/>answers only from a sourced corpus, no model call"]
+        FTA["FTA Opportunity Explainer — built<br/>apps/fta/ui<br/>answers only from a sourced corpus"]
         COMMS["Comms Assistant — built<br/>apps/comms/ui<br/>drafts a reply, human approves before send"]
         DASH["Executive Dashboard — built<br/>apps/dashboard/ui<br/>read-only summary of runs and candidates"]
         SIP["SIP Review UI — built, partly wired<br/>apps/sip/ui<br/>2 of 5 report actions call the API (#336);<br/>candidates, checklist and run header are still a local fixture"]
         MEMBER["Member Portal — shell<br/>apps/member/ui<br/>no API client at all — static local data,<br/>links out to Member Jungle for anything real"]
     end
 
-    subgraph api["services/api — built<br/>FastAPI, 13 routers / 50 routes (schemas/api-contract.md)"]
+    %% Cross-cutting layers applied to every one of the 50 routes below, not per-router —
+    %% docs/backend-engineering-evidence.md has the file:line source for each.
+    subgraph api["services/api — built<br/>FastAPI, 13 routers / 50 routes (schemas/api-contract.md)<br/>every route: session auth · CSRF · RBAC · rate limiting ·<br/>security headers · CORS deny-by-default"]
         APIC["REST API"]
     end
 
+    %% Counts queried against a freshly-applied schema.sql, not an existing dev database —
+    %% see docs/backend-engineering-evidence.md for the exact catalog queries.
     subgraph data["Persistence"]
-        DB[("Postgres — built<br/>database/schema.sql, 25 tables<br/>append-only audit_log, trigger-enforced")]
+        DB[("Postgres — built<br/>database/schema.sql · 25 tables · 51 indexes<br/>50 FK constraints (69 FK columns) · 31 CHECK constraints<br/>11 enum types · 15 triggers — append-only audit_log")]
     end
 
     FTA -->|"GET /api/fta/query — anonymous, no cookie, no token"| APIC
@@ -40,6 +44,11 @@ graph TB
     DASH -->|"GET /api/candidates, GET /api/runs — cookie, no token"| APIC
     SIP -->|"POST /api/reports, /api/reports/:id/qa, /api/runs/:id/fail-qa — cookie + X-CSRF-Token"| APIC
     MEMBER -.->|"no API call"| APIC
+    %% The strongest counter-argument to "AI wrapper with no real backend" (#329): a whole
+    %% product surface that deliberately never reaches the model, drawn dashed on purpose —
+    %% same treatment as docs/architecture.md §1, kept prominent rather than one dashed line
+    %% among several.
+    FTA -.->|"NO MODEL CALL — answers only from a sourced corpus"| MODEL
 
     SOURCES --> AGENT
     AGENT -->|"writes candidates (service credential, not a UI session)"| APIC
@@ -68,10 +77,11 @@ graph TB
   (#330), one level more detailed than a container diagram should go.
 - **Which SIP screen drives which run-state transition** — also #330, since that is a flow within
   one container, not a relationship between containers.
-- The 13 routers and 50 routes are counted from `@router.get/post/patch/put/delete` decorators
-  across `services/api/*.py` (excluding tests) as of this diagram, not from `schemas/api-contract.md`
-  directly — the two should agree; if they don't, the contract doc is the one to trust and this
-  count is stale.
+- Every count on the `services/api` and Postgres boxes — routes, routers, cross-cutting layers,
+  tables, indexes, foreign keys, CHECK constraints, enum types, triggers — is sourced from
+  `docs/backend-engineering-evidence.md`, including the exact command or query that produced each
+  one. Update the evidence document first when a count drifts, then this diagram, not the other way
+  round.
 - `services/api/decisions.py` (`DecisionRepository.record`, `ReportRepository.record_qa`) is
   business logic the API layer calls into, not a separate container — it has no `APIRouter` of its
   own and is folded into the `services/api` box above.
@@ -79,6 +89,8 @@ graph TB
   that's `docs/architecture.md` §2's job, at component level, one level below this page.
 
 ## Related documents
+- `docs/backend-engineering-evidence.md` — every count this diagram's `services/api` and Postgres
+  boxes carry, with the command or query that produced it
 - `docs/architecture.md` — system context (Level 1) and SIP component diagram (Level 3)
 - `schemas/api-contract.md` — the 50-route contract this diagram counts against
 - `docs/decisions/` — ADR-0004 (session transport), ADR-0005 (decision permissions, the reason
