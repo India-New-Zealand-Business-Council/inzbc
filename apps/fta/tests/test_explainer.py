@@ -11,6 +11,7 @@ from apps.fta.explainer import (
     Depth,
     ExplainerAnswer,
     InternalAnswer,
+    MemberAnswer,
     PublicAnswer,
     answer_query,
     answer_query_at_depth,
@@ -238,12 +239,39 @@ def test_answer_passes_through_none_for_unsourced_tariff_fields() -> None:
 # --- #187: three-audience depth split -------------------------------------------------------
 
 
-def test_depth_defaults_to_member_and_matches_answer_query() -> None:
-    assert answer_query_at_depth("dairy") == answer_query("dairy")
+def test_depth_defaults_to_member() -> None:
+    answers = answer_query_at_depth("dairy")
+    assert answers
+    assert all(isinstance(a, MemberAnswer) for a in answers)
 
 
-def test_member_depth_explicit_matches_answer_query() -> None:
-    assert answer_query_at_depth("dairy", Depth.MEMBER) == answer_query("dairy")
+def test_member_depth_returns_member_answer_shape() -> None:
+    answers = answer_query_at_depth("wool", Depth.MEMBER)
+    assert len(answers) == 1
+    assert isinstance(answers[0], MemberAnswer)
+    assert answers[0].topic == "Wool"
+    assert answers[0].confirmed is True
+
+
+def test_member_answer_carries_the_same_sourced_content_as_answer_query() -> None:
+    # MemberAnswer is a distinct type from ExplainerAnswer (not a re-export of it), but every
+    # field it does carry must match answer_query()'s result exactly - the audience split must
+    # not silently change *content*, only which fields are exposed.
+    legacy = answer_query("dairy")[0]
+    member = answer_query_at_depth("dairy", Depth.MEMBER)[0]
+    assert member.id == legacy.id
+    assert member.citation == legacy.citation
+    assert member.verified_at == legacy.verified_at
+    assert member.treatment == legacy.treatment
+    assert member.confidence == legacy.confidence
+
+
+def test_member_answer_excludes_internal_notes() -> None:
+    # The finding Bhanu raised: several corpus entries carry reviewer/drafting notes that are
+    # editorial record, not member-facing content. Structural, not conventional - MemberAnswer
+    # simply has no `notes` field, so a member-facing renderer cannot read it even by mistake.
+    field_names = {f.name for f in fields(MemberAnswer)}
+    assert "notes" not in field_names
 
 
 def test_public_depth_returns_public_answer_shape() -> None:
@@ -253,15 +281,26 @@ def test_public_depth_returns_public_answer_shape() -> None:
     assert answers[0].topic == "Wool"
 
 
-def test_public_answer_excludes_evidence_fields() -> None:
-    # Structural, not conventional: a public-tier renderer physically cannot access citation,
-    # verified_at or id, the same discipline NoMatch already uses in this module.
+def test_public_answer_carries_citation_and_verified_at() -> None:
+    # docs/modules/fta-centre.md requires every material answer - public or member - to carry
+    # its citation and source/effective date. A simpler public explanation is not an uncited
+    # one, so these must be present, not withheld as "evidence".
+    legacy = answer_query("wool")[0]
+    public = answer_query_at_depth("wool", Depth.PUBLIC)[0]
+    assert public.citation == legacy.citation
+    assert public.verified_at == legacy.verified_at
+
+
+def test_public_answer_excludes_internal_only_fields() -> None:
+    # What's actually withheld at PUBLIC: the internal `id`, the raw `source_tier` number, and
+    # drafting `notes` - reviewer-facing detail with no public-facing use. Structural exclusion,
+    # the same discipline NoMatch already uses in this module.
     field_names = {f.name for f in fields(PublicAnswer)}
-    assert "citation" not in field_names
-    assert "verified_at" not in field_names
     assert "id" not in field_names
     assert "notes" not in field_names
     assert "source_tier" not in field_names
+    assert "citation" in field_names
+    assert "verified_at" in field_names
 
 
 def test_public_answer_carries_status_line_and_disclaimer() -> None:
@@ -308,13 +347,14 @@ def test_unconfirmed_entry_suppressed_at_every_depth() -> None:
         assert answer_query_at_depth("tariff line", depth) == []
 
 
-def test_structured_tariff_fields_reach_public_and_internal_answers() -> None:
-    # #185's structured tariff fields are answer content, not evidence - a public reader asking
-    # "what's the tariff on wool" needs the same queryable value a member gets, unlike
-    # citation/verified_at/source_tier which stay evidence-tier only.
-    member = answer_query("wool")[0]
+def test_structured_tariff_fields_reach_every_depth() -> None:
+    # #185's structured tariff fields are answer content, not evidence - every audience gets
+    # the same queryable value.
+    member_legacy = answer_query("wool")[0]
     public = answer_query_at_depth("wool", Depth.PUBLIC)[0]
+    member = answer_query_at_depth("wool", Depth.MEMBER)[0]
     internal = answer_query_at_depth("wool", Depth.INTERNAL)[0]
     for field in ("current_tariff", "fta_commencement_tariff", "final_tariff", "direction"):
-        assert getattr(public, field) == getattr(member, field)
-        assert getattr(internal, field) == getattr(member, field)
+        assert getattr(public, field) == getattr(member_legacy, field)
+        assert getattr(member, field) == getattr(member_legacy, field)
+        assert getattr(internal, field) == getattr(member_legacy, field)
