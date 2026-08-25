@@ -207,7 +207,18 @@ interface RunOut {
  * no agent behind it, which is every run today, since nothing in this UI talks to the
  * orchestrator either. Same "known limitation, not silently broken" treatment as the `run_id` gap
  * on `submitReportForQa` above — not fixed here, since fixing it means deciding how a UI-only run
- * reaches `QA In Progress` at all, which is a bigger question than #336. */
+ * reaches `QA In Progress` at all, which is a bigger question than #336.
+ *
+ * **It runs deeper than the state precondition.** `(QA In Progress, QA Failed)` is itself in
+ * `apps/sip/core/orchestrator.py`'s `_HUMAN_GATED` set (line 72, per #292's own text: "Human-gated,
+ * so `approval_ref` must name a `decision_records` row"). `services/api/persistence.py`'s
+ * `apply_transition` enforces that for real: `approval_ref: null` (what's sent below) is refused
+ * outright by `HumanGateNotSatisfied` before the state check even runs, and a non-null value still
+ * has to resolve to an existing `decision_records` row via `select 1 from decision_records where
+ * id::text = %s`. There is currently no HTTP way to create one — that's the same CEO-decision
+ * endpoint gap `recordCeoDecision` documents below (ADR-0005 follow-up 4). So even fixing the state
+ * precondition above would not be enough on its own: this call needs a real decision record to
+ * point at, and nothing in this API can produce one yet. */
 export async function submitQaResult(
   report: DailyBriefReport,
   checklist: QaChecklistGroup[],
