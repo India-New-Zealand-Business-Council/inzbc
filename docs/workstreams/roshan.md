@@ -41,17 +41,24 @@ the local Postgres verification (114 passed) in the PR body. Worth a standup men
 same branch-level fault hits someone else's PR later; not otherwise unresolved.
 
 ## In review (opened, awaiting merge)
-- [ ] Explainer public/member/internal depth levels (#187, PR #327): `PublicAnswer`/
-  `InternalAnswer` alongside the existing `ExplainerAnswer` (member, unchanged) — a public
-  reader gets the finding, structured tariff fields and next step; a reviewer gets the raw
-  source tier and drafting notes used to approve distribution. Additive only:
-  `answer_query()`/`ExplainerAnswer` untouched, so `services/api/main.py`'s current endpoint
-  keeps working exactly as before; `answer_query_at_depth()` is the new entry point. Wiring a
-  depth parameter into the actual API endpoint is `services/api` — Bhanu's lane, not done here,
-  same build-ahead-of-endpoint pattern #52 established. 48 tests passing (18 new), ruff clean,
-  1032 tests collect repo-wide with no breakage. Mutation-tested the one safety-critical
-  assertion: deliberately leaked `citation` into `PublicAnswer`, confirmed
-  `test_public_answer_excludes_evidence_fields` caught it, reverted.
+- [ ] Explainer public/member/internal depth levels (#187, PR #327, **refs #187, not closes** —
+  `answer_query_at_depth()` has no runtime caller yet, wiring it into `/api/fta/query` is
+  `services/api`, tracked as a follow-up): `PublicAnswer`/`MemberAnswer`/`InternalAnswer`
+  alongside the existing `answer_query()`/`ExplainerAnswer` (untouched, for
+  `services/api/main.py` backward compat). **23 Aug, Bhanu's review round — two real audience
+  boundary bugs, both fixed:** `PublicAnswer` had wrongly dropped `citation`/`verified_at`,
+  treating them as evidence to hold back; `docs/modules/fta-centre.md` requires every material
+  answer, public or not, to carry both, so they're restored — the actual public-tier exclusion
+  is `id`/`source_tier`/`notes` only. The member tier reused `ExplainerAnswer` unchanged, which
+  carries reviewer/drafting `notes` some corpus entries have; added `MemberAnswer`, a distinct
+  type (not a re-export) so `notes` is structurally absent there too. Evidence count corrected:
+  **14 new tests** (21→35 in `test_explainer.py`, 37→51 total `apps/fta`), not the 18 first
+  reported. Mutation-tested both fixes: re-added `notes` to `MemberAnswer` and the
+  citation/verified_at strip to `PublicAnswer` in turn, confirmed each exclusion test caught it,
+  reverted. Replied inline to both of Bhanu's findings, re-requested review. **CI blocked as of
+  24 Aug** — every job failing in 2-4s on "recent account payments have failed or your spending
+  limit needs to be increased" (org GitHub Actions billing, not a code issue) — flagged, not
+  something I can fix; will re-verify CI once billing is resolved.
 
 ## Next up
 - SHARED-OK: SIP-050 relevance/signal/confidence scoring moved to Bhanu's worklog — it runs
@@ -77,17 +84,34 @@ same branch-level fault hits someone else's PR later; not otherwise unresolved.
   mutation-tested. Both PRs `MERGEABLE`, CI green, **awaiting review** — nothing left to build
   until they land. Left open by design: cross-run freshness-counter persistence, written up with
   real tradeoffs in `docs/source-freshness.md` for the team to decide.
-- [ ] FTA content depth and coverage (#186, #187). #187 (public/member/internal depth split) is
-  done — PR #327, above. #186 (cover the ten client-named sectors — wool, wine, seafood, primary
-  industries, tourism, education, defence and security, investment, immigration, sports) is
-  content-sourcing work, not a code change: the corpus today only has verified facts for four
-  goods categories (Agriculture, Cross-sector, Dairy, Infrastructure — the "goods first" scope
-  #219 settled). Adding a sector means sourcing and verifying real MFAT/treaty facts for it
-  first, per BR2 — nothing gets written about a sector until it has a source. Not started; next
-  once a sector's facts are actually sourced.
+- [ ] FTA content depth and coverage (#186, #187). #187 (public/member/internal depth split) —
+  see In review above, PR #327, addressing Bhanu's 23 Aug findings. #186 (cover the ten
+  client-named sectors — wool, wine, seafood, primary industries, tourism, education, defence
+  and security, investment, immigration, sports) is content-sourcing work, not a code change:
+  the corpus today only has verified facts for four goods categories (Agriculture, Cross-sector,
+  Dairy, Infrastructure — the "goods first" scope #219 settled). Adding a sector means sourcing
+  and verifying real MFAT/treaty facts for it first, per BR2 — nothing gets written about a
+  sector until it has a source. Not started; next once a sector's facts are actually sourced.
 - Not committed scope (#193 Comms newsletter/magazine workflow, #194 sector opportunity briefs):
   both issues explicitly say "add only if the client raises its priority" — not picked up
   unless that happens.
+- [ ] Architecture diagrams, **highest priority** (#331, #332, assigned 20 Aug). #331: two
+  sequence diagrams (FTA query flow — the `confirmed` filter and no-match escalation branch,
+  making the "no model call" property explicit; Comms draft-to-approve — the self-approval
+  refusal as a normal outcome, not an error case). #332: a defence-in-depth diagram of the model
+  data boundary — source refusal at the gateway, `minimise()` field allowlisting, policy-driven
+  redaction, the gateway's own fail-closed behaviour, operator procedure as the outermost layer.
+  Both fully scoped with acceptance criteria in their issues; pure documentation, no code risk.
+  Not started.
+- [ ] FTA corpus/collector provenance and measured evidence (#337, assigned 21 Aug). Client
+  feedback was the work "looks like an AI API wrapper with no real backend" — this is proving
+  otherwise: a committed corpus-coverage report (facts per sector, Tier 1 confirmed vs. stale)
+  and a reproducible, measured collector run showing dedupe/malformed-item isolation/mandatory-
+  source gate actually working, with real counts, not descriptions. Not started.
+- [ ] Realistic seed dataset (#338, assigned 22 Aug). Replace the 4-candidate demo seed with a
+  realistic one sourced from the real SIP-185 register, spanning multiple lifecycle states and
+  verification outcomes (including Unverified/Rejected), with duplicates dedupe actually
+  catches — idempotent, replacing the demo seed rather than sitting beside it. Not started.
 
 See Blocked / decisions needed for what's still open before any of this runs live (secrets,
 INZBC sector/disclaimer sign-off).
