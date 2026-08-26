@@ -60,29 +60,32 @@ from datetime import UTC, date, datetime, timedelta
 import psycopg
 from psycopg.rows import dict_row
 
-sys.path.insert(0, str((__import__("pathlib").Path(__file__).resolve().parents[1])))
+sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[1]))
 
-from apps.sip.collector.dedupe import find_duplicate_of  # noqa: E402
-from apps.sip.collector.source_register import ALL_SOURCES, MANDATORY_SOURCES  # noqa: E402
-from apps.sip.collector.verification import enforce_verification_gate  # noqa: E402
-from apps.sip.pipeline.models import (  # noqa: E402
+from apps.sip.collector.dedupe import find_duplicate_of
+from apps.sip.collector.source_register import (
+    ALL_SOURCES,
+    MANDATORY_SOURCES,
+)
+from apps.sip.collector.verification import enforce_verification_gate
+from apps.sip.pipeline.models import (
     RunState,
     SignalStrength,
     SourceConfidence,
     VerificationState,
 )
-from scripts.seed_source_library import main as seed_source_library  # noqa: E402
-from services.api.candidate_persistence import CandidateRepository  # noqa: E402
-from services.api.decisions import (  # noqa: E402
+from scripts.seed_source_library import main as seed_source_library
+from services.api.candidate_persistence import CandidateRepository
+from services.api.decisions import (
     CEO_RULING,
     DISTRIBUTION_AUTHORITY,
     REPORT_APPROVAL,
     DecisionRepository,
     ReportRepository,
 )
-from services.api.persistence import RunRepository  # noqa: E402
-from services.api.source_checks import SourceCheckRepository  # noqa: E402
-from services.api.tests.role_seed import authorise_run, grant, role_id  # noqa: E402
+from services.api.persistence import RunRepository
+from services.api.source_checks import SourceCheckRepository
+from services.api.tests.role_seed import authorise_run, grant, role_id
 
 _TAG = "[SEED]"
 _EMAIL_DOMAIN = "seed.inzbc.test"
