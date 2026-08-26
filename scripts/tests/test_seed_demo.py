@@ -235,3 +235,18 @@ def test_secondary_registers_are_not_empty(_seeded: None, table: str) -> None:
     with _connect() as conn:
         count = conn.execute(f"select count(*) as n from {table}").fetchone()["n"]
     assert count > 0
+
+
+def test_every_run_has_a_distinct_analyst_and_reviewer(_seeded: None) -> None:
+    """`runs` declares `check (analyst_id is null or reviewer_id is null or analyst_id <>
+    reviewer_id)` — read back here to confirm the seed script's direct UPDATE (there is no
+    repository method for these two columns yet) never assigns the same person to both.
+    """
+    with _connect() as conn:
+        rows = conn.execute(
+            "select run_number, analyst_id, reviewer_id from runs "
+            "where run_number like 'RUN-SEED-%'"
+        ).fetchall()
+    assert len(rows) == len(seed_demo.RUN_SPECS)
+    for row in rows:
+        assert row["analyst_id"] != row["reviewer_id"]
