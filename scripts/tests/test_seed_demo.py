@@ -93,3 +93,16 @@ def test_duplicates_are_genuinely_caught_and_merged(_seeded: None) -> None:
     assert len(rows) > 0
     for row in rows:
         assert row["included"] is False
+
+
+def test_verification_mix_includes_unverified_and_rejected(_seeded: None) -> None:
+    """#338 explicitly asks for Unverified and Rejected to appear, not an all-Verified dataset —
+    "a dataset where everything is Verified is not realistic and hides the gates." Checked by
+    reading the actual spread back, not by trusting `_apply_mix`'s pattern was ever reached.
+    """
+    with _connect() as conn:
+        rows = conn.execute(
+            "select distinct verification from candidates where verification is not null"
+        ).fetchall()
+    seen = {row["verification"] for row in rows}
+    assert {"Verified", "Unverified", "Rejected"} <= seen
