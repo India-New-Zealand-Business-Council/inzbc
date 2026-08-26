@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from datetime import date
 
+import scripts.fta_corpus_report as fta_corpus_report
 from apps.fta.corpus import CORPUS
 from scripts.fta_corpus_report import build_report
 
@@ -47,7 +48,9 @@ def test_every_blocked_tier1_source_is_listed() -> None:
     from apps.fta.corpus import TIER_1_SOURCES
 
     blocked = [s for s in TIER_1_SOURCES if s.automated_fetch_blocked]
-    assert blocked, "fixture assumption: at least one Tier 1 source is currently blocked"
+    assert blocked, (
+        "fixture assumption: at least one Tier 1 source is currently blocked"
+    )
 
     report = build_report(date(2026, 8, 25))
     for source in blocked:
@@ -67,3 +70,16 @@ def test_freshness_table_matches_stale_entries_at_each_window() -> None:
         stale = stale_entries(CORPUS, as_of, window)
         ids = ", ".join(f"`{e.id}`" for e in stale) if stale else "none"
         assert f"| {window} | {len(stale)} | {ids} |" in report
+
+
+def test_main_writes_the_report_to_the_configured_path(tmp_path, monkeypatch) -> None:
+    """`main()` actually writes `_OUT`, not just `build_report()`'s return value — the one path
+    the tests above never exercise since they call `build_report()` directly.
+    """
+    target = tmp_path / "fta-corpus-report.md"
+    monkeypatch.setattr(fta_corpus_report, "_OUT", target)
+
+    assert fta_corpus_report.main() == 0
+
+    assert target.exists()
+    assert "Total facts in `CORPUS`" in target.read_text(encoding="utf-8")
