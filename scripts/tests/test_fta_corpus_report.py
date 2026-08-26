@@ -8,8 +8,8 @@ from __future__ import annotations
 
 from datetime import date
 
-import scripts.fta_corpus_report as fta_corpus_report
 from apps.fta.corpus import CORPUS
+from scripts import fta_corpus_report
 from scripts.fta_corpus_report import build_report
 
 
@@ -61,8 +61,8 @@ def test_every_blocked_tier1_source_is_listed() -> None:
 
 
 def test_freshness_table_matches_stale_entries_at_each_window() -> None:
-    from scripts.fta_corpus_report import _ILLUSTRATIVE_WINDOWS_DAYS
     from apps.fta.corpus import stale_entries
+    from scripts.fta_corpus_report import _ILLUSTRATIVE_WINDOWS_DAYS
 
     as_of = date(2026, 8, 25)
     report = build_report(as_of)
