@@ -208,3 +208,18 @@ def test_report_drafted_run_has_a_report_with_no_decision_yet(_seeded: None) -> 
     assert row["ceo_ruling"] is None
     assert row["report_approval"] is None
     assert row["distribution_authority"] is None
+
+
+def test_every_seed_user_can_sign_in_via_dev_session(_seeded: None) -> None:
+    """Every `SEED_USERS` entry has a `github_login` that resolves through
+    `SessionRepository.establish_session` (`services/api/auth.py`) — the same check
+    `scripts/dev_session.py --github-login seed-<key>` performs — so the dataset is actually
+    reachable through a local login, not only visible over a direct database read.
+    """
+    from services.api.auth import SessionRepository
+
+    repo = SessionRepository(DATABASE_URL)
+    for user in seed_demo.SEED_USERS:
+        principal = repo.establish_session(f"seed-{user.key}")
+        assert principal.name == user.name
+        assert set(user.roles) <= principal.roles
