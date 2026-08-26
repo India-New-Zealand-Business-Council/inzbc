@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import type { QaChecklistGroup } from '../domain'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { DailyBriefReport, QaChecklistGroup } from '../domain'
 import { newDraftReportFixture, qaChecklistFixture } from '../lib/fixtures'
 import {
   authoriseDistribution,
@@ -9,6 +9,8 @@ import {
   submitQaResult,
   submitReportForQa,
 } from './reportsStore'
+import { stubReportsFetch } from './reportsStore.testSupport'
+import { clearSession } from './session'
 
 function submittableReport() {
   const report = newDraftReportFixture()
@@ -17,12 +19,29 @@ function submittableReport() {
   return report
 }
 
+// `submitQaResult` now needs the report_version_id `POST /api/reports` would have assigned — a
+// fixture built directly, without going through `submitReportForQa` first, stands one in for it.
+function inProgressReport(overrides: Partial<DailyBriefReport> = {}): DailyBriefReport {
+  return { ...submittableReport(), state: 'QA In Progress', reportVersionId: 'rv-1', ...overrides }
+}
+
 function allPassingChecklist(): QaChecklistGroup[] {
   return qaChecklistFixture().map((group) => ({
     ...group,
     items: group.items.map((item) => ({ ...item, answer: 'pass' as const })),
   }))
 }
+
+// Session/CSRF plumbing needs no stub: vitest.setup.ts seeds a session directly, so getCsrfToken
+// never fetches — only the three real endpoints below (stubReportsFetch) need a response.
+beforeEach(() => {
+  stubReportsFetch()
+})
+
+afterEach(() => {
+  vi.restoreAllMocks()
+  vi.unstubAllGlobals()
+})
 
 describe('submitReportForQa', () => {
   it('transitions Report Drafted -> QA In Progress once the brief is valid', async () => {
@@ -46,6 +65,16 @@ describe('submitReportForQa', () => {
     await expect(promise).rejects.toMatchObject({ name: 'AbortError' })
   })
 
+  it('reports "not signed in" distinctly, rather than a generic unreachable-service message', async () => {
+    clearSession()
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url === '/api/session') return { ok: false, status: 401, json: async () => null } as Response
+      throw new Error(`Unexpected fetch in test: ${url}`)
+    }))
+
+    await expect(submitReportForQa(submittableReport())).rejects.toThrow(/not signed in/i)
+  })
+
   it('only carries signals for the candidates actually selected, not a fixed pair', async () => {
     const report = { ...submittableReport(), selectedCandidateIds: ['cand-3'] } // Medium, non-Critical/High
     const result = await submitReportForQa(report)
@@ -62,46 +91,62 @@ describe('submitReportForQa', () => {
 
 describe('submitQaResult', () => {
   it('passes and moves to Awaiting CEO Decision when every item passes', async () => {
-    const report = { ...submittableReport(), state: 'QA In Progress' as const }
-    const result = await submitQaResult(report, allPassingChecklist(), 'Paras')
+    const result = await submitQaResult(inProgressReport(), allPassingChecklist(), 'Paras', 'Checked all sections.')
     expect(result.state).toBe('Awaiting CEO Decision')
     expect(result.qa?.result).toBe('Pass')
   })
 
   it('fails and moves to QA Failed on any Critical item marked fail', async () => {
-    const report = { ...submittableReport(), state: 'QA In Progress' as const }
     const checklist = allPassingChecklist()
     checklist[0]!.items[1] = { ...checklist[0]!.items[1]!, answer: 'fail' }
-    const result = await submitQaResult(report, checklist, 'Paras')
+    const result = await submitQaResult(inProgressReport(), checklist, 'Paras', 'a2 failed verification.')
     expect(result.state).toBe('QA Failed')
     expect(result.qa?.result).toBe('Fail')
     expect(result.qa?.criticalFailuresFound).not.toBe('')
   })
 
   it('rejects when the reviewer is the run\'s own analyst', async () => {
-    const report = { ...submittableReport(), state: 'QA In Progress' as const, analyst: 'Sunil' }
-    await expect(submitQaResult(report, allPassingChecklist(), 'Sunil')).rejects.toThrow(/cannot be this run/i)
+    const report = inProgressReport({ analyst: 'Sunil' })
+    await expect(
+      submitQaResult(report, allPassingChecklist(), 'Sunil', 'Checked all sections.'),
+    ).rejects.toThrow(/cannot be this run/i)
   })
 
   it('rejects a blank reviewer rather than silently skipping the analyst check', async () => {
-    const report = { ...submittableReport(), state: 'QA In Progress' as const }
-    await expect(submitQaResult(report, allPassingChecklist(), '')).rejects.toThrow(/reviewer is required/i)
-    await expect(submitQaResult(report, allPassingChecklist(), '   ')).rejects.toThrow(/reviewer is required/i)
-  })
-
-  it('rejects an empty checklist rather than treating it as fully passed', async () => {
-    const report = { ...submittableReport(), state: 'QA In Progress' as const }
-    await expect(submitQaResult(report, [], 'Paras')).rejects.toThrow(/checklist is empty/i)
-    await expect(submitQaResult(report, [{ id: 'g', title: 'g', items: [] }], 'Paras')).rejects.toThrow(
-      /checklist is empty/i,
+    const report = inProgressReport()
+    await expect(submitQaResult(report, allPassingChecklist(), '', 'notes')).rejects.toThrow(/reviewer is required/i)
+    await expect(submitQaResult(report, allPassingChecklist(), '   ', 'notes')).rejects.toThrow(
+      /reviewer is required/i,
     )
   })
 
+  it('rejects an empty checklist rather than treating it as fully passed', async () => {
+    const report = inProgressReport()
+    await expect(submitQaResult(report, [], 'Paras', 'notes')).rejects.toThrow(/checklist is empty/i)
+    await expect(
+      submitQaResult(report, [{ id: 'g', title: 'g', items: [] }], 'Paras', 'notes'),
+    ).rejects.toThrow(/checklist is empty/i)
+  })
+
+  it('rejects blank QA notes rather than recording a result with nothing to show for it', async () => {
+    const report = inProgressReport()
+    await expect(submitQaResult(report, allPassingChecklist(), 'Paras', '')).rejects.toThrow(/notes are required/i)
+    await expect(submitQaResult(report, allPassingChecklist(), 'Paras', '   ')).rejects.toThrow(
+      /notes are required/i,
+    )
+  })
+
+  it('rejects when the report has not been submitted yet (no report_version_id)', async () => {
+    const report = inProgressReport({ reportVersionId: null })
+    await expect(
+      submitQaResult(report, allPassingChecklist(), 'Paras', 'Checked all sections.'),
+    ).rejects.toThrow(/has not been submitted/i)
+  })
+
   it('treats N/A on a Critical item as a failure, not a pass', async () => {
-    const report = { ...submittableReport(), state: 'QA In Progress' as const }
     const checklist = allPassingChecklist()
     checklist[0]!.items[1] = { ...checklist[0]!.items[1]!, answer: 'na' } // a2, critical: true
-    const result = await submitQaResult(report, checklist, 'Paras')
+    const result = await submitQaResult(inProgressReport(), checklist, 'Paras', 'a2 not applicable.')
     expect(result.state).toBe('QA Failed')
     expect(result.qa?.result).toBe('Fail')
     expect(result.qa?.criticalFailuresFound).not.toBe('')
@@ -109,7 +154,9 @@ describe('submitQaResult', () => {
 
   it('rejects recording a QA result outside QA In Progress', async () => {
     const report = { ...submittableReport(), state: 'Report Drafted' as const }
-    await expect(submitQaResult(report, allPassingChecklist(), 'Paras')).rejects.toBeInstanceOf(ReportsApiError)
+    await expect(
+      submitQaResult(report, allPassingChecklist(), 'Paras', 'notes'),
+    ).rejects.toBeInstanceOf(ReportsApiError)
   })
 })
 

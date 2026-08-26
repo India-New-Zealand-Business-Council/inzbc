@@ -1,13 +1,24 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as reportsStore from '../api/reportsStore'
+import { stubReportsFetch } from '../api/reportsStore.testSupport'
 import type { DailyBriefReport } from '../domain'
 import { candidatesFixture, generatedDigestContent, newDraftReportFixture } from '../lib/fixtures'
 import { QaReviewScreen } from './QaReviewScreen'
 
-afterEach(() => vi.restoreAllMocks())
+beforeEach(() => stubReportsFetch())
+afterEach(() => {
+  vi.restoreAllMocks()
+  vi.unstubAllGlobals()
+})
+
+/** The section editor and the QA-notes field are both textareas — scope by accessible name so a
+ * query for one doesn't also match the other. */
+const sectionTextbox = (name: RegExp = /^edit content for/i) => screen.getByRole('textbox', { name })
+const queryAllSectionTextboxes = () => screen.queryAllByRole('textbox', { name: /^edit content for/i })
+const notesField = () => screen.getByRole('textbox', { name: /qa notes/i })
 
 async function answerEveryItem(outcome: 'Pass' | 'N/A' = 'Pass') {
   for (const group of screen.getAllByRole('group')) {
@@ -23,6 +34,9 @@ function reportInQa() {
     ...newDraftReportFixture(),
     ...generatedDigestContent(candidatesFixture()),
     state: 'QA In Progress' as const,
+    // submitQaResult now records against a specific report_version_id — a fixture built directly,
+    // without going through submitReportForQa first, stands one in for it.
+    reportVersionId: 'rv-1',
   }
 }
 
@@ -83,23 +97,23 @@ describe('QaReviewScreen', () => {
   it('sections are read-only until Edit is clicked, one section at a time', async () => {
     render(<ControlledQaReview initial={reportInQa()} />)
     const editButtons = screen.getAllByRole('button', { name: 'Edit' })
-    expect(screen.queryAllByRole('textbox')).toHaveLength(0)
+    expect(queryAllSectionTextboxes()).toHaveLength(0)
 
     await userEvent.click(editButtons[0]!)
-    expect(screen.getAllByRole('textbox')).toHaveLength(1)
+    expect(queryAllSectionTextboxes()).toHaveLength(1)
     expect(screen.getByRole('button', { name: 'Done' })).toBeInTheDocument()
 
     // Opening a second section's editor doesn't leave the first one open too.
     const stillEditButtons = screen.getAllByRole('button', { name: 'Edit' })
     await userEvent.click(stillEditButtons[0]!)
-    expect(screen.getAllByRole('textbox')).toHaveLength(1)
+    expect(queryAllSectionTextboxes()).toHaveLength(1)
   })
 
   it('edits section content in place and reports the change via onChange', async () => {
     render(<ControlledQaReview initial={reportInQa()} />)
     await userEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0]!)
 
-    const textarea = screen.getByRole('textbox')
+    const textarea = sectionTextbox()
     await userEvent.clear(textarea)
     await userEvent.type(textarea, 'Corrected section text')
 
@@ -107,7 +121,7 @@ describe('QaReviewScreen', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Done' }))
     expect(screen.getByText('Corrected section text')).toBeInTheDocument()
-    expect(screen.queryAllByRole('textbox')).toHaveLength(0)
+    expect(queryAllSectionTextboxes()).toHaveLength(0)
   })
 
   it('does not mutate the caller-owned report object when editing', async () => {
@@ -116,7 +130,7 @@ describe('QaReviewScreen', () => {
     render(<QaReviewScreen report={initial} onChange={onChange} />)
 
     await userEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0]!)
-    await userEvent.type(screen.getByRole('textbox'), 'x')
+    await userEvent.type(sectionTextbox(), 'x')
 
     expect(onChange).toHaveBeenCalled()
     expect(initial.sections[0]!.content).toBe(generatedDigestContent(candidatesFixture()).sections[0]!.content)
@@ -179,6 +193,7 @@ describe('QaReviewScreen', () => {
   it('records a clean pass and advances the report past this screen toward the CEO decision screen', async () => {
     render(<ControlledQaReview initial={reportInQa()} />)
     await answerEveryItem('Pass')
+    await userEvent.type(notesField(), 'Checked all sections against SIP-188.')
 
     await userEvent.click(screen.getByRole('button', { name: /record qa result/i }))
     expect(await screen.findByRole('status')).toHaveTextContent(/awaiting ceo decision/i)
@@ -187,6 +202,7 @@ describe('QaReviewScreen', () => {
   it('a Critical failure visibly blocks the clean-pass path before submission, not only after', async () => {
     render(<ControlledQaReview initial={reportInQa()} />)
     await answerEveryItem('Pass')
+    await userEvent.type(notesField(), 'a2 failed verification.')
     const criticalGroup = screen.getByRole('group', { name: /approved version set present/i })
     await userEvent.click(within(criticalGroup).getByRole('button', { name: 'Fail' }))
 
@@ -223,6 +239,7 @@ describe('QaReviewScreen', () => {
     vi.spyOn(reportsStore, 'submitQaResult').mockRejectedValue(new Error('network down'))
     render(<ControlledQaReview initial={reportInQa()} />)
     await answerEveryItem('Pass')
+    await userEvent.type(notesField(), 'Checked all sections.')
 
     await userEvent.click(screen.getByRole('button', { name: /record qa result/i }))
 

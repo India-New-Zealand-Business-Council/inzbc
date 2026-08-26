@@ -13,7 +13,7 @@ beforeEach(() => {
   seedSession({
     userId: '00000000-0000-0000-0000-0000000000aa',
     name: 'Test Principal',
-    roles: ['Analyst', 'Reviewer', 'SIP Owner'],
+    roles: ['Analyst', 'Reviewer', 'SIP Owner', 'Secretariat'],
     csrfToken: 'a-real-token',
   })
 })

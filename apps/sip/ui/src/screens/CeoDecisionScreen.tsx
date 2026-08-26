@@ -94,8 +94,10 @@ const DECISION_OPTIONS: { value: ReportDecisionType; label: string; tone: 'appro
  * conditions, owner, evidence reference and next review date the spec requires before it can be
  * submitted. The second, separate action — distribution authorisation — only becomes available
  * after this one is recorded (see the Continue/Continue With Correction branch below and
- * `authoriseDistribution` in reportsStore.ts) and is wired in a later commit; it deliberately has
- * no path back into this same submit.
+ * `authoriseDistribution` in reportsStore.ts). Both this screen's decision and that one stay
+ * fixture-backed — no HTTP route is mounted for either, pending ADR-0005's client decision on
+ * who may approve what (see reportsStore.ts's doc comment on `recordCeoDecision`) — and this
+ * submit deliberately has no path back into it either way.
  *
  * Unlike QaReviewScreen, this screen has no role gate at all — anyone with a report in
  * `Awaiting CEO Decision` can record its decision, regardless of who they are. QaReviewScreen's
