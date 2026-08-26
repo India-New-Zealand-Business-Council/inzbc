@@ -54,3 +54,26 @@ def test_every_run_reaches_its_target_state(_seeded: None) -> None:
     assert len(states_by_number) == len(seed_demo.RUN_SPECS)
     for spec in seed_demo.RUN_SPECS:
         assert states_by_number[spec.number] == spec.target_state.value
+
+
+def test_main_is_idempotent_on_rerun(_seeded: None) -> None:
+    """Rerunning `main()` against an already-seeded database changes nothing — the module
+    docstring's "rerunning is safe, not additive" claim, proven rather than asserted. This is the
+    one test that calls `main()` a second time on purpose; every other test relies on `_seeded`
+    running it exactly once.
+    """
+    with _connect() as conn:
+        before = {
+            table: conn.execute(f"select count(*) as n from {table}").fetchone()["n"]
+            for table in ("runs", "candidates", "source_checks", "report_versions",
+                           "decision_records", "users")
+        }
+
+    assert seed_demo.main() == 0
+
+    with _connect() as conn:
+        after = {
+            table: conn.execute(f"select count(*) as n from {table}").fetchone()["n"]
+            for table in before
+        }
+    assert after == before
