@@ -63,4 +63,4 @@ include = ["apps*", "services*"]
 # Test discovery previously worked only by accident of layout (rootdir insertion plus
 # __init__.py in every directory). Stating it makes a bare `pytest` behave like CI.
 [tool.pytest.ini_options]
-testpaths = ["apps", "services"]
+testpaths = ["apps", "services", "scripts"]
