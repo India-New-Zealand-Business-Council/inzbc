@@ -1,6 +1,11 @@
 /**
  * The session, and the CSRF token every write needs.
  *
+ * Duplicated from `apps/comms/ui/src/api/session.ts` rather than shared. There is no shared
+ * frontend package here and each app owns its own `src/api/`, so introducing one for two copies
+ * of ninety lines would be a bigger change than the problem. Worth revisiting when a third app
+ * needs it, or when either copy has to change.
+ *
  * `services/api/session.py`'s `write_access` requires an `X-CSRF-Token` header on every
  * state-changing request and answers 403 without it. `SameSite=Lax` alone still permits a
  * top-level cross-site POST, which is the shape of a form-submission CSRF, so the token is the
@@ -10,10 +15,6 @@
  * The token is read from `GET /api/session`, which requires the cookie. Reading it that way is
  * what makes double-submit work: an attacker who can make the browser send the cookie still
  * cannot read the response to a same-origin request, so they cannot learn the token.
- *
- * Same module as apps/comms/ui/src/api/session.ts, not a second implementation — issue #336 is
- * explicit that this is the one proven pattern for an authenticated write in this repo, and to
- * follow it rather than invent a variant.
  */
 
 export interface Session {
@@ -47,9 +48,9 @@ export function clearSession(): void {
  * everything this module would fetch. Handing it over avoids a second identical request on the
  * first write, and means the token the UI renders against is the token it writes with.
  *
- * Also what a component test uses: a test about a submit button should not have to know that the
- * client fetches a session first, and mocking a second endpoint in every such test is how a suite
- * ends up asserting the plumbing rather than the behaviour.
+ * Also what a component test uses: a test about a draft button should not have to know that the
+ * client fetches a session first, and mocking a second endpoint in every such test is how a
+ * suite ends up asserting the plumbing rather than the behaviour.
  */
 export function seedSession(session: Session): void {
   inFlight = Promise.resolve(session)

@@ -56,6 +56,9 @@ describe('getSession', () => {
   })
 
   it('fetches once however many callers ask', async () => {
+    // Caching the promise rather than the value is what makes this hold. Caching the value would
+    // leave a window where a second caller starts a second request because the first has not
+    // resolved yet, which is the common case when a screen fires two writes at once.
     const fetchMock = vi.fn(async () => jsonResponse(VALID_BODY))
     vi.stubGlobal('fetch', fetchMock)
 
@@ -65,6 +68,8 @@ describe('getSession', () => {
   })
 
   it('throws NotSignedInError on 401, distinctly from other failures', async () => {
+    // Signing in fixes one of these and not the other, so a caller has to be able to tell them
+    // apart to say anything useful.
     vi.stubGlobal('fetch', vi.fn(async () => jsonResponse(null, 401)))
 
     await expect(getSession()).rejects.toBeInstanceOf(NotSignedInError)
@@ -77,6 +82,8 @@ describe('getSession', () => {
   })
 
   it('does not cache a failure', async () => {
+    // An early failure would otherwise poison every write for the life of the page. This is the
+    // difference between a transient blip and a session that never recovers without a reload.
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(jsonResponse(null, 503))
@@ -95,6 +102,8 @@ describe('getSession', () => {
     ['not an object', 'a string'],
     ['null', null],
   ])('refuses a malformed session body: %s', async (_label, body) => {
+    // An empty token would build a request the server refuses in `compare_digest`, for a reason
+    // the caller cannot see. Failing here says what actually happened.
     vi.stubGlobal('fetch', vi.fn(async () => jsonResponse(body)))
 
     await expect(getSession()).rejects.toBeInstanceOf(SessionUnavailableError)
