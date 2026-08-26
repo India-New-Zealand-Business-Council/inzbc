@@ -74,3 +74,4 @@ board-before-*.json
 
 # Scratch space for one-off analysis and rendering. Working files, not project state.
 .tmp/
+.gstack/
