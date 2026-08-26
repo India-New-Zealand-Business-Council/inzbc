@@ -192,3 +192,19 @@ def test_only_the_distributed_run_is_authorised_to_distribute(_seeded: None) -> 
     for run_number in ("RUN-SEED-07", "RUN-SEED-08", "RUN-SEED-10"):
         assert by_run[run_number] == "Not Authorised"
 
+
+def test_report_drafted_run_has_a_report_with_no_decision_yet(_seeded: None) -> None:
+    """RUN-SEED-06 (Report Drafted) has a submitted report version whose three decision streams
+    are open but undecided — `current_report_decisions.ceo_ruling` etc. are null, the "submitted,
+    undecided" state distinct from no report existing at all, per the module docstring.
+    """
+    with _connect() as conn:
+        row = conn.execute(
+            "select d.ceo_ruling, d.report_approval, d.distribution_authority "
+            "from current_report_decisions d join runs r on r.id = d.run_id "
+            "where r.run_number = 'RUN-SEED-06'"
+        ).fetchone()
+    assert row is not None
+    assert row["ceo_ruling"] is None
+    assert row["report_approval"] is None
+    assert row["distribution_authority"] is None
