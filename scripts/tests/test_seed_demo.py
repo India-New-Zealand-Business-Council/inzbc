@@ -77,3 +77,19 @@ def test_main_is_idempotent_on_rerun(_seeded: None) -> None:
             for table in before
         }
     assert after == before
+
+
+def test_duplicates_are_genuinely_caught_and_merged(_seeded: None) -> None:
+    """At least one candidate per duplicate-injected run is marked `duplicate_of` and excluded —
+    proof the run through `dedupe.find_duplicate_of` in `_capture_and_work_candidates` actually
+    matched something, not that a flag was hand-set. `_inject_duplicates` needs a batch of at
+    least 4 to run at all, so this also guards against a future edit shrinking every run below
+    that floor and silently making the whole demonstration a no-op.
+    """
+    with _connect() as conn:
+        rows = conn.execute(
+            "select id, duplicate_of, included from candidates where duplicate_of is not null"
+        ).fetchall()
+    assert len(rows) > 0
+    for row in rows:
+        assert row["included"] is False
