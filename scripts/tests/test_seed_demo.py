@@ -38,3 +38,19 @@ def _connect() -> psycopg.Connection:
 def _seeded() -> None:
     """Runs the seed script once for the whole test session."""
     assert seed_demo.main() == 0
+
+
+def test_every_run_reaches_its_target_state(_seeded: None) -> None:
+    """Every RunSpec's `target_state` is a real, reachable end state — not a stale label — proven
+    by reading `runs.state` back after `main()` drove each one through `RunRepository
+    .apply_transition`, the same legality- and gate-checked path `services/api/persistence.py`
+    enforces everywhere else.
+    """
+    with _connect() as conn:
+        rows = conn.execute(
+            "select run_number, state from runs where run_number like 'RUN-SEED-%'"
+        ).fetchall()
+    states_by_number = {row["run_number"]: row["state"] for row in rows}
+    assert len(states_by_number) == len(seed_demo.RUN_SPECS)
+    for spec in seed_demo.RUN_SPECS:
+        assert states_by_number[spec.number] == spec.target_state.value
