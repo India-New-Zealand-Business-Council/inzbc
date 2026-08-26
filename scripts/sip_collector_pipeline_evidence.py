@@ -22,7 +22,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from apps.sip.collector.dedupe import find_duplicate_of  # noqa: E402
+from apps.sip.collector.dedupe import find_duplicate_of, normalize_url  # noqa: E402
 from apps.sip.collector.ingest import ingest_articles  # noqa: E402
 from apps.sip.collector.source_register import (  # noqa: E402
     MANDATORY_SOURCES,
@@ -132,7 +132,7 @@ def _dedupe_section() -> tuple[list[str], int]:
             match = next(c for c in _ALREADY_CAPTURED if c["id"] == duplicate_id)
             matched_by = (
                 "url"
-                if article.get("url", "").strip().lower().rstrip("/") == match["url"]
+                if normalize_url(article.get("url")) == normalize_url(match["url"])
                 else "headline"
             )
             lines.append(f"| {article['title']!r} | `{duplicate_id}` | {matched_by} |")
