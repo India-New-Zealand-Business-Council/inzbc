@@ -106,3 +106,24 @@ def test_verification_mix_includes_unverified_and_rejected(_seeded: None) -> Non
         ).fetchall()
     seen = {row["verification"] for row in rows}
     assert {"Verified", "Unverified", "Rejected"} <= seen
+
+
+def test_candidate_sod_exception_is_recorded_and_used(_seeded: None) -> None:
+    """The one deliberate self-verification exception (#338's "separation of duties must
+    survive") exists, was approved by someone other than the person it exempts, and the
+    candidate it covers actually carries a verification recorded under it — not just an orphaned
+    exception row nothing points back to.
+    """
+    with _connect() as conn:
+        exception = conn.execute(
+            "select id, candidate_id, actor_id, approved_by from candidate_sod_exceptions"
+        ).fetchone()
+        assert exception is not None
+        assert exception["approved_by"] != exception["actor_id"]
+
+        candidate = conn.execute(
+            "select verified_by, verification from candidates where id = %s",
+            (exception["candidate_id"],),
+        ).fetchone()
+        assert candidate["verified_by"] == exception["actor_id"]
+        assert candidate["verification"] == "Verified"
