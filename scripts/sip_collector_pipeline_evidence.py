@@ -22,9 +22,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from apps.sip.collector.dedupe import find_duplicate_of, normalize_url  # noqa: E402
-from apps.sip.collector.ingest import ingest_articles  # noqa: E402
-from apps.sip.collector.source_register import (  # noqa: E402
+from apps.sip.collector.dedupe import find_duplicate_of, normalize_url
+from apps.sip.collector.ingest import ingest_articles
+from apps.sip.collector.source_register import (
     MANDATORY_SOURCES,
     missing_mandatory_outcomes,
 )
