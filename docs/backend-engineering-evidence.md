@@ -30,13 +30,13 @@ removed entirely.
 ## What the backend actually contains
 
 ```
-grep -rhoE '@(router|app)\.(get|post|put|patch|delete)' services/api/*.py | wc -l
+grep -rhoE '@[a-zA-Z_]*router\.(get|post|patch|put|delete)\(' services/api --include=*.py | grep -v test | wc -l
 grep -cE '^create table' database/schema.sql
 ```
 
 | Primitive | Count |
 |---|---|
-| REST routes | 34, across 12 routers |
+| REST routes | 51, across 13 routers |
 | Database tables | 25 |
 | Foreign-key columns | 39 (52 `references` occurrences, including table-level constraints) |
 | Indexes | 54 (3 explicit + 48 implicit from PK/UNIQUE constraints + 3 added by #334) |
@@ -45,8 +45,14 @@ grep -cE '^create table' database/schema.sql
 | Triggers | 15 |
 | Stored functions | 2 |
 | SQL schema lines | 701 |
-| Python tests | 1,025 passing, 0 skipped |
-| CI jobs gating every merge | 9 |
+| Python tests | 1,047 passing, 0 skipped |
+| CI jobs defined to gate every merge | 9 (none have run since 24 August, see below) |
+
+An earlier version of this table said 34 routes across 12 routers. That count used a
+narrower grep matching only decorators literally named `@router.`, which missed the three
+routers `registers.py` defines under other names (`action_register_router`,
+`watch_list_router`, `exceptions_router`). 13 routers is confirmed independently by the 13
+`app.include_router(...)` calls in `services/api/main.py`.
 
 Engineering that is not model work, with the file that implements it:
 
@@ -71,6 +77,13 @@ Engineering that is not model work, with the file that implements it:
 - **Contract-first API** — OpenAPI generated from the code, TypeScript client generated from that,
   and a CI job that fails the build when the two drift. `schemas/openapi.json`
 - **Rate limiting, security headers, CORS deny-by-default** — `services/api/hardening.py`
+
+**CI has not run since 24 August 2026.** Every job on every branch fails at startup with no
+steps executed, including Dependabot's, while `.github/workflows/ci.yml` has not changed
+since 13 August and runs were green through 23 August. That points at an Actions quota or
+org policy cutoff rather than anything in this repository. Until it is restored, the nine
+jobs are defined but are not gating anything, and the figures above rest on
+`.claude/verify.local.sh` run locally against a real Postgres.
 
 ## The strongest single counter-example
 
