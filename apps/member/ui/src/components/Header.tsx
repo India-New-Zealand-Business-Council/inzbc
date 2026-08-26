@@ -1,12 +1,9 @@
-import inzbcLogoAcronymWhite from '../assets/inzbc-logo-acronym-white.svg'
-import { Container } from './Container'
+import { ArrowUpRight } from 'lucide-react'
 
-// Navy background + white text per INZBC Brand Guidelines 2026 v1.0 (Colour Palette, p.16) — same
-// treatment as apps/comms/ui, apps/sip/ui and apps/fta/ui's headers. Logo: the acronym lockup,
-// white variant, sourced from Drive (Brand/Logo Files/Export/SVG - Vector/
-// INZBC_Logo_Acronym_White.svg), not fabricated — the guide (p.8) recommends it "at small scales,
-// where 'India New Zealand Business Council' might become illegible," exactly this header's use
-// case.
+// Floating glass-pill header, matching the live inzview build
+// (India-New-Zealand-Business-Council/inzview, src/components/inzbc/motion.tsx's StickyHeader) —
+// same treatment as apps/fta/ui's and apps/comms/ui's Header.tsx. The four section anchors take
+// inzview's centre nav-link slot; Member Login takes its "Join INZBC" CTA slot.
 //
 // "Member Login" links out to Member Jungle rather than rendering a login form: the portal login
 // mechanism is undecided (docs/modules/member-portal-spec.md — SSO vs. a separate Member Jungle
@@ -17,6 +14,8 @@ import { Container } from './Container'
 // pattern the rest of this shell follows, not a stand-in for a decision nobody has made.
 const MEMBER_JUNGLE_URL = 'https://inzbc.memberjungle.club'
 
+const LOGO_URL = 'https://static.wixstatic.com/media/df219d_0b8e6333d53841efaf66f675038a0798~mv2.jpg'
+
 const SECTION_LINKS = [
   { href: '#notifications', label: 'Notifications' },
   { href: '#membership', label: 'Membership' },
@@ -26,61 +25,53 @@ const SECTION_LINKS = [
 
 export function Header() {
   return (
-    <header className="bg-inzbc-navy text-white">
+    <header className="pointer-events-none fixed inset-x-0 top-0 z-50 p-4 sm:p-5">
       <a
         href="#main-content"
-        className="sr-only focus-visible:not-sr-only focus-visible:absolute focus-visible:left-4 focus-visible:top-4 focus-visible:z-50 focus-visible:rounded-md focus-visible:bg-white focus-visible:px-3 focus-visible:py-2 focus-visible:text-inzbc-navy"
+        className="sr-only focus-visible:not-sr-only focus-visible:pointer-events-auto focus-visible:absolute focus-visible:left-4 focus-visible:top-4 focus-visible:z-50 focus-visible:rounded-md focus-visible:bg-white focus-visible:px-3 focus-visible:py-2 focus-visible:text-inzbc-ink"
       >
         Skip to main content
       </a>
-      <Container className="py-4">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex min-w-0 items-center gap-2">
-            <a
-              href="/"
-              className="shrink-0 rounded-sm transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-lavender"
-            >
-              {/* Guide, p.11: acronym logo minimum size is 8mm / 25px wide — h-6 (24px tall)
-                  renders this ~81px wide at its native aspect ratio, comfortably above that
-                  floor. */}
-              <img src={inzbcLogoAcronymWhite} alt="INZBC" className="h-6 w-auto" />
-            </a>
-            <span aria-hidden="true" className="h-4 w-px shrink-0 bg-white/30" />
-            <span className="truncate text-sm font-medium text-white">Member Portal</span>
-          </div>
-          {/* Tangerine CTA per docs/design-decisions.md: reserved as the accent colour for
-              primary actions. Navy text on Tangerine is 5.56:1 (AA pass) — white text on
-              Tangerine is only 3.37:1 and fails, the exact bug fixed in PR #162; don't repeat it. */}
+      <div className="pointer-events-auto relative mx-auto flex w-full max-w-7xl min-h-[64px] items-center justify-between gap-4 rounded-[1.2rem] border border-white/60 bg-white/80 px-4 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.78),0_18px_60px_rgba(9,3,24,0.14)] backdrop-blur-2xl backdrop-saturate-150">
+        <div className="flex shrink-0 items-center gap-2">
           <a
-            href={MEMBER_JUNGLE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="shrink-0 rounded-sm bg-inzbc-tangerine px-3 py-1.5 text-sm font-medium text-inzbc-navy transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-lavender"
+            href="/"
+            className="inline-flex min-h-11 items-center rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-lime"
           >
-            Member Login
+            <img src={LOGO_URL} alt="INZBC" className="h-auto w-[clamp(120px,16vw,150px)]" />
           </a>
+          <span aria-hidden="true" className="h-4 w-px bg-inzbc-ink/20" />
+          <span className="hidden text-sm font-medium text-inzbc-ink sm:inline">Member Portal</span>
         </div>
-      </Container>
-      {/* Horizontally scrollable, not wrapped: four section links plus the logo/CTA row above
-          would overflow a 320px viewport if laid out in one row (the failure mode this whole
-          commit exists to fix) — same overflow-x-auto tab-strip pattern as
-          apps/sip/ui/src/components/AppShell.tsx uses for its (longer) screen switcher. Same
-          max-w-7xl/padding as Container by hand, not the component itself: Container renders a
-          <div>, and this needs to be the <nav> element for its own aria-label. */}
-      <nav aria-label="Primary" className="mx-auto max-w-7xl overflow-x-auto px-4 pb-3 sm:px-6 lg:px-8">
-        <ul className="flex gap-4">
-          {SECTION_LINKS.map((link) => (
-            <li key={link.href}>
-              <a
-                href={link.href}
-                className="whitespace-nowrap rounded-sm text-sm font-medium text-white/80 transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-lavender"
-              >
-                {link.label}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </nav>
+        <nav aria-label="Primary" className="overflow-x-auto">
+          <ul className="flex gap-1">
+            {SECTION_LINKS.map((link) => (
+              <li key={link.href}>
+                <a
+                  href={link.href}
+                  className="inline-flex min-h-11 items-center whitespace-nowrap rounded-md px-3 text-sm font-medium text-inzbc-ink/70 transition-colors hover:text-inzbc-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-lime"
+                >
+                  {link.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        {/* Lime CTA, matching inzview's own bg-lime/text-navy button convention (Sections.tsx,
+            InnerPage.tsx) rather than the Brand Guidelines' Tangerine accent this used to be.
+            Navy text on Lime is a comfortable AA pass, same reasoning as the Tangerine version
+            this replaces (docs/design-decisions.md; the white-on-Tangerine failure from PR #162
+            doesn't recur here since text stays navy). */}
+        <a
+          href={MEMBER_JUNGLE_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full bg-inzbc-lime px-4 py-2.5 text-sm font-semibold text-inzbc-navy transition-transform active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-lime"
+        >
+          Member Login
+          <ArrowUpRight aria-hidden="true" size={16} />
+        </a>
+      </div>
     </header>
   )
 }

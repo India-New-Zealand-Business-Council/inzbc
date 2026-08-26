@@ -10,8 +10,10 @@ export function App() {
     // layout, same as apps/comms/ui and apps/sip/ui.
     <div className="flex min-h-screen flex-col">
       <Header />
-      <main id="main-content" className="flex-1 bg-slate-50">
-        <div className="mx-auto max-w-2xl px-4 py-6 sm:py-8">
+      {/* pt-24/pt-28 clears the fixed floating header (Header.tsx) — it no longer sits in
+          normal flow, so the page has to make its own room for it. */}
+      <main id="main-content" className="flex-1 bg-slate-50 pt-24 sm:pt-28">
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:py-8">
           {/* font-family/uppercase come from the h1 rule in index.css's @layer base; weight is
               bumped to Extrabold here since this is the single most prominent heading on the
               page — same treatment as apps/comms/ui's App.tsx. */}
