@@ -6,6 +6,7 @@ import { BriefBuilderScreen } from '../screens/BriefBuilderScreen'
 import { CeoDecisionScreen } from '../screens/CeoDecisionScreen'
 import { DistributionStatusScreen } from '../screens/DistributionStatusScreen'
 import { QaReviewScreen } from '../screens/QaReviewScreen'
+import { RunsCandidatesScreen } from '../screens/RunsCandidatesScreen'
 import { SCREENS, type ScreenId } from '../types'
 import { Footer } from './Footer'
 
@@ -80,6 +81,7 @@ export function AppShell() {
         {screen === 'qa-review' ? <QaReviewScreen report={report} onChange={setReport} /> : null}
         {screen === 'ceo-decision' ? <CeoDecisionScreen report={report} onChange={setReport} /> : null}
         {screen === 'distribution-status' ? <DistributionStatusScreen report={report} /> : null}
+        {screen === 'runs-candidates' ? <RunsCandidatesScreen /> : null}
       </main>
       <Footer />
     </div>

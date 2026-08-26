@@ -184,10 +184,10 @@ jobs:
           uv run pnpm run codegen
           # --porcelain, not `git diff`: it reports untracked files too, so a generated artifact
           # that was never committed still fails the check instead of passing silently.
-          if [ -n "$(git status --porcelain -- schemas/openapi.json apps/fta/ui/src/api/schema.ts apps/dashboard/ui/src/api/schema.ts)" ]; then
+          if [ -n "$(git status --porcelain -- schemas/openapi.json apps/fta/ui/src/api/schema.ts apps/sip/ui/src/api/schema.ts apps/dashboard/ui/src/api/schema.ts)" ]; then
             echo "::error::Generated types are stale — run 'pnpm run codegen' and commit the result."
-            git --no-pager diff -- schemas/openapi.json apps/fta/ui/src/api/schema.ts apps/dashboard/ui/src/api/schema.ts
-            git status --porcelain -- schemas/openapi.json apps/fta/ui/src/api/schema.ts apps/dashboard/ui/src/api/schema.ts
+            git --no-pager diff -- schemas/openapi.json apps/fta/ui/src/api/schema.ts apps/sip/ui/src/api/schema.ts apps/dashboard/ui/src/api/schema.ts
+            git status --porcelain -- schemas/openapi.json apps/fta/ui/src/api/schema.ts apps/sip/ui/src/api/schema.ts apps/dashboard/ui/src/api/schema.ts
             exit 1
           fi
       - name: Lint
