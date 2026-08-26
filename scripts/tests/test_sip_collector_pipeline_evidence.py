@@ -6,6 +6,7 @@ data (dedupe.py, ingest.py and source_register.py's pure logic, no live client, 
 
 from __future__ import annotations
 
+import scripts.sip_collector_pipeline_evidence as sip_evidence
 from apps.sip.collector.dedupe import find_duplicate_of
 from apps.sip.collector.ingest import ingest_articles
 from scripts.sip_collector_pipeline_evidence import (
@@ -75,3 +76,12 @@ def test_build_report_contains_all_three_sections() -> None:
     gate_idx = report.index("## 3. Mandatory-source coverage gate")
     assert dedupe_idx < ingest_idx < gate_idx
 
+
+def test_main_writes_the_report_to_the_configured_path(tmp_path, monkeypatch) -> None:
+    target = tmp_path / "sip-collector-pipeline-evidence.md"
+    monkeypatch.setattr(sip_evidence, "_OUT", target)
+
+    assert sip_evidence.main() == 0
+
+    assert target.exists()
+    assert "SIP collector pipeline evidence" in target.read_text(encoding="utf-8")
