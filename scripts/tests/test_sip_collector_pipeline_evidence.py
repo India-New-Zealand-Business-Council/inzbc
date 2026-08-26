@@ -13,6 +13,7 @@ from scripts.sip_collector_pipeline_evidence import (
     _INCOMING_BATCH,
     _RUN_ID,
     _FakeClient,
+    build_report,
 )
 
 
@@ -62,3 +63,15 @@ def test_mandatory_source_gate_reports_the_uncovered_set_not_a_fixed_total() -> 
     still_missing = missing_mandatory_outcomes(covered)
     assert len(still_missing) == len(MANDATORY_SOURCES) - 3
     assert not covered & set(still_missing)
+
+
+def test_build_report_contains_all_three_sections() -> None:
+    """`build_report()` combines all three sections without error and in order — a smoke test
+    that would catch one section's function raising or the assembly order changing.
+    """
+    report = build_report()
+    dedupe_idx = report.index("## 1. Cross-run duplicate detection")
+    ingest_idx = report.index("## 2. Per-item isolation on a malformed article")
+    gate_idx = report.index("## 3. Mandatory-source coverage gate")
+    assert dedupe_idx < ingest_idx < gate_idx
+
