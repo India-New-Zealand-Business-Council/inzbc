@@ -44,3 +44,21 @@ def test_malformed_item_fails_in_isolation_without_stopping_the_batch() -> None:
     assert len(result.created) == well_formed
     assert len(result.failed) == 1
     assert "title" in result.failed[0].error
+
+
+def test_mandatory_source_gate_reports_the_uncovered_set_not_a_fixed_total() -> None:
+    """`missing_mandatory_outcomes` with zero outcomes recorded returns every mandatory source;
+    with the first three covered, it returns exactly three fewer — proof it reports the
+    *uncovered* set rather than a count that happens to look right at zero.
+    """
+    from apps.sip.collector.source_register import (
+        MANDATORY_SOURCES,
+        missing_mandatory_outcomes,
+    )
+
+    assert len(missing_mandatory_outcomes(set())) == len(MANDATORY_SOURCES)
+
+    covered = {s.source_id for s in MANDATORY_SOURCES[:3]}
+    still_missing = missing_mandatory_outcomes(covered)
+    assert len(still_missing) == len(MANDATORY_SOURCES) - 3
+    assert not covered & set(still_missing)
