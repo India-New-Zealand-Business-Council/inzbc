@@ -148,3 +148,29 @@ def test_one_run_leaves_mandatory_sources_uncovered(_seeded: None) -> None:
         ).fetchall()
     missing = missing_mandatory_outcomes({row["sip185_code"] for row in recorded})
     assert len(missing) > 0
+
+
+@pytest.mark.parametrize(
+    ("run_number", "expected_ceo_ruling"),
+    [
+        ("RUN-SEED-07", "Continue With Correction"),
+        ("RUN-SEED-08", "Pause"),
+        ("RUN-SEED-09", "Continue"),
+        ("RUN-SEED-10", "Stop"),
+    ],
+)
+def test_decided_runs_carry_the_right_ceo_ruling(
+    _seeded: None, run_number: str, expected_ceo_ruling: str
+) -> None:
+    """Each of the four runs that reach a report-decided state carries a `CEO Ruling` decision
+    record with the value that state implies — read via `current_report_decisions`, the schema's
+    own "one authoritative combined read" view, rather than joining the decision tables by hand.
+    """
+    with _connect() as conn:
+        row = conn.execute(
+            "select d.ceo_ruling from current_report_decisions d "
+            "join runs r on r.id = d.run_id where r.run_number = %s",
+            (run_number,),
+        ).fetchone()
+    assert row is not None
+    assert row["ceo_ruling"] == expected_ceo_ruling
