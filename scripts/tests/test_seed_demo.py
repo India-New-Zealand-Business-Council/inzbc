@@ -174,3 +174,21 @@ def test_decided_runs_carry_the_right_ceo_ruling(
         ).fetchone()
     assert row is not None
     assert row["ceo_ruling"] == expected_ceo_ruling
+
+
+def test_only_the_distributed_run_is_authorised_to_distribute(_seeded: None) -> None:
+    """Only RUN-SEED-09 (Distributed) carries `Distribution Authority: Authorised` — the other
+    three decided runs (QA Failed, Paused, Stopped) all recorded `Not Authorised`, so a reader
+    can't mistake "a Distribution Authority decision exists" for "this run was cleared to send."
+    """
+    with _connect() as conn:
+        rows = conn.execute(
+            "select r.run_number, d.distribution_authority from current_report_decisions d "
+            "join runs r on r.id = d.run_id where r.run_number like 'RUN-SEED-%' "
+            "order by r.run_number"
+        ).fetchall()
+    by_run = {row["run_number"]: row["distribution_authority"] for row in rows}
+    assert by_run["RUN-SEED-09"] == "Authorised"
+    for run_number in ("RUN-SEED-07", "RUN-SEED-08", "RUN-SEED-10"):
+        assert by_run[run_number] == "Not Authorised"
+
