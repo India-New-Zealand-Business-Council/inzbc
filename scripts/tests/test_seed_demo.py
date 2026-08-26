@@ -223,3 +223,15 @@ def test_every_seed_user_can_sign_in_via_dev_session(_seeded: None) -> None:
         principal = repo.establish_session(f"seed-{user.key}")
         assert principal.name == user.name
         assert set(user.roles) <= principal.roles
+
+
+@pytest.mark.parametrize(
+    "table", ["action_register", "watch_lists", "exceptions", "comms_drafts", "approved_facts"]
+)
+def test_secondary_registers_are_not_empty(_seeded: None, table: str) -> None:
+    """The dashboard and comms UI read these tables too — #338's "no empty screens" criterion
+    covers all five UIs, not just the SIP run/candidate screens.
+    """
+    with _connect() as conn:
+        count = conn.execute(f"select count(*) as n from {table}").fetchone()["n"]
+    assert count > 0
