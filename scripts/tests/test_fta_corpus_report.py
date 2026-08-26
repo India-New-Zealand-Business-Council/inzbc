@@ -27,3 +27,17 @@ def test_confirmed_and_tier1_counts_match_corpus() -> None:
         f"({len(CORPUS) - len(confirmed)} not confirmed)"
     ) in report
     assert f"Confirmed and Tier 1 sourced: **{len(tier1_confirmed)}**" in report
+
+
+def test_sector_table_matches_corpus_per_sector() -> None:
+    from apps.fta.corpus import SECTORS_IN_SCOPE
+
+    report = build_report(date(2026, 8, 25))
+    for sector in SECTORS_IN_SCOPE:
+        sector_entries = [e for e in CORPUS if e.sector == sector]
+        sector_confirmed = [e for e in sector_entries if e.confirmed]
+        sector_tier1 = [e for e in sector_confirmed if e.source_tier == 1]
+        assert (
+            f"| {sector} | {len(sector_entries)} | {len(sector_confirmed)} | "
+            f"{len(sector_tier1)} |"
+        ) in report
