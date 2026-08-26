@@ -250,3 +250,16 @@ def test_every_run_has_a_distinct_analyst_and_reviewer(_seeded: None) -> None:
     assert len(rows) == len(seed_demo.RUN_SPECS)
     for row in rows:
         assert row["analyst_id"] != row["reviewer_id"]
+
+
+def test_qa_failed_run_has_a_failed_qa_status_with_a_critical(_seeded: None) -> None:
+    """RUN-SEED-07's `record_qa` call passed `result="Fail", critical_failures=1` —
+    `ReportRepository.record_qa` (services/api/decisions.py) refuses a Pass with any Critical
+    failure, so a Fail landing here is the only value that call could have produced, and this
+    confirms it actually reached `runs.qa_status` rather than erroring silently.
+    """
+    with _connect() as conn:
+        row = conn.execute(
+            "select qa_status from runs where run_number = 'RUN-SEED-07'"
+        ).fetchone()
+    assert row["qa_status"] == "Failed"
