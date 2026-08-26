@@ -127,3 +127,24 @@ def test_candidate_sod_exception_is_recorded_and_used(_seeded: None) -> None:
         ).fetchone()
         assert candidate["verified_by"] == exception["actor_id"]
         assert candidate["verification"] == "Verified"
+
+
+def test_one_run_leaves_mandatory_sources_uncovered(_seeded: None) -> None:
+    """RUN-SEED-05 is spec'd `full_source_coverage=False` so #338's coverage gate has something
+    real to report — checked here against `missing_mandatory_outcomes()`, the actual production
+    function (`apps/sip/collector/source_register.py`), not a hand-rolled count.
+    """
+    from apps.sip.collector.source_register import missing_mandatory_outcomes
+
+    with _connect() as conn:
+        run = conn.execute(
+            "select id from runs where run_number = 'RUN-SEED-05'"
+        ).fetchone()
+        recorded = conn.execute(
+            "select sl.sip185_code from source_checks sc "
+            "join source_library sl on sl.id = sc.source_id "
+            "where sc.run_id = %s and sl.sip185_code is not null",
+            (run["id"],),
+        ).fetchall()
+    missing = missing_mandatory_outcomes({row["sip185_code"] for row in recorded})
+    assert len(missing) > 0
