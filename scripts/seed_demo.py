@@ -67,7 +67,10 @@ from apps.sip.collector.source_register import (
     ALL_SOURCES,
     MANDATORY_SOURCES,
 )
-from apps.sip.collector.verification import enforce_verification_gate
+from apps.sip.collector.verification import (
+    UnverifiedHighSignalError,
+    enforce_verification_gate,
+)
 from apps.sip.pipeline.models import (
     RunState,
     SignalStrength,
@@ -415,8 +418,9 @@ def _capture_and_work_candidates(
                 continue
             try:
                 enforce_verification_gate(spec.signal, spec.verification)
-            except Exception:
-                continue  # a Rejected/Unverified row correctly cannot carry a High/Critical signal
+            except UnverifiedHighSignalError:
+                # A Rejected/Unverified row correctly cannot carry a High/Critical signal.
+                continue
             cand_repo.record_score(
                 row["id"],
                 signal=spec.signal,
@@ -458,9 +462,12 @@ def _record_sod_exception(
             candidate_id,
             actor_id,
             approver_id,
-            f"{_TAG} single-analyst placement window; steady-state staffing has one person "
-            "holding every SIP role, so this exception is deliberate rather than a gap.",
-            date.today() + timedelta(days=180),
+            (
+                f"{_TAG} single-analyst placement window; steady-state staffing has one "
+                "person holding every SIP role, so this exception is deliberate rather than "
+                "a gap."
+            ),
+            datetime.now(UTC).date() + timedelta(days=180),
         ),
     ).fetchone()
     conn.commit()
@@ -497,7 +504,7 @@ def _report_and_decide(
     )
 
     decided_at = datetime.now(UTC)
-    next_review = date.today() + timedelta(days=90)
+    next_review = datetime.now(UTC).date() + timedelta(days=90)
     ids: dict[str, str] = {}
     for kind, value in (
         (REPORT_APPROVAL, report_value),
