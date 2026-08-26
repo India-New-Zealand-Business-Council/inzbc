@@ -13,12 +13,17 @@ picture at three illustrative cutoffs instead of asserting a policy number that 
 from __future__ import annotations
 
 import sys
-from datetime import date
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from apps.fta.corpus import CORPUS, SECTORS_IN_SCOPE, TIER_1_SOURCES, stale_entries  # noqa: E402
+from apps.fta.corpus import (
+    CORPUS,
+    SECTORS_IN_SCOPE,
+    TIER_1_SOURCES,
+    stale_entries,
+)
 
 _OUT = Path(__file__).resolve().parents[1] / "docs" / "fta-corpus-report.md"
 _ILLUSTRATIVE_WINDOWS_DAYS = (30, 60, 90)
@@ -114,7 +119,7 @@ def build_report(as_of: date) -> str:
 
 
 def main() -> int:
-    report = build_report(date.today())
+    report = build_report(datetime.now(UTC).date())
     _OUT.write_text(report, encoding="utf-8")
     print(f"wrote {_OUT}")
     return 0
