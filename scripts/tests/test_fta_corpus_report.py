@@ -41,3 +41,17 @@ def test_sector_table_matches_corpus_per_sector() -> None:
             f"| {sector} | {len(sector_entries)} | {len(sector_confirmed)} | "
             f"{len(sector_tier1)} |"
         ) in report
+
+
+def test_every_blocked_tier1_source_is_listed() -> None:
+    from apps.fta.corpus import TIER_1_SOURCES
+
+    blocked = [s for s in TIER_1_SOURCES if s.automated_fetch_blocked]
+    assert blocked, "fixture assumption: at least one Tier 1 source is currently blocked"
+
+    report = build_report(date(2026, 8, 25))
+    for source in blocked:
+        assert f"**{source.name}** — {source.url}" in report
+    not_blocked = [s for s in TIER_1_SOURCES if not s.automated_fetch_blocked]
+    for source in not_blocked:
+        assert f"**{source.name}** — {source.url}" not in report
