@@ -55,3 +55,15 @@ def test_every_blocked_tier1_source_is_listed() -> None:
     not_blocked = [s for s in TIER_1_SOURCES if not s.automated_fetch_blocked]
     for source in not_blocked:
         assert f"**{source.name}** — {source.url}" not in report
+
+
+def test_freshness_table_matches_stale_entries_at_each_window() -> None:
+    from scripts.fta_corpus_report import _ILLUSTRATIVE_WINDOWS_DAYS
+    from apps.fta.corpus import stale_entries
+
+    as_of = date(2026, 8, 25)
+    report = build_report(as_of)
+    for window in _ILLUSTRATIVE_WINDOWS_DAYS:
+        stale = stale_entries(CORPUS, as_of, window)
+        ids = ", ".join(f"`{e.id}`" for e in stale) if stale else "none"
+        assert f"| {window} | {len(stale)} | {ids} |" in report
