@@ -7,9 +7,10 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     // Same-origin in deployment (ADR-0004); this proxy keeps the dev shape identical rather than
-    // hiding the boundary. Nothing is listening on the API side yet — the SIP report endpoints
-    // land once the database and orchestrator persistence exist (issue #44), so this UI is built
-    // against contract fixtures (src/api/reportsStore.ts), not this proxy, for now.
+    // hiding the boundary. `/api/runs` and `/api/candidates` are live behind this proxy today
+    // (#237, #242) — see src/api/runsClient.ts and candidatesClient.ts. The report/decision/
+    // dashboard endpoints the other four screens target are still unbuilt (issue #44), so
+    // src/api/reportsStore.ts stays fixture-backed for those.
     proxy: {
       '/api': { target: 'http://127.0.0.1:8000', changeOrigin: true },
     },
@@ -30,6 +31,8 @@ export default defineConfig({
       exclude: [
         // Entry point: one createRoot call, no logic.
         'src/main.tsx',
+        // Generated from OpenAPI; the drift check in CI is what guards this, not tests.
+        'src/api/schema.ts',
       ],
       thresholds: {
         // Matches the frontend gate used by apps/fta/ui and apps/comms/ui.
