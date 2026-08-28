@@ -1,13 +1,18 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as reportsStore from '../api/reportsStore'
+import { stubReportsFetch } from '../api/reportsStore.testSupport'
 import type { DailyBriefReport } from '../domain'
 import { candidatesFixture, generatedDigestContent, newDraftReportFixture } from '../lib/fixtures'
 import { CeoDecisionScreen } from './CeoDecisionScreen'
 
-afterEach(() => vi.restoreAllMocks())
+beforeEach(() => stubReportsFetch())
+afterEach(() => {
+  vi.restoreAllMocks()
+  vi.unstubAllGlobals()
+})
 
 // All fixture candidates "selected" — this report is already past brief-building in these tests,
 // so the exact selection doesn't matter here, only that generatedDigestContent gets a non-empty
@@ -17,6 +22,7 @@ function reportAwaitingDecision() {
     ...newDraftReportFixture(),
     ...generatedDigestContent(candidatesFixture()),
     state: 'Awaiting CEO Decision' as const,
+    reportVersionId: 'rv-1',
   }
 }
 
