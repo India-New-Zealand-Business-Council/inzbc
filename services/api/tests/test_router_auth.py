@@ -316,6 +316,13 @@ EXPECTED_ROLES: dict[tuple[str, str], set[str]] = {
     # the analyst on that particular run, the same two-gate split as candidates/{id}/verify.
     # Analyst is absent on purpose: QA is the check on the analyst's work.
     ("POST", "/api/reports/{report_version_id}/qa"): {"Reviewer", "SIP Owner"},
+    # CEO Ruling, Report Approval, Distribution Authority (#293, #348). This is the coarse gate
+    # only — whether a given call actually succeeds is decision_role_permissions, checked per
+    # (kind, role) inside DecisionRepository.record. Board Viewer and Auditor are absent: neither
+    # was ever going to record one of these, whatever decision_role_permissions ends up seeded with.
+    ("POST", "/api/reports/{report_version_id}/ruling"): {"SIP Owner", "Reviewer", "Analyst"},
+    ("POST", "/api/reports/{report_version_id}/approval"): {"SIP Owner", "Reviewer", "Analyst"},
+    ("POST", "/api/reports/{report_version_id}/distribution"): {"SIP Owner", "Reviewer", "Analyst"},
     # The SIP-185 mandatory-source register. Reference data every role needs to read to know
     # which sources a run was obliged to cover; nothing personal in it and no write path here,
     # but it is the register an auditor checks a run against, so it is not public either.
