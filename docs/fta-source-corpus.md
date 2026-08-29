@@ -23,6 +23,10 @@ every substantive claim traces to an official document below.
   cooperation/TRQs; 6 side letters, one of them "Dairy Consultations"). This closes the
   "no line-by-line schedule" gap — the Explainer should cite the Annex 2A appendices directly
   for product-level tariff lines, not just the NIA summary.
+- Individual chapter/annex PDFs used for the Investment/Education/Tourism entries (29 Aug 2026):
+  Chapter 9 (Investment Promotion and Cooperation), Annex 8F (Students' Mobility and Post Study
+  Work Visas, under Chapter 8), Chapter 14 (Economic Cooperation and Technical Assistance) — all
+  under the same `text-of-the-agreement` path above, numbered per that page's chapter list.
 - MFAT **National Interest Analysis (NIA)** — now available:
   https://www.mfat.govt.nz/assets/Trade-agreements/NZ-India-FTA/NZ-India-FTA-National-Interest-Analysis-NIA.pdf
   (published ~2026; covers tariff outcomes, economic modelling, and treaty obligations chapter
@@ -137,6 +141,45 @@ represent two different numbers:
   have a confirmed 33%→0%/10yr line; blueberries and persimmons don't have their own line at all
   (see above). Split so the confirmed pair doesn't carry the unconfirmed pair's absence of data.
 
+## Investment, Education, Tourism — verified against Tier 1 chapter text, checked 29 Aug 2026
+The "add next, once sourced from the agreement text" item below is resolved. Read directly from
+the signed chapter/annex PDFs (`text-of-the-agreement`), not the summary — the summary's own
+Post Study Work Visa figures turned out to be less precise than the Annex itself (it collapses
+Master's and Doctoral into one "up to four years" line; the Annex gives three separate tiers).
+
+- **Investment (Chapter 9, Investment Promotion and Cooperation).** Article 9.2: New Zealand
+  "shall promote FDI from investors of New Zealand into India with the aim to increase such
+  investment by US Dollars 20 billion within 15 years of the date of entry into force." This is a
+  *New Zealand* promotion commitment, not an India market-access concession — no tariff, no
+  quota, nothing India grants NZ investors beyond Article 9.4's "New Zealand Investment Desk"
+  (India shall establish one to assist NZ investors). Article 9.11: no recourse to the FTA's
+  Chapter 19 dispute settlement for anything in this chapter. Article 9.10 (Remedial Measures) is
+  the one real risk worth surfacing: if the US$20bn objective isn't met by the 15-year review and
+  the dispute stays unresolved through the three-tier consultation process, India may take
+  "proportionate remedial measures to rebalance the concessions provided to New Zealand by India"
+  under the tariff schedule (Annex 2A) — i.e. a missed NZ investment target can eventually cost NZ
+  exporters their tariff gains. Not a current fact (nothing has been missed yet), but real treaty
+  text, worth one sentence in `notes` rather than omitting.
+- **Education (Annex 8F, Students' Mobility and Post Study Work Visas, under Chapter 8 Trade in
+  Services).** Reciprocal, uncapped student visa access (para 2: "neither Party shall impose any
+  numerical limits"); minimum 20 hours/week work rights for students during study (para 3); Post
+  Study Work Visa periods for Indian graduates of NZ institutions (para 4): 2 years after a
+  bachelor's (incl. honours), 3 years after a master's (research or coursework), 4 years after a
+  doctorate; para 5 extends the bachelor's tier to 3 years for First Class Honours STEM/ICT
+  graduates specifically. Para 6 requires India to reciprocate with an equivalent route for NZ
+  graduates of Indian institutions. Para 8: dispute settlement only applies to a "pattern of
+  practice" after administrative remedies are exhausted, not an individual visa decision.
+- **Tourism (Chapter 14, Economic Cooperation and Technical Assistance).** No market-access or
+  tariff commitment exists for tourism anywhere in the agreement — it is a named *cooperation*
+  thematic area only, under the Committee on Economic Cooperation and Technical Assistance
+  (CECTA, Article 14.6, for non-agriculture sectors), alongside audio-visual production and
+  sports (per the summary's economic-cooperation list; the CECTA's specific thematic-area list is
+  Annex 14B, not fetched for this pass — cooperation-only status is already established by
+  Chapter 14 itself naming CECTA as a working-group/action-plan mechanism with no binding
+  outcomes, Article 14.13 excluding it from dispute settlement entirely). The corpus entry must
+  not overstate this as market access: it is "New Zealand and India agreed to cooperate on
+  tourism," not "New Zealand gained tourism market access in India."
+
 ## Member-facing mapping (how a query becomes a sourced answer)
 Member selects sector/product → tool matches to the relevant tariff outcome in the schedule →
 returns: the agreed treatment (prose), its in-force status, the citation, and a "next steps / talk
@@ -146,9 +189,9 @@ on X" question resolves to a value, not just prose to re-parse; `None` on any of
 yet sourced for that entry, per the "Not in this table" list above. Sector scope settled 9 Aug 2026
 (#219, docs/client-answers-relayed-2026-08-09.md): build now on the goods sectors already sourced
 (agriculture, dairy, cross-sector aggregates, infrastructure — `apps/fta/corpus.py`'s
-`SECTORS_IN_SCOPE`); add next, once sourced from the agreement text,
-tourism/education/investment; defence and security, immigration and sports are named but not
-sourced and do not gate the build. Dairy's exclusion is handled explicitly rather than omitted.
+`SECTORS_IN_SCOPE`), plus Investment, Education and Tourism as of 29 Aug 2026 (see the section
+above) — defence and security, immigration and sports are named but not sourced and do not gate
+the build. Dairy's exclusion is handled explicitly rather than omitted.
 
 ## Open items
 - **PIB / Dept of Commerce still blocked (checked again 22 Jul 2026).** Tried the press note
@@ -167,5 +210,7 @@ sourced and do not gate the build. Dairy's exclusion is handled explicitly rathe
   ingest up front; the NIA's key-outcomes table already covers the sectors most relevant to
   INZBC members (agriculture, dairy, forestry, wine, honey) at summary level.
 - **Resolved 9 Aug 2026 (#219):** sector scope is settled by build order, not a single fixed list
-  — see "Member-facing mapping" above and `docs/client-answers-relayed-2026-08-09.md`. Remaining
-  open item is sourcing tourism/education/investment from the agreement text before they're added.
+  — see "Member-facing mapping" above and `docs/client-answers-relayed-2026-08-09.md`.
+- **Resolved 29 Aug 2026 (#186):** Investment, Education and Tourism sourced from the signed
+  chapter/annex text — see "Investment, Education, Tourism" above. Defence and security,
+  immigration and sports remain unsourced and still don't gate the build.

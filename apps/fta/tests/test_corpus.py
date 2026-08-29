@@ -179,3 +179,49 @@ def test_iron_steel_and_industrial_products_are_not_added() -> None:
     topics = {entry.topic.lower() for entry in CORPUS}
     assert not any("iron" in t or "steel" in t for t in topics)
     assert not any("industrial product" in t for t in topics)
+
+
+def test_investment_entry_states_the_commitment_is_one_directional() -> None:
+    # Article 9.2 is a New Zealand undertaking, not an India market-access concession - the
+    # treatment text must say so rather than imply India granted something in return.
+    entry = next(e for e in CORPUS if e.sector == "Investment")
+    assert "US$20 billion" in entry.treatment
+    assert "not an India market-access concession" in entry.treatment
+    assert "9.2" in entry.citation
+
+
+def test_investment_entry_carries_the_remedial_measures_risk_in_notes() -> None:
+    # Article 9.10: a missed investment target can eventually cost NZ its tariff gains. Real
+    # treaty text, not a current fact - it belongs in notes, not the headline treatment.
+    entry = next(e for e in CORPUS if e.sector == "Investment")
+    assert entry.notes is not None
+    assert "remedial measures" in entry.notes.lower()
+
+
+def test_education_entry_has_all_three_post_study_work_visa_tiers() -> None:
+    # The pre-signature summary collapsed master's and doctoral into one "up to four years"
+    # line; the actual Annex 8F gives three separate tiers - all three must be present.
+    entry = next(e for e in CORPUS if e.sector == "Education")
+    assert "2 years after a bachelor's" in entry.treatment
+    assert "3 years after a master's" in entry.treatment
+    assert "4 years after a doctorate" in entry.treatment
+    assert "STEM/ICT" in entry.treatment
+
+
+def test_tourism_entry_is_explicitly_not_market_access() -> None:
+    # Chapter 14 is cooperation-only - the entry must say so plainly rather than let a reader
+    # infer market access from the sector's mere presence in SECTORS_IN_SCOPE.
+    entry = next(e for e in CORPUS if e.sector == "Tourism")
+    assert "no market-access or tariff commitment" in entry.treatment
+    assert entry.notes is not None
+    assert "not present this as market access" in entry.notes.lower()
+
+
+def test_investment_education_tourism_have_no_tariff_fields() -> None:
+    # None of these three are product tariff lines - the structured tariff fields must stay
+    # unset, the same discipline the existing cross-sector aggregates follow.
+    for sector in ("Investment", "Education", "Tourism"):
+        entry = next(e for e in CORPUS if e.sector == sector)
+        assert entry.current_tariff is None
+        assert entry.final_tariff is None
+        assert entry.direction is None
