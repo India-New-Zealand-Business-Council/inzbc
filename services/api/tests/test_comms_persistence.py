@@ -161,6 +161,84 @@ def test_approving_a_missing_draft_raises_key_error(repo: CommsDraftRepository) 
         )
 
 
+def test_delete_removes_the_row(repo: CommsDraftRepository) -> None:
+    author = _make_user("Author")
+    record = repo.create("newsletter", "brief", "text", authored_by=author)
+
+    repo.delete(record.id, actor_id=author, reason="superseded")
+
+    with pytest.raises(KeyError):
+        repo.get(record.id)
+
+
+def test_delete_of_an_approved_draft_still_succeeds(repo: CommsDraftRepository) -> None:
+    """Any status is deletable, including Approved: deleting the row does not erase the approval
+    - it already wrote its own audit entry, and that survives even though the row is gone."""
+    author = _make_user("Author")
+    reviewer = _make_user("Reviewer")
+    record = repo.create("newsletter", "brief", "text", authored_by=author)
+    repo.approve(record.id, principal=_principal(reviewer, "Reviewer"))
+
+    repo.delete(record.id, actor_id=reviewer, reason="contained personal information")
+
+    with pytest.raises(KeyError):
+        repo.get(record.id)
+    rows = _audit_rows(record.id)
+    assert any(action == "comms_draft.approve" for action, *_ in rows), (
+        "the approval's own audit row must survive even though the draft row is gone"
+    )
+
+
+def test_delete_writes_an_audit_row_naming_only_the_status_transition(
+    repo: CommsDraftRepository,
+) -> None:
+    author = _make_user("Author")
+    record = repo.create("newsletter", "brief", "text", authored_by=author)
+
+    repo.delete(record.id, actor_id=author, reason="created in error")
+
+    rows = _audit_rows(record.id)
+    assert len(rows) == 2
+    action, old_value, new_value, user_id = rows[1]
+    assert action == "comms_draft.delete"
+    assert old_value == "Draft"
+    assert new_value == "Deleted"
+    assert str(user_id) == author
+
+
+def test_delete_audits_the_act_without_recording_the_text(repo: CommsDraftRepository) -> None:
+    """`audit_log` is append-only - nothing can remove a row from it. Recording what was in a
+    deleted draft would make the sensitive text permanent in the one table nothing can remove it
+    from, the exact opposite of what someone deleting a draft is trying to achieve.
+
+    Scans every `old_value`/`new_value`/`reason` in the whole table, not just this record's own
+    rows - the failure being guarded against is the text leaking into a column nobody thought
+    about, not just the obvious one.
+    """
+    distinctive = f"leaked-name-{uuid.uuid4()}"
+    author = _make_user("Author")
+    record = repo.create("newsletter", "brief", distinctive, authored_by=author)
+
+    repo.delete(record.id, actor_id=author, reason="contained personal information")
+
+    with psycopg.connect(DATABASE_URL) as conn:
+        rows = conn.execute(
+            "select old_value, new_value, reason from audit_log "
+            "where old_value like %s or new_value like %s or reason like %s",
+            (f"%{distinctive}%", f"%{distinctive}%", f"%{distinctive}%"),
+        ).fetchall()
+    assert rows == []
+
+
+def test_deleting_a_missing_draft_raises_key_error(repo: CommsDraftRepository) -> None:
+    with pytest.raises(KeyError):
+        repo.delete(
+            "00000000-0000-0000-0000-000000000000",
+            actor_id=_make_user("Someone"),
+            reason="created in error",
+        )
+
+
 def test_get_and_list_all_round_trip(repo: CommsDraftRepository) -> None:
     author = _make_user("Author")
     first = repo.create("newsletter", "brief one", "text one", authored_by=author)

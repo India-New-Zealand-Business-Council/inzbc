@@ -11,10 +11,14 @@ that `draft` is a non-empty string, by its own docstring's stated design.
 Every write here requires a session (ADR-0004): reads declare `read_access`, writes declare
 `write_access`, both via `services/api/session.py`, same as every other business router.
 
-The other three routes (`approve`, `get`, `list`) close the gap #60 (Paras's review UI) and #65
+Three of the other routes (`approve`, `get`, `list`) close the gap #60 (Paras's review UI) and #65
 (Bhanu's streaming API) both name as a dependency: "Comms Assistant service side (Roshan)".
 Neither existed until now - draft generation returned text and persisted nothing, so there was no
 row for a review UI to show or an approval to attach to.
+
+`delete` (#342) exists because `comms_drafts` had no retention rule and no way to remove a row -
+found by the #132 privacy verification pass. A retention *period* is still an INZBC decision
+(`docs/client-questions.md` §4); this only gives a person a manual path to remove one row.
 """
 
 from __future__ import annotations
@@ -79,6 +83,18 @@ class ApproveIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     reason: str | None = None
+
+
+class DeleteDraftIn(BaseModel):
+    """Body, not a query parameter — a reason in a URL lands in access logs, which is the same
+    leak in a different place. `reason` describes *why* the draft is being removed, not what it
+    contained: it is stored in `audit_log`, which is append-only, so naming what was in the draft
+    would move the disclosure into the one place it can never be deleted from again.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    reason: str = Field(min_length=1, max_length=500)
 
 
 class CommsDraftOut(BaseModel):
@@ -167,6 +183,26 @@ def approve_draft(
     except SelfApprovalError as error:
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail=str(error)) from error
     return _draft_record_out(record)
+
+
+@router.delete("/drafts/{draft_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_draft(
+    draft_id: str,
+    body: DeleteDraftIn,
+    principal: Principal = Depends(write_access(SECRETARIAT, SIP_OWNER)),
+    repo: CommsDraftRepository = Depends(get_comms_draft_repository),
+) -> None:
+    """Removes a draft outright (#342). Same roles as creating one — Secretariat, SIP Owner — not
+    the reviewer roles that approve; deleting is an authoring-side act, not a review one.
+
+    Any status is deletable, including `Approved`: the approval's own audit entry survives even
+    though the row it approved is gone. See `CommsDraftRepository.delete`'s docstring for why the
+    audit row this writes never carries the brief or draft text.
+    """
+    try:
+        repo.delete(draft_id, actor_id=principal.user_id, reason=body.reason)
+    except KeyError as error:
+        raise _not_found(draft_id) from error
 
 
 @router.get("/drafts/{draft_id}", response_model=CommsDraftOut)
