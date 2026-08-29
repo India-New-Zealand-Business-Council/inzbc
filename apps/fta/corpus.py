@@ -3,7 +3,7 @@
 Every fact here traces to that doc, which traces to the citations recorded on each entry. Do not
 add a fact here that isn't already sourced in docs/fta-source-corpus.md; update that doc first,
 then mirror it here, the same relationship apps/sip/collector/source_register.py has to
-SIP-185. Last mirrored against the doc as checked there on 22 Jul 2026.
+SIP-185. Last mirrored against the doc as checked there on 29 Aug 2026.
 """
 
 from __future__ import annotations
@@ -23,16 +23,24 @@ FTA_STATUS_LINE = (
 # services second"): the three previously-conflicting sector lists are resolved by scope, not by
 # picking one - Sunil's ten broad sectors and this corpus's tariff-outcome categories are
 # different kinds of thing. Build now on the goods sectors already sourced (these four category
-# values, used by CORPUS entries below). Add next, once sourced from the agreement text before
-# publication: tourism, education, investment. Defence and security, immigration and sports are
-# not dropped, but are not sourced and do not gate the build (BR2: nothing is written about a
-# sector until it has a source). No longer provisional/pending INZBC - this list will grow as
-# "add next" items get sourced, not on further confirmation.
+# values, used by CORPUS entries below). Defence and security, immigration and sports are not
+# dropped, but are not sourced and do not gate the build (BR2: nothing is written about a sector
+# until it has a source). No longer provisional/pending INZBC - this list grows as "add next"
+# items get sourced, not on further confirmation.
+#
+# Investment, Education and Tourism added 29 Aug 2026 (#186), sourced from the signed
+# chapter/annex text rather than the client, per docs/fta-source-corpus.md's "Investment,
+# Education, Tourism" section. Tourism's entry is cooperation-only (no market access or tariff
+# commitment exists for it anywhere in the agreement) - it is in scope because it has a real,
+# citable fact, not because it has a favourable one.
 SECTORS_IN_SCOPE: tuple[str, ...] = (
     "Agriculture",
     "Cross-sector",
     "Dairy",
     "Infrastructure",
+    "Investment",
+    "Education",
+    "Tourism",
 )
 
 
@@ -71,6 +79,29 @@ TIER_1_SOURCES: tuple[SourceDocument, ...] = (
         "https://www.mfat.govt.nz/assets/Trade-agreements/NZ-India-FTA/NZ-India-FTA-National-Interest-Analysis-NIA.pdf",
         tier=1,
         note="Covers tariff outcomes, economic modelling, and treaty obligations chapter by chapter.",
+    ),
+    SourceDocument(
+        "Chapter 9 - Investment Promotion and Cooperation",
+        "https://www.mfat.govt.nz/assets/Trade-agreements/NZ-India-FTA/46.-Chapter-9-Investment-Promotion-and-Cooperation.pdf",
+        tier=1,
+        note="Article 9.2's US$20bn/15yr NZ investment-promotion commitment; Article 9.10's "
+        "remedial-measures risk against the tariff schedule if it's missed.",
+    ),
+    SourceDocument(
+        "Annex 8F - Students' Mobility and Post Study Work Visas",
+        "https://www.mfat.govt.nz/assets/Trade-agreements/NZ-India-FTA/27.-Annex-8F-Students-Mobility-and-Post-Study-Work-Visas.pdf",
+        tier=1,
+        note="Under Chapter 8 (Trade in Services). Paras 4-5's three-tier Post Study Work Visa "
+        "(2/3/4 years, 3 for STEM/ICT honours) is more precise than the pre-signature summary, "
+        "which collapsed master's and doctoral into one 'up to four years' line.",
+    ),
+    SourceDocument(
+        "Chapter 14 - Economic Cooperation and Technical Assistance",
+        "https://www.mfat.govt.nz/assets/Trade-agreements/NZ-India-FTA/51.-Chapter-14-Economic-Cooperation-and-Technical-Assistance.pdf",
+        tier=1,
+        note="Establishes CECTA (Article 14.6), the cooperation-only mechanism tourism sits "
+        "under - confirms there is no market-access or tariff commitment for tourism anywhere "
+        "in the agreement.",
     ),
     SourceDocument(
         "Ministry of Commerce & Industry / PIB press note",
