@@ -487,6 +487,71 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/reports/{report_version_id}/ruling": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record Ruling
+         * @description Records the CEO's ruling on a report version: Continue, Continue With Correction, Pause or
+         *     Stop. Independent of report approval and distribution authority — see the module docstring.
+         */
+        post: operations["record_ruling_api_reports__report_version_id__ruling_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/{report_version_id}/approval": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record Approval
+         * @description Records the report-approval decision: Approved, Rejected or Returned for Correction.
+         */
+        post: operations["record_approval_api_reports__report_version_id__approval_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/{report_version_id}/distribution": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record Distribution
+         * @description Records distribution authority: Authorised or Not Authorised.
+         *
+         *     **Not Authorised does not stop the run.** It is a complete, valid outcome — the send is
+         *     skipped and the run reaches close-out as approved but not distributed
+         *     (`docs/sip/operator-guide.md`) — not a refusal that blocks progress.
+         */
+        post: operations["record_distribution_api_reports__report_version_id__distribution_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/reports/{report_version_id}": {
         parameters: {
             query?: never;
@@ -1030,6 +1095,36 @@ export interface components {
             /** Implementation Period Years */
             implementation_period_years?: number | null;
         };
+        /** ApprovalIn */
+        ApprovalIn: {
+            /** Expected Head Revision */
+            expected_head_revision: number;
+            /** Reason */
+            reason: string;
+            /** Conditions */
+            conditions?: string[];
+            /** Owner Id */
+            owner_id: string;
+            /** Evidence Ref */
+            evidence_ref: string;
+            /**
+             * Next Review
+             * Format: date
+             */
+            next_review: string;
+            /**
+             * Decided At
+             * Format: date-time
+             */
+            decided_at: string;
+            /** Sod Exception Id */
+            sod_exception_id?: string | null;
+            /**
+             * Value
+             * @enum {string}
+             */
+            value: "Approved" | "Rejected" | "Returned for Correction";
+        };
         /** ApproveIn */
         ApproveIn: {
             /** Reason */
@@ -1241,6 +1336,27 @@ export interface components {
             /** Open Actions Truncated */
             open_actions_truncated: boolean;
         };
+        /** DecisionRecordOut */
+        DecisionRecordOut: {
+            /** Id */
+            id: string;
+            /** Stream Id */
+            stream_id: string;
+            /** Report Version Id */
+            report_version_id: string;
+            /** Kind */
+            kind: string;
+            /** Stream Revision */
+            stream_revision: number;
+            /** Value */
+            value: string;
+            /** Actor Id */
+            actor_id: string;
+            /** Decided At */
+            decided_at: string;
+            /** Reason */
+            reason: string;
+        };
         /**
          * DecisionsOut
          * @description The current decision on each stream, plus the revision each was read at.
@@ -1265,6 +1381,38 @@ export interface components {
             revisions: {
                 [key: string]: number;
             };
+        };
+        /** DistributionIn */
+        DistributionIn: {
+            /** Expected Head Revision */
+            expected_head_revision: number;
+            /** Reason */
+            reason: string;
+            /** Conditions */
+            conditions?: string[];
+            /** Owner Id */
+            owner_id: string;
+            /** Evidence Ref */
+            evidence_ref: string;
+            /**
+             * Next Review
+             * Format: date
+             */
+            next_review: string;
+            /**
+             * Decided At
+             * Format: date-time
+             */
+            decided_at: string;
+            /** Sod Exception Id */
+            sod_exception_id?: string | null;
+            /**
+             * Value
+             * @enum {string}
+             */
+            value: "Authorised" | "Not Authorised";
+            /** Distribution Recipient */
+            distribution_recipient?: string | null;
         };
         /** DraftFactIn */
         DraftFactIn: {
@@ -1525,6 +1673,36 @@ export interface components {
             included?: boolean | null;
             /** Reason */
             reason: string;
+        };
+        /** RulingIn */
+        RulingIn: {
+            /** Expected Head Revision */
+            expected_head_revision: number;
+            /** Reason */
+            reason: string;
+            /** Conditions */
+            conditions?: string[];
+            /** Owner Id */
+            owner_id: string;
+            /** Evidence Ref */
+            evidence_ref: string;
+            /**
+             * Next Review
+             * Format: date
+             */
+            next_review: string;
+            /**
+             * Decided At
+             * Format: date-time
+             */
+            decided_at: string;
+            /** Sod Exception Id */
+            sod_exception_id?: string | null;
+            /**
+             * Value
+             * @enum {string}
+             */
+            value: "Continue" | "Continue With Correction" | "Pause" | "Stop";
         };
         /** RunOut */
         RunOut: {
@@ -2788,6 +2966,153 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["QaResultOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_ruling_api_reports__report_version_id__ruling_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RulingIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionRecordOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_approval_api_reports__report_version_id__approval_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApprovalIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionRecordOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_distribution_api_reports__report_version_id__distribution_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DistributionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionRecordOut"];
                 };
             };
             /** @description No session, or the session has expired or been idle too long. */
