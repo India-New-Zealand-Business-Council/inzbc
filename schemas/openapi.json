@@ -3381,17 +3381,10 @@
             "title": "Expected Head Revision"
           },
           "conditions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
             "title": "Conditions"
           },
           "sod_exception_id": {
@@ -4243,6 +4236,10 @@
             "type": "string",
             "title": "Id"
           },
+          "stream_id": {
+            "type": "string",
+            "title": "Stream Id"
+          },
           "report_version_id": {
             "type": "string",
             "title": "Report Version Id"
@@ -4251,28 +4248,39 @@
             "type": "string",
             "title": "Kind"
           },
+          "stream_revision": {
+            "type": "integer",
+            "title": "Stream Revision"
+          },
           "value": {
             "type": "string",
             "title": "Value"
+          },
+          "actor_id": {
+            "type": "string",
+            "title": "Actor Id"
           },
           "decided_at": {
             "type": "string",
             "title": "Decided At"
           },
-          "head_revision": {
-            "type": "integer",
-            "title": "Head Revision"
+          "reason": {
+            "type": "string",
+            "title": "Reason"
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
           "id",
+          "stream_id",
           "report_version_id",
           "kind",
+          "stream_revision",
           "value",
+          "actor_id",
           "decided_at",
-          "head_revision"
+          "reason"
         ],
         "title": "DecisionOut"
       },
@@ -4398,17 +4406,10 @@
             "title": "Expected Head Revision"
           },
           "conditions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
             "title": "Conditions"
           },
           "sod_exception_id": {
@@ -5335,17 +5336,10 @@
             "title": "Expected Head Revision"
           },
           "conditions": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
             "title": "Conditions"
           },
           "sod_exception_id": {

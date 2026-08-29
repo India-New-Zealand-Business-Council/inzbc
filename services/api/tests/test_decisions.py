@@ -552,3 +552,44 @@ def test_capture_claims_the_run_for_its_analyst_so_qa_self_review_can_fire() -> 
         "a second capturer must not become the analyst - that would free the original analyst "
         "to record QA on their own run"
     )
+
+
+def test_authorised_distribution_requires_approval_ruling_and_clean_qa(
+    repo: DecisionRepository, seeded: dict
+) -> None:
+    """ADR-0005's release predicate, which was specified and never enforced.
+
+    `Authorised` is valid only on a version whose report approval is `Approved`, whose CEO ruling
+    is `Continue`, and which carries no open Critical QA failure. Before this, the route checked
+    only that a recipient was present and `record()` checked permission, authorship and revision -
+    so a report with no approval at all could be recorded as authorised for release. That is
+    REQ-G-04, the platform's central human-release control.
+    """
+    # Nothing decided yet: both preconditions are absent.
+    with pytest.raises(DecisionRejected) as refused:
+        repo.record(**_kwargs(seeded, kind=DISTRIBUTION_AUTHORITY, value="Authorised",
+                              distribution_recipient="internal@example.test"))
+    message = str(refused.value)
+    assert "report approval is undecided" in message
+    assert "CEO ruling is undecided" in message
+
+    # An explicit refusal is always recordable - it is a decision, not a release.
+    repo.record(**_kwargs(seeded, kind=DISTRIBUTION_AUTHORITY, value="Not Authorised",
+                          distribution_recipient="internal@example.test"))
+
+
+def test_continue_with_correction_does_not_permit_release(
+    repo: DecisionRepository, seeded: dict
+) -> None:
+    """The ADR is explicit that a corrected report needs a fresh approval and a fresh authority.
+
+    Treating `Continue With Correction` as good enough is the plausible misreading, and it would
+    release a report the CEO asked to be corrected first.
+    """
+    repo.record(**_kwargs(seeded, kind=REPORT_APPROVAL, value="Approved"))
+    repo.record(**_kwargs(seeded, kind=CEO_RULING, value="Continue With Correction"))
+
+    with pytest.raises(DecisionRejected) as refused:
+        repo.record(**_kwargs(seeded, kind=DISTRIBUTION_AUTHORITY, value="Authorised",
+                              distribution_recipient="internal@example.test"))
+    assert "CEO ruling is Continue With Correction" in str(refused.value)

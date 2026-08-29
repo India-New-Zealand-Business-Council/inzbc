@@ -343,7 +343,11 @@ class _DecisionIn(BaseModel):
     decided_at: datetime
     idempotency_key: UUID
     expected_head_revision: int = Field(ge=0)
-    conditions: list[str] | None = None
+    # Empty list rather than None: a decision recorded with no conditions has zero conditions,
+    # which is a fact, not an absence of information. Defaulting to None made every reader do a
+    # null check to express the same thing, and left "conditions were not supplied" and "there
+    # were no conditions" indistinguishable in the stored record.
+    conditions: list[str] = Field(default_factory=list)
     # Only ever set when one person legitimately holds both sides of the act. Absent means no
     # exception is claimed, and `record()` refuses a self-decision without one.
     sod_exception_id: str | None = None
@@ -381,22 +385,39 @@ class DistributionIn(_DecisionIn):
 class DecisionOut(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    # Mirrors DecisionRecord's own field names rather than renaming them at the boundary. The
+    # earlier shape dropped `actor_id` and `stream_id` and renamed `stream_revision` to
+    # `head_revision`, which cost a client the two things a decision record is for: who decided,
+    # and which stream and revision it belongs to. A caller reading a decision back to display or
+    # audit it needs the decider's identity; omitting it makes the response a receipt rather than
+    # a record. Renaming the revision also meant a client could not use the value it read as the
+    # `expected_head_revision` of its next write without knowing about the rename.
     id: str
+    stream_id: str
     report_version_id: str
     kind: str
+    stream_revision: int
     value: str
+    actor_id: str
     decided_at: str
-    head_revision: int
+    reason: str
 
 
 def _decision_out(record: DecisionRecord) -> DecisionOut:
     return DecisionOut(
         id=record.id,
+        stream_id=record.stream_id,
         report_version_id=record.report_version_id,
         kind=record.kind,
+        stream_revision=record.stream_revision,
         value=record.value,
-        decided_at=record.decided_at.isoformat(),
-        head_revision=record.head_revision,
+        actor_id=record.actor_id,
+        # `decided_at` is already a string on the record. Calling `.isoformat()` on it raised
+        # AttributeError, and the old `head_revision=record.head_revision` named a field that does
+        # not exist — so every *successful* decision failed on the way out and only the refusal
+        # paths had ever been exercised.
+        decided_at=record.decided_at,
+        reason=record.reason,
     )
 
 
@@ -427,7 +448,12 @@ def _record_decision(
     """
     try:
         actor_role_id = reports.role_id_for(principal.user_id, role_names)
-    except LookupError as error:
+    except (LookupError, DecisionNotPermittedError) as error:
+        # Both, because role resolution refuses in two different ways and only one of them was
+        # caught. `_role_id_for` raises DecisionNotPermittedError - a RuntimeError, not a
+        # LookupError - when the actor holds none of the required roles, so that case escaped as
+        # a 500 rather than the 403 it is. That is the ordinary refusal this endpoint exists to
+        # make, and it is the most likely path while role accounts are still being set up.
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail=str(error)) from error
 
     try:
@@ -524,11 +550,22 @@ def record_distribution(
             detail="an Authorised distribution must name its recipient; authorising a send to "
                    "nobody in particular is not an authorisation anyone can audit",
         )
-    if body.value == "Not Authorised" and body.distribution_recipient:
+    if body.value == "Not Authorised" and not body.distribution_recipient:
+        # This rule was inverted, and the inversion made an explicit refusal impossible to record
+        # at all: with a recipient the route refused it, without one the database check constraint
+        # refused it, so both request shapes returned 422 and `Not Authorised` could never be
+        # written. An unrecordable refusal is indistinguishable from an undecided stream, which
+        # defeats the distinction the whole append-only decision model exists to preserve.
+        #
+        # The schema is the side that was right (`database/schema.sql`, the Distribution Authority
+        # check): "Both Yes and No are decisions about a concrete requested recipient." Refusing to
+        # send to a named recipient is a more useful record than refusing in the abstract — it says
+        # what was proposed as well as what was decided. Found by adversarial review.
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="a Not Authorised decision cannot name a recipient; the record would read as "
-                   "though a send was intended",
+            detail="a Not Authorised decision must still name the recipient it refuses; "
+                   "'we did not authorise sending to X' is the record, and a refusal naming "
+                   "nobody does not say what was declined",
         )
     return _record_decision(
         report_version_id=report_version_id, kind=DISTRIBUTION_AUTHORITY, body=body,

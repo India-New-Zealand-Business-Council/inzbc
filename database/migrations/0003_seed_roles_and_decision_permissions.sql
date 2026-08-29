@@ -42,4 +42,12 @@ from (values ('CEO Ruling', 'SIP Owner'),
              ('Distribution Authority', 'SIP Owner'),
              ('Distribution Authority', 'Secretariat')) as grant_spec(kind, role_name)
 join roles r on r.name = grant_spec.role_name
-on conflict (kind, actor_role_id) do update set enabled = excluded.enabled;
+-- `do nothing`, not `do update set enabled = excluded.enabled`. `excluded.enabled` is always true
+-- here, so the update form silently re-enabled any grant an operator had deliberately revoked by
+-- setting `enabled = false` — running a migration would have restored a capability someone took
+-- away on purpose, with nothing to show it had happened.
+--
+-- Seeding a baseline and overriding an operator's decision are different acts. This statement is
+-- the first; the second needs to be a deliberate, separate migration that says so. Found by
+-- adversarial review.
+on conflict (kind, actor_role_id) do nothing;
