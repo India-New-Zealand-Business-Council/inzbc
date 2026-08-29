@@ -374,7 +374,25 @@ export interface paths {
         get: operations["get_draft_api_comms_drafts__draft_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete Draft
+         * @description Removes a draft (#342). The act is audited; the text is not.
+         *
+         *     **The reason this route exists is privacy, not tidiness.** `brief` is typed by a staff member,
+         *     and no automated control can tell whether they typed a member's name — redaction removes
+         *     formatted identifiers, never a name in prose (ADR-0006). Until this existed there was no way
+         *     to remove one.
+         *
+         *     **`reason` must describe why, not repeat what is being removed.** It is stored in `audit_log`,
+         *     which is append-only and whose grant is insert/select only, so anything written here is
+         *     permanent and unremovable. Writing "removing Priya Sharma's name from the brief" would move the
+         *     disclosure into the one table it can never be deleted from. "Contained personal information"
+         *     is the right shape.
+         *
+         *     Same roles as creating a draft. The audit record names who deleted it, so the act is
+         *     attributable without being restricted to one person who may be unavailable.
+         */
+        delete: operations["delete_draft_api_comms_drafts__draft_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1266,6 +1284,18 @@ export interface components {
                 [key: string]: number;
             };
         };
+        /**
+         * DeleteIn
+         * @description `reason` is required, unlike `ApproveIn`'s.
+         *
+         *     Deleting the only stored copy of what was sent to an external model is not something to do
+         *     without saying why, and the audit row is all that remains afterwards. An optional reason would
+         *     make "deleted, no explanation given" the easy default.
+         */
+        DeleteIn: {
+            /** Reason */
+            reason: string;
+        };
         /** DraftFactIn */
         DraftFactIn: {
             /** Fact Key */
@@ -1285,15 +1315,38 @@ export interface components {
             /** Supersedes Id */
             supersedes_id?: string | null;
         };
-        /** DraftIn */
+        /**
+         * DraftIn
+         * @description Structured brief (#303), replacing the single 4,000-character free-text box.
+         *
+         *     **Breaking change to the request shape only.** `DraftOut` and `CommsDraftOut` are unchanged,
+         *     because the brief is rendered to text before it is stored - so the list, read and approve
+         *     paths, and the review UI that uses them, are untouched. Only the submit path moves.
+         *
+         *     The limits are the point. A 200-character topic and eight 300-character key points is a much
+         *     smaller target than one 4,000-character box for pasting whatever is on the clipboard, which is
+         *     the disclosure route #303 describes. It is mitigation, not a boundary: a staff member can
+         *     still type a member's name into `topic`, and the source declared to the gateway stays
+         *     `STAFF_AUTHORED` rather than falsely claiming to be minimised. See `apps/comms/draft.Brief`.
+         */
         DraftIn: {
             /**
              * Content Type
              * @enum {string}
              */
             content_type: "newsletter" | "linkedin_post" | "event_announcement" | "member_spotlight";
-            /** Brief */
-            brief: string;
+            /** Topic */
+            topic: string;
+            /** Key Points */
+            key_points?: string[];
+            /** Links */
+            links?: string[];
+            /**
+             * Tone
+             * @default formal
+             * @enum {string}
+             */
+            tone: "formal" | "warm" | "concise";
         };
         /**
          * DraftOut
@@ -2625,6 +2678,53 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CommsDraftOut"];
                 };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_draft_api_comms_drafts__draft_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                draft_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description No session, or the session has expired or been idle too long. */
             401: {

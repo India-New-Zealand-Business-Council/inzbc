@@ -144,6 +144,53 @@ class CommsDraftRepository:
             conn.commit()
         return _row_to_record(row)
 
+    def delete(self, draft_id: str, *, principal: Principal, reason: str) -> None:
+        """Removes a draft. The act is audited; the text is not (#342).
+
+        **Why this exists.** `comms_drafts.brief` is the one field in the system where personal
+        data can arrive without anyone deciding it should: a staff member types it, and redaction
+        cannot remove a name from prose (ADR-0006). Until this existed, someone who typed a
+        member's name into a brief had no way to remove it.
+
+        **The audit row deliberately does not record what was deleted**, and that is the whole
+        design. `record_audit` normally captures `old_value` so a reader can see what changed;
+        doing that here would copy the brief's text into `audit_log`, which *is* append-only and
+        whose grant is insert/select only. The sensitive text would become permanent in the one
+        table nothing can remove it from - the exact opposite of what a caller invoking this is
+        trying to achieve. So the record says a deletion happened, who did it, and why; it does
+        not say what it contained.
+
+        For the same reason `reason` is operator free text and is stored in an append-only table:
+        it must describe *why*, not repeat the thing being removed. The API docstring says so to
+        the caller, since this function cannot enforce it.
+
+        **Any status may be deleted, including Approved.** Deleting the row does not erase the
+        approval: `comms_draft.approve` already wrote its own audit entry, and that entry survives.
+        The act stays on the record; only the text goes.
+        """
+        with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
+            # Locked before deleting so a concurrent approve cannot land between the existence
+            # check and the delete, which would record an approval of a row that no longer exists.
+            current = conn.execute(
+                "select id, content_type from comms_drafts where id = %s for update",
+                (draft_id,),
+            ).fetchone()
+            if current is None:
+                raise KeyError(f"no comms draft {draft_id!r}")
+
+            conn.execute("delete from comms_drafts where id = %s", (draft_id,))
+            record_audit(
+                conn,
+                user_id=principal.user_id,
+                action="comms_draft.delete",
+                record_type="comms_drafts",
+                record_id=draft_id,
+                # No old_value. See the docstring - this omission is the point, not an oversight.
+                new_value=None,
+                reason=reason,
+            )
+            conn.commit()
+
     def get(self, draft_id: str) -> CommsDraftRecord:
         with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
             row = conn.execute(

@@ -1158,6 +1158,62 @@
       }
     },
     "/api/comms/drafts/{draft_id}": {
+      "delete": {
+        "tags": [
+          "Comms Assistant"
+        ],
+        "summary": "Delete Draft",
+        "description": "Removes a draft (#342). The act is audited; the text is not.\n\n**The reason this route exists is privacy, not tidiness.** `brief` is typed by a staff member,\nand no automated control can tell whether they typed a member's name \u2014 redaction removes\nformatted identifiers, never a name in prose (ADR-0006). Until this existed there was no way\nto remove one.\n\n**`reason` must describe why, not repeat what is being removed.** It is stored in `audit_log`,\nwhich is append-only and whose grant is insert/select only, so anything written here is\npermanent and unremovable. Writing \"removing Priya Sharma's name from the brief\" would move the\ndisclosure into the one table it can never be deleted from. \"Contained personal information\"\nis the right shape.\n\nSame roles as creating a draft. The audit record names who deleted it, so the act is\nattributable without being restricted to one person who may be unavailable.",
+        "operationId": "delete_draft_api_comms_drafts__draft_id__delete",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "draft_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Draft Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
       "get": {
         "tags": [
           "Comms Assistant"
@@ -1429,6 +1485,201 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ReportOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reports/{report_version_id}/ruling": {
+      "post": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Record Ruling",
+        "description": "Records the CEO ruling on a report version.\n\nSIP Owner only. This is the run-level ruling SIP-050 section 26 puts with the CEO, and it is\nseparate from approving the report: a `Continue` here does not approve anything, and an\n`Approved` there does not authorise a send.",
+        "operationId": "record_ruling_api_reports__report_version_id__ruling_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "report_version_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Report Version Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RulingIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reports/{report_version_id}/approval": {
+      "post": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Record Approval",
+        "description": "Records the report-approval decision.\n\nReviewer or SIP Owner. `record()` separately refuses whoever authored the version being decided\non, so holding the role is necessary and not sufficient. That refusal is the control this\nrecord exists to evidence.",
+        "operationId": "record_approval_api_reports__report_version_id__approval_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "report_version_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Report Version Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reports/{report_version_id}/distribution": {
+      "post": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Record Distribution",
+        "description": "Records distribution authority, separately from report approval.\n\n**`Not Authorised` is a decision, not a failure.** It does not stop the run: the send is\nskipped and the run reaches close-out as approved but not distributed. That is why an absent\ndecision and an explicit refusal have to stay distinguishable, and why this endpoint exists\nrather than a boolean on the approval.",
+        "operationId": "record_distribution_api_reports__report_version_id__distribution_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "report_version_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Report Version Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DistributionIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionOut"
                 }
               }
             }
@@ -3091,6 +3342,93 @@
         "title": "AnswerOut",
         "description": "A sourced FTA finding. Every field is evidence or the presentation it must carry."
       },
+      "ApprovalIn": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Reason"
+          },
+          "evidence_ref": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Evidence Ref"
+          },
+          "owner_id": {
+            "type": "string",
+            "title": "Owner Id"
+          },
+          "next_review": {
+            "type": "string",
+            "format": "date",
+            "title": "Next Review"
+          },
+          "decided_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Decided At"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Idempotency Key"
+          },
+          "expected_head_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Head Revision"
+          },
+          "conditions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conditions"
+          },
+          "sod_exception_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sod Exception Id"
+          },
+          "value": {
+            "type": "string",
+            "enum": [
+              "Approved",
+              "Rejected",
+              "Returned for Correction"
+            ],
+            "title": "Value"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reason",
+          "evidence_ref",
+          "owner_id",
+          "next_review",
+          "decided_at",
+          "idempotency_key",
+          "expected_head_revision",
+          "value"
+        ],
+        "title": "ApprovalIn"
+      },
       "ApproveIn": {
         "properties": {
           "reason": {
@@ -3899,6 +4237,45 @@
         ],
         "title": "DashboardOut"
       },
+      "DecisionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "report_version_id": {
+            "type": "string",
+            "title": "Report Version Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "decided_at": {
+            "type": "string",
+            "title": "Decided At"
+          },
+          "head_revision": {
+            "type": "integer",
+            "title": "Head Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "report_version_id",
+          "kind",
+          "value",
+          "decided_at",
+          "head_revision"
+        ],
+        "title": "DecisionOut"
+      },
       "DecisionsOut": {
         "properties": {
           "ceo_ruling": {
@@ -3964,6 +4341,121 @@
         ],
         "title": "DecisionsOut",
         "description": "The current decision on each stream, plus the revision each was read at.\n\nA `null` value means undecided *after submission*, which is a different fact from an explicit\nrefusal: `Not Authorised` is a decision, `null` is the absence of one. Keeping them distinct is\nthe whole reason the mutable approvals row was replaced.\n\n`revisions` is not decoration. A caller recording a decision passes back the revision it read,\nand that is what makes a decision built on a superseded ruling detectable."
+      },
+      "DeleteIn": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "DeleteIn",
+        "description": "`reason` is required, unlike `ApproveIn`'s.\n\nDeleting the only stored copy of what was sent to an external model is not something to do\nwithout saying why, and the audit row is all that remains afterwards. An optional reason would\nmake \"deleted, no explanation given\" the easy default."
+      },
+      "DistributionIn": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Reason"
+          },
+          "evidence_ref": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Evidence Ref"
+          },
+          "owner_id": {
+            "type": "string",
+            "title": "Owner Id"
+          },
+          "next_review": {
+            "type": "string",
+            "format": "date",
+            "title": "Next Review"
+          },
+          "decided_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Decided At"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Idempotency Key"
+          },
+          "expected_head_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Head Revision"
+          },
+          "conditions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conditions"
+          },
+          "sod_exception_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sod Exception Id"
+          },
+          "value": {
+            "type": "string",
+            "enum": [
+              "Authorised",
+              "Not Authorised"
+            ],
+            "title": "Value"
+          },
+          "distribution_recipient": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distribution Recipient"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reason",
+          "evidence_ref",
+          "owner_id",
+          "next_review",
+          "decided_at",
+          "idempotency_key",
+          "expected_head_revision",
+          "value"
+        ],
+        "title": "DistributionIn"
       },
       "DraftFactIn": {
         "properties": {
@@ -4056,20 +4548,51 @@
             ],
             "title": "Content Type"
           },
-          "brief": {
+          "topic": {
             "type": "string",
-            "maxLength": 4000,
+            "maxLength": 200,
             "minLength": 1,
-            "title": "Brief"
+            "title": "Topic"
+          },
+          "key_points": {
+            "items": {
+              "type": "string",
+              "maxLength": 300
+            },
+            "type": "array",
+            "maxItems": 8,
+            "title": "Key Points"
+          },
+          "links": {
+            "items": {
+              "type": "string",
+              "maxLength": 2083,
+              "minLength": 1,
+              "format": "uri"
+            },
+            "type": "array",
+            "maxItems": 5,
+            "title": "Links"
+          },
+          "tone": {
+            "type": "string",
+            "enum": [
+              "formal",
+              "warm",
+              "concise"
+            ],
+            "title": "Tone",
+            "default": "formal"
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
           "content_type",
-          "brief"
+          "topic"
         ],
-        "title": "DraftIn"
+        "title": "DraftIn",
+        "description": "Structured brief (#303), replacing the single 4,000-character free-text box.\n\n**Breaking change to the request shape only.** `DraftOut` and `CommsDraftOut` are unchanged,\nbecause the brief is rendered to text before it is stored - so the list, read and approve\npaths, and the review UI that uses them, are untouched. Only the submit path moves.\n\nThe limits are the point. A 200-character topic and eight 300-character key points is a much\nsmaller target than one 4,000-character box for pasting whatever is on the clipboard, which is\nthe disclosure route #303 describes. It is mitigation, not a boundary: a staff member can\nstill type a member's name into `topic`, and the source declared to the gateway stays\n`STAFF_AUTHORED` rather than falsely claiming to be minimised. See `apps/comms/draft.Brief`."
       },
       "DraftOut": {
         "properties": {
@@ -4772,6 +5295,94 @@
           "reason"
         ],
         "title": "RouteIn"
+      },
+      "RulingIn": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Reason"
+          },
+          "evidence_ref": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Evidence Ref"
+          },
+          "owner_id": {
+            "type": "string",
+            "title": "Owner Id"
+          },
+          "next_review": {
+            "type": "string",
+            "format": "date",
+            "title": "Next Review"
+          },
+          "decided_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Decided At"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Idempotency Key"
+          },
+          "expected_head_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Head Revision"
+          },
+          "conditions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conditions"
+          },
+          "sod_exception_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sod Exception Id"
+          },
+          "value": {
+            "type": "string",
+            "enum": [
+              "Continue",
+              "Continue With Correction",
+              "Pause",
+              "Stop"
+            ],
+            "title": "Value"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reason",
+          "evidence_ref",
+          "owner_id",
+          "next_review",
+          "decided_at",
+          "idempotency_key",
+          "expected_head_revision",
+          "value"
+        ],
+        "title": "RulingIn"
       },
       "RunOut": {
         "properties": {

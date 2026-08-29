@@ -171,3 +171,85 @@ def test_get_and_list_all_round_trip(repo: CommsDraftRepository) -> None:
     ids = {r.id for r in repo.list_all()}
     assert first.id in ids
     assert second.id in ids
+
+
+def test_delete_removes_the_row(repo: CommsDraftRepository) -> None:
+    author = _make_user("Author")
+    draft = repo.create("newsletter", "a brief", "some text", authored_by=author)
+
+    repo.delete(draft.id, principal=_principal(author, "Author"), reason="no longer needed")
+
+    with pytest.raises(KeyError):
+        repo.get(draft.id)
+
+
+def test_delete_audits_the_act_without_recording_the_text(repo: CommsDraftRepository) -> None:
+    """The whole point of #342, and the thing easiest to get backwards.
+
+    `record_audit` normally captures `old_value` so a reader can see what changed. Doing that on a
+    deletion would copy the brief into `audit_log`, which is append-only with an insert/select-only
+    grant - making the sensitive text permanent in the one table nothing can remove it from, which
+    is the exact opposite of what someone deleting a draft is trying to achieve.
+
+    So: the act must be on the record, and the text must not be.
+    """
+    author = _make_user("Author")
+    secret = f"Priya Sharma, Chief Executive {uuid.uuid4()}"
+    draft = repo.create("newsletter", secret, "generated text", authored_by=author)
+
+    repo.delete(
+        draft.id, principal=_principal(author, "Author"), reason="contained personal information"
+    )
+
+    with psycopg.connect(DATABASE_URL) as conn:
+        rows = conn.execute(
+            "select action, old_value, new_value, reason from audit_log where record_id = %s",
+            (draft.id,),
+        ).fetchall()
+
+    actions = [r[0] for r in rows]
+    assert "comms_draft.delete" in actions
+
+    # The brief must appear nowhere in the audit trail for this record.
+    for _action, old_value, new_value, reason in rows:
+        for field in (old_value, new_value, reason):
+            assert secret not in (field or "")
+
+    # And nowhere else in audit_log either - a wider net, because the failure this guards against
+    # is the text leaking into a column nobody thought about.
+    with psycopg.connect(DATABASE_URL) as conn:
+        leaked = conn.execute(
+            "select count(*) from audit_log where coalesce(old_value,'') || coalesce(new_value,'') "
+            "|| coalesce(reason,'') like %s",
+            (f"%{secret}%",),
+        ).fetchone()[0]
+    assert leaked == 0
+
+
+def test_delete_leaves_the_earlier_approval_on_the_record(repo: CommsDraftRepository) -> None:
+    """Deleting the draft removes the text, not the history of who approved it."""
+    author = _make_user("Author")
+    reviewer = _make_user("Reviewer")
+    draft = repo.create("newsletter", "a brief", "some text", authored_by=author)
+    repo.approve(draft.id, principal=_principal(reviewer, "Reviewer"), reason="looks right")
+
+    repo.delete(draft.id, principal=_principal(reviewer, "Reviewer"), reason="superseded")
+
+    with psycopg.connect(DATABASE_URL) as conn:
+        actions = [
+            r[0]
+            for r in conn.execute(
+                "select action from audit_log where record_id = %s order by id", (draft.id,)
+            ).fetchall()
+        ]
+    assert "comms_draft.approve" in actions
+    assert "comms_draft.delete" in actions
+
+
+def test_deleting_a_missing_draft_raises_key_error(repo: CommsDraftRepository) -> None:
+    with pytest.raises(KeyError):
+        repo.delete(
+            "00000000-0000-0000-0000-000000000000",
+            principal=_principal(_make_user("Author"), "Author"),
+            reason="x",
+        )

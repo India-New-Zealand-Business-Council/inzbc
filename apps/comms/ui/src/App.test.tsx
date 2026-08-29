@@ -7,6 +7,6 @@ describe('App', () => {
     render(<App />)
     expect(screen.getByRole('heading', { level: 1, name: /comms assistant/i })).toBeInTheDocument()
     expect(screen.getByLabelText(/content type/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/brief/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/topic/i)).toBeInTheDocument()
   })
 })
