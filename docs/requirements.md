@@ -262,7 +262,15 @@ Acceptance criteria:
 Each requirement mapped to the issue, the pull request that delivered it, and the tests that hold it
 in place. A control requirement with no test is not counted as done.
 
-Test counts are **test functions**; parametrised tests expand to more cases at run time.
+Test counts are given as **`N fn / M cases`** — test functions, then the cases pytest collects
+after parametrisation.
+
+Both units are recorded because giving one invited the other. The final traceability pass (#136)
+found three rows carrying case counts under a heading that said functions — `test_verification`
+read 17 when it has 4 functions and 17 cases, and `test_orchestrator` and `test_runs_api` had the
+same substitution. Nothing was wrong with the tests; the column was ambiguous, so it drifted.
+
+Counts verified against `pytest --collect-only`, not read off the files, on 20 August 2026.
 
 **Where a control is enforced matters as much as that it exists**, so the implementation column
 names the durable boundary and not only the first place the rule was written. Three rows were wrong
@@ -273,27 +281,34 @@ records; the orchestrator holds the same rules for the in-process path.
 
 | Req | Story | Issue | Delivered by | Implementation | Tests |
 |---|---|---|---|---|---|
-| REQ-G-01 | Mandatory source coverage | — (follow-up #52) | PR #27, #35, #51 | `apps/sip/collector/source_register.py` | `test_source_register.py` (14) |
-| REQ-G-02 | Verification gate | — | PR #23, #285 | `apps/sip/collector/verification.py`, `services/api/candidate_persistence.py` | `test_verification.py` (17), `test_candidate_persistence.py` (25) |
-| REQ-G-03 | Human gates on lifecycle | #62 | PR #67, #228, #301 | `apps/sip/core/orchestrator.py`, `services/api/persistence.py`, `database/schema.sql` (`run_authorisations`) | `test_orchestrator.py` (44), `test_persistence.py` (17) |
-| REQ-G-04 | Approval ≠ distribution | #62 | PR #67, #285 | `apps/sip/core/orchestrator.py`, `services/api/runs.py` (`/stop`, `/fail-qa`) | `test_orchestrator.py` (44), `test_runs_api.py` (29) |
-| REQ-I-01 | Capture before selection | — | PR #23 | `apps/sip/collector/mapping.py`, `apps/sip/collector/ingest.py` | `test_mapping.py` (13), `test_ingest.py` (5) |
-| REQ-I-02 | SIP-050 scoring | — | PR #34, #50 | `apps/sip/core/scoring.py` | `test_scoring.py` (9), `test_candidate_relevance_bounds.py` (3) |
-| REQ-I-03 | Untrusted article text | #38 | PR #50 | `apps/sip/core/scoring.py` | `test_scoring_injection.py` (14) |
-| REQ-I-04 | Duplicate suppression | — | PR #23 | `apps/sip/collector/dedupe.py` | `test_dedupe.py` (7) |
+| REQ-G-01 | Mandatory source coverage | — (follow-up #52) | PR #27, #35, #51 | `apps/sip/collector/source_register.py` | `test_source_register.py` (17 fn / 25 cases) |
+| REQ-G-02 | Verification gate | — | PR #23, #285 | `apps/sip/collector/verification.py`, `services/api/candidate_persistence.py` | `test_verification.py` (4 fn / 17 cases), `test_candidate_persistence.py` (28 fn / 28 cases) |
+| REQ-G-03 | Human gates on lifecycle | #62 | PR #67, #228, #301 | `apps/sip/core/orchestrator.py`, `services/api/persistence.py`, `database/schema.sql` (`run_authorisations`) | `test_orchestrator.py` (31 fn / 44 cases), `test_persistence.py` (17 fn / 17 cases) |
+| REQ-G-04 | Approval ≠ distribution | #62 | PR #67, #285 | `apps/sip/core/orchestrator.py`, `services/api/runs.py` (`/stop`, `/fail-qa`) | `test_orchestrator.py` (31 fn / 44 cases), `test_runs_api.py` (19 fn / 29 cases) |
+| REQ-I-01 | Capture before selection | — | PR #23 | `apps/sip/collector/mapping.py`, `apps/sip/collector/ingest.py` | `test_mapping.py` (16 fn / 16 cases), `test_ingest.py` (5 fn / 6 cases) |
+| REQ-I-02 | SIP-050 scoring | — | PR #34, #50 | `apps/sip/core/scoring.py` | `test_scoring.py` (9 fn / 9 cases), `test_candidate_relevance_bounds.py` (3 fn / 19 cases) |
+| REQ-I-03 | Untrusted article text | #38 | PR #50 | `apps/sip/core/scoring.py` | `test_scoring_injection.py` (14 fn / 27 cases) |
+| REQ-I-04 | Duplicate suppression | — | PR #23 | `apps/sip/collector/dedupe.py` | `test_dedupe.py` (7 fn / 7 cases) |
 | REQ-I-05 | End-to-end live run | #55 | — | — | Blocked |
-| REQ-F-01 | Sourced answers only | — | PR #23, #32 | `apps/fta/explainer.py`, `corpus.py` | `test_explainer.py` (11), `test_corpus.py` (7) |
-| REQ-F-02 | Information Standard | — | PR #32, #218 | `apps/fta/standards.py`, `apps/fta/ui/src/components/FtaQuery.tsx` | `test_explainer.py` (11), `FtaQuery.test.tsx` |
-| REQ-U-01 | Review and QA interface | #57, #263 | PR #285 (backend only) | `services/api/runs.py` (`/fail-qa`) | `test_runs_api.py` (29). **Interface not built** |
-| REQ-U-02 | CEO decision screen | #57 | PR #237, #285, #311 (backend only) | `services/api/runs.py` (`/pause`, `/stop`), `services/api/reports.py` | `test_runs_api.py` (29), `test_reports_api.py` (19). **Screen not built** |
+| REQ-F-01 | Sourced answers only | — | PR #23, #32 | `apps/fta/explainer.py`, `corpus.py` | `test_explainer.py` (21 fn / 21 cases), `test_corpus.py` (16 fn / 16 cases) |
+| REQ-F-02 | Information Standard | — | PR #32, #218 | `apps/fta/standards.py`, `apps/fta/ui/src/components/FtaQuery.tsx` | `test_explainer.py` (21 fn / 21 cases), `FtaQuery.test.tsx` |
+| REQ-U-01 | Review and QA interface | #57, #263 | PR #285 (backend only) | `services/api/runs.py` (`/fail-qa`) | `test_runs_api.py` (19 fn / 29 cases). **Interface not built** |
+| REQ-U-02 | CEO decision screen | #57 | PR #237, #285, #311 (backend only) | `services/api/runs.py` (`/pause`, `/stop`), `services/api/reports.py` | `test_runs_api.py` (19 fn / 29 cases), `test_reports_api.py` (24 fn / 33 cases). **Screen not built** |
 | REQ-U-03 | Accessible design system | #58 | — | — | Planned |
 | REQ-U-04 | FTA Explainer embed | #59 | #85–#87, #89, #91 | `apps/fta/ui`, `services/api/main.py` | `FtaQuery.test.tsx`, `test_main.py`. Built and served from the container image; **not deployed** (#99) |
-| NFR-01 | Server-side model calls | #36 | PR #34 | `services/api/model_gateway.py` | `test_model_gateway.py` (2) |
-| NFR-02 | Fail closed on Critical | — | PR #23, #34, #67 | across gates | `test_orchestrator.py`, `test_verification.py`, `test_scoring_injection.py` |
+| NFR-01 | Server-side model calls | #36 | PR #34 | `services/api/model_gateway.py` | `test_model_gateway.py` (2 fn / 2 cases) |
+| NFR-02 | Fail closed on Critical | — | PR #23, #34, #67 | across gates | `test_orchestrator.py` (31 fn / 44 cases), `test_verification.py` (4 fn / 17 cases), `test_scoring_injection.py` |
+| NFR-03 | Named human reviewer before publication | #53 | PR #162, #301 | `apps/comms/draft.py` (refuses the draft's own author), `services/api/persistence.py` (`run_authorisations`) | `test_draft.py`, `test_persistence.py` (17 fn / 17 cases) |
+| NFR-04 | Privacy Act 2020 handling | #132 | — | `docs/privacy-assessment.md` | **Not testable yet** — no member data is stored (#198, #201) |
+| NFR-05 | Distribution disabled until SIP-191 | — | PR #164, #237 | `database/schema.sql` (`runs.production_enabled` default false), `apps/sip/pipeline/client.py` (server-only field) | `test_models.py`, `test_client.py` |
+| NFR-06 | ADR per significant decision | — | across PRs | `docs/decisions/` (7 ADRs) | Verified by review; no automated test |
+| NFR-07 | Reviewed PR, green CI, no direct pushes to `main` | — | — | `.github/workflows/ci.yml` (9 jobs), `CONTRIBUTING.md` | Enforced by CI and branch protection, not by a unit test |
 | NFR-08 | Controlled docs single source | — | PR #72, agent PR #12 | `docs/sip/launch/` | Verified by diff; no automated test |
 
-**Coverage summary:** 18 requirements tracked. 13 delivered with automated test coverage, plus
-NFR-08 verified by diff rather than by a test.
+**Coverage summary:** 23 requirements tracked after the final pass added the five missing NFRs
+(was 18). 15 delivered with automated test coverage; NFR-06, NFR-07 and NFR-08 are enforced by
+review, CI and branch protection rather than by a unit test, and say so rather than claiming a
+test that does not exist.
 
 Five remain, and they are not all the same kind of incomplete. REQ-U-01 and REQ-U-02 have their
 **backends built and tested** and no interface; the requirement is written about a screen, so they
@@ -301,9 +316,30 @@ are not counted as delivered, and the row says which half exists rather than imp
 extreme. REQ-U-03 is unstarted. REQ-U-04 is built and served from the container image but not
 deployed anywhere (#99). REQ-I-05 needs a live run against real sources (#55).
 
-This is a correction pass, not the final traceability review (#136). Nothing here was marked
-delivered to improve the count: the two rows that moved furthest, REQ-U-01 and REQ-U-02, moved from
-"Planned" to "backend only" and stay uncounted.
+### Final traceability pass, 20 August 2026 (#136)
+
+Every row was checked against the repository rather than against the previous version of this
+table. Three findings, none of which changed a delivered/not-delivered verdict:
+
+1. **Nine test counts were wrong**, and in two different ways. Six were simply stale — tests were
+   added and the table was not updated. Three were the *right number in the wrong unit*:
+   `test_verification` read 17, which is its case count, not its 4 functions; `test_orchestrator`
+   and `test_runs_api` had the same substitution. The column now records both units so the
+   ambiguity that produced this cannot recur. No tests were deleted — that was checked first,
+   because a falling count is the one that would matter.
+2. **Five non-functional requirements were absent from the matrix.** §2 defines eight; only
+   NFR-01, NFR-02 and NFR-08 were traced. NFR-03 to NFR-07 are now rowed with honest evidence:
+   two are enforced by mechanisms that are not unit tests (CI and branch protection for NFR-07,
+   review discipline for NFR-06), and NFR-04 is not testable at all yet because no member data is
+   stored.
+3. **Nothing was marked delivered to improve the count.** REQ-U-01 and REQ-U-02 still have
+   backends built and tested with no interface, and stay uncounted. REQ-I-05 is still blocked on a
+   live run. REQ-U-04 is still built-but-undeployed.
+
+Counts verified with `pytest --collect-only`. The suite stands at 1,025 passing, 0 skipped.
+
+The earlier correction pass, which moved REQ-U-01 and REQ-U-02 from "Planned" to "backend only",
+also did not count them — that was the point of it.
 
 Every `[x]` in this document means the behaviour is implemented **and** exercised by a test. Where a
 criterion depends on a caller that does not exist yet, it is left unticked even if the supporting

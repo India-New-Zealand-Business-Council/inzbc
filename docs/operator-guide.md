@@ -146,6 +146,16 @@ task needs a decision from the Executive Sponsor, not a workaround.
 yourself and nothing can tell a member's name from any other words. That is why the warning above
 matters: there is no refusal waiting to catch that one.
 
+Since #303 the brief is no longer one free-text box. It is a topic (200 characters), up to eight
+key points of 300 characters each, up to five links, and a tone. That was done to shrink what can
+be pasted in one go and to make each field's purpose obvious.
+
+**It does not make the brief safe, and you should not read it as though it does.** A name typed
+into the topic field reaches the model exactly as a name pasted into the old box did. The system
+still declares this text as staff-authored rather than claiming it has been minimised, because
+that is the truth. The rule is unchanged: do not enter member names, job titles, employers or
+Board material, and do not rely on redaction to remove them.
+
 ### 401 "no session" / "session expired" / "session idle too long"
 
 Sign in again. Nothing is wrong.

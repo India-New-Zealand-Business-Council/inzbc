@@ -170,6 +170,26 @@ same branch-level fault hits someone else's PR later; not otherwise unresolved.
   it on `main`, so the check clears on this rebase (13 Aug 2026).
 
 ## Next up
+
+**Top priority, 20 Aug 2026 — architecture diagram pack for the project coordinator.** Ahead of
+the comms service side and the end-to-end run. Standard and the full seventeen-diagram set are in
+[docs/architecture-diagram-plan.md](../architecture-diagram-plan.md). Both are documentation of
+code that already exists, so neither is blocked on anything.
+
+- [ ] **#331 Service flow diagrams: FTA query and Comms draft-to-approve.** Both flows encode a
+      refusal that is the point of the service, and neither refusal appears in any diagram. The
+      FTA one must make the no-model-call boundary explicit.
+- [ ] **#332 Model data boundary: the defence-in-depth layers.** Source refusal, `minimise()`,
+      redaction, gateway, operator procedure. Each layer states what it *cannot* do — a layer
+      documented only by its successes reads as a guarantee, which is what ADR-0006 exists to
+      prevent.
+- [ ] **#338 Replace the demo seed with a realistic dataset.** Four candidates on a run keyed
+      `DEMO-` is what every screenshot and walkthrough currently runs on, and it reads as a toy.
+      Needs your judgement on what realistic intelligence data looks like — real SIP-185 sources,
+      a spread of verification states, runs mid-lifecycle, duplicates dedupe actually catches, at
+      least one uncovered mandatory source. Nothing invented and presented as real
+      (`PROJECT-RULES.md`).
+
 - SHARED-OK: SIP-050 relevance/signal/confidence scoring moved to Bhanu's worklog — it runs
   through the model gateway he owns. `assessment.py` stays the validation/carry layer here.
 - [ ] Comms Assistant service side (`apps/comms`): draft-generation flow with the named-reviewer

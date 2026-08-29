@@ -38,10 +38,15 @@ and it must still not be described as making it safe to send member data to a mo
 policy does not make it so.
 
 **One case has no structural control**, and it is worth knowing which: the Comms Assistant brief is
-free text a staff member types, so there is no record to minimise. What bounds it is the operator
-being told not to paste member details and told why, with redaction catching the identifiers it can
+text a staff member types, so there is no record to minimise. What bounds it is the operator being
+told not to enter member details and told why, with redaction catching the identifiers it can
 match. That is weaker than the structured path, and it is the reason the operator guide says so
 plainly.
+
+#303 narrowed the field without closing the case. The brief is now named, capped fields rather than
+one 4,000-character box, which shrinks what can be pasted in a single action. It does not make the
+contents inspectable, so the call still declares `STAFF_AUTHORED` rather than claiming to be
+minimised — a field being named says nothing about what a person typed into it.
 
 Two evasions are defended because they are cheap to defend: a full-width `＠` homoglyph, and a
 number split across a line break. Others are not. Policy authorship remains a trusted operation.

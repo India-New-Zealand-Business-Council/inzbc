@@ -377,8 +377,24 @@ Sharma, Chief Executive at Koru Exports, opposed the offer` satisfies `check_sou
 redaction untouched, and violates ADR-0006 §1 and §3 while every automated control reports success.
 
 What bounds it is the operator being told not to. That is a procedure, not a boundary, and
-procedures are what #223 existed to replace. Closing it means the request carrying named fields
-instead of prose, so there is something to minimise. Tracked as #303.
+procedures are what #223 existed to replace. Tracked as #303.
+
+**Partially addressed, and the limit is worth stating precisely.** #303 replaced the single
+4,000-character brief with named, capped fields: a 200-character topic, up to eight key points of
+300 characters, up to five links, and a controlled tone. That shrinks what can be pasted in one
+action and makes each field's purpose explicit.
+
+It is not a boundary, and the implementation deliberately does not pretend otherwise. The original
+plan was to route the fields through `minimise()` and declare `MINIMISED_RECORD`. That would have
+been false: `minimise()` drops fields nobody named, it does not inspect values a human typed, so a
+member's name in the topic field survives it untouched. The declaration therefore stays
+`STAFF_AUTHORED`, which is true. A true weak declaration is worth more than a false strong one,
+because the false one would make this table read as closed.
+
+The gap that remains is the original one at smaller scale: staff-typed prose reaches a model and
+no automated control can tell whether it names a member. Closing it needs either a written,
+Executive-Sponsor-approved acceptance of that exposure, or a decision to stop accepting staff prose
+at all.
 
 ## 8. Known gaps
 
@@ -389,7 +405,7 @@ marketing document.
 |---|---|
 | OAuth handshake not merged; sessions issued out of band | #99 |
 | No module builds prompts through `minimise()` yet | ADR-0006 §2 |
-| The Comms brief is free prose, so refusal cannot bound it; procedure only | #303 |
+| Staff-typed prose still reaches a model; #303 capped and structured the fields, which shrinks the exposure but does not bound it. Needs a written acceptance or a decision to stop accepting prose | #303 |
 | A hollowed-out prompt is sent rather than refused | ADR-0006 §5, threshold is INZBC's to set |
 | Session establishment and sign-out are not audited | this document, §5 |
 | `users.mfa_enabled` exists but nothing reads or enforces it | this document, §1 |

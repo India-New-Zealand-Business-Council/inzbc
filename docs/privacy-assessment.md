@@ -1,7 +1,24 @@
 # Preliminary privacy and data-flow assessment
 
 Required by the Privacy Act 2020 and BR3, and it has to happen **before** the first real record is
-stored rather than after. Verification against the built system is separate (#132).
+stored rather than after.
+
+**Verified against the built system on 21 August 2026 (#132).** Every claim below was checked
+against the schema and the code rather than against the previous version of this document. Three
+things had changed and are corrected in place; the rest held. What the pass found:
+
+| Claim | Result |
+|---|---|
+| `users` fields and their necessity (§1) | Accurate |
+| `mfa_enabled` is read by nothing | Still true — zero non-test references |
+| No member or CRM data is stored | Still true — no such tables exist |
+| Session tokens never logged, only the SHA-256 digest stored (§5) | Accurate |
+| Request bodies not logged wholesale (§5) | Accurate — zero logging call sites in `services/api` |
+| `audit_log.reason` is unbounded operator text (§5) | Accurate — `text`, no length limit |
+| `minimise()` has no production caller (§3, §8 item 5) | Still true — only referenced in comments |
+| **Model prompts and responses are not persisted (§5)** | **Wrong now.** Corrected below |
+| **§1 data inventory is complete** | **Wrong now** — `comms_drafts` was missing. Added below |
+| **§8 gate items 6 and 7 are open engineering work** | **Out of date** — both closed. Corrected below |
 
 **Status: assessment complete, not approved.** The Privacy Owner role sits with the Executive
 Sponsor. Nothing here is a decision INZBC has made until it is signed.
@@ -75,6 +92,37 @@ published material, which is what makes it proportionate. **It should not become
 system stores articles, and building a person-keyed index across them would be a different
 collection with a different purpose, and would need its own assessment.
 
+### Comms drafts — staff prose and model output — `comms_drafts`
+
+Added by the 21 August verification pass (#132). This table existed and was not in the inventory.
+
+| Field | Necessary? | Why |
+|---|---|---|
+| `brief` | Yes | The text sent to the model. Storing it is what lets a reviewer or an incident responder see what actually left the building |
+| `draft_text` | Yes | The model's response, which is the thing being reviewed and approved |
+| `authored_by` / `approved_by` | Yes | BR8 refuses self-approval, which requires knowing who did each |
+| `approval_reason` | Marginal | Free operator text, same unbounded-prose concern as `audit_log.reason` (§5) |
+
+**This is the one table where personal data can arrive without anyone deciding it should.** `brief`
+is typed by a staff member. Nothing in the system can tell whether they typed a member's name, job
+title or employer, and redaction cannot remove those from prose — that is ADR-0006's founding
+finding, restated.
+
+#303 narrowed the field: the brief is now four short capped inputs totalling at most 4,000
+characters rather than one free-text box, and every field carries a warning. That reduces what can
+be pasted in one action. It does not make the contents inspectable, which is why the call still
+declares `STAFF_AUTHORED` rather than claiming to be minimised.
+
+Two consequences worth naming rather than leaving implied:
+
+- **There is no retention rule for this table.** Drafts accumulate indefinitely. It belongs in
+  §2's list and in the `[[period]]` decisions INZBC still owes.
+- ~~There is no deletion path.~~ **Closed (#342).** `DELETE /api/comms/drafts/{id}` removes a
+  draft, requires a reason, and writes an audit record. The audit row deliberately records that a
+  deletion happened and **not what it contained**: copying the brief into `audit_log` — which is
+  append-only with an insert/select-only grant — would make the sensitive text permanent in the
+  one table nothing can remove it from. A test asserts the text appears nowhere in `audit_log`.
+
 ### Members — not yet, and this is the gate
 
 Modules 2, 3 and 4. Before the first member record is stored:
@@ -101,6 +149,7 @@ Authoritative table: [`data/system-of-record-and-retention.md`](./data/system-of
 | `candidates`, `runs`, `report_versions` | Life of the programme, then review | Working intelligence; no reason to keep indefinitely once superseded |
 | `sessions` | 12 hours absolute, 60 minutes idle | Deleted on expiry, sign-out, or by `purge_expired()` |
 | `users` | Deactivate, never delete | The audit trail references `users.id`; deleting the person removes the meaning from every action they recorded |
+| `comms_drafts` | **Deletion exists (#342); retention period still undecided** | Added by the 21 August pass (#132). Holds staff-typed prose and model output; the only table where personal data can arrive without anyone deciding it should. A draft can now be removed on request; nothing expires on its own, so a `[[period]]` is still owed |
 | Member data | Per-field, decided before collection | Not yet applicable |
 
 **`purge_expired()` is written but nothing calls it on a schedule.** So an abandoned session row
@@ -174,9 +223,22 @@ precedent.
 | Credentials | Never in the database; environment only, `gitleaks` on every commit |
 | Request bodies | Not logged wholesale |
 | `audit_log` free text | `reason` is operator-written and *can* carry whatever they type — the one place personal data could enter without anyone deciding it should |
-| Model prompts and responses | Not persisted today. #36 proposes usage logging, and that proposal is where this assessment applies |
+| Model prompts and responses | **Persisted, as of the Comms Assistant landing.** Corrected below — this row previously read "not persisted today" and that stopped being true without the assessment noticing |
 
-Two of those rows deserve attention rather than a tick.
+Three of those rows deserve attention rather than a tick.
+
+**Model prompts and responses are persisted now, and this document said otherwise.** Every
+successful `POST /api/comms/draft` writes a `comms_drafts` row holding `brief` — the staff-written
+text that goes into the prompt — and `draft_text`, the model's response. Both halves of the
+exchange are stored, indefinitely, in a table this assessment did not list.
+
+That was not a decision anyone took; the row simply became stale when the Comms Assistant gained
+persistence, which is exactly the failure mode a verification pass exists to catch. The privacy
+consequence is real but narrow today: no member data is stored, so what accumulates is staff-typed
+prose and model output. It stops being narrow the moment a staff member types a member's name into
+a brief — see §1's `comms_drafts` entry.
+
+#36's usage logging remains the *next* decision, not the first one.
 
 **`audit_log.reason` is unbounded operator text**, and it is append-only, so a name typed into it
 cannot be removed. Worth an operator-guide line: reasons state what and why, not who beyond the
@@ -233,10 +295,17 @@ The gate, in one list:
 4. Row-level visibility designed (§4).
 5. Every module that touches member records builds its prompts through `minimise()` and declares
    `MINIMISED_RECORD`. The mechanism exists (§3); using it is per-module work.
-6. #205 landed — environments separated, production data staying in production (§6).
-7. A restore proven, not assumed (#290).
+6. ~~#205 landed~~ — **closed.** Environments are separated; production data stays in production (§6).
+7. ~~A restore proven, not assumed (#290)~~ — **closed.**
 8. Principle 10 squared: reusing INZBC's existing membership register for a new purpose.
+9. **A retention period for `comms_drafts`.** Added by the 21 August pass. The deletion path is
+   built (#342); what remains is INZBC deciding how long a draft nobody deletes should live.
 
-**Items 5, 6 and 7 are open engineering work, not paperwork.** That is the honest summary of this
-assessment: the privacy position today is defensible because the system holds almost nothing, and
-three of the eight things standing between here and holding member data are unbuilt.
+**Status after the 21 August verification pass:** items 6 and 7 are now closed, so the honest
+summary has moved. One piece of engineering work remains on this gate — item 5, `minimise()` still
+has no production caller — plus the new item 9, which the pass found.
+
+The underlying position is unchanged and still the important sentence: **the privacy position
+today is defensible because the system holds almost nothing.** It stops being defensible by
+default the moment member data arrives, which is what this gate exists to prevent happening
+accidentally.

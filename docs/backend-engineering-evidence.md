@@ -36,7 +36,7 @@ grep -cE '^create table' database/schema.sql
 
 | Primitive | Count |
 |---|---|
-| REST routes | 51, across 13 routers |
+| REST operations | 56, across 48 paths and 13 routers |
 | Database tables | 25 |
 | Foreign-key columns | 39 (52 `references` occurrences, including table-level constraints) |
 | Indexes | 54 (3 explicit + 48 implicit from PK/UNIQUE constraints + 3 added by #334) |
@@ -48,11 +48,26 @@ grep -cE '^create table' database/schema.sql
 | Python tests | 1,047 passing, 0 skipped |
 | CI jobs defined to gate every merge | 9 (none have run since 24 August, see below) |
 
-An earlier version of this table said 34 routes across 12 routers. That count used a
-narrower grep matching only decorators literally named `@router.`, which missed the three
-routers `registers.py` defines under other names (`action_register_router`,
-`watch_list_router`, `exceptions_router`). 13 routers is confirmed independently by the 13
-`app.include_router(...)` calls in `services/api/main.py`.
+**The route count has been wrong twice, so it is worth saying how it is now derived.** The first
+version said 34, from a grep matching only decorators literally named `@router.` — which missed
+the three routers `registers.py` defines under other names (`action_register_router`,
+`watch_list_router`, `exceptions_router`). The second said 51, which was that corrected grep run
+against a stale checkout.
+
+The number above comes from the generated schema, which is what the application actually serves
+rather than what a regex finds:
+
+```
+.venv/Scripts/python.exe scripts/dump_openapi.py
+.venv/Scripts/python.exe -c "import json; s=json.load(open('schemas/openapi.json')); \
+print(sum(len([m for m in v if m in ('get','post','put','patch','delete')]) for v in s['paths'].values()))"
+```
+
+It agrees with a decorator count across every router name (56), which is the cross-check that
+makes it trustworthy. **Regenerate before quoting it** — `schemas/openapi.json` was 616 lines
+stale when this correction was made, so a reader running the second command alone on an
+un-regenerated checkout gets a number that is confidently wrong. That is the failure mode this
+document keeps hitting, and the reason each figure here carries its command.
 
 Engineering that is not model work, with the file that implements it:
 

@@ -50,8 +50,13 @@ Two conventions hold across this tree:
 
 ## I am waiting on a client decision
 - [`sunil-decision-sheet.md`](sunil-decision-sheet.md) — **start here.** Eight of its nine items are
-  settled. The one client decision still open is who owns the platform after the placement ends
-  (#97).
+  settled. Post-capstone ownership (#97) is one of several still open — see
+  [`client-questions.md`](client-questions.md) for the current list, which supersedes any count
+  given here.
+- [`client-questions.md`](client-questions.md) — **the current list of what INZBC still owes**,
+  compiled 21 August 2026. Grouped by what each item blocks rather than by topic, and it opens by
+  naming what is already settled so nothing gets re-asked. Four signatures sit at the top; they
+  are the only things holding #40, #303, #189 and #99 open.
 - [`client-decision-pack.md`](client-decision-pack.md) — the six decisions that belonged to INZBC,
   each with the options and what it cost to leave it open. **All six are settled**; kept as the
   record of how each answer was reached, not as a list of questions.
