@@ -1158,6 +1158,62 @@
       }
     },
     "/api/comms/drafts/{draft_id}": {
+      "delete": {
+        "tags": [
+          "Comms Assistant"
+        ],
+        "summary": "Delete Draft",
+        "description": "Removes a draft outright (#342). Same roles as creating one \u2014 Secretariat, SIP Owner \u2014 not\nthe reviewer roles that approve; deleting is an authoring-side act, not a review one.\n\nAny status is deletable, including `Approved`: the approval's own audit entry survives even\nthough the row it approved is gone. See `CommsDraftRepository.delete`'s docstring for why the\naudit row this writes never carries the brief or draft text.",
+        "operationId": "delete_draft_api_comms_drafts__draft_id__delete",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "draft_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Draft Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteDraftIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
       "get": {
         "tags": [
           "Comms Assistant"
@@ -3964,6 +4020,23 @@
         ],
         "title": "DecisionsOut",
         "description": "The current decision on each stream, plus the revision each was read at.\n\nA `null` value means undecided *after submission*, which is a different fact from an explicit\nrefusal: `Not Authorised` is a decision, `null` is the absence of one. Keeping them distinct is\nthe whole reason the mutable approvals row was replaced.\n\n`revisions` is not decoration. A caller recording a decision passes back the revision it read,\nand that is what makes a decision built on a superseded ruling detectable."
+      },
+      "DeleteDraftIn": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "DeleteDraftIn",
+        "description": "Body, not a query parameter \u2014 a reason in a URL lands in access logs, which is the same\nleak in a different place. `reason` describes *why* the draft is being removed, not what it\ncontained: it is stored in `audit_log`, which is append-only, so naming what was in the draft\nwould move the disclosure into the one place it can never be deleted from again."
       },
       "DraftFactIn": {
         "properties": {

@@ -361,6 +361,9 @@ EXPECTED_ROLES: dict[tuple[str, str], set[str]] = {
     ("POST", "/api/comms/drafts/{draft_id}/approve"): {"Reviewer", "SIP Owner"},
     ("GET", "/api/comms/drafts/{draft_id}"): set(STAFF_READ),
     ("GET", "/api/comms/drafts"): set(STAFF_READ),
+    # Same roles as creating a draft, not the reviewer roles that approve one (#342) — deleting is
+    # an authoring-side act.
+    ("DELETE", "/api/comms/drafts/{draft_id}"): {"Secretariat", "SIP Owner"},
 }
 
 

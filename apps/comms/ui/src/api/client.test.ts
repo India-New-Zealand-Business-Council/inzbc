@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { CommsDraftError, requestCommsDraft } from './client'
+import { CommsDraftError, deleteCommsDraft, requestCommsDraft } from './client'
 import { clearSession } from './session'
+
+const DRAFT_ID = '00000000-0000-0000-0000-0000000000d1'
 
 const SESSION_BODY = {
   user_id: '00000000-0000-0000-0000-0000000000aa',
@@ -42,10 +44,11 @@ afterEach(() => vi.unstubAllGlobals())
 
 describe('requestCommsDraft', () => {
   it('posts the content type and brief, same-origin, and returns the draft', async () => {
-    const spy = mockFetch({ draft: 'Hello staff' })
+    const spy = mockFetch({ draft: 'Hello staff', id: DRAFT_ID, status: 'Draft' })
     const result = await requestCommsDraft({ contentType: 'newsletter', brief: 'Q3 update' })
 
     expect(result.draft).toBe('Hello staff')
+    expect(result.id).toBe(DRAFT_ID)
     const [url, init] = draftCall(spy)
     expect(url).toBe('/api/comms/draft')
     expect(init.method).toBe('POST')
@@ -54,7 +57,7 @@ describe('requestCommsDraft', () => {
   })
 
   it('honours a baseUrl for a cross-origin deployed shape', async () => {
-    const spy = mockFetch({ draft: 'x' })
+    const spy = mockFetch({ draft: 'x', id: DRAFT_ID, status: 'Draft' })
     await requestCommsDraft({ contentType: 'linkedin_post', brief: 'x' }, { baseUrl: 'https://api.example.test' })
     expect(draftCall(spy)[0]).toBe('https://api.example.test/api/comms/draft')
   })
@@ -94,10 +97,13 @@ describe('requestCommsDraft', () => {
   })
 
   it.each([
-    ['a missing draft field', {}],
-    ['a non-string draft', { draft: 42 }],
-    ['an empty draft', { draft: '' }],
+    ['a missing draft field', { id: DRAFT_ID, status: 'Draft' }],
+    ['a non-string draft', { draft: 42, id: DRAFT_ID, status: 'Draft' }],
+    ['an empty draft', { draft: '', id: DRAFT_ID, status: 'Draft' }],
     ['a non-object body', 'not json'],
+    ['a missing id — additive fields the UI now relies on', { draft: 'x', status: 'Draft' }],
+    ['an empty id', { draft: 'x', id: '', status: 'Draft' }],
+    ['a missing status', { draft: 'x', id: DRAFT_ID }],
   ])('rejects %s', async (_label, body) => {
     mockFetch(body)
     await expect(requestCommsDraft({ contentType: 'newsletter', brief: 'x' })).rejects.toBeInstanceOf(
@@ -111,7 +117,7 @@ describe('CSRF', () => {
     // The endpoint is behind `write_access`, which refuses a state-changing request with no
     // `X-CSRF-Token`. Sending the cookie alone is authenticated and refused, so without this the
     // draft button cannot work at all against the real API.
-    const spy = mockFetch({ draft: 'Hello staff' })
+    const spy = mockFetch({ draft: 'Hello staff', id: DRAFT_ID, status: 'Draft' })
 
     await requestCommsDraft({ contentType: 'newsletter', brief: 'x' })
 
@@ -121,7 +127,7 @@ describe('CSRF', () => {
 
   it('fetches the session before the draft, not after', async () => {
     clearSession()
-    const spy = mockFetchWithSession({ draft: 'x' })
+    const spy = mockFetchWithSession({ draft: 'x', id: DRAFT_ID, status: 'Draft' })
 
     await requestCommsDraft({ contentType: 'newsletter', brief: 'x' })
 
@@ -141,5 +147,46 @@ describe('CSRF', () => {
     await expect(requestCommsDraft({ contentType: 'newsletter', brief: 'x' })).rejects.not.toBeInstanceOf(
       CommsDraftError,
     )
+  })
+})
+
+describe('deleteCommsDraft', () => {
+  it('sends DELETE with the reason in the body, same-origin, with the CSRF token', async () => {
+    const spy = mockFetch(null, { status: 204 })
+
+    await deleteCommsDraft(DRAFT_ID, 'contained personal information')
+
+    const [url, init] = draftCall(spy)
+    expect(url).toBe(`/api/comms/drafts/${DRAFT_ID}`)
+    expect(init.method).toBe('DELETE')
+    expect(init.credentials).toBe('same-origin')
+    expect(JSON.parse(init.body as string)).toEqual({ reason: 'contained personal information' })
+    expect((init.headers as Record<string, string>)['X-CSRF-Token']).toBe('a-real-token')
+  })
+
+  it('resolves with nothing on success', async () => {
+    mockFetch(null, { status: 204 })
+    await expect(deleteCommsDraft(DRAFT_ID, 'superseded')).resolves.toBeUndefined()
+  })
+
+  it('raises a distinct message on 404 — already gone, not a generic failure', async () => {
+    mockFetch(null, { ok: false, status: 404 })
+    await expect(deleteCommsDraft(DRAFT_ID, 'superseded')).rejects.toThrow(/no longer exists/i)
+  })
+
+  it('raises a distinct message on 403 — a real state, not a generic toast', async () => {
+    mockFetch(null, { ok: false, status: 403 })
+    await expect(deleteCommsDraft(DRAFT_ID, 'superseded')).rejects.toThrow(/permission/i)
+  })
+
+  it('raises a typed error when the service is unreachable', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('network down')))
+    await expect(deleteCommsDraft(DRAFT_ID, 'superseded')).rejects.toBeInstanceOf(CommsDraftError)
+  })
+
+  it('propagates an abort rather than disguising it as a service error', async () => {
+    const abort = new DOMException('aborted', 'AbortError')
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(abort))
+    await expect(deleteCommsDraft(DRAFT_ID, 'superseded')).rejects.toBe(abort)
   })
 })

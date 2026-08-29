@@ -374,7 +374,16 @@ export interface paths {
         get: operations["get_draft_api_comms_drafts__draft_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete Draft
+         * @description Removes a draft outright (#342). Same roles as creating one — Secretariat, SIP Owner — not
+         *     the reviewer roles that approve; deleting is an authoring-side act, not a review one.
+         *
+         *     Any status is deletable, including `Approved`: the approval's own audit entry survives even
+         *     though the row it approved is gone. See `CommsDraftRepository.delete`'s docstring for why the
+         *     audit row this writes never carries the brief or draft text.
+         */
+        delete: operations["delete_draft_api_comms_drafts__draft_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1265,6 +1274,17 @@ export interface components {
             revisions: {
                 [key: string]: number;
             };
+        };
+        /**
+         * DeleteDraftIn
+         * @description Body, not a query parameter — a reason in a URL lands in access logs, which is the same
+         *     leak in a different place. `reason` describes *why* the draft is being removed, not what it
+         *     contained: it is stored in `audit_log`, which is append-only, so naming what was in the draft
+         *     would move the disclosure into the one place it can never be deleted from again.
+         */
+        DeleteDraftIn: {
+            /** Reason */
+            reason: string;
         };
         /** DraftFactIn */
         DraftFactIn: {
@@ -2625,6 +2645,53 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CommsDraftOut"];
                 };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_draft_api_comms_drafts__draft_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                draft_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteDraftIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description No session, or the session has expired or been idle too long. */
             401: {

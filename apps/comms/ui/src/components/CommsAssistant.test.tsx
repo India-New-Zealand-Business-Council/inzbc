@@ -11,6 +11,16 @@ function mockFetch(body: unknown, init: { ok?: boolean; status?: number } = {}) 
   return spy
 }
 
+let draftIdCounter = 0
+
+/** `id`/`status` are additive on `DraftOut` (services/api/comms.py) — every draft response in
+ * this file needs them now that the delete control reads `draftState.id`, so this is the one
+ * place that shape lives rather than repeating it at every call site. */
+function draftBody(draft: string) {
+  draftIdCounter += 1
+  return { draft, id: `draft-${draftIdCounter}`, status: 'Draft' }
+}
+
 function stubClipboard(writeText: ReturnType<typeof vi.fn>) {
   Object.defineProperty(navigator, 'clipboard', {
     value: { writeText },
@@ -36,7 +46,7 @@ describe('CommsAssistant', () => {
     // The button-disabled test above never attempts a submission, so it can't catch a broken
     // whitespace guard inside generateDraft() itself — only Ctrl+Enter (onBriefKeyDown) calls
     // generateDraft() directly, independent of the button's disabled attribute.
-    const spy = mockFetch({ draft: 'x' })
+    const spy = mockFetch(draftBody('x'))
     render(<CommsAssistant />)
 
     await userEvent.type(screen.getByLabelText(/brief/i), '   {Control>}{Enter}{/Control}')
@@ -45,7 +55,7 @@ describe('CommsAssistant', () => {
   })
 
   it('submits the selected content type and brief, then renders the draft', async () => {
-    const spy = mockFetch({ draft: 'Draft newsletter body' })
+    const spy = mockFetch(draftBody('Draft newsletter body'))
     render(<CommsAssistant />)
 
     await userEvent.selectOptions(screen.getByLabelText(/content type/i), 'LinkedIn Post')
@@ -77,7 +87,7 @@ describe('CommsAssistant', () => {
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
 
     expect(screen.getByRole('button', { name: /generating/i })).toBeDisabled()
-    resolveFetch({ ok: true, status: 200, json: async () => ({ draft: 'done' }) })
+    resolveFetch({ ok: true, status: 200, json: async () => draftBody('done') })
     expect(await screen.findByText('done')).toBeInTheDocument()
   })
 
@@ -96,7 +106,7 @@ describe('CommsAssistant', () => {
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
 
     expect(container.querySelector('[aria-hidden="true"] .animate-pulse')).toBeTruthy()
-    resolveFetch({ ok: true, status: 200, json: async () => ({ draft: 'done' }) })
+    resolveFetch({ ok: true, status: 200, json: async () => draftBody('done') })
     await screen.findByText('done')
     expect(container.querySelector('[aria-hidden="true"] .animate-pulse')).toBeFalsy()
   })
@@ -116,7 +126,7 @@ describe('CommsAssistant', () => {
     // A failed *second* generateDraft() call used to wipe the already-rendered draft along with
     // it: generate A, ask for a revision, hit a 503, A is gone with no recovery. draftState must
     // stay untouched on a failed regeneration; only submitError should change.
-    mockFetch({ draft: 'First draft' })
+    mockFetch(draftBody('First draft'))
     render(<CommsAssistant />)
     await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
@@ -133,7 +143,7 @@ describe('CommsAssistant', () => {
   })
 
   it('copies the rendered draft to the clipboard', async () => {
-    mockFetch({ draft: 'Copy me' })
+    mockFetch(draftBody('Copy me'))
     const writeText = vi.fn().mockResolvedValue(undefined)
     stubClipboard(writeText)
 
@@ -148,7 +158,7 @@ describe('CommsAssistant', () => {
   })
 
   it('shows a copy-failed state when the clipboard write rejects', async () => {
-    mockFetch({ draft: 'Copy me' })
+    mockFetch(draftBody('Copy me'))
     stubClipboard(vi.fn().mockRejectedValue(new Error('denied')))
 
     render(<CommsAssistant />)
@@ -161,7 +171,7 @@ describe('CommsAssistant', () => {
   })
 
   it('shows a toast notification when the copy succeeds', async () => {
-    mockFetch({ draft: 'Copy me' })
+    mockFetch(draftBody('Copy me'))
     stubClipboard(vi.fn().mockResolvedValue(undefined))
 
     render(<CommsAssistant />)
@@ -179,7 +189,7 @@ describe('CommsAssistant', () => {
   })
 
   it('shows a toast notification when the copy fails', async () => {
-    mockFetch({ draft: 'Copy me' })
+    mockFetch(draftBody('Copy me'))
     stubClipboard(vi.fn().mockRejectedValue(new Error('denied')))
 
     render(<CommsAssistant />)
@@ -192,7 +202,7 @@ describe('CommsAssistant', () => {
   })
 
   it('clears the brief, content type, and any rendered draft on reset', async () => {
-    mockFetch({ draft: 'Copy me' })
+    mockFetch(draftBody('Copy me'))
     render(<CommsAssistant />)
 
     await userEvent.selectOptions(screen.getByLabelText(/content type/i), 'LinkedIn Post')
@@ -214,7 +224,7 @@ describe('CommsAssistant', () => {
       vi.fn().mockImplementation((_url, init: RequestInit) => {
         if (init.signal) aborts.push(init.signal)
         return new Promise((resolve) =>
-          setTimeout(() => resolve({ ok: true, status: 200, json: async () => ({ draft: 'late' }) }), 5),
+          setTimeout(() => resolve({ ok: true, status: 200, json: async () => draftBody('late') }), 5),
         )
       }),
     )
@@ -258,7 +268,7 @@ describe('CommsAssistant', () => {
       'fetch',
       spy.mockImplementation(async (_url: string, init: RequestInit) => {
         const { content_type: contentType } = JSON.parse(init.body as string) as { content_type: string }
-        return { ok: true, status: 200, json: async () => ({ draft: `${contentType} draft` }) }
+        return { ok: true, status: 200, json: async () => draftBody(`${contentType} draft`) }
       }),
     )
     render(<CommsAssistant />)
@@ -292,7 +302,7 @@ describe('CommsAssistant', () => {
       'fetch',
       vi.fn().mockImplementation(async () => {
         counter += 1
-        return { ok: true, status: 200, json: async () => ({ draft: `draft ${counter}` }) }
+        return { ok: true, status: 200, json: async () => draftBody(`draft ${counter}`) }
       }),
     )
     render(<CommsAssistant />)
@@ -318,7 +328,7 @@ describe('CommsAssistant', () => {
       'fetch',
       vi.fn().mockImplementation(async () => {
         counter += 1
-        return { ok: true, status: 200, json: async () => ({ draft: `draft ${counter}` }) }
+        return { ok: true, status: 200, json: async () => draftBody(`draft ${counter}`) }
       }),
     )
     render(<CommsAssistant />)
@@ -338,7 +348,7 @@ describe('CommsAssistant', () => {
   })
 
   it('toggles thumbs-up/thumbs-down feedback on the draft', async () => {
-    mockFetch({ draft: 'Rate me' })
+    mockFetch(draftBody('Rate me'))
     render(<CommsAssistant />)
     await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
@@ -359,7 +369,7 @@ describe('CommsAssistant', () => {
   })
 
   it('resets feedback when a new draft is generated', async () => {
-    mockFetch({ draft: 'First' })
+    mockFetch(draftBody('First'))
     render(<CommsAssistant />)
     await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
@@ -367,7 +377,7 @@ describe('CommsAssistant', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Helpful' }))
     expect(screen.getByRole('button', { name: 'Helpful' })).toHaveAttribute('aria-pressed', 'true')
 
-    mockFetch({ draft: 'Second' })
+    mockFetch(draftBody('Second'))
     await userEvent.clear(screen.getByLabelText(/brief/i))
     await userEvent.type(screen.getByLabelText(/brief/i), 'Another brief')
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
@@ -377,7 +387,7 @@ describe('CommsAssistant', () => {
   })
 
   it('exports the current draft to Word with its content type in the filename', async () => {
-    mockFetch({ draft: 'Export me' })
+    mockFetch(draftBody('Export me'))
     const downloadSpy = vi.spyOn(exportDraft, 'downloadAsWord').mockImplementation(() => {})
 
     render(<CommsAssistant />)
@@ -391,7 +401,7 @@ describe('CommsAssistant', () => {
   })
 
   it('shows the word count of the generated draft', async () => {
-    mockFetch({ draft: 'Four little words here' })
+    mockFetch(draftBody('Four little words here'))
     render(<CommsAssistant />)
     await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
@@ -400,7 +410,7 @@ describe('CommsAssistant', () => {
   })
 
   it('submits the brief on Ctrl+Enter', async () => {
-    const spy = mockFetch({ draft: 'From shortcut' })
+    const spy = mockFetch(draftBody('From shortcut'))
     render(<CommsAssistant />)
 
     await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this{Control>}{Enter}{/Control}')
@@ -410,7 +420,7 @@ describe('CommsAssistant', () => {
   })
 
   it('does not submit on plain Enter, so a brief can still span multiple lines', async () => {
-    const spy = mockFetch({ draft: 'x' })
+    const spy = mockFetch(draftBody('x'))
     render(<CommsAssistant />)
 
     await userEvent.type(screen.getByLabelText(/brief/i), 'Line one{Enter}Line two')
@@ -420,7 +430,7 @@ describe('CommsAssistant', () => {
   })
 
   it('exports the current draft to PDF via the print dialog', async () => {
-    mockFetch({ draft: 'Export me' })
+    mockFetch(draftBody('Export me'))
     const pdfSpy = vi.spyOn(exportDraft, 'exportAsPdf').mockImplementation(() => {})
 
     render(<CommsAssistant />)
@@ -430,5 +440,123 @@ describe('CommsAssistant', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /export as pdf/i }))
     expect(pdfSpy).toHaveBeenCalledTimes(1)
+  })
+
+  // -------------------------------------------------------------------------
+  // delete (#342, #343)
+  // -------------------------------------------------------------------------
+
+  /** Serves a generated draft to any POST /api/comms/draft, and lets the caller control what a
+   * DELETE to /api/comms/drafts/:id resolves to — the two calls this whole flow needs. */
+  function mockFetchWithDelete(deleteResponse: { ok: boolean; status: number }) {
+    const spy = vi.fn(async (_url: string, init?: RequestInit) => {
+      if (init?.method === 'DELETE') {
+        return { ok: deleteResponse.ok, status: deleteResponse.status, json: async () => null }
+      }
+      return { ok: true, status: 200, json: async () => draftBody('Delete me') }
+    })
+    vi.stubGlobal('fetch', spy)
+    return spy
+  }
+
+  async function generateADraft() {
+    await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
+    await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
+    await screen.findByText('Delete me')
+  }
+
+  it('reveals the reason step only after Delete is clicked, sending nothing yet', async () => {
+    const spy = mockFetchWithDelete({ ok: true, status: 204 })
+    render(<CommsAssistant />)
+    await generateADraft()
+
+    expect(screen.queryByText(/this cannot be undone/i)).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /^delete$/i }))
+
+    expect(screen.getByText(/this cannot be undone/i)).toBeInTheDocument()
+    expect(spy.mock.calls.every((call) => (call[1] as RequestInit | undefined)?.method !== 'DELETE')).toBe(true)
+  })
+
+  it('cancel returns to the plain Delete button without sending anything', async () => {
+    const spy = mockFetchWithDelete({ ok: true, status: 204 })
+    render(<CommsAssistant />)
+    await generateADraft()
+    await userEvent.click(screen.getByRole('button', { name: /^delete$/i }))
+
+    await userEvent.click(screen.getByRole('button', { name: /cancel/i }))
+
+    expect(screen.queryByText(/this cannot be undone/i)).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^delete$/i })).toBeInTheDocument()
+    expect(spy.mock.calls.every((call) => (call[1] as RequestInit | undefined)?.method !== 'DELETE')).toBe(true)
+  })
+
+  it('a preset reason fills the field; Confirm delete stays disabled until one is chosen', async () => {
+    mockFetchWithDelete({ ok: true, status: 204 })
+    render(<CommsAssistant />)
+    await generateADraft()
+    await userEvent.click(screen.getByRole('button', { name: /^delete$/i }))
+
+    expect(screen.getByRole('button', { name: /confirm delete/i })).toBeDisabled()
+    await userEvent.click(screen.getByRole('button', { name: 'Contained personal information' }))
+    expect(screen.getByLabelText(/reason/i)).toHaveValue('Contained personal information')
+    expect(screen.getByRole('button', { name: /confirm delete/i })).toBeEnabled()
+  })
+
+  it('states the reason is permanently recorded and asks why, not what', async () => {
+    mockFetchWithDelete({ ok: true, status: 204 })
+    render(<CommsAssistant />)
+    await generateADraft()
+    await userEvent.click(screen.getByRole('button', { name: /^delete$/i }))
+
+    expect(screen.getByText(/permanently recorded/i)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/not what the draft contained/i)).toBeInTheDocument()
+  })
+
+  it('confirming sends the reason and removes the current draft from view on success', async () => {
+    const spy = mockFetchWithDelete({ ok: true, status: 204 })
+    render(<CommsAssistant />)
+    await generateADraft()
+    await userEvent.click(screen.getByRole('button', { name: /^delete$/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Superseded' }))
+
+    await userEvent.click(screen.getByRole('button', { name: /confirm delete/i }))
+
+    await waitFor(() => expect(screen.queryByText('Delete me')).not.toBeInTheDocument())
+    const deleteCall = spy.mock.calls.find((call) => (call[1] as RequestInit | undefined)?.method === 'DELETE')
+    if (!deleteCall) throw new Error('DELETE was not sent')
+    expect(JSON.parse((deleteCall[1] as RequestInit).body as string)).toEqual({ reason: 'Superseded' })
+  })
+
+  it('a 403 shows an inline error on the control itself, not the page-level alert', async () => {
+    mockFetchWithDelete({ ok: false, status: 403 })
+    render(<CommsAssistant />)
+    await generateADraft()
+    await userEvent.click(screen.getByRole('button', { name: /^delete$/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Superseded' }))
+
+    await userEvent.click(screen.getByRole('button', { name: /confirm delete/i }))
+
+    expect(await screen.findByText(/do not have permission/i)).toBeInTheDocument()
+    // The draft itself is still on screen — a refused delete must not look like a successful one.
+    expect(screen.getByText('Delete me')).toBeInTheDocument()
+  })
+
+  it('deleting one history entry removes only that one', async () => {
+    mockFetchWithDelete({ ok: true, status: 204 })
+    render(<CommsAssistant />)
+    await generateADraft()
+    await userEvent.clear(screen.getByLabelText(/brief/i))
+    await userEvent.type(screen.getByLabelText(/brief/i), 'Second brief')
+    await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
+    await screen.findByText('Delete me', { selector: 'pre' })
+    expect(await screen.findByText(/recent drafts/i)).toBeInTheDocument()
+    const historyItem = screen.getByText('Delete me', { selector: 'p' }).closest('li')
+    if (!historyItem) throw new Error('expected a history entry')
+
+    await userEvent.click(within(historyItem).getByRole('button', { name: /^delete$/i }))
+    await userEvent.click(within(historyItem).getByRole('button', { name: 'Superseded' }))
+    await userEvent.click(within(historyItem).getByRole('button', { name: /confirm delete/i }))
+
+    await waitFor(() => expect(screen.queryByRole('listitem')).not.toBeInTheDocument())
   })
 })
