@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { CommsDraftError, requestCommsDraft, type ContentType } from '../api/client'
+import { CommsDraftError, deleteCommsDraft, requestCommsDraft, type ContentType } from '../api/client'
 import { downloadAsWord, exportAsPdf } from '../lib/exportDraft'
 
 const CONTENT_TYPES: { value: ContentType; label: string }[] = [
@@ -28,12 +28,136 @@ function countWords(text: string): number {
 // server-side — there was no way back to it. Keeping `draftState` untouched by a failed
 // `generateDraft` call means the previous draft simply stays on screen while `submitError` reports
 // what went wrong alongside it.
-type DraftState = { kind: 'idle' } | { kind: 'result'; draft: string; contentType: ContentType }
+type DraftState =
+  | { kind: 'idle' }
+  | { kind: 'result'; id: string; draft: string; contentType: ContentType }
 
 interface HistoryEntry {
   id: string
   contentType: ContentType
   draft: string
+}
+
+const DELETE_REASON_PRESETS = [
+  'Contained personal information',
+  'Superseded',
+  'Created in error',
+] as const
+
+/**
+ * Confirm-then-delete for one persisted draft (#342, #343). Two steps, not one click, because
+ * deletion isn't undoable — "Delete" only reveals the reason step; nothing is sent until "Confirm
+ * delete" is pressed.
+ *
+ * The reason field asks *why*, never *what* — `docs/comms-assistant.md`'s framing, echoed in
+ * `deleteCommsDraft`'s own doc comment: `audit_log` is append-only, so anything describing what
+ * the draft contained would become permanent in the one place it can never be removed from again.
+ * The line under the field says so, so the choice is informed rather than assumed.
+ *
+ * A 403 renders as a real inline state on this control specifically, not a page-level toast —
+ * `submitError`'s existing `role="alert"` above is for the drafting form's own failures; a delete
+ * refusal belongs next to the thing that was refused.
+ */
+function DeleteDraftControl({ draftId, onDeleted }: { draftId: string; onDeleted: () => void }) {
+  const [confirming, setConfirming] = useState(false)
+  const [reason, setReason] = useState('')
+  const [state, setState] = useState<{ kind: 'idle' } | { kind: 'loading' } | { kind: 'error'; message: string }>({
+    kind: 'idle',
+  })
+  const reasonId = useId()
+
+  async function onConfirm() {
+    const trimmed = reason.trim()
+    if (!trimmed) return
+    setState({ kind: 'loading' })
+    try {
+      await deleteCommsDraft(draftId, trimmed)
+      onDeleted()
+    } catch (error) {
+      setState({
+        kind: 'error',
+        message: error instanceof CommsDraftError ? error.message : 'Something went wrong. Please try again.',
+      })
+    }
+  }
+
+  if (!confirming) {
+    return (
+      <button
+        type="button"
+        onClick={() => setConfirming(true)}
+        className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-inzbc-crimson transition-colors hover:border-inzbc-crimson hover:bg-inzbc-crimson/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-crimson"
+      >
+        Delete
+      </button>
+    )
+  }
+
+  return (
+    <div className="space-y-2 rounded-md border border-inzbc-crimson/40 bg-inzbc-crimson/5 p-3">
+      <p className="text-sm font-semibold text-inzbc-navy">Delete this draft? This cannot be undone.</p>
+      <div>
+        <label htmlFor={reasonId} className="block text-xs font-medium text-inzbc-navy">
+          Reason
+        </label>
+        <div className="mt-1 flex flex-wrap gap-1">
+          {DELETE_REASON_PRESETS.map((preset) => (
+            <button
+              key={preset}
+              type="button"
+              onClick={() => setReason(preset)}
+              className={`rounded-md border px-2 py-1 text-xs font-medium ${
+                reason === preset
+                  ? 'border-inzbc-navy bg-inzbc-navy text-white'
+                  : 'border-slate-300 text-inzbc-navy hover:border-inzbc-navy'
+              }`}
+            >
+              {preset}
+            </button>
+          ))}
+        </div>
+        <input
+          id={reasonId}
+          type="text"
+          value={reason}
+          onChange={(event) => setReason(event.target.value)}
+          placeholder="Or describe why (not what the draft contained)"
+          className="mt-1 w-full rounded-md border border-inzbc-navy/20 px-2 py-1 text-sm transition-colors hover:border-inzbc-navy/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
+        />
+        <p className="mt-1 text-xs text-slate-500">
+          This reason is permanently recorded. Describe why the draft is being removed, not what it
+          contained.
+        </p>
+      </div>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => void onConfirm()}
+          disabled={!reason.trim() || state.kind === 'loading'}
+          className="rounded-md bg-inzbc-crimson px-3 py-1 text-sm font-semibold text-white disabled:cursor-progress disabled:opacity-60"
+        >
+          {state.kind === 'loading' ? 'Deleting…' : 'Confirm delete'}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setConfirming(false)
+            setReason('')
+            setState({ kind: 'idle' })
+          }}
+          disabled={state.kind === 'loading'}
+          className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-inzbc-navy transition-colors hover:border-inzbc-navy hover:bg-inzbc-navy/5"
+        >
+          Cancel
+        </button>
+      </div>
+      {state.kind === 'error' ? (
+        <p role="alert" className="text-sm text-inzbc-crimson">
+          {state.message}
+        </p>
+      ) : null}
+    </div>
+  )
 }
 
 export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
@@ -85,14 +209,14 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
       if (inFlight.current !== controller) return
       if (outgoing) {
         setHistory((prev) =>
-          [{ id: crypto.randomUUID(), contentType: outgoing.contentType, draft: outgoing.draft }, ...prev].slice(
+          [{ id: outgoing.id, contentType: outgoing.contentType, draft: outgoing.draft }, ...prev].slice(
             0,
             HISTORY_LIMIT,
           ),
         )
       }
       setFeedback(null)
-      setDraftState({ kind: 'result', draft: result.draft, contentType })
+      setDraftState({ kind: 'result', id: result.id, draft: result.draft, contentType })
       setIsGenerating(false)
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return
@@ -288,6 +412,10 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
                 >
                   Export as PDF
                 </button>
+                <DeleteDraftControl
+                  draftId={draftState.id}
+                  onDeleted={() => setDraftState({ kind: 'idle' })}
+                />
               </div>
             </div>
             <pre className="print-draft whitespace-pre-wrap font-sans text-slate-800">{draftState.draft}</pre>
@@ -338,10 +466,16 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
           <h2 className="text-base text-inzbc-navy sm:text-lg">Recent drafts</h2>
           <ul className="space-y-2">
             {history.map((entry) => (
-              <li key={entry.id} className="rounded-md border border-slate-200 bg-slate-50 p-4 shadow-sm">
-                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  {CONTENT_TYPE_LABELS[entry.contentType]}
-                </p>
+              <li key={entry.id} className="space-y-2 rounded-md border border-slate-200 bg-slate-50 p-4 shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    {CONTENT_TYPE_LABELS[entry.contentType]}
+                  </p>
+                  <DeleteDraftControl
+                    draftId={entry.id}
+                    onDeleted={() => setHistory((prev) => prev.filter((item) => item.id !== entry.id))}
+                  />
+                </div>
                 <p className="max-h-24 overflow-y-auto whitespace-pre-wrap text-sm text-slate-700">
                   {entry.draft}
                 </p>
