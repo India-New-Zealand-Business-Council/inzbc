@@ -486,3 +486,69 @@ def test_an_exception_approved_by_a_deactivated_account_is_refused(
                 sod_exception_id=exception,
             )
         )
+
+
+def test_capture_claims_the_run_for_its_analyst_so_qa_self_review_can_fire() -> None:
+    """The QA self-review guard was unreachable, and no test noticed.
+
+    `decisions.py` record_qa refuses a reviewer who is the run's analyst, comparing against
+    `runs.analyst_id`. Nothing wrote that column - `create_run` sets `initiated_by` and not this -
+    so it was NULL on every run, `analyst is not None` was always False, and the guard never fired.
+    No test set `analyst_id` either, which is why a control that could not work read as enforced.
+
+    `capture` now claims the run for whoever first does analyst work on it. This asserts the
+    claim happens, that it makes the guard fire, and that it is claim-once - a second capturer
+    must not silently become the analyst and thereby free the original one to review their own run.
+    """
+    from services.api.candidate_persistence import CandidateRepository
+
+    candidates = CandidateRepository(DATABASE_URL)
+    with psycopg.connect(DATABASE_URL, row_factory=psycopg.rows.dict_row) as conn:
+        role = _sip_owner_role(conn)
+        people = {}
+        for label in ("analyst", "second"):
+            row = conn.execute(
+                "insert into users (name, email) values (%s, %s) returning id",
+                (f"{label} {uuid.uuid4()}", f"{uuid.uuid4()}@example.test"),
+            ).fetchone()
+            conn.execute(
+                "insert into user_roles (user_id, role_id) values (%s, %s) "
+                "on conflict (user_id, role_id) do update set enabled = true",
+                (row["id"], role),
+            )
+            people[label] = str(row["id"])
+        run = conn.execute(
+            "insert into runs (run_number, coverage_start_utc, coverage_end_utc, prompt_version, "
+            "initiated_by) values (%s, %s, %s, %s, %s) returning id, analyst_id",
+            (f"RUN-CLAIM-{uuid.uuid4().hex[:10]}", "2026-07-29T00:00Z", "2026-07-30T00:00Z",
+             "SIP-050 v1.1", people["analyst"]),
+        ).fetchone()
+        conn.commit()
+
+    # Creating a run does not make anyone its analyst: whoever starts a run need not be the
+    # person who works it.
+    assert run["analyst_id"] is None
+
+    candidates.capture(
+        run_id=str(run["id"]), headline="first capture", source_id=None, url=None,
+        summary=None, published_at=None, in_coverage_window=True, actor_id=people["analyst"],
+    )
+    with psycopg.connect(DATABASE_URL, row_factory=psycopg.rows.dict_row) as conn:
+        claimed = conn.execute(
+            "select analyst_id from runs where id = %s", (run["id"],)
+        ).fetchone()["analyst_id"]
+    assert str(claimed) == people["analyst"], "capture must claim the run for its analyst"
+
+    # Claim-once: a later capture by someone else leaves the original analyst in place.
+    candidates.capture(
+        run_id=str(run["id"]), headline="second capture", source_id=None, url=None,
+        summary=None, published_at=None, in_coverage_window=True, actor_id=people["second"],
+    )
+    with psycopg.connect(DATABASE_URL, row_factory=psycopg.rows.dict_row) as conn:
+        still = conn.execute(
+            "select analyst_id from runs where id = %s", (run["id"],)
+        ).fetchone()["analyst_id"]
+    assert str(still) == people["analyst"], (
+        "a second capturer must not become the analyst - that would free the original analyst "
+        "to record QA on their own run"
+    )

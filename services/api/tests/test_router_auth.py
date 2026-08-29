@@ -316,6 +316,17 @@ EXPECTED_ROLES: dict[tuple[str, str], set[str]] = {
     # the analyst on that particular run, the same two-gate split as candidates/{id}/verify.
     # Analyst is absent on purpose: QA is the check on the analyst's work.
     ("POST", "/api/reports/{report_version_id}/qa"): {"Reviewer", "SIP Owner"},
+    # The three decision streams (ADR-0005). Each carries the roles its own decision kind is
+    # granted to in database/migrations/0003, not one shared set: the HTTP gate and the
+    # decision_role_permissions grant have to agree, or a caller passes the route check and is
+    # then refused by the repository, which reads as a bug rather than as the control working.
+    #
+    # Ruling is the CEO's alone. Approval reaches Reviewer because a quality judgement only the
+    # owner can make is not independent of the owner. Distribution reaches Secretariat because
+    # sending is a secretariat act, and it stays a separate decision from approval per REQ-G-04.
+    ("POST", "/api/reports/{report_version_id}/ruling"): {"SIP Owner"},
+    ("POST", "/api/reports/{report_version_id}/approval"): {"Reviewer", "SIP Owner"},
+    ("POST", "/api/reports/{report_version_id}/distribution"): {"Secretariat", "SIP Owner"},
     # The SIP-185 mandatory-source register. Reference data every role needs to read to know
     # which sources a run was obliged to cover; nothing personal in it and no write path here,
     # but it is the register an auditor checks a run against, so it is not public either.
