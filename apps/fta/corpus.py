@@ -504,6 +504,72 @@ CORPUS: tuple[TariffOutcome, ...] = (
         notes="Context for an answer, not a tariff fact - keep separate from product-level citations.",
         verified_at=date(2026, 7, 22),
     ),
+    TariffOutcome(
+        id="FTA-021",
+        topic="Investment promotion (NZ into India)",
+        sector="Investment",
+        treatment=(
+            "New Zealand has committed to promote foreign direct investment from NZ investors "
+            "into India, aiming to increase it by US$20 billion within 15 years of entry into "
+            "force. India will establish a dedicated 'New Zealand Investment Desk' to assist "
+            "NZ investors. This is a New Zealand undertaking, not an India market-access "
+            "concession - India grants no new investment access to NZ investors under this "
+            "chapter."
+        ),
+        confirmed=True,
+        citation="NZ-India FTA, Chapter 9 (Investment Promotion and Cooperation), Articles 9.2 and 9.4",
+        notes=(
+            "Article 9.10 (Remedial Measures): if the US$20bn objective isn't met by the "
+            "15-year review and the dispute stays unresolved through the three-tier "
+            "consultation process, India may take proportionate remedial measures against "
+            "NZ's tariff concessions under Annex 2A. Not a current fact - nothing has been "
+            "missed yet - but real treaty text a member should know exists."
+        ),
+        verified_at=date(2026, 8, 29),
+    ),
+    TariffOutcome(
+        id="FTA-022",
+        topic="Student mobility and Post Study Work Visas",
+        sector="Education",
+        treatment=(
+            "Neither party may impose numerical limits on student visas for the other party's "
+            "students at recognised institutions. Students may work at least 20 hours/week "
+            "during study. Indian graduates of NZ institutions get a Post Study Work Visa: up "
+            "to 2 years after a bachelor's (including honours), 3 years after a master's "
+            "(research or coursework), 4 years after a doctorate - extended to 3 years for a "
+            "First Class Honours bachelor's in STEM/ICT fields. India must provide NZ "
+            "graduates of Indian institutions an equivalent, reciprocal route."
+        ),
+        confirmed=True,
+        citation=(
+            "NZ-India FTA, Annex 8F (Students' Mobility and Post Study Work Visas, under "
+            "Chapter 8 Trade in Services), paragraphs 2-6"
+        ),
+        notes=(
+            "More precise than the pre-signature MFAT summary, which collapsed master's and "
+            "doctoral into one 'up to four years' line - the Annex gives three separate tiers."
+        ),
+        verified_at=date(2026, 8, 29),
+    ),
+    TariffOutcome(
+        id="FTA-023",
+        topic="Tourism cooperation",
+        sector="Tourism",
+        treatment=(
+            "New Zealand and India agreed to cooperate on tourism as a named thematic area "
+            "under the Committee on Economic Cooperation and Technical Assistance (CECTA), "
+            "alongside audio-visual production and sports. There is no market-access or "
+            "tariff commitment for tourism anywhere in the agreement - this is a cooperation "
+            "framework (information exchange, joint initiatives, working groups), not access."
+        ),
+        confirmed=True,
+        citation="NZ-India FTA, Chapter 14 (Economic Cooperation and Technical Assistance), Article 14.6",
+        notes=(
+            "Do not present this as market access gained - it is explicitly cooperation-only, "
+            "and Article 14.13 excludes it from the FTA's dispute settlement entirely."
+        ),
+        verified_at=date(2026, 8, 29),
+    ),
 )
 
 
