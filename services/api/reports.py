@@ -13,27 +13,45 @@ later records a decision has to pass back the revision it read. Two calls would 
 commit in between, which is exactly the race `DecisionRepository.current` exists to close, so
 splitting them here would reopen it one layer up.
 
-**The decision-writing endpoints are deliberately absent.** `/approval`, `/ruling` and
-`/distribution` are specified in `schemas/api-contract.md` and are not mounted, because
-`decision_role_permissions` is unseeded: no row means nobody may act, so `DecisionRepository.record`
-refuses every decision by design. Mounting them now would ship three endpoints that answer 403
-until INZBC decides who may approve what, which is a client decision (ADR-0005 required follow-up
-4, client answers B8) rather than an engineering one. Recorded in the issue rather than hidden
-behind an endpoint that looks built.
+**The three decision-writing endpoints are now mounted.** `/ruling`, `/approval` and
+`/distribution` were specified in `schemas/api-contract.md` and deliberately absent while
+`decision_role_permissions` was unseeded, because no row means nobody may act and the repository
+refuses every decision by design. Migration `0003` seeds that table (#348), so they answer for
+real rather than 403 by construction. Who may record which kind is data, not code: revoking a
+grant is `enabled = false`, and `record()` checks it on every call.
+
+**They stay three commands, not one.** REQ-U-02 requires distribution authority to be captured as
+a separate act, and ADR-0005 records the three as independent immutable streams each with its own
+actor and timestamp. One endpoint writing two of them cannot satisfy that, however many rows it
+writes. Do not reintroduce `/decision`.
 """
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Literal
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from services.api.auth import ANALYST, REVIEWER, SIP_OWNER, STAFF_READ, Principal
+from services.api.auth import (
+    ANALYST,
+    REVIEWER,
+    SECRETARIAT,
+    SIP_OWNER,
+    STAFF_READ,
+    Principal,
+)
 from services.api.decisions import (
+    CEO_RULING,
+    DISTRIBUTION_AUTHORITY,
+    REPORT_APPROVAL,
     CurrentDecisions,
+    DecisionConflictError,
     DecisionNotPermittedError,
+    DecisionRecord,
+    DecisionRejected,
     DecisionRepository,
     QaSelfReviewError,
     ReportRepository,
@@ -49,6 +67,14 @@ router = APIRouter(prefix="/api/reports", tags=["Reports"], responses=AUTH_RESPO
 # make the owner its author. Ordered rather than arbitrary so the recorded role still means
 # something when one person holds every role.
 _SUBMIT_ROLES = (ANALYST, SIP_OWNER)
+
+# Which role each decision kind is recorded under, in precedence order, matching the grants
+# migration 0003 seeds. The role check inside `record()` is the authority; these tuples only decide
+# which of several held roles the act is *recorded* as, which matters precisely because the steady
+# state here is one person holding every role.
+_RULING_ROLES = (SIP_OWNER,)
+_APPROVAL_ROLES = (REVIEWER, SIP_OWNER)
+_DISTRIBUTION_ROLES = (SECRETARIAT, SIP_OWNER)
 
 # Absorbs ordinary clock skew between a caller and this service. Wide enough that a
 # correct request is never refused for being a few seconds ahead, narrow enough that a
@@ -295,3 +321,217 @@ def read_report(
         ) from error
 
     return ReportOut(report=_version_out(version), decisions=_decisions_out(current))
+
+
+class _DecisionIn(BaseModel):
+    """Fields every decision carries, whichever stream it lands on.
+
+    `expected_head_revision` is the revision the caller read from `GET /api/reports/{id}`. It is
+    not bookkeeping: it is the caller asserting "I read this stream at this point and I am deciding
+    in response to what it said". Without it a correction can supersede a ruling nobody ever saw.
+
+    `idempotency_key` is caller-supplied because only the caller knows whether a retry is the same
+    act or a second one. A server-generated key would make every retry a new decision.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    reason: str = Field(min_length=1, max_length=2000)
+    evidence_ref: str = Field(min_length=1, max_length=500)
+    owner_id: str
+    next_review: date
+    decided_at: datetime
+    idempotency_key: UUID
+    expected_head_revision: int = Field(ge=0)
+    conditions: list[str] | None = None
+    # Only ever set when one person legitimately holds both sides of the act. Absent means no
+    # exception is claimed, and `record()` refuses a self-decision without one.
+    sod_exception_id: str | None = None
+
+    @field_validator("decided_at")
+    @classmethod
+    def _not_in_the_future(cls, value: datetime) -> datetime:
+        """A decision cannot have been taken later than now, for the same reason `created_at`
+        cannot: the record would say something that has not happened.
+        """
+        if value.tzinfo is None:
+            raise ValueError("decided_at must carry a timezone")
+        if value > datetime.now(UTC) + _CLOCK_SKEW_ALLOWANCE:
+            raise ValueError("decided_at is in the future")
+        return value
+
+
+class RulingIn(_DecisionIn):
+    value: Literal["Continue", "Continue With Correction", "Pause", "Stop"]
+
+
+class ApprovalIn(_DecisionIn):
+    # Three values, not two. `Returned for Correction` is a distinct outcome from `Rejected`, and
+    # `schemas/api-contract.md` notes that a two-value endpoint could not express it.
+    value: Literal["Approved", "Rejected", "Returned for Correction"]
+
+
+class DistributionIn(_DecisionIn):
+    value: Literal["Authorised", "Not Authorised"]
+    # Required on an Authorised decision and refused on a refusal, checked below rather than by
+    # type: a recipient recorded against `Not Authorised` would read as though a send was intended.
+    distribution_recipient: str | None = Field(default=None, max_length=500)
+
+
+class DecisionOut(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    report_version_id: str
+    kind: str
+    value: str
+    decided_at: str
+    head_revision: int
+
+
+def _decision_out(record: DecisionRecord) -> DecisionOut:
+    return DecisionOut(
+        id=record.id,
+        report_version_id=record.report_version_id,
+        kind=record.kind,
+        value=record.value,
+        decided_at=record.decided_at.isoformat(),
+        head_revision=record.head_revision,
+    )
+
+
+def _record_decision(
+    *,
+    report_version_id: str,
+    kind: str,
+    body: _DecisionIn,
+    value: str,
+    role_names: tuple[str, ...],
+    principal: Principal,
+    reports: ReportRepository,
+    decisions: DecisionRepository,
+    distribution_recipient: str | None = None,
+) -> DecisionOut:
+    """Shared body for the three decision endpoints.
+
+    They differ only in which stream they write and which roles may write it, so the error mapping
+    lives once. Three copies of this would be three places for the 403/409/422 split to drift.
+
+    **The role is resolved before the write, on a separate connection.** `record()` takes an
+    `actor_role_id` rather than resolving it, so there is a window where a role disabled between
+    resolution and write is still recorded as the one the act was performed in. `record()` re-checks
+    the grant, the assignment and the account inside its own transaction, so a revoked permission
+    still refuses; what can go stale is only *which* of several held roles gets recorded. Narrowing
+    that further means moving resolution inside `record()`, which is a change to that method rather
+    than to this router.
+    """
+    try:
+        actor_role_id = reports.role_id_for(principal.user_id, role_names)
+    except LookupError as error:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail=str(error)) from error
+
+    try:
+        record = decisions.record(
+            report_version_id=report_version_id,
+            kind=kind,
+            value=value,
+            actor_id=principal.user_id,
+            actor_role_id=actor_role_id,
+            reason=body.reason,
+            evidence_ref=body.evidence_ref,
+            owner_id=body.owner_id,
+            next_review=body.next_review,
+            decided_at=body.decided_at,
+            idempotency_key=body.idempotency_key,
+            expected_head_revision=body.expected_head_revision,
+            distribution_recipient=distribution_recipient,
+            sod_exception_id=body.sod_exception_id,
+            conditions=body.conditions,
+        )
+    except KeyError as error:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, detail=f"no report version {report_version_id!r}"
+        ) from error
+    except DecisionNotPermittedError as error:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail=str(error)) from error
+    # 409, not 422: the caller's request was well formed and lost a race, which is a retry after
+    # re-reading rather than a request to correct.
+    except DecisionConflictError as error:
+        raise HTTPException(status.HTTP_409_CONFLICT, detail=str(error)) from error
+    except DecisionRejected as error:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(error)) from error
+    return _decision_out(record)
+
+
+@router.post("/{report_version_id}/ruling", response_model=DecisionOut, status_code=201)
+def record_ruling(
+    report_version_id: str,
+    body: RulingIn,
+    principal: Principal = Depends(write_access(SIP_OWNER)),
+    reports: ReportRepository = Depends(get_report_repository),
+    decisions: DecisionRepository = Depends(get_decision_repository),
+) -> DecisionOut:
+    """Records the CEO ruling on a report version.
+
+    SIP Owner only. This is the run-level ruling SIP-050 section 26 puts with the CEO, and it is
+    separate from approving the report: a `Continue` here does not approve anything, and an
+    `Approved` there does not authorise a send.
+    """
+    return _record_decision(
+        report_version_id=report_version_id, kind=CEO_RULING, body=body, value=body.value,
+        role_names=_RULING_ROLES, principal=principal, reports=reports, decisions=decisions,
+    )
+
+
+@router.post("/{report_version_id}/approval", response_model=DecisionOut, status_code=201)
+def record_approval(
+    report_version_id: str,
+    body: ApprovalIn,
+    principal: Principal = Depends(write_access(REVIEWER, SIP_OWNER)),
+    reports: ReportRepository = Depends(get_report_repository),
+    decisions: DecisionRepository = Depends(get_decision_repository),
+) -> DecisionOut:
+    """Records the report-approval decision.
+
+    Reviewer or SIP Owner. `record()` separately refuses whoever authored the version being decided
+    on, so holding the role is necessary and not sufficient. That refusal is the control this
+    record exists to evidence.
+    """
+    return _record_decision(
+        report_version_id=report_version_id, kind=REPORT_APPROVAL, body=body, value=body.value,
+        role_names=_APPROVAL_ROLES, principal=principal, reports=reports, decisions=decisions,
+    )
+
+
+@router.post("/{report_version_id}/distribution", response_model=DecisionOut, status_code=201)
+def record_distribution(
+    report_version_id: str,
+    body: DistributionIn,
+    principal: Principal = Depends(write_access(SECRETARIAT, SIP_OWNER)),
+    reports: ReportRepository = Depends(get_report_repository),
+    decisions: DecisionRepository = Depends(get_decision_repository),
+) -> DecisionOut:
+    """Records distribution authority, separately from report approval.
+
+    **`Not Authorised` is a decision, not a failure.** It does not stop the run: the send is
+    skipped and the run reaches close-out as approved but not distributed. That is why an absent
+    decision and an explicit refusal have to stay distinguishable, and why this endpoint exists
+    rather than a boolean on the approval.
+    """
+    if body.value == "Authorised" and not body.distribution_recipient:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="an Authorised distribution must name its recipient; authorising a send to "
+                   "nobody in particular is not an authorisation anyone can audit",
+        )
+    if body.value == "Not Authorised" and body.distribution_recipient:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="a Not Authorised decision cannot name a recipient; the record would read as "
+                   "though a send was intended",
+        )
+    return _record_decision(
+        report_version_id=report_version_id, kind=DISTRIBUTION_AUTHORITY, body=body,
+        value=body.value, role_names=_DISTRIBUTION_ROLES, principal=principal, reports=reports,
+        decisions=decisions, distribution_recipient=body.distribution_recipient,
+    )

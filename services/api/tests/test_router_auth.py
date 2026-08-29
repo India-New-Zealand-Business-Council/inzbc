@@ -359,6 +359,11 @@ EXPECTED_ROLES: dict[tuple[str, str], set[str]] = {
     # something", not "may approve their own draft" - that second check lives in the repository,
     # not in the role map, the same split as /api/candidates/{id}/verify.
     ("POST", "/api/comms/drafts/{draft_id}/approve"): {"Reviewer", "SIP Owner"},
+    # Deleting a draft (#342) takes the roles that can create one, not the reviewer roles that
+    # approve. It is a privacy-erasure act: the person who typed a member's name into a brief is
+    # the one who notices, and the audit record makes it attributable without restricting it to a
+    # single person who may be unavailable.
+    ("DELETE", "/api/comms/drafts/{draft_id}"): {"Secretariat", "SIP Owner"},
     ("GET", "/api/comms/drafts/{draft_id}"): set(STAFF_READ),
     ("GET", "/api/comms/drafts"): set(STAFF_READ),
 }
