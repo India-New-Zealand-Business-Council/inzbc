@@ -75,3 +75,19 @@ board-before-*.json
 # Scratch space for one-off analysis and rendering. Working files, not project state.
 .tmp/
 .gstack/
+
+# Generated deliverables and the working directories that build them. These are outputs, not
+# project state: the decks are rebuilt from `ppt_group_report_work/build_group_final.mjs` on
+# demand, and the layout/inspect dumps beside them are that script's intermediate artefacts.
+#
+# 119 of these were committed by accident in #357 and untracked immediately after. Listing them
+# here rather than relying on care is the point: a blanket `git add -A` during a conflict
+# resolution is exactly the moment nobody is checking, which is how they got in.
+#
+# The evidence portfolios are individual work product. They belong to the person who wrote them,
+# not in a shared organisation repository where every contributor can read them.
+INZBC_Group_Final_Report_*.pptx
+INZBC_Group_Final_Report_*.pptx.inspect.ndjson
+ppt_group_report_work/
+team_report_work/
+bhanu_evidence_work/
