@@ -1,0 +1,492 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/lbks50",
+    "id": "lbks50",
+    "slide": 1,
+    "layoutId": "/ppt/slideLayouts/slideLayout1.xml",
+    "layoutName": "DEFAULT",
+    "masterLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+    "backgroundImage": {
+      "assetId": "/ppt/media/Slide-1-image-1.jpeg",
+      "contentType": "image/jpeg",
+      "byteLength": 448444
+    },
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "Office",
+    "colors": {
+      "accent1": "#4472C4",
+      "accent2": "#ED7D31",
+      "accent3": "#A5A5A5",
+      "accent4": "#FFC000",
+      "accent5": "#5B9BD5",
+      "accent6": "#70AD47",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#44546A",
+      "lt2": "#E7E6E6",
+      "hlink": "#0563C1",
+      "folHlink": "#954F72"
+    },
+    "fontScheme": {
+      "name": "Office",
+      "majorFont": {
+        "latinTypeface": "Calibri Light"
+      },
+      "minorFont": {
+        "latinTypeface": "Calibri"
+      }
+    },
+    "typefaces": [
+      "Arial",
+      "Calibri",
+      "Calibri Light"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "/ppt/slideLayouts/slideLayout1.xml",
+      "name": "DEFAULT",
+      "parentLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "/ppt/slideMasters/slideMaster1.xml",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "image",
+      "scope": "slide",
+      "aid": "im/o3q1032h",
+      "id": "12",
+      "name": "!!orb",
+      "bbox": [
+        326.4,
+        -19.2,
+        710.4,
+        710.4
+      ],
+      "contentType": "image/png",
+      "asset": {
+        "assetId": "/ppt/media/image-1-2.png",
+        "contentType": "image/png",
+        "byteLength": 283574
+      },
+      "fillImage": {
+        "assetId": "/ppt/media/image-1-2.png",
+        "contentType": "image/png",
+        "byteLength": 283574
+      }
+    },
+    {
+      "order": 2,
+      "kind": "image",
+      "scope": "slide",
+      "aid": "im/94jit832",
+      "id": "13",
+      "name": "!!orb2",
+      "bbox": [
+        -153.6,
+        374.4,
+        480,
+        480
+      ],
+      "contentType": "image/png",
+      "asset": {
+        "assetId": "/ppt/media/image-1-3.png",
+        "contentType": "image/png",
+        "byteLength": 288193
+      },
+      "fillImage": {
+        "assetId": "/ppt/media/image-1-3.png",
+        "contentType": "image/png",
+        "byteLength": 288193
+      }
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/0721sbax",
+      "id": "4",
+      "name": "track",
+      "bbox": [
+        86.4,
+        677.28,
+        1107.17,
+        1.73
+      ],
+      "geometry": "rect",
+      "fillColor": "#242C3B",
+      "lineColor": "#242C3B",
+      "lineWidth": 1.33
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/l8b21gr2",
+      "id": "5",
+      "name": "!!bar",
+      "bbox": [
+        86.4,
+        676.8,
+        40.32,
+        2.88
+      ],
+      "geometry": "rect",
+      "fillColor": "#FF6B35",
+      "lineColor": "#FF6B35",
+      "lineWidth": 1.33
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/y50jq1sr",
+      "id": "6",
+      "name": "pageno",
+      "bbox": [
+        1046.4,
+        48,
+        146.88,
+        30.72
+      ],
+      "geometry": "rect",
+      "text": "01 / 20",
+      "textPreview": "01 / 20",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "01 / 20"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "01 / 20",
+          "resolvedTextStyle": {
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "01 / 20",
+              "fontSize": 12,
+              "typeface": "Arial",
+              "color": "#8A94A8"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/z69kz69c",
+      "id": "7",
+      "name": "!!mark",
+      "bbox": [
+        86.4,
+        57.6,
+        14.4,
+        14.4
+      ],
+      "rotation": 45,
+      "geometry": "rect",
+      "fillColor": "#FF6B35",
+      "lineColor": "#FF6B35",
+      "lineWidth": 1.33
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/8v2lwbat",
+      "id": "8",
+      "name": "anim_eyebrow",
+      "bbox": [
+        86.4,
+        193.92,
+        768,
+        28.8
+      ],
+      "geometry": "rect",
+      "text": "[YOUR ORGANISATION]",
+      "textPreview": "[YOUR ORGANISATION]",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "[YOUR ORGANISATION]"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "[YOUR ORGANISATION]",
+          "runs": [
+            {
+              "index": 1,
+              "text": "[YOUR ORGANISATION]",
+              "fontSize": 13.33,
+              "typeface": "Arial",
+              "color": "#FF6B35",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/9wb25gre",
+      "id": "9",
+      "name": "!!kicker",
+      "bbox": [
+        86.4,
+        232.32,
+        1036.8,
+        244.8
+      ],
+      "geometry": "rect",
+      "text": "[Your title\ngoes here]",
+      "textPreview": "[Your title | goes here]",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "[Your title"
+          },
+          {
+            "index": 2,
+            "text": "goes here]"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "[Your title",
+          "runs": [
+            {
+              "index": 1,
+              "text": "[Your title",
+              "fontSize": 72,
+              "typeface": "Arial",
+              "color": "#EEF2F8",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "goes here]",
+          "runs": [
+            {
+              "index": 1,
+              "text": "goes here]",
+              "fontSize": 72,
+              "typeface": "Arial",
+              "color": "#EEF2F8",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/9wn2hovm",
+      "id": "10",
+      "name": "anim_sub",
+      "bbox": [
+        86.4,
+        491.52,
+        729.6,
+        76.8
+      ],
+      "geometry": "rect",
+      "text": "[One sentence on what this deck delivers, and who it is for.]",
+      "textPreview": "[One sentence on what this deck delivers, and who it is for.]",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "[One sentence on what this deck delivers, and who it is for.]"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "[One sentence on what this deck delivers, and who it is for.]",
+          "runs": [
+            {
+              "index": 1,
+              "text": "[One sentence on what this deck delivers, and who it is for.]",
+              "fontSize": 20,
+              "typeface": "Arial",
+              "color": "#8A94A8"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 10,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/8vel8ju1",
+      "id": "11",
+      "name": "Text 7",
+      "bbox": [
+        86.4,
+        612.48,
+        864,
+        30.72
+      ],
+      "geometry": "rect",
+      "text": "[PRESENTER]     ·     [ROLE]     ·     [DATE]",
+      "textPreview": "[PRESENTER]     ·     [ROLE]     ·     [DATE]",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "[PRESENTER]     ·     [ROLE]     ·     [DATE]"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "[PRESENTER]     ·     [ROLE]     ·     [DATE]",
+          "runs": [
+            {
+              "index": 1,
+              "text": "[PRESENTER]     ·     [ROLE]     ·     [DATE]",
+              "fontSize": 13.33,
+              "typeface": "Arial",
+              "color": "#6E7788"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    }
+  ],
+  "composeRuns": []
+}

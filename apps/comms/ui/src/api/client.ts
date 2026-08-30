@@ -2,10 +2,42 @@ import { getCsrfToken } from './session'
 
 export type ContentType = 'newsletter' | 'linkedin_post' | 'event_announcement' | 'member_spotlight'
 
+export type Tone = 'formal' | 'warm' | 'concise'
+
+/**
+ * The structured brief (#303), replacing the single free-text `brief` field.
+ *
+ * The limits mirror the server's and are not decoration: the endpoint rejects a topic over 200
+ * characters, a key point over 300, more than eight key points, more than five links, or a link
+ * that is not a URL. Enforcing them here too is so the user finds out while typing rather than
+ * from a 422.
+ *
+ * This is a reduction in what can be pasted, not a guarantee about content. A staff member can
+ * still type a member's name into `topic`, which is why the server still declares the text as
+ * staff-authored rather than claiming it has been minimised.
+ */
 export interface CommsDraftRequest {
   contentType: ContentType
-  brief: string
+  topic: string
+  keyPoints?: string[]
+  links?: string[]
+  tone?: Tone
 }
+
+export const TOPIC_MAX_LENGTH = 200
+export const KEY_POINT_MAX_LENGTH = 300
+export const MAX_KEY_POINTS = 8
+export const MAX_LINKS = 5
+
+/**
+ * Ceiling across topic, key points and links together — mirrors `TOTAL_BRIEF_BUDGET` in
+ * `services/api/comms.py`.
+ *
+ * Per-field caps do not compose into a total. Summed, they allowed 12,940 characters, because a
+ * URL can be ~2,000 and five are permitted — 3.2x the 4,000-character box #303 replaced. This is
+ * the number that keeps the change a reduction rather than a rename.
+ */
+export const TOTAL_BRIEF_BUDGET = 4000
 
 export interface CommsDraftResult {
   draft: string
@@ -35,7 +67,7 @@ export class CommsDraftError extends Error {}
  * "you are not signed in" needs a different answer from "the drafting service failed".
  */
 export async function requestCommsDraft(
-  { contentType, brief }: CommsDraftRequest,
+  { contentType, topic, keyPoints = [], links = [], tone = 'formal' }: CommsDraftRequest,
   options: { signal?: AbortSignal; baseUrl?: string } = {},
 ): Promise<CommsDraftResult> {
   const { signal, baseUrl = '' } = options
@@ -54,7 +86,15 @@ export async function requestCommsDraft(
         Accept: 'application/json',
         'X-CSRF-Token': csrfToken,
       },
-      body: JSON.stringify({ content_type: contentType, brief }),
+      // Empty key points and links are dropped rather than sent blank: the server caps the list
+      // lengths, and padding them with empty strings spends that budget on nothing.
+      body: JSON.stringify({
+        content_type: contentType,
+        topic,
+        key_points: keyPoints.map((point) => point.trim()).filter(Boolean),
+        links: links.map((link) => link.trim()).filter(Boolean),
+        tone,
+      }),
     })
   } catch (cause) {
     if (cause instanceof DOMException && cause.name === 'AbortError') throw cause

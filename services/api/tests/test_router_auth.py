@@ -316,6 +316,17 @@ EXPECTED_ROLES: dict[tuple[str, str], set[str]] = {
     # the analyst on that particular run, the same two-gate split as candidates/{id}/verify.
     # Analyst is absent on purpose: QA is the check on the analyst's work.
     ("POST", "/api/reports/{report_version_id}/qa"): {"Reviewer", "SIP Owner"},
+    # The three decision streams (ADR-0005). Each carries the roles its own decision kind is
+    # granted to in database/migrations/0003, not one shared set: the HTTP gate and the
+    # decision_role_permissions grant have to agree, or a caller passes the route check and is
+    # then refused by the repository, which reads as a bug rather than as the control working.
+    #
+    # Ruling is the CEO's alone. Approval reaches Reviewer because a quality judgement only the
+    # owner can make is not independent of the owner. Distribution reaches Secretariat because
+    # sending is a secretariat act, and it stays a separate decision from approval per REQ-G-04.
+    ("POST", "/api/reports/{report_version_id}/ruling"): {"SIP Owner"},
+    ("POST", "/api/reports/{report_version_id}/approval"): {"Reviewer", "SIP Owner"},
+    ("POST", "/api/reports/{report_version_id}/distribution"): {"Secretariat", "SIP Owner"},
     # The SIP-185 mandatory-source register. Reference data every role needs to read to know
     # which sources a run was obliged to cover; nothing personal in it and no write path here,
     # but it is the register an auditor checks a run against, so it is not public either.
@@ -359,11 +370,13 @@ EXPECTED_ROLES: dict[tuple[str, str], set[str]] = {
     # something", not "may approve their own draft" - that second check lives in the repository,
     # not in the role map, the same split as /api/candidates/{id}/verify.
     ("POST", "/api/comms/drafts/{draft_id}/approve"): {"Reviewer", "SIP Owner"},
+    # Deleting a draft (#342) takes the roles that can create one, not the reviewer roles that
+    # approve. It is a privacy-erasure act: the person who typed a member's name into a brief is
+    # the one who notices, and the audit record makes it attributable without restricting it to a
+    # single person who may be unavailable.
+    ("DELETE", "/api/comms/drafts/{draft_id}"): {"Secretariat", "SIP Owner"},
     ("GET", "/api/comms/drafts/{draft_id}"): set(STAFF_READ),
     ("GET", "/api/comms/drafts"): set(STAFF_READ),
-    # Same roles as creating a draft, not the reviewer roles that approve one (#342) — deleting is
-    # an authoring-side act.
-    ("DELETE", "/api/comms/drafts/{draft_id}"): {"Secretariat", "SIP Owner"},
 }
 
 

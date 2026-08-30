@@ -1,0 +1,960 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/hgzapcr6",
+    "id": "hgzapcr6",
+    "slide": 13,
+    "layoutId": "/ppt/slideLayouts/slideLayout1.xml",
+    "layoutName": "DEFAULT",
+    "masterLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+    "backgroundImage": {
+      "assetId": "/ppt/media/image.jpeg",
+      "contentType": "image/jpeg",
+      "byteLength": 448444
+    },
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "Office",
+    "colors": {
+      "accent1": "#4472C4",
+      "accent2": "#ED7D31",
+      "accent3": "#A5A5A5",
+      "accent4": "#FFC000",
+      "accent5": "#5B9BD5",
+      "accent6": "#70AD47",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#44546A",
+      "lt2": "#E7E6E6",
+      "hlink": "#0563C1",
+      "folHlink": "#954F72"
+    },
+    "fontScheme": {
+      "name": "Office",
+      "majorFont": {
+        "latinTypeface": "Calibri Light"
+      },
+      "minorFont": {
+        "latinTypeface": "Calibri"
+      }
+    },
+    "typefaces": [
+      "Arial",
+      "Calibri",
+      "Calibri Light"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "/ppt/slideLayouts/slideLayout1.xml",
+      "name": "DEFAULT",
+      "parentLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "/ppt/slideMasters/slideMaster1.xml",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "image",
+      "scope": "slide",
+      "aid": "im/qd4fuhsn",
+      "id": "25",
+      "name": "!!orb",
+      "bbox": [
+        844.8,
+        -134.4,
+        576,
+        576
+      ],
+      "contentType": "image/png",
+      "asset": {
+        "assetId": "/ppt/media/image3.png",
+        "contentType": "image/png",
+        "byteLength": 267750
+      },
+      "fillImage": {
+        "assetId": "/ppt/media/image3.png",
+        "contentType": "image/png",
+        "byteLength": 267750
+      }
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/bq9orito",
+      "id": "3",
+      "name": "track",
+      "bbox": [
+        86.4,
+        677.28,
+        1107.17,
+        1.73
+      ],
+      "geometry": "rect",
+      "fillColor": "#242C3B",
+      "lineColor": "#242C3B",
+      "lineWidth": 1.33
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/o3i5w3ad",
+      "id": "4",
+      "name": "!!bar",
+      "bbox": [
+        86.4,
+        676.8,
+        714.12,
+        2.88
+      ],
+      "geometry": "rect",
+      "fillColor": "#FF6B35",
+      "lineColor": "#FF6B35",
+      "lineWidth": 1.33
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/p4r6p8by",
+      "id": "5",
+      "name": "!!mark",
+      "bbox": [
+        86.4,
+        57.6,
+        14.4,
+        14.4
+      ],
+      "rotation": 45,
+      "geometry": "rect",
+      "fillColor": "#FF6B35",
+      "lineColor": "#FF6B35",
+      "lineWidth": 1.33
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/21gnuts7",
+      "id": "6",
+      "name": "!!kicker",
+      "bbox": [
+        119.04,
+        48,
+        672,
+        30.72
+      ],
+      "geometry": "rect",
+      "text": "BEFORE AND AFTER",
+      "textPreview": "BEFORE AND AFTER",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "BEFORE AND AFTER"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "BEFORE AND AFTER",
+          "runs": [
+            {
+              "index": 1,
+              "text": "BEFORE AND AFTER",
+              "fontSize": 12,
+              "typeface": "Arial",
+              "color": "#8A94A8",
+              "bold": true
+            }
+          ],
+          "bulletCharacter": "",
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/32ponyts",
+      "id": "7",
+      "name": "pageno",
+      "bbox": [
+        1046.4,
+        48,
+        146.88,
+        30.72
+      ],
+      "geometry": "rect",
+      "text": "13 / 20",
+      "textPreview": "13 / 20",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "13 / 20"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "13 / 20",
+          "resolvedTextStyle": {
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "13 / 20",
+              "fontSize": 12,
+              "typeface": "Arial",
+              "color": "#8A94A8"
+            }
+          ],
+          "bulletCharacter": "",
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/gzy5s3a1",
+      "id": "8",
+      "name": "Text 5",
+      "bbox": [
+        86.4,
+        117.12,
+        816,
+        91.2
+      ],
+      "geometry": "rect",
+      "text": "What changed, precisely",
+      "textPreview": "What changed, precisely",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "What changed, precisely"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "What changed, precisely",
+          "runs": [
+            {
+              "index": 1,
+              "text": "What changed, precisely",
+              "fontSize": 36,
+              "typeface": "Arial",
+              "color": "#EEF2F8",
+              "bold": true
+            }
+          ],
+          "bulletCharacter": "",
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/1076lobm",
+      "id": "9",
+      "name": "!!panelTODAY",
+      "bbox": [
+        86.4,
+        225.6,
+        518.4,
+        388.8
+      ],
+      "geometry": "roundRect",
+      "fillColor": "rgba(21, 26, 36, 0.88)",
+      "lineColor": "#242C3B",
+      "lineWidth": 1.33
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/hcfy9k3u",
+      "id": "10",
+      "name": "Text 7",
+      "bbox": [
+        126.72,
+        261.12,
+        307.2,
+        32.64
+      ],
+      "geometry": "rect",
+      "text": "STARTING POINT",
+      "textPreview": "STARTING POINT",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "STARTING POINT"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "STARTING POINT",
+          "runs": [
+            {
+              "index": 1,
+              "text": "STARTING POINT",
+              "fontSize": 13.33,
+              "typeface": "Arial",
+              "color": "#8A94A8",
+              "bold": true
+            }
+          ],
+          "bulletCharacter": "",
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 10,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/gb6x0zm9",
+      "id": "11",
+      "name": "Shape 8",
+      "bbox": [
+        126.72,
+        341.76,
+        9.6,
+        9.6
+      ],
+      "rotation": 45,
+      "geometry": "rect",
+      "fillColor": "#3A455C",
+      "lineColor": "#3A455C",
+      "lineWidth": 1.33
+    },
+    {
+      "order": 11,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/vaxg7ulo",
+      "id": "12",
+      "name": "Text 9",
+      "bbox": [
+        168.96,
+        322.56,
+        393.6,
+        48
+      ],
+      "geometry": "rect",
+      "text": "Separate specialist lanes",
+      "textPreview": "Separate specialist lanes",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Separate specialist lanes"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Separate specialist lanes",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Separate specialist lanes",
+              "fontSize": 18.67,
+              "typeface": "Arial",
+              "color": "#8A94A8"
+            }
+          ],
+          "bulletCharacter": "",
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 12,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/u9ofyp43",
+      "id": "13",
+      "name": "Shape 10",
+      "bbox": [
+        126.72,
+        430.08,
+        9.6,
+        9.6
+      ],
+      "rotation": 45,
+      "geometry": "rect",
+      "fillColor": "#3A455C",
+      "lineColor": "#3A455C",
+      "lineWidth": 1.33
+    },
+    {
+      "order": 13,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/t8fy5k3i",
+      "id": "14",
+      "name": "Text 11",
+      "bbox": [
+        168.96,
+        410.88,
+        393.6,
+        48
+      ],
+      "geometry": "rect",
+      "text": "Hidden approval assumptions",
+      "textPreview": "Hidden approval assumptions",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Hidden approval assumptions"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Hidden approval assumptions",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Hidden approval assumptions",
+              "fontSize": 18.67,
+              "typeface": "Arial",
+              "color": "#8A94A8"
+            }
+          ],
+          "bulletCharacter": "",
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 14,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/876xwfmx",
+      "id": "15",
+      "name": "Shape 12",
+      "bbox": [
+        126.72,
+        518.4,
+        9.6,
+        9.6
+      ],
+      "rotation": 45,
+      "geometry": "rect",
+      "fillColor": "#3A455C",
+      "lineColor": "#3A455C",
+      "lineWidth": 1.33
+    },
+    {
+      "order": 15,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/7mdg3als",
+      "id": "16",
+      "name": "Text 13",
+      "bbox": [
+        168.96,
+        499.2,
+        393.6,
+        48
+      ],
+      "geometry": "rect",
+      "text": "Board state could drift",
+      "textPreview": "Board state could drift",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Board state could drift"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Board state could drift",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Board state could drift",
+              "fontSize": 18.67,
+              "typeface": "Arial",
+              "color": "#8A94A8"
+            }
+          ],
+          "bulletCharacter": "",
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 16,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/6l4fu547",
+      "id": "17",
+      "name": "!!panelAFTER",
+      "bbox": [
+        674.88,
+        225.6,
+        518.4,
+        388.8
+      ],
+      "geometry": "roundRect",
+      "fillColor": "rgba(21, 26, 36, 0.88)",
+      "lineColor": "#FF6B35",
+      "lineWidth": 1.33
+    },
+    {
+      "order": 17,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/lkvy103m",
+      "id": "18",
+      "name": "Text 15",
+      "bbox": [
+        715.2,
+        261.12,
+        307.2,
+        32.64
+      ],
+      "geometry": "rect",
+      "text": "DELIVERED STATE",
+      "textPreview": "DELIVERED STATE",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "DELIVERED STATE"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "DELIVERED STATE",
+          "runs": [
+            {
+              "index": 1,
+              "text": "DELIVERED STATE",
+              "fontSize": 13.33,
+              "typeface": "Arial",
+              "color": "#FF6B35",
+              "bold": true
+            }
+          ],
+          "bulletCharacter": "",
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 18,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/kjmxsfm1",
+      "id": "19",
+      "name": "Shape 16",
+      "bbox": [
+        715.2,
+        341.76,
+        9.6,
+        9.6
+      ],
+      "rotation": 45,
+      "geometry": "rect",
+      "fillColor": "#FF6B35",
+      "lineColor": "#FF6B35",
+      "lineWidth": 1.33
+    },
+    {
+      "order": 19,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/cnqh8fux",
+      "id": "20",
+      "name": "Text 17",
+      "bbox": [
+        757.44,
+        322.56,
+        393.6,
+        48
+      ],
+      "geometry": "rect",
+      "text": "Shared contracts and APIs",
+      "textPreview": "Shared contracts and APIs",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Shared contracts and APIs"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Shared contracts and APIs",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Shared contracts and APIs",
+              "fontSize": 18.67,
+              "typeface": "Arial",
+              "color": "#EEF2F8"
+            }
+          ],
+          "bulletCharacter": "",
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 20,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/xozyhkbi",
+      "id": "21",
+      "name": "Shape 18",
+      "bbox": [
+        715.2,
+        430.08,
+        9.6,
+        9.6
+      ],
+      "rotation": 45,
+      "geometry": "rect",
+      "fillColor": "#FF6B35",
+      "lineColor": "#FF6B35",
+      "lineWidth": 1.33
+    },
+    {
+      "order": 21,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/q18f65cr",
+      "id": "22",
+      "name": "Text 19",
+      "bbox": [
+        757.44,
+        410.88,
+        393.6,
+        48
+      ],
+      "geometry": "rect",
+      "text": "Named review + audit trail",
+      "textPreview": "Named review + audit trail",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Named review + audit trail"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Named review + audit trail",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Named review + audit trail",
+              "fontSize": 18.67,
+              "typeface": "Arial",
+              "color": "#EEF2F8"
+            }
+          ],
+          "bulletCharacter": "",
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 22,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/bmhgfatc",
+      "id": "23",
+      "name": "Shape 20",
+      "bbox": [
+        715.2,
+        518.4,
+        9.6,
+        9.6
+      ],
+      "rotation": 45,
+      "geometry": "rect",
+      "fillColor": "#FF6B35",
+      "lineColor": "#FF6B35",
+      "lineWidth": 1.33
+    },
+    {
+      "order": 23,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/oz6x4vul",
+      "id": "24",
+      "name": "Text 21",
+      "bbox": [
+        757.44,
+        499.2,
+        393.6,
+        48
+      ],
+      "geometry": "rect",
+      "text": "Handover gaps made visible",
+      "textPreview": "Handover gaps made visible",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Handover gaps made visible"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Handover gaps made visible",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Handover gaps made visible",
+              "fontSize": 18.67,
+              "typeface": "Arial",
+              "color": "#EEF2F8"
+            }
+          ],
+          "bulletCharacter": "",
+          "marginLeft": 0
+        }
+      ]
+    }
+  ],
+  "composeRuns": []
+}

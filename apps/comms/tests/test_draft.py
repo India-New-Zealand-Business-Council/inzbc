@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from apps.comms.draft import BlankBriefError, build_prompt, generate_draft
+from apps.comms.draft import BlankBriefError, Brief, build_prompt, generate_draft
 from services.api.model_gateway import GatewayResult
 from services.api.prompt_boundary import PromptSource
 
@@ -31,13 +31,13 @@ class FakeGateway:
 
 def test_generate_draft_returns_the_gateways_text() -> None:
     gateway = FakeGateway(text="Dear members, ...")
-    result = generate_draft(gateway, "newsletter", "announce the new FTA explainer")
+    result = generate_draft(gateway, "newsletter", Brief(topic="announce the new FTA explainer"))
     assert result.text == "Dear members, ..."
 
 
 def test_generate_draft_passes_the_brief_through_to_the_prompt() -> None:
     gateway = FakeGateway()
-    generate_draft(gateway, "linkedin_post", "we hit 500 members this quarter")
+    generate_draft(gateway, "linkedin_post", Brief(topic="we hit 500 members this quarter"))
     assert gateway.last_prompt is not None
     assert "we hit 500 members this quarter" in gateway.last_prompt
 
@@ -52,30 +52,60 @@ def test_generate_draft_passes_the_brief_through_to_the_prompt() -> None:
     ],
 )
 def test_build_prompt_names_the_content_type(content_type, expected_label: str) -> None:
-    prompt = build_prompt(content_type, "a brief")
+    prompt = build_prompt(content_type, Brief(topic="a brief"))
     assert expected_label in prompt
 
 
 def test_build_prompt_instructs_against_inventing_facts() -> None:
     # docs/modules/comms-assistant.md and CLAUDE.md both require this; asserting it here means a
     # future edit that drops the line fails a test, not just a careful re-read of the prompt.
-    prompt = build_prompt("newsletter", "a brief")
+    prompt = build_prompt("newsletter", Brief(topic="a brief"))
     assert "do not invent" in prompt.lower()
 
 
 def test_build_prompt_says_the_output_is_a_draft_for_review() -> None:
-    prompt = build_prompt("newsletter", "a brief")
+    prompt = build_prompt("newsletter", Brief(topic="a brief"))
     assert "review" in prompt.lower()
 
 
-@pytest.mark.parametrize("blank_brief", ["", "   ", "\n\t"])
-def test_generate_draft_refuses_a_blank_brief(blank_brief: str) -> None:
+@pytest.mark.parametrize("blank_topic", ["", "   ", "\n\t"])
+def test_generate_draft_refuses_a_blank_brief(blank_topic: str) -> None:
     gateway = FakeGateway()
     with pytest.raises(BlankBriefError):
-        generate_draft(gateway, "newsletter", blank_brief)
+        generate_draft(gateway, "newsletter", Brief(topic=blank_topic))
     # The refusal must happen before any call reaches the gateway - a blank brief is this
     # module's own validation failure, not something to spend a model call finding out.
     assert gateway.last_prompt is None
+
+
+def test_a_blank_topic_is_still_a_brief_if_it_has_key_points() -> None:
+    """Blankness is about the whole brief, not the topic alone.
+
+    Refusing on an empty topic while key points carry real content would reject a usable brief,
+    and `is_blank()` exists so that rule lives in one place rather than at each call site.
+    """
+    gateway = FakeGateway()
+    generate_draft(gateway, "newsletter", Brief(topic="  ", key_points=("500 members reached",)))
+    assert gateway.last_prompt is not None
+    assert "500 members reached" in gateway.last_prompt
+
+
+def test_the_rendered_brief_carries_every_field() -> None:
+    brief = Brief(
+        topic="FTA explainer launch",
+        key_points=("tariffs drop to zero", "wool and dairy covered"),
+        links=("https://example.invalid/fta",),
+        tone="concise",
+    )
+    rendered = brief.render()
+    for expected in (
+        "FTA explainer launch",
+        "tariffs drop to zero",
+        "wool and dairy covered",
+        "https://example.invalid/fta",
+        "short and direct",
+    ):
+        assert expected in rendered
 
 
 def test_generate_draft_propagates_gateway_errors_unchanged() -> None:
@@ -84,7 +114,7 @@ def test_generate_draft_propagates_gateway_errors_unchanged() -> None:
             raise RuntimeError("provider is down")
 
     with pytest.raises(RuntimeError, match="provider is down"):
-        generate_draft(RaisingGateway(), "newsletter", "a brief")
+        generate_draft(RaisingGateway(), "newsletter", Brief(topic="a brief"))
 
 
 def test_the_draft_flow_declares_staff_authored_text() -> None:
@@ -95,5 +125,5 @@ def test_the_draft_flow_declares_staff_authored_text() -> None:
     refused, should fail here rather than in production.
     """
     gateway = FakeGateway()
-    generate_draft(gateway, "newsletter", "announce the FTA explainer")
+    generate_draft(gateway, "newsletter", Brief(topic="announce the FTA explainer"))
     assert gateway.last_source is PromptSource.STAFF_AUTHORED

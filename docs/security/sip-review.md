@@ -131,7 +131,7 @@ already recorded.
 | Session establishment and sign-out unaudited | Technical Lead | §5 above |
 | MFA on owned accounts unverified | Executive Sponsor | Five-minute check nobody outside INZBC can perform |
 | Backup never restored from a production backup | Technical Lead | The checker runs in CI; there is no production database yet (#99) |
-| No migration mechanism (#44) | Technical Lead | A schema-level control binds new databases only |
+| ~~No migration mechanism (#44)~~ | Technical Lead | **Closed 20 Aug 2026.** `scripts/migrate.py` plus `database/migrations/`; a schema-level control can now reach an existing database instead of binding new ones only |
 
 ## 7. Conclusion
 

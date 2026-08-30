@@ -35,10 +35,10 @@ describe('CommsAssistant', () => {
     render(<CommsAssistant />)
     expect(screen.getByRole('button', { name: /generate draft/i })).toBeDisabled()
 
-    await userEvent.type(screen.getByLabelText(/brief/i), '   ')
+    await userEvent.type(screen.getByLabelText(/topic/i), '   ')
     expect(screen.getByRole('button', { name: /generate draft/i })).toBeDisabled()
 
-    await userEvent.type(screen.getByLabelText(/brief/i), 'Announce the trade mission')
+    await userEvent.type(screen.getByLabelText(/topic/i), 'Announce the trade mission')
     expect(screen.getByRole('button', { name: /generate draft/i })).toBeEnabled()
   })
 
@@ -49,7 +49,7 @@ describe('CommsAssistant', () => {
     const spy = mockFetch(draftBody('x'))
     render(<CommsAssistant />)
 
-    await userEvent.type(screen.getByLabelText(/brief/i), '   {Control>}{Enter}{/Control}')
+    await userEvent.type(screen.getByLabelText(/topic/i), '   {Control>}{Enter}{/Control}')
 
     expect(spy).not.toHaveBeenCalled()
   })
@@ -59,7 +59,7 @@ describe('CommsAssistant', () => {
     render(<CommsAssistant />)
 
     await userEvent.selectOptions(screen.getByLabelText(/content type/i), 'LinkedIn Post')
-    await userEvent.type(screen.getByLabelText(/brief/i), 'Celebrate the FTA anniversary')
+    await userEvent.type(screen.getByLabelText(/topic/i), 'Celebrate the FTA anniversary')
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
 
     expect(await screen.findByText('Draft newsletter body')).toBeInTheDocument()
@@ -68,7 +68,7 @@ describe('CommsAssistant', () => {
     const [, init] = call as [string, RequestInit]
     expect(JSON.parse(init.body as string)).toMatchObject({
       content_type: 'linkedin_post',
-      brief: 'Celebrate the FTA anniversary',
+      topic: 'Celebrate the FTA anniversary',
     })
   })
 
@@ -83,7 +83,7 @@ describe('CommsAssistant', () => {
       ),
     )
     render(<CommsAssistant />)
-    await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
+    await userEvent.type(screen.getByLabelText(/topic/i), 'Draft this')
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
 
     expect(screen.getByRole('button', { name: /generating/i })).toBeDisabled()
@@ -102,7 +102,7 @@ describe('CommsAssistant', () => {
       ),
     )
     const { container } = render(<CommsAssistant />)
-    await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
+    await userEvent.type(screen.getByLabelText(/topic/i), 'Draft this')
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
 
     expect(container.querySelector('[aria-hidden="true"] .animate-pulse')).toBeTruthy()
@@ -114,7 +114,7 @@ describe('CommsAssistant', () => {
   it('surfaces a service failure without inventing a draft', async () => {
     mockFetch({}, { ok: false, status: 503 })
     render(<CommsAssistant />)
-    await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
+    await userEvent.type(screen.getByLabelText(/topic/i), 'Draft this')
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
 
     const alert = await screen.findByRole('alert')
@@ -128,13 +128,13 @@ describe('CommsAssistant', () => {
     // stay untouched on a failed regeneration; only submitError should change.
     mockFetch(draftBody('First draft'))
     render(<CommsAssistant />)
-    await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
+    await userEvent.type(screen.getByLabelText(/topic/i), 'Draft this')
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
     await screen.findByText('First draft')
 
     mockFetch({}, { ok: false, status: 503 })
-    await userEvent.clear(screen.getByLabelText(/brief/i))
-    await userEvent.type(screen.getByLabelText(/brief/i), 'Revise this')
+    await userEvent.clear(screen.getByLabelText(/topic/i))
+    await userEvent.type(screen.getByLabelText(/topic/i), 'Revise this')
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
 
     const alert = await screen.findByRole('alert')
@@ -148,7 +148,7 @@ describe('CommsAssistant', () => {
     stubClipboard(writeText)
 
     render(<CommsAssistant />)
-    await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
+    await userEvent.type(screen.getByLabelText(/topic/i), 'Draft this')
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
     await screen.findByText('Copy me')
     await userEvent.click(screen.getByRole('button', { name: /copy to clipboard/i }))
@@ -162,7 +162,7 @@ describe('CommsAssistant', () => {
     stubClipboard(vi.fn().mockRejectedValue(new Error('denied')))
 
     render(<CommsAssistant />)
-    await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
+    await userEvent.type(screen.getByLabelText(/topic/i), 'Draft this')
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
     await screen.findByText('Copy me')
     await userEvent.click(screen.getByRole('button', { name: /copy to clipboard/i }))
@@ -175,7 +175,7 @@ describe('CommsAssistant', () => {
     stubClipboard(vi.fn().mockResolvedValue(undefined))
 
     render(<CommsAssistant />)
-    await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
+    await userEvent.type(screen.getByLabelText(/topic/i), 'Draft this')
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
     await screen.findByText('Copy me')
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
@@ -193,7 +193,7 @@ describe('CommsAssistant', () => {
     stubClipboard(vi.fn().mockRejectedValue(new Error('denied')))
 
     render(<CommsAssistant />)
-    await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
+    await userEvent.type(screen.getByLabelText(/topic/i), 'Draft this')
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
     await screen.findByText('Copy me')
     await userEvent.click(screen.getByRole('button', { name: /copy to clipboard/i }))
@@ -206,13 +206,13 @@ describe('CommsAssistant', () => {
     render(<CommsAssistant />)
 
     await userEvent.selectOptions(screen.getByLabelText(/content type/i), 'LinkedIn Post')
-    await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
+    await userEvent.type(screen.getByLabelText(/topic/i), 'Draft this')
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
     await screen.findByText('Copy me')
 
     await userEvent.click(screen.getByRole('button', { name: /^clear$/i }))
 
-    expect(screen.getByLabelText(/brief/i)).toHaveValue('')
+    expect(screen.getByLabelText(/topic/i)).toHaveValue('')
     expect(screen.getByLabelText(/content type/i)).toHaveValue('newsletter')
     expect(screen.queryByText('Copy me')).not.toBeInTheDocument()
   })
@@ -229,7 +229,7 @@ describe('CommsAssistant', () => {
       }),
     )
     render(<CommsAssistant />)
-    const textarea = screen.getByLabelText(/brief/i)
+    const textarea = screen.getByLabelText(/topic/i)
     await userEvent.type(textarea, 'Draft this')
     // Two Ctrl+Enter keydowns fired without an await between them, not two button clicks: the
     // button disables after the first submit starts, so userEvent.click's second call may or may
@@ -254,12 +254,23 @@ describe('CommsAssistant', () => {
     expect(screen.getByText(/ai drafts require human review before publishing/i)).toBeInTheDocument()
   })
 
-  it('shows a live character count against the brief limit', async () => {
+  it('shows a live character count against the topic limit', async () => {
+    // 200, not the old 4000: #303 replaced one free-text box with capped fields, and the cap is
+    // the mitigation, so the counter has to show the real one.
     render(<CommsAssistant />)
-    expect(screen.getByText('0 / 4000')).toBeInTheDocument()
+    expect(screen.getByText('0 / 200')).toBeInTheDocument()
 
-    await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
-    expect(screen.getByText('10 / 4000')).toBeInTheDocument()
+    await userEvent.type(screen.getByLabelText(/topic/i), 'Draft this')
+    expect(screen.getByText('10 / 200')).toBeInTheDocument()
+  })
+
+  it('counts key points and links against their own limits', async () => {
+    render(<CommsAssistant />)
+    expect(screen.getByText('0 / 8')).toBeInTheDocument()
+    expect(screen.getByText('0 / 5')).toBeInTheDocument()
+
+    await userEvent.type(screen.getByLabelText(/key points/i), 'one\ntwo')
+    expect(screen.getByText('2 / 8')).toBeInTheDocument()
   })
 
   it('moves a superseded draft into recent-drafts history, keeping its content type', async () => {
@@ -275,14 +286,14 @@ describe('CommsAssistant', () => {
 
     expect(screen.queryByText(/recent drafts/i)).not.toBeInTheDocument()
 
-    await userEvent.type(screen.getByLabelText(/brief/i), 'First brief')
+    await userEvent.type(screen.getByLabelText(/topic/i), 'First brief')
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
     await screen.findByText('newsletter draft')
     expect(screen.queryByText(/recent drafts/i)).not.toBeInTheDocument()
 
     await userEvent.selectOptions(screen.getByLabelText(/content type/i), 'LinkedIn Post')
-    await userEvent.clear(screen.getByLabelText(/brief/i))
-    await userEvent.type(screen.getByLabelText(/brief/i), 'Second brief')
+    await userEvent.clear(screen.getByLabelText(/topic/i))
+    await userEvent.type(screen.getByLabelText(/topic/i), 'Second brief')
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
     await screen.findByText('linkedin_post draft')
 
@@ -308,8 +319,8 @@ describe('CommsAssistant', () => {
     render(<CommsAssistant />)
 
     for (let i = 0; i < 2; i += 1) {
-      await userEvent.clear(screen.getByLabelText(/brief/i))
-      await userEvent.type(screen.getByLabelText(/brief/i), `brief ${i}`)
+      await userEvent.clear(screen.getByLabelText(/topic/i))
+      await userEvent.type(screen.getByLabelText(/topic/i), `brief ${i}`)
       await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
       await screen.findByText(`draft ${i + 1}`)
     }
@@ -334,8 +345,8 @@ describe('CommsAssistant', () => {
     render(<CommsAssistant />)
 
     for (let i = 0; i < 5; i += 1) {
-      await userEvent.clear(screen.getByLabelText(/brief/i))
-      await userEvent.type(screen.getByLabelText(/brief/i), `brief ${i}`)
+      await userEvent.clear(screen.getByLabelText(/topic/i))
+      await userEvent.type(screen.getByLabelText(/topic/i), `brief ${i}`)
       await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
       await screen.findByText(`draft ${i + 1}`)
     }
@@ -350,7 +361,7 @@ describe('CommsAssistant', () => {
   it('toggles thumbs-up/thumbs-down feedback on the draft', async () => {
     mockFetch(draftBody('Rate me'))
     render(<CommsAssistant />)
-    await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
+    await userEvent.type(screen.getByLabelText(/topic/i), 'Draft this')
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
     await screen.findByText('Rate me')
 
@@ -371,15 +382,15 @@ describe('CommsAssistant', () => {
   it('resets feedback when a new draft is generated', async () => {
     mockFetch(draftBody('First'))
     render(<CommsAssistant />)
-    await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
+    await userEvent.type(screen.getByLabelText(/topic/i), 'Draft this')
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
     await screen.findByText('First')
     await userEvent.click(screen.getByRole('button', { name: 'Helpful' }))
     expect(screen.getByRole('button', { name: 'Helpful' })).toHaveAttribute('aria-pressed', 'true')
 
     mockFetch(draftBody('Second'))
-    await userEvent.clear(screen.getByLabelText(/brief/i))
-    await userEvent.type(screen.getByLabelText(/brief/i), 'Another brief')
+    await userEvent.clear(screen.getByLabelText(/topic/i))
+    await userEvent.type(screen.getByLabelText(/topic/i), 'Another brief')
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
     await screen.findByText('Second')
 
@@ -392,7 +403,7 @@ describe('CommsAssistant', () => {
 
     render(<CommsAssistant />)
     await userEvent.selectOptions(screen.getByLabelText(/content type/i), 'LinkedIn Post')
-    await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
+    await userEvent.type(screen.getByLabelText(/topic/i), 'Draft this')
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
     await screen.findByText('Export me')
 
@@ -403,7 +414,7 @@ describe('CommsAssistant', () => {
   it('shows the word count of the generated draft', async () => {
     mockFetch(draftBody('Four little words here'))
     render(<CommsAssistant />)
-    await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
+    await userEvent.type(screen.getByLabelText(/topic/i), 'Draft this')
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
 
     expect(await screen.findByText(/4 words/i)).toBeInTheDocument()
@@ -413,20 +424,113 @@ describe('CommsAssistant', () => {
     const spy = mockFetch(draftBody('From shortcut'))
     render(<CommsAssistant />)
 
-    await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this{Control>}{Enter}{/Control}')
+    await userEvent.type(screen.getByLabelText(/topic/i), 'Draft this{Control>}{Enter}{/Control}')
 
     expect(await screen.findByText('From shortcut')).toBeInTheDocument()
     expect(spy).toHaveBeenCalledTimes(1)
   })
 
-  it('does not submit on plain Enter, so a brief can still span multiple lines', async () => {
+  it('cancels plain Enter in the topic field so the form cannot submit', async () => {
+    // Topic became a single-line input in #303, and an input inside a form submits on Enter
+    // natively. Ctrl+Enter stays the only submit shortcut.
+    //
+    // Asserts the event was cancelled rather than asserting "fetch was not called". jsdom does not
+    // implement implicit form submission, so a not-called assertion passes whether or not the
+    // guard exists - it did exactly that when the guard was removed, and reported success.
+    // fireEvent returns false when preventDefault was called, which tests the guard itself.
     const spy = mockFetch(draftBody('x'))
     render(<CommsAssistant />)
 
-    await userEvent.type(screen.getByLabelText(/brief/i), 'Line one{Enter}Line two')
+    const topic = screen.getByLabelText(/topic/i)
+    await userEvent.type(topic, 'Line one')
+
+    const notCancelled = fireEvent.keyDown(topic, { key: 'Enter' })
+    expect(notCancelled).toBe(false)
+    expect(spy).not.toHaveBeenCalled()
+  })
+
+  it('blocks submit and says why when a field is over its cap', async () => {
+    // Adversarial review found the counters turned red while submit stayed enabled, so the only
+    // feedback was a bare "returned 422" from the server. The rules here mirror the server's.
+    const spy = mockFetch({ draft: 'x' })
+    render(<CommsAssistant />)
+
+    await userEvent.type(screen.getByLabelText(/topic/i), 'A topic')
+    expect(screen.getByRole('button', { name: /generate/i })).toBeEnabled()
+
+    // Nine key points against a limit of eight.
+    fireEvent.change(screen.getByLabelText(/key points/i), {
+      target: { value: Array.from({ length: 9 }, (_, i) => `point ${i}`).join('\n') },
+    })
+
+    expect(screen.getByRole('button', { name: /generate/i })).toBeDisabled()
+    expect(screen.getByRole('alert')).toHaveTextContent(/no more than 8 key points/i)
+    expect(spy).not.toHaveBeenCalled()
+  })
+
+  it('requires a topic, because the server does', async () => {
+    // canSubmit previously allowed a key-points-only brief while DraftIn.topic has min_length=1,
+    // so that combination was a guaranteed 422.
+    render(<CommsAssistant />)
+    fireEvent.change(screen.getByLabelText(/key points/i), { target: { value: 'a real point' } })
+    expect(screen.getByRole('button', { name: /generate/i })).toBeDisabled()
+  })
+
+  it('clearing during generation does not leave the form stuck', async () => {
+    // Abort skips the catch block that would normally clear isGenerating, so Clear mid-request
+    // used to brick the form until reload.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => new Promise(() => {})),
+    )
+    render(<CommsAssistant />)
+    await userEvent.type(screen.getByLabelText(/topic/i), 'A topic')
+    await userEvent.click(screen.getByRole('button', { name: /generate/i }))
+    await userEvent.click(screen.getByRole('button', { name: /clear/i }))
+
+    await userEvent.type(screen.getByLabelText(/topic/i), 'Another topic')
+    expect(screen.getByRole('button', { name: /generate/i })).toBeEnabled()
+  })
+
+  it('announces the external-model warning from every brief field', () => {
+    // The warning sat under key points alone, so it was absent from Topic and Links — the two
+    // fields the code itself names as the residual #303 risk. Every field now references it, and
+    // aria-describedby is what makes that true for a screen reader rather than only visually.
+    render(<CommsAssistant />)
+
+    const warning = screen.getByText(/do not enter member names/i)
+    for (const label of [/topic/i, /key points/i, /links/i]) {
+      const described = screen.getByLabelText(label).getAttribute('aria-describedby') ?? ''
+      expect(described.split(' ')).toContain(warning.id)
+    }
+  })
+
+  it('associates each counter with its field', () => {
+    render(<CommsAssistant />)
+    for (const label of [/topic/i, /key points/i, /links/i]) {
+      const described = screen.getByLabelText(label).getAttribute('aria-describedby') ?? ''
+      // At least one referenced id must exist in the document, or the attribute is decorative.
+      expect(described.split(' ').some((id) => document.getElementById(id) !== null)).toBe(true)
+    }
+  })
+
+  it('leaves plain Enter alone in the key points textarea', async () => {
+    // The mirror of the test above: the guard must be narrow. Cancelling Enter in a textarea
+    // would stop key points being more than one line, which is the whole point of that field.
+    render(<CommsAssistant />)
+    const keyPoints = screen.getByLabelText(/key points/i)
+    const notCancelled = fireEvent.keyDown(keyPoints, { key: 'Enter' })
+    expect(notCancelled).toBe(true)
+  })
+
+  it('keeps plain Enter as a newline in key points, so a list can span lines', async () => {
+    const spy = mockFetch({ draft: 'x' })
+    render(<CommsAssistant />)
+
+    await userEvent.type(screen.getByLabelText(/key points/i), 'Line one{Enter}Line two')
 
     expect(spy).not.toHaveBeenCalled()
-    expect(screen.getByLabelText(/brief/i)).toHaveValue('Line one\nLine two')
+    expect(screen.getByLabelText(/key points/i)).toHaveValue('Line one\nLine two')
   })
 
   it('exports the current draft to PDF via the print dialog', async () => {
@@ -434,7 +538,7 @@ describe('CommsAssistant', () => {
     const pdfSpy = vi.spyOn(exportDraft, 'exportAsPdf').mockImplementation(() => {})
 
     render(<CommsAssistant />)
-    await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
+    await userEvent.type(screen.getByLabelText(/topic/i), 'Draft this')
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
     await screen.findByText('Export me')
 
@@ -460,7 +564,7 @@ describe('CommsAssistant', () => {
   }
 
   async function generateADraft() {
-    await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
+    await userEvent.type(screen.getByLabelText(/topic/i), 'Draft this')
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
     await screen.findByText('Delete me')
   }
@@ -545,8 +649,8 @@ describe('CommsAssistant', () => {
     mockFetchWithDelete({ ok: true, status: 204 })
     render(<CommsAssistant />)
     await generateADraft()
-    await userEvent.clear(screen.getByLabelText(/brief/i))
-    await userEvent.type(screen.getByLabelText(/brief/i), 'Second brief')
+    await userEvent.clear(screen.getByLabelText(/topic/i))
+    await userEvent.type(screen.getByLabelText(/topic/i), 'Second brief')
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
     await screen.findByText('Delete me', { selector: 'pre' })
     expect(await screen.findByText(/recent drafts/i)).toBeInTheDocument()

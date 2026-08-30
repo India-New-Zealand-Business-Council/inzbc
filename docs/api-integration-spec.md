@@ -185,8 +185,21 @@ violates ADR-0006 §1 and §3 while every automated control reports success.
 What bounds it today is the operator being told not to, in `operator-guide.md` §3. That is a
 procedure, not a boundary, and `comms-assistant.md`'s "Prohibited by default: no
 member/sponsor/stakeholder personal data... no confidential government/commercial data" asks for a
-boundary. Closing it properly means the Comms request carrying named fields rather than prose, so
-there is something to minimise. Tracked as #303.
+boundary. Tracked as #303.
+
+**The request shape changed, and the gap did not close.** As of #303 the endpoint takes
+`{content_type, topic, key_points[], links[], tone}` instead of `{content_type, brief}` — a
+200-character topic, up to eight 300-character key points, up to five URLs, and a controlled tone.
+Callers must send the new shape; `extra="forbid"` means the old body is rejected outright rather
+than silently ignored.
+
+The declaration to the gateway is still `STAFF_AUTHORED`, deliberately. Routing named fields
+through `minimise()` and declaring `MINIMISED_RECORD` was considered and rejected as untrue:
+`minimise()` drops fields nobody named, it does not clean what a human typed into a field that was
+named. The exposure is smaller and the same in kind.
+
+Response shapes are unchanged. The brief is rendered to text before storage, so `DraftOut`,
+`CommsDraftOut` and every read path are unaffected.
 
 **Also not yet true:** the adversarial/security review `comms-assistant.md` requires "before
 staff use" hasn't happened (nothing built yet to review) — this flow cannot ship to real staff

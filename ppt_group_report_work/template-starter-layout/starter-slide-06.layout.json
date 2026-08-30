@@ -1,0 +1,422 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/3main6",
+    "id": "3main6",
+    "slide": 6,
+    "layoutId": "/ppt/slideLayouts/slideLayout1.xml",
+    "layoutName": "DEFAULT",
+    "masterLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+    "backgroundImage": {
+      "assetId": "/ppt/media/Slide-1-image-1.jpeg",
+      "contentType": "image/jpeg",
+      "byteLength": 448444
+    },
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "Office",
+    "colors": {
+      "accent1": "#4472C4",
+      "accent2": "#ED7D31",
+      "accent3": "#A5A5A5",
+      "accent4": "#FFC000",
+      "accent5": "#5B9BD5",
+      "accent6": "#70AD47",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#44546A",
+      "lt2": "#E7E6E6",
+      "hlink": "#0563C1",
+      "folHlink": "#954F72"
+    },
+    "fontScheme": {
+      "name": "Office",
+      "majorFont": {
+        "latinTypeface": "Calibri Light"
+      },
+      "minorFont": {
+        "latinTypeface": "Calibri"
+      }
+    },
+    "typefaces": [
+      "Arial",
+      "Calibri",
+      "Calibri Light"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "/ppt/slideLayouts/slideLayout1.xml",
+      "name": "DEFAULT",
+      "parentLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "/ppt/slideMasters/slideMaster1.xml",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "image",
+      "scope": "slide",
+      "aid": "im/gjeh0f65",
+      "id": "11",
+      "name": "!!orb",
+      "bbox": [
+        278.4,
+        48,
+        768,
+        768
+      ],
+      "contentType": "image/png",
+      "asset": {
+        "assetId": "/ppt/media/image-1-2.png",
+        "contentType": "image/png",
+        "byteLength": 283574
+      },
+      "fillImage": {
+        "assetId": "/ppt/media/image-1-2.png",
+        "contentType": "image/png",
+        "byteLength": 283574
+      }
+    },
+    {
+      "order": 2,
+      "kind": "image",
+      "scope": "slide",
+      "aid": "im/fi507apk",
+      "id": "12",
+      "name": "!!orb2",
+      "bbox": [
+        -192,
+        441.6,
+        480,
+        480
+      ],
+      "contentType": "image/png",
+      "asset": {
+        "assetId": "/ppt/media/image-10-2.png",
+        "contentType": "image/png",
+        "byteLength": 267750
+      },
+      "fillImage": {
+        "assetId": "/ppt/media/image-10-2.png",
+        "contentType": "image/png",
+        "byteLength": 267750
+      }
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/9kretc7y",
+      "id": "4",
+      "name": "track",
+      "bbox": [
+        86.4,
+        677.28,
+        1107.17,
+        1.73
+      ],
+      "geometry": "rect",
+      "fillColor": "#242C3B",
+      "lineColor": "#242C3B",
+      "lineWidth": 1.33
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ojix076d",
+      "id": "5",
+      "name": "!!bar",
+      "bbox": [
+        86.4,
+        676.8,
+        321.07,
+        2.88
+      ],
+      "geometry": "rect",
+      "fillColor": "#FF6B35",
+      "lineColor": "#FF6B35",
+      "lineWidth": 1.33
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ni9wr2ps",
+      "id": "6",
+      "name": "!!mark",
+      "bbox": [
+        86.4,
+        57.6,
+        14.4,
+        14.4
+      ],
+      "rotation": 45,
+      "geometry": "rect",
+      "fillColor": "#FF6B35",
+      "lineColor": "#FF6B35",
+      "lineWidth": 1.33
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/mh0vyh87",
+      "id": "7",
+      "name": "!!kicker",
+      "bbox": [
+        119.04,
+        48,
+        672,
+        30.72
+      ],
+      "geometry": "rect",
+      "text": "THE ARGUMENT",
+      "textPreview": "THE ARGUMENT",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "THE ARGUMENT"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "THE ARGUMENT",
+          "runs": [
+            {
+              "index": 1,
+              "text": "THE ARGUMENT",
+              "fontSize": 12,
+              "typeface": "Arial",
+              "color": "#8A94A8",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/po7ehs7u",
+      "id": "8",
+      "name": "pageno",
+      "bbox": [
+        1046.4,
+        48,
+        146.88,
+        30.72
+      ],
+      "geometry": "rect",
+      "text": "06 / 20",
+      "textPreview": "06 / 20",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "06 / 20"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "06 / 20",
+          "resolvedTextStyle": {
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "06 / 20",
+              "fontSize": 12,
+              "typeface": "Arial",
+              "color": "#8A94A8"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/4nydonq9",
+      "id": "9",
+      "name": "Text 5",
+      "bbox": [
+        86.4,
+        225.6,
+        1056,
+        249.6
+      ],
+      "geometry": "rect",
+      "text": "[The big idea, in eight words or fewer.]",
+      "textPreview": "[The big idea, in eight words or fewer.]",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "[The big idea, in eight words or"
+          },
+          {
+            "index": 2,
+            "text": "fewer.]"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "[The big idea, in eight words or fewer.]",
+          "resolvedTextStyle": {
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "[The big idea, in eight words or fewer.]",
+              "fontSize": 61.33,
+              "typeface": "Arial",
+              "color": "#EEF2F8",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/qts3ydsf",
+      "id": "10",
+      "name": "Text 6",
+      "bbox": [
+        86.4,
+        513.6,
+        768,
+        38.4
+      ],
+      "geometry": "rect",
+      "text": "[Who says so, and on what evidence.]",
+      "textPreview": "[Who says so, and on what evidence.]",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "[Who says so, and on what evidence.]"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "[Who says so, and on what evidence.]",
+          "runs": [
+            {
+              "index": 1,
+              "text": "[Who says so, and on what evidence.]",
+              "fontSize": 16,
+              "typeface": "Arial",
+              "color": "#8A94A8"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    }
+  ],
+  "composeRuns": []
+}

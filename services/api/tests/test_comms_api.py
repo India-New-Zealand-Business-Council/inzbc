@@ -31,9 +31,14 @@ class FakeGateway:
         self.next_error: Exception | None = None
         self.next_text = "a generated draft"
         self.last_source: PromptSource | None = None
+        # Recorded so a test can assert what actually reached the gateway, not just what came
+        # back. #303 turns on the prompt's contents, so "the brief we stored is the text we sent"
+        # has to be checkable.
+        self.last_prompt: str | None = None
 
     def complete(self, prompt: str, *, source: PromptSource) -> GatewayResult:
         self.last_source = source
+        self.last_prompt = prompt
         if self.next_error is not None:
             error, self.next_error = self.next_error, None
             raise error
@@ -49,6 +54,7 @@ class FakeCommsDraftRepository:
         self._drafts: dict[str, CommsDraftRecord] = {}
         self.next_approve_error: Exception | None = None
         self.last_approve_principal: Principal | None = None
+        self.deleted: list[tuple[str, str]] = []
 
     def create(self, content_type, brief, draft_text, *, authored_by) -> CommsDraftRecord:
         record = CommsDraftRecord(
@@ -128,7 +134,7 @@ def client(fake_gateway: FakeGateway, fake_repo: FakeCommsDraftRepository) -> Te
 
 
 def _post_draft(client: TestClient, **overrides) -> object:
-    body = {"content_type": "newsletter", "brief": "announce the new FTA explainer"}
+    body = {"content_type": "newsletter", "topic": "announce the new FTA explainer"}
     body.update(overrides)
     return client.post("/api/comms/draft", json=body)
 
@@ -165,8 +171,100 @@ def test_draft_rejects_an_unknown_content_type(client: TestClient) -> None:
 
 
 def test_draft_rejects_a_blank_brief(client: TestClient) -> None:
-    response = _post_draft(client, brief="   ")
+    response = _post_draft(client, topic="   ")
     assert response.status_code == 422
+
+
+def test_draft_caps_the_structured_fields(client: TestClient) -> None:
+    """#303's limits are the mitigation, so they are asserted rather than trusted to the schema.
+
+    The point of structuring the brief was to shrink the paste target. A cap that silently stopped
+    being enforced would leave the endpoint accepting the same 4,000-character box under a new
+    field name, which is the thing #303 exists to stop.
+    """
+    assert _post_draft(client, topic="x" * 201).status_code == 422
+    assert _post_draft(client, key_points=["x" * 301]).status_code == 422
+    assert _post_draft(client, key_points=["ok"] * 9).status_code == 422
+    assert _post_draft(client, links=["not-a-url"]).status_code == 422
+    assert _post_draft(client, tone="shouty").status_code == 422
+
+
+def test_the_total_budget_is_not_larger_than_the_box_it_replaced(client: TestClient) -> None:
+    """#303 exists to shrink the paste target. This asserts it actually did.
+
+    Adversarial review found the per-field caps summed to 12,940 characters — 3.2x the
+    4,000-character box they replaced — because pydantic's HttpUrl accepts roughly 2,000
+    characters and five of them are allowed. Per-field limits do not compose into a total.
+
+    Maximal values on every field must now be refused, and the old cap must still fit.
+    """
+    long_url = "https://e.invalid/" + "a" * 2000
+    maximal = _post_draft(
+        client,
+        topic="t" * 200,
+        key_points=["k" * 300] * 8,
+        links=[long_url] * 5,
+    )
+    assert maximal.status_code == 422
+
+    # A brief at the old cap still works, so the budget is a ceiling and not a new obstacle.
+    at_old_cap = _post_draft(client, topic="t" * 200, key_points=["k" * 300] * 8)
+    assert at_old_cap.status_code == 200
+
+
+def test_draft_accepts_a_full_structured_brief(client: TestClient) -> None:
+    response = _post_draft(
+        client,
+        topic="FTA explainer launch",
+        key_points=["tariffs drop to zero", "wool and dairy covered"],
+        links=["https://example.invalid/fta"],
+        tone="concise",
+    )
+    assert response.status_code == 200
+
+
+def test_every_accepted_field_reaches_the_prompt(
+    client: TestClient, fake_gateway: FakeGateway
+) -> None:
+    """A field the API validates must actually be used.
+
+    Asserting 200 proves only that the request was accepted. A field can pass validation and then
+    be dropped on the way to the model, which is worse than rejecting it: the caller is told it
+    worked, and the tone or links they chose silently do nothing. This asserts each accepted field
+    is observable in the prompt that reached the gateway.
+    """
+    _post_draft(
+        client,
+        topic="FTA explainer launch",
+        key_points=["tariffs drop to zero", "wool and dairy covered"],
+        links=["https://example.invalid/fta"],
+        tone="concise",
+    )
+    prompt = fake_gateway.last_prompt
+    assert prompt is not None
+    assert "FTA explainer launch" in prompt
+    assert "tariffs drop to zero" in prompt
+    assert "wool and dairy covered" in prompt
+    assert "https://example.invalid/fta" in prompt
+    # "concise" renders as its label, so this also catches tone being ignored or defaulted.
+    assert "short and direct" in prompt
+
+
+def test_the_stored_brief_is_the_rendered_text_that_was_sent(
+    client: TestClient, fake_repo: FakeCommsDraftRepository, fake_gateway: FakeGateway
+) -> None:
+    """What is stored must be what reached the model, not the form that produced it.
+
+    A reviewer checking a draft, or an incident responder asking what was disclosed, needs the
+    text that actually left the building. Storing the structured fields instead would make them
+    reconstruct it and risk reconstructing it differently.
+    """
+    response = _post_draft(client, topic="FTA explainer launch", key_points=["wool to zero"])
+    stored = fake_repo.get(response.json()["id"]).brief
+    assert "FTA explainer launch" in stored
+    assert "wool to zero" in stored
+    assert fake_gateway.last_prompt is not None
+    assert stored in fake_gateway.last_prompt
 
 
 def test_draft_rejects_an_unknown_field(client: TestClient) -> None:
@@ -251,6 +349,7 @@ def test_self_approval_returns_403(
 # ---------------------------------------------------------------------------
 # get / list
 # ---------------------------------------------------------------------------
+
 
 def test_get_draft_returns_it(client: TestClient) -> None:
     draft_id = _post_draft(client).json()["id"]

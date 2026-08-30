@@ -1,0 +1,188 @@
+{
+  "outputSlides": [
+    {
+      "outputSlide": 1,
+      "sourceSlide": 1,
+      "narrativeRole": "opening title",
+      "reuseMode": "duplicate-slide",
+      "editTargets": [
+        { "action": "rewrite", "sourceElementIds": ["sh/fu94fe98", "sh/utg3698n", "sh/wn6dc7eh", "sh/hofulsf2"] }
+      ]
+    },
+    {
+      "outputSlide": 2,
+      "sourceSlide": 2,
+      "narrativeRole": "opening thesis",
+      "reuseMode": "duplicate-slide",
+      "editTargets": [
+        { "action": "rewrite", "sourceElementIds": ["sh/w3i1sfa9", "sh/q5wjelsz", "sh/ove9o7yd"] }
+      ]
+    },
+    {
+      "outputSlide": 3,
+      "sourceSlide": 3,
+      "narrativeRole": "narrative contents",
+      "reuseMode": "duplicate-slide",
+      "editTargets": [
+        { "action": "rewrite", "sourceElementIds": ["sh/m5cra54z", "sh/n2l4fq98", "sh/m1c3mlsn", "sh/v6l4jq94", "sh/a5c3ql8z", "sh/ja54na9g", "sh/i9w3u58v", "sh/03ix43e5", "sh/14ryd8fq"] }
+      ]
+    },
+    {
+      "outputSlide": 4,
+      "sourceSlide": 4,
+      "narrativeRole": "chapter divider for mandate and proof",
+      "reuseMode": "duplicate-slide",
+      "editTargets": [
+        { "action": "rewrite", "sourceElementIds": ["sh/ih8ju9sn", "sh/kbm987y5"] }
+      ]
+    },
+    {
+      "outputSlide": 5,
+      "sourceSlide": 5,
+      "narrativeRole": "project mandate and connected outcomes",
+      "reuseMode": "duplicate-slide",
+      "editTargets": [
+        { "action": "replace", "sourceElementId": "im/uhkvq14z" },
+        { "action": "rewrite", "sourceElementIds": ["sh/w32dkbuh", "sh/x4vedgvm", "sh/v2twb6dw", "sh/58vehgvy", "sh/j6dwfqds"] }
+      ]
+    },
+    {
+      "outputSlide": 6,
+      "sourceSlide": 6,
+      "narrativeRole": "central argument",
+      "reuseMode": "duplicate-slide",
+      "editTargets": [
+        { "action": "rewrite", "sourceElementIds": ["sh/7m98ru9g", "sh/pc76hkr2", "sh/h4bupgn6"] }
+      ]
+    },
+    {
+      "outputSlide": 7,
+      "sourceSlide": 7,
+      "narrativeRole": "three team ownership lanes",
+      "reuseMode": "duplicate-slide",
+      "editTargets": [
+        { "action": "rewrite", "sourceElementIds": ["sh/kzmdova1", "sh/eh0ba1sr", "sh/xcz2l03q", "sh/cbq1sv25", "sh/o761ov2t", "sh/f2d0b6lc", "sh/4fm1wb6p", "sh/50v2pgna"] }
+      ]
+    },
+    {
+      "outputSlide": 8,
+      "sourceSlide": 8,
+      "narrativeRole": "merge rate comparison",
+      "reuseMode": "duplicate-slide",
+      "editTargets": [
+        { "action": "rewrite", "sourceElementIds": ["sh/tkby9kzm", "sh/je9g3ahk", "sh/id0fu50z", "sh/o7ydoret", "sh/98rehwve", "sh/n6pwfmd8", "sh/0jydkreh", "sh/ehgvihwr", "sh/zipwbmdc", "sh/lgbepgvm"] },
+        { "action": "rewrite-and-reposition", "sourceElementIds": ["sh/m5gvmhwn", "sh/1k7edwv2", "sh/kfixwbe1"] }
+      ]
+    },
+    {
+      "outputSlide": 9,
+      "sourceSlide": 9,
+      "narrativeRole": "team delivery scale",
+      "reuseMode": "duplicate-slide",
+      "editTargets": [
+        { "action": "rewrite", "sourceElementIds": ["sh/9gzml0nq", "sh/bih4na5w", "sh/ah8nu54b", "sh/oza1gfyh", "sh/p0ji9kf2", "sh/2xsjepgb", "sh/3y107axw", "sh/cnu1kzyd", "sh/do3id4fy", "sh/qlcjipgn", "sh/bml0buxs", "sh/0ru1ozyp"] }
+      ]
+    },
+    {
+      "outputSlide": 10,
+      "sourceSlide": 10,
+      "narrativeRole": "chapter divider for connected delivery",
+      "reuseMode": "duplicate-slide",
+      "editTargets": [
+        { "action": "rewrite", "sourceElementIds": ["sh/m1cnetkj", "sh/s7yt4b21"] }
+      ]
+    },
+    {
+      "outputSlide": 11,
+      "sourceSlide": 11,
+      "narrativeRole": "delivery progression timeline",
+      "reuseMode": "duplicate-slide",
+      "editTargets": [
+        { "action": "rewrite", "sourceElementIds": ["sh/72t03qp0", "sh/9gza9sze", "sh/nehs7iho", "sh/0b6tc3yx", "sh/1cfa58zi", "sh/zaxs3yhc", "sh/cn6t83y1", "sh/dofa18z6", "sh/87ehgv6d", "sh/7650nq5s", "sh/65wzelo7", "sh/k3uhcb6h", "sh/j2lgjq5w", "sh/y1czalob", "sh/4zyhofml", "sh/m58fih43"] }
+      ]
+    },
+    {
+      "outputSlide": 12,
+      "sourceSlide": 12,
+      "narrativeRole": "governed delivery flow",
+      "reuseMode": "duplicate-slide",
+      "editTargets": [
+        { "action": "rewrite", "sourceElementIds": ["sh/dcbm583y", "sh/b6d4f2lc", "sh/wvupgz6t", "sh/xw3q94ne", "sh/bulo7u58", "sh/orapcf6h", "sh/mps7a5or", "sh/nq1o3a5w", "sh/1oj61kn6", "sh/hkbm5wzu"] }
+      ]
+    },
+    {
+      "outputSlide": 13,
+      "sourceSlide": 13,
+      "narrativeRole": "starting point versus delivered state",
+      "reuseMode": "duplicate-slide",
+      "editTargets": [
+        { "action": "rewrite", "sourceElementIds": ["sh/21gnuts7", "sh/gzy5s3a1", "sh/hcfy9k3u", "sh/vaxg7ulo", "sh/t8fy5k3i", "sh/7mdg3als", "sh/lkvy103m", "sh/cnqh8fux", "sh/q18f65cr", "sh/oz6x4vul"] }
+      ]
+    },
+    {
+      "outputSlide": 14,
+      "sourceSlide": 14,
+      "narrativeRole": "integration stewardship evidence",
+      "reuseMode": "duplicate-slide",
+      "editTargets": [
+        { "action": "replace", "sourceElementId": "im/9k7y1o3e" },
+        { "action": "rewrite", "sourceElementIds": ["sh/5grehs7i", "sh/zi5c3y98", "sh/ehwvat8n", "sh/x4ni9ofy", "sh/b2507exs", "sh/kre1k3y9", "sh/ls7idofu", "sh/z650byxo", "sh/0buh8zy5", "sh/hsvy50re", "sh/grmxwvqt"] }
+      ]
+    },
+    {
+      "outputSlide": 15,
+      "sourceSlide": 15,
+      "narrativeRole": "chapter divider for team practice and handover",
+      "reuseMode": "duplicate-slide",
+      "editTargets": [
+        { "action": "rewrite", "sourceElementIds": ["sh/m9c3e1kn", "sh/wrm9kvep"] }
+      ]
+    },
+    {
+      "outputSlide": 16,
+      "sourceSlide": 16,
+      "narrativeRole": "team reflection",
+      "reuseMode": "duplicate-slide",
+      "editTargets": [
+        { "action": "rewrite", "sourceElementIds": ["sh/kv2h4rqp", "sh/fm1gzq5o", "sh/1ojy10ne", "sh/gnax8v6t"] }
+      ]
+    },
+    {
+      "outputSlide": 17,
+      "sourceSlide": 17,
+      "narrativeRole": "team communication and quality practices",
+      "reuseMode": "duplicate-slide",
+      "editTargets": [
+        { "action": "rewrite", "sourceElementIds": ["sh/t8ne10n6", "sh/jilcvq54", "sh/4by9or6l", "sh/pc7qhwn6", "sh/3ap8fm50", "sh/gnepkr69", "sh/ulw7ihoj", "sh/fm58bm54", "sh/14rqpgne", "sh/90nq9gfi", "sh/ny5876xc", "sh/mxw7e1gr", "sh/0vepcbyl", "sh/zul836xg", "sh/ytc7a1gv"] }
+      ]
+    },
+    {
+      "outputSlide": 18,
+      "sourceSlide": 18,
+      "narrativeRole": "three production decisions",
+      "reuseMode": "duplicate-slide",
+      "editTargets": [
+        { "action": "rewrite", "sourceElementIds": ["sh/4felwzu5", "sh/6hw3y9sb", "sh/fapkr6pw", "sh/upg3i18r", "sh/1cr2tg72", "sh/gbylkbqh", "sh/6lg3e18f", "sh/to72pw76", "sh/snylgrql", "sh/bi94zqp4", "sh/md4nipsr", "sh/nedoru9c", "sh/8zm5kzax", "sh/90v6t4ri", "sh/a14nm9s3"] }
+      ]
+    },
+    {
+      "outputSlide": 19,
+      "sourceSlide": 19,
+      "narrativeRole": "closing resolution",
+      "reuseMode": "duplicate-slide",
+      "editTargets": [
+        { "action": "rewrite", "sourceElementIds": ["sh/il47u5sz", "sh/cri1gnql", "sh/dsri9sr6"] }
+      ]
+    },
+    {
+      "outputSlide": 20,
+      "sourceSlide": 20,
+      "narrativeRole": "evidence trail and next action",
+      "reuseMode": "duplicate-slide",
+      "editTargets": [
+        { "action": "rewrite", "sourceElementIds": ["sh/3ml0rmpw", "sh/hk3ipcr6", "sh/dkfmp4zy", "sh/cj65wzyd", "sh/rid4nuhs", "sh/qh4nupg7", "sh/pwvmlkzm", "sh/4vm5sfy1", "sh/3ud4juhg", "sh/2t4nqpgb", "sh/grm5ofy5", "sh/8b654f61"] }
+      ]
+    }
+  ],
+  "omittedSourceSlides": []
+}

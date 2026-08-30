@@ -40,7 +40,13 @@ pytestmark = pytest.mark.skipif(
 )
 
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-_HEALTH_TIMEOUT_S = 10.0
+# Budget for a cold subprocess to import the whole app (12 routers, FastAPI, psycopg) and bind.
+# Measured on an idle Windows dev machine: 7.3s, 7.8s, 8.3s. Against the previous 10.0s that left
+# roughly a 20% margin, so the test passed or failed on how busy the machine was - it failed
+# reproducibly while the full suite ran alongside it. Raising this is close to free: the loop polls
+# proc.poll() every iteration, so a server that dies is still reported immediately, and the budget
+# only governs the alive-but-still-importing case.
+_HEALTH_TIMEOUT_S = 45.0
 _SHUTDOWN_TIMEOUT_S = 5.0
 
 
@@ -76,7 +82,12 @@ def _start_server(port: int) -> subprocess.Popen:
             response = requests.get(f"http://127.0.0.1:{port}/health", timeout=0.5)
             if response.status_code == 200:
                 return proc
-        except requests.exceptions.ConnectionError:
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+            # Not-listening-yet and listening-but-slow are sibling exception types, not
+            # parent/child. Catching only ConnectionError meant a loaded machine - where uvicorn
+            # accepts the socket but takes longer than the 0.5s read timeout to answer /health -
+            # failed the test with time still left on the deadline. The deadline above is the only
+            # thing that should decide to give up.
             pass
         time.sleep(0.1)
     proc.kill()

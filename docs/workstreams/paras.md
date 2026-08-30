@@ -22,6 +22,21 @@ SIP review/approval UI + Comms Assistant UI + FTA Explainer embed.
 The shared API + auth for anything that reads/writes data. Roshan's FTA service for the Explainer UI.
 
 ## Next up
+
+**Top priority, 20 Aug 2026 — architecture diagram pack for the project coordinator.** Ahead of
+the design system and the Explorer embed. Standard and the full seventeen-diagram set are in
+[docs/architecture-diagram-plan.md](../architecture-diagram-plan.md).
+
+- [ ] **#329 Container diagram: the whole platform on one page.** Do this one first and alone —
+      every other diagram in the pack hangs off it and has to match its naming. The repo has a C4
+      Level 1 context diagram and one Level 3 component diagram, and no Level 2 container diagram
+      at all, so the five UIs you own appear in no diagram anywhere. Draw shells as shells:
+      `apps/member/ui` has no API client and `apps/sip/ui` runs on fixtures.
+- [ ] **#330 UI architecture: integration patterns and SIP screen flow against run states.** The
+      four integration patterns (anonymous read, authenticated write with CSRF, authenticated
+      read, fixture-backed) plus which screen drives which state transition. Starts once #329 is
+      merged.
+
 - [ ] Design system from `docs/design-direction.md` (the system is what's outstanding, not the
       source doc): token-driven component library on
       the real brand tokens documented in `docs/design-decisions.md` (#155) (colours, typography,

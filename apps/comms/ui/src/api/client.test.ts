@@ -45,7 +45,7 @@ afterEach(() => vi.unstubAllGlobals())
 describe('requestCommsDraft', () => {
   it('posts the content type and brief, same-origin, and returns the draft', async () => {
     const spy = mockFetch({ draft: 'Hello staff', id: DRAFT_ID, status: 'Draft' })
-    const result = await requestCommsDraft({ contentType: 'newsletter', brief: 'Q3 update' })
+    const result = await requestCommsDraft({ contentType: 'newsletter', topic: 'Q3 update' })
 
     expect(result.draft).toBe('Hello staff')
     expect(result.id).toBe(DRAFT_ID)
@@ -53,31 +53,57 @@ describe('requestCommsDraft', () => {
     expect(url).toBe('/api/comms/draft')
     expect(init.method).toBe('POST')
     expect(init.credentials).toBe('same-origin')
-    expect(JSON.parse(init.body as string)).toEqual({ content_type: 'newsletter', brief: 'Q3 update' })
+    // The full structured body (#303), not just the fields this call set. Empty key points and
+    // links are sent as empty arrays rather than omitted, so the server sees the same shape every
+    // time and a missing field always means a bug rather than "the user left it blank".
+    expect(JSON.parse(init.body as string)).toEqual({
+      content_type: 'newsletter',
+      topic: 'Q3 update',
+      key_points: [],
+      links: [],
+      tone: 'formal',
+    })
+  })
+
+  it('trims and drops blank key points and links rather than sending them', async () => {
+    // `id` and `status` are required by `isCommsDraftResult` since drafts became persisted rows;
+    // a mock without them is rejected as an unrecognised response before the assertion is reached.
+    const spy = mockFetch({ draft: 'x', id: DRAFT_ID, status: 'Draft' })
+    await requestCommsDraft({
+      contentType: 'newsletter',
+      topic: 'Q3 update',
+      keyPoints: ['  first  ', '   ', 'second'],
+      links: ['', ' https://example.invalid/a '],
+      tone: 'concise',
+    })
+    const body = JSON.parse(draftCall(spy)[1].body as string)
+    expect(body.key_points).toEqual(['first', 'second'])
+    expect(body.links).toEqual(['https://example.invalid/a'])
+    expect(body.tone).toBe('concise')
   })
 
   it('honours a baseUrl for a cross-origin deployed shape', async () => {
     const spy = mockFetch({ draft: 'x', id: DRAFT_ID, status: 'Draft' })
-    await requestCommsDraft({ contentType: 'linkedin_post', brief: 'x' }, { baseUrl: 'https://api.example.test' })
+    await requestCommsDraft({ contentType: 'linkedin_post', topic: 'x' }, { baseUrl: 'https://api.example.test' })
     expect(draftCall(spy)[0]).toBe('https://api.example.test/api/comms/draft')
   })
 
   it('raises a typed error when the service is unreachable, without inventing a draft', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('network down')))
-    await expect(requestCommsDraft({ contentType: 'newsletter', brief: 'x' })).rejects.toBeInstanceOf(
+    await expect(requestCommsDraft({ contentType: 'newsletter', topic: 'x' })).rejects.toBeInstanceOf(
       CommsDraftError,
     )
   })
 
   it('raises a typed error on a non-ok response', async () => {
     mockFetch({}, { ok: false, status: 503 })
-    await expect(requestCommsDraft({ contentType: 'newsletter', brief: 'x' })).rejects.toThrow('503')
+    await expect(requestCommsDraft({ contentType: 'newsletter', topic: 'x' })).rejects.toThrow('503')
   })
 
   it('propagates an abort rather than disguising it as a service error', async () => {
     const abort = new DOMException('aborted', 'AbortError')
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(abort))
-    await expect(requestCommsDraft({ contentType: 'newsletter', brief: 'x' })).rejects.toBe(abort)
+    await expect(requestCommsDraft({ contentType: 'newsletter', topic: 'x' })).rejects.toBe(abort)
   })
 
   it('raises a typed error when the response body cannot be parsed as JSON', async () => {
@@ -91,7 +117,7 @@ describe('requestCommsDraft', () => {
         },
       }),
     )
-    await expect(requestCommsDraft({ contentType: 'newsletter', brief: 'x' })).rejects.toBeInstanceOf(
+    await expect(requestCommsDraft({ contentType: 'newsletter', topic: 'x' })).rejects.toBeInstanceOf(
       CommsDraftError,
     )
   })
@@ -106,7 +132,7 @@ describe('requestCommsDraft', () => {
     ['a missing status', { draft: 'x', id: DRAFT_ID }],
   ])('rejects %s', async (_label, body) => {
     mockFetch(body)
-    await expect(requestCommsDraft({ contentType: 'newsletter', brief: 'x' })).rejects.toBeInstanceOf(
+    await expect(requestCommsDraft({ contentType: 'newsletter', topic: 'x' })).rejects.toBeInstanceOf(
       CommsDraftError,
     )
   })
@@ -119,7 +145,7 @@ describe('CSRF', () => {
     // draft button cannot work at all against the real API.
     const spy = mockFetch({ draft: 'Hello staff', id: DRAFT_ID, status: 'Draft' })
 
-    await requestCommsDraft({ contentType: 'newsletter', brief: 'x' })
+    await requestCommsDraft({ contentType: 'newsletter', topic: 'x' })
 
     const [, init] = draftCall(spy)
     expect((init.headers as Record<string, string>)['X-CSRF-Token']).toBe('a-real-token')
@@ -129,7 +155,7 @@ describe('CSRF', () => {
     clearSession()
     const spy = mockFetchWithSession({ draft: 'x', id: DRAFT_ID, status: 'Draft' })
 
-    await requestCommsDraft({ contentType: 'newsletter', brief: 'x' })
+    await requestCommsDraft({ contentType: 'newsletter', topic: 'x' })
 
     expect(spy.mock.calls[0]?.[0]).toBe('/api/session')
     expect(spy.mock.calls[1]?.[0]).toBe('/api/comms/draft')
@@ -144,7 +170,7 @@ describe('CSRF', () => {
       vi.fn(async () => ({ ok: false, status: 401, json: async () => null })),
     )
 
-    await expect(requestCommsDraft({ contentType: 'newsletter', brief: 'x' })).rejects.not.toBeInstanceOf(
+    await expect(requestCommsDraft({ contentType: 'newsletter', topic: 'x' })).rejects.not.toBeInstanceOf(
       CommsDraftError,
     )
   })

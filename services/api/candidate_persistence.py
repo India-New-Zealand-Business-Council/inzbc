@@ -151,6 +151,24 @@ class CandidateRepository:
                 (run_id, headline, source_id, url, summary, published_at, in_coverage_window,
                  actor_id),
             ).fetchone()
+            # Claim the run for this analyst, once. `runs.analyst_id` is what the SIP-188
+            # self-review guard compares a reviewer against (`decisions.py` record_qa), and
+            # nothing wrote it — `create_run` sets `initiated_by` and not this — so the column
+            # was NULL on every run and `analyst is not None` made the guard unreachable. A
+            # control that never fires reads as enforced and is not.
+            #
+            # Set here rather than at creation because whoever *starts* a run need not be its
+            # analyst; the analyst is whoever first does analyst work on it, and capture is the
+            # first such act in the authorisation matrix.
+            #
+            # `is null` in the WHERE makes it claim-once: a second capture, by the same person or
+            # a different one, leaves the first claim standing. Without that a later capturer
+            # would silently become the analyst and quietly free the original one to review their
+            # own run.
+            conn.execute(
+                "update runs set analyst_id = %s where id = %s and analyst_id is null",
+                (actor_id, run_id),
+            )
             record_audit(
                 conn,
                 user_id=actor_id,

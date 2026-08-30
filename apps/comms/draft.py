@@ -25,12 +25,21 @@ gateway; it is deployment that waits" describes.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Literal
 
 from services.api.model_gateway import GatewayResult, ModelGateway
 from services.api.prompt_boundary import PromptSource
 
 ContentType = Literal["newsletter", "linkedin_post", "event_announcement", "member_spotlight"]
+
+Tone = Literal["formal", "warm", "concise"]
+
+_TONE_LABELS: dict[Tone, str] = {
+    "formal": "formal and measured",
+    "warm": "warm and personable",
+    "concise": "short and direct",
+}
 
 _CONTENT_TYPE_LABELS: dict[ContentType, str] = {
     "newsletter": "email newsletter section",
@@ -41,12 +50,62 @@ _CONTENT_TYPE_LABELS: dict[ContentType, str] = {
 
 
 class BlankBriefError(ValueError):
-    """Raised for a brief that is empty or whitespace-only - nothing for the model to draft
-    from, and a blank prompt is not a case `ModelGateway` should have to reject on our behalf.
+    """Raised for a brief with no topic and no key points - nothing for the model to draft from,
+    and a blank prompt is not a case `ModelGateway` should have to reject on our behalf.
     """
 
 
-def build_prompt(content_type: ContentType, brief: str) -> str:
+@dataclass(frozen=True)
+class Brief:
+    """A structured brief (#303), replacing the free-text one.
+
+    **This is a reduction in surface area, not a boundary, and the distinction matters.** The
+    original `brief` was a single 4,000-character box, which invited pasting whatever was on the
+    clipboard - including Board minutes carrying a member's name, job title and employer. Named
+    fields with tight limits make each one's purpose explicit and give a staff member far less
+    room to paste something wholesale.
+
+    What it does **not** do is make the text safe. A person can type a member's name into `topic`
+    exactly as easily as into a free-text brief, and nothing here can tell that they have.
+
+    So the declaration to the gateway stays `STAFF_AUTHORED`. It was tempting to route this
+    through `minimise()` and declare `MINIMISED_RECORD`, and that would have been false:
+    `minimise()` drops fields nobody named, it does not inspect values a human typed. Declaring
+    it would make the boundary check report a guarantee that does not exist, which is precisely
+    the failure `prompt_boundary.py` names - "a caller that declares the wrong thing is not
+    caught". `STAFF_AUTHORED` is true, and a true weak declaration beats a false strong one.
+
+    The residual exposure is unchanged in kind and smaller in degree. It stays bounded by operator
+    procedure plus redaction as defence in depth, and that remains the honest description until an
+    accepted-risk record is signed.
+    """
+
+    topic: str
+    key_points: tuple[str, ...] = ()
+    links: tuple[str, ...] = ()
+    tone: Tone = "formal"
+
+    def render(self) -> str:
+        """The brief as readable text, for the prompt and for the stored record.
+
+        Rendering rather than storing the structure keeps `CommsDraftOut.brief` a string, so the
+        review, list and approve paths are untouched by #303 - only the submit path changes.
+        """
+        lines = [f"Topic: {self.topic.strip()}"]
+        if self.key_points:
+            lines.append("Key points:")
+            lines.extend(f"- {point.strip()}" for point in self.key_points if point.strip())
+        if self.links:
+            lines.append("Links:")
+            lines.extend(f"- {link.strip()}" for link in self.links if link.strip())
+        lines.append(f"Tone: {_TONE_LABELS[self.tone]}")
+        return "\n".join(lines)
+
+    def is_blank(self) -> bool:
+        return not self.topic.strip() and not any(point.strip() for point in self.key_points)
+
+
+def build_prompt(content_type: ContentType, brief: Brief) -> str:
     """Builds the prompt sent to `ModelGateway.complete()`.
 
     Deliberately generic. `docs/modules/comms-assistant.md` lists "INZBC voice guide + approved
@@ -64,26 +123,31 @@ def build_prompt(content_type: ContentType, brief: str) -> str:
         "Do not invent statistics, member names, board names, dates, or FTA details not present "
         "in the brief below. Where a fact is needed but not given, use a "
         "[[placeholder]] rather than inventing one.\n\n"
-        f"Brief:\n{brief.strip()}"
+        f"Brief:\n{brief.render()}"
     )
 
 
-def generate_draft(gateway: ModelGateway, content_type: ContentType, brief: str) -> GatewayResult:
+def generate_draft(gateway: ModelGateway, content_type: ContentType, brief: Brief) -> GatewayResult:
     """Generates a draft via `gateway.complete()`. Raises `BlankBriefError` for an empty brief;
     propagates `GatewayNotConfiguredError`, `RedactionNotConfiguredError` and `GatewayCallError`
     unchanged - this module has no more information about those failures than the gateway does,
     so it does not wrap or reinterpret them.
     """
-    if not brief.strip():
-        raise BlankBriefError("brief must not be blank")
+    if brief.is_blank():
+        raise BlankBriefError("brief needs a topic or at least one key point")
     prompt = build_prompt(content_type, brief)
-    # STAFF_AUTHORED, and the residual risk is worth naming rather than leaving implied: the brief
-    # is free text a staff member typed, so nothing here can stop them pasting member details into
-    # it. The declaration records where the text came from, not that it is clean.
+    # STAFF_AUTHORED, and the residual risk is worth naming rather than leaving implied: the fields
+    # are still typed by a staff member, so nothing here can stop them entering member details.
+    # The declaration records where the text came from, not that it is clean.
     #
-    # This is the one call site with no structural control available, because there is no record to
-    # minimise - a human wrote prose. What bounds it is that the operator is told not to paste
-    # member details and told why (`docs/operator-guide.md` §3), with redaction as defence in depth
-    # for the identifiers it can match. A prompt assembled from member records must go through
-    # `minimise()` and be declared MINIMISED_RECORD instead.
+    # #303 structured this brief to shrink the surface, and deliberately did not change this
+    # declaration. `MINIMISED_RECORD` would be a lie: `minimise()` drops fields nobody named, it
+    # does not clean values a human typed, so nothing about a form makes its contents minimised.
+    # A prompt genuinely assembled from member records must go through `minimise()` and declare
+    # MINIMISED_RECORD; this one is neither.
+    #
+    # What bounds it remains the operator being told not to enter member details and told why
+    # (`docs/operator-guide.md` §3), with redaction as defence in depth for the identifiers it can
+    # match. That is procedure, not a boundary, and #303 stays open until it is either accepted in
+    # writing or replaced by something structural.
     return gateway.complete(prompt, source=PromptSource.STAFF_AUTHORED)

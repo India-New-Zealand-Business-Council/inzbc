@@ -1,0 +1,374 @@
+{"kind":"deck","id":"pr/dylyea","name":"Deck"}
+{"kind":"layout","layoutId":"/ppt/slideMasters/slideMaster1.xml","name":"","type":"master"}
+{"kind":"layout","layoutId":"/ppt/slideLayouts/slideLayout1.xml","name":"DEFAULT"}
+{"kind":"slide","id":"sl/lbks50","slide":1,"title":"01 / 20","textShapes":5}
+{"kind":"shape","id":"sh/0721sbax","slide":1,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/l8b21gr2","slide":1,"name":"!!bar","bbox":[86.4,676.8,40.32,2.88]}
+{"kind":"textbox","id":"sh/y50jq1sr","slide":1,"name":"pageno","text":"01 / 20","textPreview":"01 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"shape","id":"sh/z69kz69c","slide":1,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/8v2lwbat","slide":1,"name":"anim_eyebrow","text":"[YOUR ORGANISATION]","textPreview":"[YOUR ORGANISATION]","textChars":19,"textLines":1,"bbox":[86.4,193.92,768,28.8]}
+{"kind":"textbox","id":"sh/9wb25gre","slide":1,"name":"!!kicker","text":"[Your title\ngoes here]","textPreview":"[Your title | goes here]","textChars":22,"textLines":2,"bbox":[86.4,232.32,1036.8,244.8]}
+{"kind":"textbox","id":"sh/9wn2hovm","slide":1,"name":"anim_sub","text":"[One sentence on what this deck delivers, and who it is for.]","textPreview":"[One sentence on what this deck delivers, and who it is for.]","textChars":61,"textLines":1,"bbox":[86.4,491.52,729.6,76.8]}
+{"kind":"textbox","id":"sh/8vel8ju1","slide":1,"name":"Text 7","text":"[PRESENTER]     ·     [ROLE]     ·     [DATE]","textPreview":"[PRESENTER]     ·     [ROLE]     ·     [DATE]","textChars":45,"textLines":1,"bbox":[86.4,612.48,864,30.72]}
+{"kind":"image","id":"im/o3q1032h","slide":1,"name":"!!orb","bbox":[326.4,-19.2,710.4,710.4]}
+{"kind":"image","id":"im/94jit832","slide":1,"name":"!!orb2","bbox":[-153.6,374.4,480,480]}
+{"kind":"notes","id":"nt/lbks50","slide":1,"text":"HOW THIS TEMPLATE WORKS\n\n1. Every shape whose name starts with !! is a morph anchor. Keep the names identical across slides and PowerPoint animates the movement for you. Home > Select > Selection Pane to see them.\n2. Morph is already applied to slides 2 to 20. Slides auto-advance so it plays like a video. To present manually, go to Transitions and untick 'After'.\n3. To export as video: File > Export > Create a Video.\n4. To re-theme for any topic, change three colours: the accent (FF6B35), the second accent (3DDC97) and the background image. Swap the three abstract images for your own photography.\n5. Replace every [bracketed] slot with your content. The layout holds at any length because titles are set to shrink text on overflow."}
+{"kind":"slide","id":"sl/9hj6ek","slide":2,"title":"[YOUR TITLE GOES HERE]","textShapes":4}
+{"kind":"shape","id":"sh/cz2hgnu9","slide":2,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/d0by9svu","slide":2,"name":"!!bar","bbox":[86.4,676.8,96.47,2.88]}
+{"kind":"shape","id":"sh/qxkzedc3","slide":2,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/rytg7ido","slide":2,"name":"!!kicker","text":"[YOUR TITLE GOES HERE]","textPreview":"[YOUR TITLE GOES HERE]","textChars":22,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/4vihc3ux","slide":2,"name":"pageno","text":"02 / 20","textPreview":"02 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/pwby58vi","slide":2,"name":"Text 5","text":"[Write the one idea you want this room to remember. One sentence. No hedging.]","textPreview":"[Write the one idea you want this room to remember. One sentence. No hedging.]","textChars":78,"textLines":1,"bbox":[86.4,216,998.4,259.2]}
+{"kind":"textbox","id":"sh/xgf2lsvy","slide":2,"name":"Text 6","text":"[Optional supporting line, source, or the number that backs it up.]","textPreview":"[Optional supporting line, source, or the number that backs it up.]","textChars":67,"textLines":1,"bbox":[86.4,532.8,806.4,48]}
+{"kind":"image","id":"im/3idgz2po","slide":2,"name":"!!orb","bbox":[-172.8,134.4,633.6,633.6]}
+{"kind":"image","id":"im/4j6x87q9","slide":2,"name":"!!orb2","bbox":[883.2,403.2,518.4,518.4]}
+{"kind":"notes","id":"nt/9hj6ek","slide":2,"text":"Open with the conclusion. Say the sentence, then stop talking for two seconds. The morph carries the title from slide 1 up into the corner label, so the audience sees the deck 'fold' into working mode."}
+{"kind":"slide","id":"sl/u45y1z","slide":3,"title":"CONTENTS","textShapes":15}
+{"kind":"shape","id":"sh/87m1cr21","slide":3,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/vaxk7m1s","slide":3,"name":"!!bar","bbox":[86.4,676.8,152.62,2.88]}
+{"kind":"shape","id":"sh/a9o3e1k7","slide":3,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/xcf29wjy","slide":3,"name":"!!kicker","text":"CONTENTS","textPreview":"CONTENTS","textChars":8,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/wb6lgr2d","slide":3,"name":"pageno","text":"03 / 20","textPreview":"03 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/jyxkb61o","slide":3,"name":"Text 5","text":"What we will cover","textPreview":"What we will cover","textChars":18,"textLines":1,"bbox":[86.4,122.88,768,91.2]}
+{"kind":"textbox","id":"sh/ido3i1kj","slide":3,"name":"!!num","text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[86.4,251.52,91.2,52.8]}
+{"kind":"textbox","id":"sh/8n614za5","slide":3,"name":"Text 7","text":"[Chapter one title]","textPreview":"[Chapter one title]","textChars":19,"textLines":1,"bbox":[187.2,251.52,451.2,52.8]}
+{"kind":"textbox","id":"sh/9of2x4rq","slide":3,"name":"Text 8","text":"[One line on what this section proves.]","textPreview":"[One line on what this section proves.]","textChars":39,"textLines":1,"bbox":[667.2,251.52,526.08,52.8]}
+{"kind":"shape","id":"sh/mloj29sz","slide":3,"name":"Shape 9","bbox":[86.4,326.4,1107.17,0.77]}
+{"kind":"textbox","id":"sh/nmxkve9k","slide":3,"name":"num1","text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[86.4,349.44,91.2,52.8]}
+{"kind":"textbox","id":"sh/wr618ja1","slide":3,"name":"Text 11","text":"[Chapter two title]","textPreview":"[Chapter two title]","textChars":19,"textLines":1,"bbox":[187.2,349.44,451.2,52.8]}
+{"kind":"textbox","id":"sh/xsf21orm","slide":3,"name":"Text 12","text":"[One line on what this section proves.]","textPreview":"[One line on what this section proves.]","textChars":39,"textLines":1,"bbox":[667.2,349.44,526.08,52.8]}
+{"kind":"shape","id":"sh/apoj69sv","slide":3,"name":"Shape 13","bbox":[86.4,424.32,1107.17,0.77]}
+{"kind":"textbox","id":"sh/vqxkze9g","slide":3,"name":"num2","text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[86.4,447.36,91.2,52.8]}
+{"kind":"textbox","id":"sh/kvqlcjad","slide":3,"name":"Text 15","text":"[Chapter three title]","textPreview":"[Chapter three title]","textChars":21,"textLines":1,"bbox":[187.2,447.36,451.2,52.8]}
+{"kind":"textbox","id":"sh/5wz25ori","slide":3,"name":"Text 16","text":"[One line on what this section proves.]","textPreview":"[One line on what this section proves.]","textChars":39,"textLines":1,"bbox":[667.2,447.36,526.08,52.8]}
+{"kind":"shape","id":"sh/t0ba94fq","slide":3,"name":"Shape 17","bbox":[86.4,522.24,1107.17,0.77]}
+{"kind":"textbox","id":"sh/sz2t0ze5","slide":3,"name":"num3","text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[86.4,545.28,91.2,52.8]}
+{"kind":"textbox","id":"sh/7yts7uxk","slide":3,"name":"Text 19","text":"[Chapter four title]","textPreview":"[Chapter four title]","textChars":20,"textLines":1,"bbox":[187.2,545.28,451.2,52.8]}
+{"kind":"textbox","id":"sh/6xkbypwz","slide":3,"name":"Text 20","text":"[One line on what this section proves.]","textPreview":"[One line on what this section proves.]","textChars":39,"textLines":1,"bbox":[667.2,545.28,526.08,52.8]}
+{"kind":"image","id":"im/yxg7qhof","slide":3,"name":"!!orb","bbox":[825.6,-115.2,614.4,614.4]}
+{"kind":"notes","id":"nt/u45y1z","slide":3,"text":"Four chapters is the ceiling. If you have six, two of them are really sub-points. The 01 numeral is named !!num, so it grows into the giant numeral on the next slide."}
+{"kind":"slide","id":"sl/nmm1ax","slide":4,"title":"CHAPTER 01","textShapes":5}
+{"kind":"shape","id":"sh/ytcfqtsf","slide":4,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/xs3ehobu","slide":4,"name":"!!bar","bbox":[86.4,676.8,208.77,2.88]}
+{"kind":"shape","id":"sh/craxoja9","slide":4,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/bq1wfeto","slide":4,"name":"!!kicker","text":"CHAPTER 01","textPreview":"CHAPTER 01","textChars":10,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/q5sfm9s3","slide":4,"name":"pageno","text":"04 / 20","textPreview":"04 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/honyt8ry","slide":4,"name":"!!num","text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[566.4,72,626.88,537.6]}
+{"kind":"textbox","id":"sh/wnex03ad","slide":4,"name":"Text 6","text":"[Chapter one\ntitle]","textPreview":"[Chapter one | title]","textChars":19,"textLines":2,"bbox":[86.4,264,633.6,201.6]}
+{"kind":"textbox","id":"sh/atsb6dwn","slide":4,"name":"Text 7","text":"[One line on what this section proves and why it matters to the people in the room.]","textPreview":"[One line on what this section proves and why it matters to the people in the room.]","textChars":84,"textLines":1,"bbox":[86.4,480,566.4,96]}
+{"kind":"image","id":"im/w7qxw7il","slide":4,"name":"!!orb","bbox":[-211.2,211.2,729.6,729.6]}
+{"kind":"notes","id":"nt/nmm1ax","slide":4,"text":"Divider slides give the deck its rhythm. Say the chapter title out loud, then move. The numeral morphs in from the contents slide and shrinks back down on the next slide."}
+{"kind":"slide","id":"sl/isb6dr","slide":5,"title":"CHAPTER 01","textShapes":8}
+{"kind":"shape","id":"sh/lcjyxkzm","slide":5,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/kbax4fyh","slide":5,"name":"!!bar","bbox":[86.4,676.8,264.92,2.88]}
+{"kind":"shape","id":"sh/za1gvuhw","slide":5,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/yp8f2p0b","slide":5,"name":"!!kicker","text":"CHAPTER 01","textPreview":"CHAPTER 01","textChars":10,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/xozytkzq","slide":5,"name":"pageno","text":"05 / 20","textPreview":"05 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/cnqx0fi5","slide":5,"name":"!!num","text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[86.4,117.12,96,48]}
+{"kind":"textbox","id":"sh/ypsrexkz","slide":5,"name":"Text 6","text":"[Section headline that\nstates a position]","textPreview":"[Section headline that | states a position]","textChars":41,"textLines":2,"bbox":[86.4,180.48,528,91.2]}
+{"kind":"textbox","id":"sh/zq18n2lk","slide":5,"name":"Text 7","text":"[Two or three lines of context. Set out what is true today, in plain language, with the number that anchors it. Frame every figure with a time period and a comparison so the reader can judge it.]","textPreview":"[Two or three lines of context. Set out what is true today, in plain language, with the number that anchors it. Frame every figure with a...","textChars":195,"textLines":1,"bbox":[86.4,328.32,518.4,163.2]}
+{"kind":"shape","id":"sh/0ra9g725","slide":5,"name":"Shape 8","bbox":[86.4,504.96,8.64,8.64]}
+{"kind":"textbox","id":"sh/lsjqpc3q","slide":5,"name":"Text 9","text":"[Point one, in six words]","textPreview":"[Point one, in six words]","textChars":25,"textLines":1,"bbox":[119.04,494.4,480,30.72]}
+{"kind":"shape","id":"sh/q187axk3","slide":5,"name":"Shape 10","bbox":[86.4,549.12,8.64,8.64]}
+{"kind":"textbox","id":"sh/b2h8j2lo","slide":5,"name":"Text 11","text":"[Point two, in six words]","textPreview":"[Point two, in six words]","textChars":25,"textLines":1,"bbox":[119.04,538.56,480,30.72]}
+{"kind":"shape","id":"sh/c3a9c729","slide":5,"name":"Shape 12","bbox":[86.4,593.28,8.64,8.64]}
+{"kind":"textbox","id":"sh/d4jqlc3u","slide":5,"name":"Text 13","text":"[Point three, in six words]","textPreview":"[Point three, in six words]","textChars":27,"textLines":1,"bbox":[119.04,582.72,480,30.72]}
+{"kind":"image","id":"im/pknehcf2","slide":5,"name":"!!orb","bbox":[-249.6,422.4,499.2,499.2]}
+{"kind":"image","id":"im/ojexo7eh","slide":5,"name":"!!art","bbox":[672,0,607.97,720]}
+{"kind":"notes","id":"nt/isb6dr","slide":5,"text":"Half-bleed image slide. Right-click the image and choose Change Picture to swap it. Keep the shape name !!art so it morphs with the next image slide."}
+{"kind":"slide","id":"sl/3main6","slide":6,"title":"THE ARGUMENT","textShapes":4}
+{"kind":"shape","id":"sh/9kretc7y","slide":6,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/ojix076d","slide":6,"name":"!!bar","bbox":[86.4,676.8,321.07,2.88]}
+{"kind":"shape","id":"sh/ni9wr2ps","slide":6,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/mh0vyh87","slide":6,"name":"!!kicker","text":"THE ARGUMENT","textPreview":"THE ARGUMENT","textChars":12,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/po7ehs7u","slide":6,"name":"pageno","text":"06 / 20","textPreview":"06 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/4nydonq9","slide":6,"name":"Text 5","text":"[The big idea, in eight words or fewer.]","textPreview":"[The big idea, in eight words or fewer.]","textChars":40,"textLines":1,"bbox":[86.4,225.6,1056,249.6]}
+{"kind":"textbox","id":"sh/qts3ydsf","slide":6,"name":"Text 6","text":"[Who says so, and on what evidence.]","textPreview":"[Who says so, and on what evidence.]","textChars":36,"textLines":1,"bbox":[86.4,513.6,768,38.4]}
+{"kind":"image","id":"im/gjeh0f65","slide":6,"name":"!!orb","bbox":[278.4,48,768,768]}
+{"kind":"image","id":"im/fi507apk","slide":6,"name":"!!orb2","bbox":[-192,441.6,480,480]}
+{"kind":"notes","id":"nt/3main6","slide":6,"text":"This slide morphs word by word from the previous one. Keep the line short so the motion reads cleanly."}
+{"kind":"slide","id":"sl/ohvonc","slide":7,"title":"HOW IT WORKS","textShapes":12}
+{"kind":"shape","id":"sh/94n61s7i","slide":7,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/u5wnado3","slide":7,"name":"!!bar","bbox":[86.4,676.8,377.22,2.88]}
+{"kind":"shape","id":"sh/v65o3ipo","slide":7,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/wre5cn69","slide":7,"name":"!!kicker","text":"HOW IT WORKS","textPreview":"HOW IT WORKS","textChars":12,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/hsn65s7u","slide":7,"name":"pageno","text":"07 / 20","textPreview":"07 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/itwnexof","slide":7,"name":"Text 5","text":"Three things carry the case","textPreview":"Three things carry the case","textChars":27,"textLines":1,"bbox":[86.4,117.12,816,91.2]}
+{"kind":"shape","id":"sh/ju5o72p0","slide":7,"name":"!!card1","bbox":[86.4,241.92,336,347.52]}
+{"kind":"shape","id":"sh/fuh8jy5g","slide":7,"name":"Shape 7","bbox":[126.72,282.24,61.44,61.44]}
+{"kind":"textbox","id":"sh/et8rat4v","slide":7,"name":"Text 8","text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[126.72,282.24,61.44,61.44]}
+{"kind":"textbox","id":"sh/1gzql8nm","slide":7,"name":"Text 9","text":"[Pillar one]","textPreview":"[Pillar one]","textChars":12,"textLines":1,"bbox":[126.72,372.48,255.36,43.2]}
+{"kind":"textbox","id":"sh/0fq9c3m1","slide":7,"name":"Text 10","text":"[What it is, and the single reason it matters. Two lines is plenty.]","textPreview":"[What it is, and the single reason it matters. Two lines is plenty.]","textChars":68,"textLines":1,"bbox":[126.72,412.8,255.36,134.4]}
+{"kind":"shape","id":"sh/rqx8fy5k","slide":7,"name":"!!card2","bbox":[471.84,241.92,336,347.52]}
+{"kind":"shape","id":"sh/qpo76toz","slide":7,"name":"Shape 12","bbox":[512.16,282.24,61.44,61.44]}
+{"kind":"textbox","id":"sh/dszqh8na","slide":7,"name":"Text 13","text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[512.16,282.24,61.44,61.44]}
+{"kind":"textbox","id":"sh/sr69836p","slide":7,"name":"Text 14","text":"[Pillar two]","textPreview":"[Pillar two]","textChars":12,"textLines":1,"bbox":[512.16,372.48,255.36,43.2]}
+{"kind":"textbox","id":"sh/bm18ri5o","slide":7,"name":"Text 15","text":"[What it is, and the single reason it matters. Two lines is plenty.]","textPreview":"[What it is, and the single reason it matters. Two lines is plenty.]","textChars":68,"textLines":1,"bbox":[512.16,412.8,255.36,134.4]}
+{"kind":"shape","id":"sh/alsrid43","slide":7,"name":"!!card3","bbox":[857.28,241.92,336,347.52]}
+{"kind":"shape","id":"sh/mhcbahob","slide":7,"name":"Shape 17","bbox":[897.6,282.24,61.44,61.44]}
+{"kind":"textbox","id":"sh/7ilcjmpw","slide":7,"name":"Text 18","text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[897.6,282.24,61.44,61.44]}
+{"kind":"textbox","id":"sh/8jetcr6h","slide":7,"name":"Text 19","text":"[Pillar three]","textPreview":"[Pillar three]","textChars":14,"textLines":1,"bbox":[897.6,372.48,255.36,43.2]}
+{"kind":"textbox","id":"sh/9knulw72","slide":7,"name":"Text 20","text":"[What it is, and the single reason it matters. Two lines is plenty.]","textPreview":"[What it is, and the single reason it matters. Two lines is plenty.]","textChars":68,"textLines":1,"bbox":[897.6,412.8,255.36,134.4]}
+{"kind":"image","id":"im/1ofqpova","slide":7,"name":"!!orb","bbox":[864,-153.6,576,576]}
+{"kind":"notes","id":"nt/ohvonc","slide":7,"text":"Cards are named !!card1 to !!card3. Duplicate this slide and move or resize a card to make it grow on click, with no manual animation."}
+{"kind":"slide","id":"sl/hnc7uw","slide":8,"title":"THE NUMBER","textShapes":11}
+{"kind":"shape","id":"sh/w3e987m1","slide":8,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/ne58bi5k","slide":8,"name":"!!bar","bbox":[86.4,676.8,433.37,2.88]}
+{"kind":"shape","id":"sh/mdwr2d4z","slide":8,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/9gnqdsnq","slide":8,"name":"!!kicker","text":"THE NUMBER","textPreview":"THE NUMBER","textChars":10,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/8fe94nm5","slide":8,"name":"pageno","text":"08 / 20","textPreview":"08 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/7apsnmlo","slide":8,"name":"Text 5","text":"[00]%","textPreview":"[00]%","textChars":5,"textLines":1,"bbox":[86.4,148.8,672,268.8]}
+{"kind":"textbox","id":"sh/69greh43","slide":8,"name":"Text 6","text":"[What the number measures]","textPreview":"[What the number measures]","textChars":26,"textLines":1,"bbox":[86.4,432,633.6,48]}
+{"kind":"textbox","id":"sh/4j6hcbip","slide":8,"name":"Text 7","text":"[Frame it: over what period, against what baseline, and why that gap is the point. A number without a comparison is decoration.]","textPreview":"[Frame it: over what period, against what baseline, and why that gap is the point. A number without a comparison is decoration.]","textChars":128,"textLines":1,"bbox":[86.4,494.4,604.8,115.2]}
+{"kind":"textbox","id":"sh/5kfi5gja","slide":8,"name":"Text 8","text":"[This year]","textPreview":"[This year]","textChars":11,"textLines":1,"bbox":[806.4,191.04,249.6,28.8]}
+{"kind":"shape","id":"sh/ih4za10j","slide":8,"name":"Shape 9","bbox":[806.4,225.6,340.8,32.64]}
+{"kind":"textbox","id":"sh/3ix03614","slide":8,"name":"Text 10","text":"[00]","textPreview":"[00]","textChars":4,"textLines":1,"bbox":[1162.56,225.6,86.4,32.64]}
+{"kind":"textbox","id":"sh/gfmh8bid","slide":8,"name":"Text 11","text":"[Last year]","textPreview":"[Last year]","textChars":11,"textLines":1,"bbox":[806.4,304.32,249.6,28.8]}
+{"kind":"shape","id":"sh/hgvi1gjy","slide":8,"name":"Shape 12","bbox":[806.4,338.88,220.8,32.64]}
+{"kind":"textbox","id":"sh/ud4z610n","slide":8,"name":"Text 13","text":"[00]","textPreview":"[00]","textChars":4,"textLines":1,"bbox":[1042.56,338.88,86.4,32.64]}
+{"kind":"textbox","id":"sh/ved0z618","slide":8,"name":"Text 14","text":"[Benchmark]","textPreview":"[Benchmark]","textChars":11,"textLines":1,"bbox":[806.4,417.6,249.6,28.8]}
+{"kind":"shape","id":"sh/8bmh4rih","slide":8,"name":"Shape 15","bbox":[806.4,452.16,139.2,32.64]}
+{"kind":"textbox","id":"sh/tcvixwj2","slide":8,"name":"Text 16","text":"[00]","textPreview":"[00]","textChars":4,"textLines":1,"bbox":[960.96,452.16,86.4,32.64]}
+{"kind":"image","id":"im/ud0zy9g3","slide":8,"name":"!!orb","bbox":[-230.4,86.4,672,672]}
+{"kind":"notes","id":"nt/hnc7uw","slide":8,"text":"One number, one screen. Say the number, then say what it is measured against. Never leave a figure standing on its own."}
+{"kind":"slide","id":"sl/jgol75","slide":9,"title":"EVIDENCE","textShapes":13}
+{"kind":"shape","id":"sh/cba943md","slide":9,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/ze1szi54","slide":9,"name":"!!bar","bbox":[86.4,676.8,489.52,2.88]}
+{"kind":"shape","id":"sh/ydsr6d4j","slide":9,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/lg3a1sna","slide":9,"name":"!!kicker","text":"EVIDENCE","textPreview":"EVIDENCE","textChars":8,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/kfa98nmp","slide":9,"name":"pageno","text":"09 / 20","textPreview":"09 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/72ls3250","slide":9,"name":"Text 5","text":"Three figures worth arguing over","textPreview":"Three figures worth arguing over","textChars":32,"textLines":1,"bbox":[86.4,117.12,864,91.2]}
+{"kind":"textbox","id":"sh/mhcrax4f","slide":9,"name":"Text 6","text":"[00]","textPreview":"[00]","textChars":4,"textLines":1,"bbox":[86.4,273.6,336,144]}
+{"kind":"textbox","id":"sh/43ytsf2p","slide":9,"name":"Text 7","text":"[Label for figure one]","textPreview":"[Label for figure one]","textChars":22,"textLines":1,"bbox":[86.4,436.8,307.2,38.4]}
+{"kind":"textbox","id":"sh/p47u1k3a","slide":9,"name":"Text 8","text":"[Period and comparison]","textPreview":"[Period and comparison]","textChars":23,"textLines":1,"bbox":[86.4,478.08,307.2,76.8]}
+{"kind":"textbox","id":"sh/i1gbqpkz","slide":9,"name":"Text 9","text":"[00]","textPreview":"[00]","textChars":4,"textLines":1,"bbox":[471.84,273.6,336,144]}
+{"kind":"textbox","id":"sh/32pczalk","slide":9,"name":"Text 10","text":"[Label for figure two]","textPreview":"[Label for figure two]","textChars":22,"textLines":1,"bbox":[471.84,436.8,307.2,38.4]}
+{"kind":"textbox","id":"sh/c7ytwz21","slide":9,"name":"Text 11","text":"[Period and comparison]","textPreview":"[Period and comparison]","textChars":23,"textLines":1,"bbox":[471.84,478.08,307.2,76.8]}
+{"kind":"textbox","id":"sh/d87u543m","slide":9,"name":"Text 12","text":"[00]","textPreview":"[00]","textChars":4,"textLines":1,"bbox":[857.28,273.6,336,144]}
+{"kind":"textbox","id":"sh/q5gbupkv","slide":9,"name":"Text 13","text":"[Label for figure three]","textPreview":"[Label for figure three]","textChars":24,"textLines":1,"bbox":[857.28,436.8,307.2,38.4]}
+{"kind":"textbox","id":"sh/r6pc3ulg","slide":9,"name":"Text 14","text":"[Period and comparison]","textPreview":"[Period and comparison]","textChars":23,"textLines":1,"bbox":[857.28,478.08,307.2,76.8]}
+{"kind":"textbox","id":"sh/0vit0z2x","slide":9,"name":"!!num","text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[1113.6,119.04,79.68,43.2]}
+{"kind":"image","id":"im/yd0v2h0f","slide":9,"name":"!!orb","bbox":[806.4,345.6,595.2,595.2]}
+{"kind":"notes","id":"nt/jgol75","slide":9,"text":"Three stats maximum. Each one needs its period and its comparison underneath, or it does not go on the slide."}
+{"kind":"slide","id":"sl/kjfnn8","slide":10,"title":"CHAPTER 02","textShapes":5}
+{"kind":"shape","id":"sh/dwvex4jq","slide":10,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/eh4v69kv","slide":10,"name":"!!bar","bbox":[86.4,676.8,545.67,2.88]}
+{"kind":"shape","id":"sh/zidwze1g","slide":10,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/0jmd8j21","slide":10,"name":"!!kicker","text":"CHAPTER 02","textPreview":"CHAPTER 02","textChars":10,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/1kve1ojm","slide":10,"name":"pageno","text":"10 / 20","textPreview":"10 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/ul0vupkr","slide":10,"name":"!!num","text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[86.4,72,595.2,537.6]}
+{"kind":"textbox","id":"sh/fm9cnalc","slide":10,"name":"Text 6","text":"[Chapter two\ntitle]","textPreview":"[Chapter two | title]","textChars":19,"textLines":2,"bbox":[614.4,264,578.88,201.6]}
+{"kind":"textbox","id":"sh/n69cb2p4","slide":10,"name":"Text 7","text":"[One line on what this section proves and why it matters.]","textPreview":"[One line on what this section proves and why it matters.]","textChars":58,"textLines":1,"bbox":[614.4,480,578.88,86.4]}
+{"kind":"image","id":"im/xofitwb2","slide":10,"name":"!!orb","bbox":[787.2,172.8,672,672]}
+{"kind":"notes","id":"nt/kjfnn8","slide":10,"text":"Second divider mirrors the first so the numeral swings across the screen. That single move is what makes the deck feel filmed rather than clicked."}
+{"kind":"slide","id":"sl/apvags","slide":11,"title":"CHAPTER 02","textShapes":19}
+{"kind":"shape","id":"sh/mt8n2x0j","slide":11,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/hkjm1cj6","slide":11,"name":"!!bar","bbox":[86.4,676.8,601.82,2.88]}
+{"kind":"shape","id":"sh/wja58ril","slide":11,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/vi14zm10","slide":11,"name":"!!kicker","text":"CHAPTER 02","textPreview":"CHAPTER 02","textChars":10,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/uxsn6h0v","slide":11,"name":"pageno","text":"11 / 20","textPreview":"11 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/5o3m5wji","slide":11,"name":"Text 5","text":"How we got here","textPreview":"How we got here","textChars":15,"textLines":1,"bbox":[86.4,117.12,768,91.2]}
+{"kind":"textbox","id":"sh/4nu5crix","slide":11,"name":"!!num","text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[1113.6,119.04,79.68,43.2]}
+{"kind":"shape","id":"sh/2xovmh4v","slide":11,"name":"Shape 7","bbox":[192,370.56,895.68,1.73]}
+{"kind":"textbox","id":"sh/3yxwfm5g","slide":11,"name":"Text 8","text":"[YEAR]","textPreview":"[YEAR]","textChars":6,"textLines":1,"bbox":[86.4,309.12,211.2,34.56]}
+{"kind":"shape","id":"sh/4j6dorm1","slide":11,"name":"!!node1","bbox":[180.96,360.48,22.08,22.08]}
+{"kind":"textbox","id":"sh/pkfehwnm","slide":11,"name":"Text 10","text":"[Milestone one]","textPreview":"[Milestone one]","textChars":15,"textLines":1,"bbox":[86.4,405.12,211.2,36.48]}
+{"kind":"textbox","id":"sh/ql8vqh47","slide":11,"name":"Text 11","text":"[What changed]","textPreview":"[What changed]","textChars":14,"textLines":1,"bbox":[86.4,443.52,211.2,57.6]}
+{"kind":"textbox","id":"sh/bmhwjm5s","slide":11,"name":"Text 12","text":"[YEAR]","textPreview":"[YEAR]","textChars":6,"textLines":1,"bbox":[310.32,309.12,211.2,34.56]}
+{"kind":"shape","id":"sh/cnqdsrmd","slide":11,"name":"!!node2","bbox":[404.88,360.48,22.08,22.08]}
+{"kind":"textbox","id":"sh/dozelwni","slide":11,"name":"Text 14","text":"[Milestone two]","textPreview":"[Milestone two]","textChars":15,"textLines":1,"bbox":[310.32,405.12,211.2,36.48]}
+{"kind":"textbox","id":"sh/6p4vex43","slide":11,"name":"Text 15","text":"[What changed]","textPreview":"[What changed]","textChars":14,"textLines":1,"bbox":[310.32,443.52,211.2,57.6]}
+{"kind":"textbox","id":"sh/7qdw7258","slide":11,"name":"Text 16","text":"[YEAR]","textPreview":"[YEAR]","textChars":6,"textLines":1,"bbox":[534.24,309.12,211.2,34.56]}
+{"kind":"shape","id":"sh/vutsfyl0","slide":11,"name":"!!node3","bbox":[628.8,360.48,22.08,22.08]}
+{"kind":"textbox","id":"sh/at0bmtkv","slide":11,"name":"Text 18","text":"[Milestone three]","textPreview":"[Milestone three]","textChars":17,"textLines":1,"bbox":[534.24,405.12,211.2,36.48]}
+{"kind":"textbox","id":"sh/xwbah836","slide":11,"name":"Text 19","text":"[What changed]","textPreview":"[What changed]","textChars":14,"textLines":1,"bbox":[534.24,443.52,211.2,57.6]}
+{"kind":"textbox","id":"sh/wv2to32l","slide":11,"name":"Text 20","text":"[YEAR]","textPreview":"[YEAR]","textChars":6,"textLines":1,"bbox":[758.16,309.12,211.2,34.56]}
+{"kind":"shape","id":"sh/n69sbel4","slide":11,"name":"!!node4","bbox":[852.72,360.48,22.08,22.08]}
+{"kind":"textbox","id":"sh/m50bi9kj","slide":11,"name":"Text 22","text":"[Milestone four]","textPreview":"[Milestone four]","textChars":16,"textLines":1,"bbox":[758.16,405.12,211.2,36.48]}
+{"kind":"textbox","id":"sh/98rado3a","slide":11,"name":"Text 23","text":"[What changed]","textPreview":"[What changed]","textChars":14,"textLines":1,"bbox":[758.16,443.52,211.2,57.6]}
+{"kind":"textbox","id":"sh/87itkj2p","slide":11,"name":"Text 24","text":"[NOW]","textPreview":"[NOW]","textChars":5,"textLines":1,"bbox":[982.08,309.12,211.2,34.56]}
+{"kind":"shape","id":"sh/72dcnil8","slide":11,"name":"!!node5","bbox":[1076.64,360.48,22.08,22.08]}
+{"kind":"textbox","id":"sh/614budkn","slide":11,"name":"Text 26","text":"[Where we stand]","textPreview":"[Where we stand]","textChars":16,"textLines":1,"bbox":[982.08,405.12,211.2,36.48]}
+{"kind":"textbox","id":"sh/4vuhsbe9","slide":11,"name":"Text 27","text":"[What changed]","textPreview":"[What changed]","textChars":14,"textLines":1,"bbox":[982.08,443.52,211.2,57.6]}
+{"kind":"image","id":"im/ihwf614v","slide":11,"name":"!!orb","bbox":[-192,364.8,537.6,537.6]}
+{"kind":"notes","id":"nt/apvags","slide":11,"text":"Nodes are named !!node1 to !!node5. Duplicate the slide and enlarge one node to zoom into a single milestone. Morph does the travel."}
+{"kind":"slide","id":"sl/ibyas0","slide":12,"title":"THE PLAN","textShapes":15}
+{"kind":"shape","id":"sh/a14ry9kj","slide":12,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/lsfadoj6","slide":12,"name":"!!bar","bbox":[86.4,676.8,657.97,2.88]}
+{"kind":"shape","id":"sh/krm94j2l","slide":12,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/zqdsbe1g","slide":12,"name":"!!kicker","text":"THE PLAN","textPreview":"THE PLAN","textChars":8,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/yp4r29kv","slide":12,"name":"pageno","text":"12 / 20","textPreview":"12 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/1wbq1kj2","slide":12,"name":"Text 5","text":"Four steps, in order","textPreview":"Four steps, in order","textChars":20,"textLines":1,"bbox":[86.4,117.12,768,91.2]}
+{"kind":"textbox","id":"sh/0v29sz2h","slide":12,"name":"!!step1","text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[86.4,240,255.36,105.6]}
+{"kind":"textbox","id":"sh/uhw3a98z","slide":12,"name":"Text 7","text":"[Step one]","textPreview":"[Step one]","textChars":10,"textLines":1,"bbox":[86.4,362.88,255.36,40.32]}
+{"kind":"textbox","id":"sh/fi543e94","slide":12,"name":"Text 8","text":"[What happens, who does it, and how long it takes.]","textPreview":"[What happens, who does it, and how long it takes.]","textChars":51,"textLines":1,"bbox":[86.4,403.2,255.36,124.8]}
+{"kind":"textbox","id":"sh/gjylcjqp","slide":12,"name":"!!step2","text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[369.6,240,255.36,105.6]}
+{"kind":"textbox","id":"sh/hk7m54ra","slide":12,"name":"Text 10","text":"[Step two]","textPreview":"[Step two]","textChars":10,"textLines":1,"bbox":[369.6,362.88,255.36,40.32]}
+{"kind":"textbox","id":"sh/2lg3e98v","slide":12,"name":"Text 11","text":"[What happens, who does it, and how long it takes.]","textPreview":"[What happens, who does it, and how long it takes.]","textChars":51,"textLines":1,"bbox":[369.6,403.2,255.36,124.8]}
+{"kind":"textbox","id":"sh/3mp47e9g","slide":12,"name":"!!step3","text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[652.8,240,255.36,105.6]}
+{"kind":"textbox","id":"sh/4nylgjq1","slide":12,"name":"Text 13","text":"[Step three]","textPreview":"[Step three]","textChars":12,"textLines":1,"bbox":[652.8,362.88,255.36,40.32]}
+{"kind":"textbox","id":"sh/po7m9orm","slide":12,"name":"Text 14","text":"[What happens, who does it, and how long it takes.]","textPreview":"[What happens, who does it, and how long it takes.]","textChars":51,"textLines":1,"bbox":[652.8,403.2,255.36,124.8]}
+{"kind":"textbox","id":"sh/qpgnit87","slide":12,"name":"!!step4","text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[936,240,255.36,105.6]}
+{"kind":"textbox","id":"sh/rq94by9c","slide":12,"name":"Text 16","text":"[Step four]","textPreview":"[Step four]","textChars":11,"textLines":1,"bbox":[936,362.88,255.36,40.32]}
+{"kind":"textbox","id":"sh/ne9kzy5k","slide":12,"name":"Text 17","text":"[What happens, who does it, and how long it takes.]","textPreview":"[What happens, who does it, and how long it takes.]","textChars":51,"textLines":1,"bbox":[936,403.2,255.36,124.8]}
+{"kind":"image","id":"im/xsr6t0jq","slide":12,"name":"!!orb","bbox":[902.4,403.2,537.6,537.6]}
+{"kind":"notes","id":"nt/ibyas0","slide":12,"text":"Colour only the step you are on. Duplicate this slide four times and move the ember colour along, and morph walks the audience through the plan stage by stage."}
+{"kind":"slide","id":"sl/xdhvu5","slide":13,"title":"BEFORE AND AFTER","textShapes":11}
+{"kind":"shape","id":"sh/cbqhs3a5","slide":13,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/36x0vyto","slide":13,"name":"!!bar","bbox":[86.4,676.8,714.12,2.88]}
+{"kind":"shape","id":"sh/25ozmts3","slide":13,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/p8fix8bu","slide":13,"name":"!!kicker","text":"BEFORE AND AFTER","textPreview":"BEFORE AND AFTER","textChars":16,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/476ho3a9","slide":13,"name":"pageno","text":"13 / 20","textPreview":"13 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/n2107i9s","slide":13,"name":"Text 5","text":"What changes, precisely","textPreview":"What changes, precisely","textChars":23,"textLines":1,"bbox":[86.4,117.12,816,91.2]}
+{"kind":"shape","id":"sh/m1szydsn","slide":13,"name":"!!panelTODAY","bbox":[86.4,225.6,518.4,388.8]}
+{"kind":"textbox","id":"sh/szq5o3m1","slide":13,"name":"Text 7","text":"TODAY","textPreview":"TODAY","textChars":5,"textLines":1,"bbox":[126.72,261.12,307.2,32.64]}
+{"kind":"shape","id":"sh/d0z6x8nm","slide":13,"name":"Shape 8","bbox":[126.72,341.76,9.6,9.6]}
+{"kind":"textbox","id":"sh/qx8nmt4v","slide":13,"name":"Text 9","text":"[The constraint people feel now]","textPreview":"[The constraint people feel now]","textChars":32,"textLines":1,"bbox":[168.96,322.56,393.6,48]}
+{"kind":"shape","id":"sh/ryhovy5g","slide":13,"name":"Shape 10","bbox":[126.72,430.08,9.6,9.6]}
+{"kind":"textbox","id":"sh/4vq5k3m5","slide":13,"name":"Text 11","text":"[The cost of leaving it alone]","textPreview":"[The cost of leaving it alone]","textChars":30,"textLines":1,"bbox":[168.96,410.88,393.6,48]}
+{"kind":"shape","id":"sh/5wz6t8nq","slide":13,"name":"Shape 12","bbox":[126.72,518.4,9.6,9.6]}
+{"kind":"textbox","id":"sh/itonit4z","slide":13,"name":"Text 13","text":"[Who carries that cost]","textPreview":"[Who carries that cost]","textChars":23,"textLines":1,"bbox":[168.96,499.2,393.6,48]}
+{"kind":"shape","id":"sh/3uhory5k","slide":13,"name":"!!panelAFTER","bbox":[674.88,225.6,518.4,388.8]}
+{"kind":"textbox","id":"sh/w765gjmt","slide":13,"name":"Text 15","text":"AFTER","textPreview":"AFTER","textChars":5,"textLines":1,"bbox":[715.2,261.12,307.2,32.64]}
+{"kind":"shape","id":"sh/hsf6pone","slide":13,"name":"Shape 16","bbox":[715.2,341.76,9.6,9.6]}
+{"kind":"textbox","id":"sh/xo7mdkf2","slide":13,"name":"Text 17","text":"[What replaces it]","textPreview":"[What replaces it]","textChars":18,"textLines":1,"bbox":[757.44,322.56,393.6,48]}
+{"kind":"shape","id":"sh/wnylkfyx","slide":13,"name":"Shape 18","bbox":[715.2,430.08,9.6,9.6]}
+{"kind":"textbox","id":"sh/bmp4baxc","slide":13,"name":"Text 19","text":"[The saving or the gain]","textPreview":"[The saving or the gain]","textChars":24,"textLines":1,"bbox":[757.44,410.88,393.6,48]}
+{"kind":"shape","id":"sh/alg3i5gr","slide":13,"name":"Shape 20","bbox":[715.2,518.4,9.6,9.6]}
+{"kind":"textbox","id":"sh/907290f6","slide":13,"name":"Text 21","text":"[Who benefits first]","textPreview":"[Who benefits first]","textChars":20,"textLines":1,"bbox":[757.44,499.2,393.6,48]}
+{"kind":"image","id":"im/zut4bet8","slide":13,"name":"!!orb","bbox":[844.8,-134.4,576,576]}
+{"kind":"notes","id":"nt/xdhvu5","slide":13,"text":"State the opposing case first, in its strongest form, then answer it. The audience trusts the second column more when the first one is honest."}
+{"kind":"slide","id":"sl/d76c8n","slide":14,"title":"AT A GLANCE","textShapes":12}
+{"kind":"shape","id":"sh/03yl8vax","slide":14,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/n6pk3qto","slide":14,"name":"!!bar","bbox":[86.4,676.8,770.27,2.88]}
+{"kind":"shape","id":"sh/25g3als3","slide":14,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/p87250be","slide":14,"name":"!!kicker","text":"AT A GLANCE","textPreview":"AT A GLANCE","textChars":11,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/o7ylcva9","slide":14,"name":"pageno","text":"14 / 20","textPreview":"14 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/jalkr6t4","slide":14,"name":"Text 5","text":"The whole picture","textPreview":"The whole picture","textChars":17,"textLines":1,"bbox":[86.4,109.44,672,91.2]}
+{"kind":"textbox","id":"sh/i9cjy1sz","slide":14,"name":"!!num","text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[1113.6,111.36,79.68,43.2]}
+{"kind":"textbox","id":"sh/103ad476","slide":14,"name":"Text 7","text":"[Caption for the visual]","textPreview":"[Caption for the visual]","textChars":24,"textLines":1,"bbox":[119.04,562.56,470.4,38.4]}
+{"kind":"shape","id":"sh/exsb2p8v","slide":14,"name":"!!tileA","bbox":[648,177.6,545.28,206.4]}
+{"kind":"textbox","id":"sh/fylsbupg","slide":14,"name":"Text 9","text":"[00]","textPreview":"[00]","textChars":4,"textLines":1,"bbox":[688.32,199.68,211.2,86.4]}
+{"kind":"textbox","id":"sh/o3ut8z6x","slide":14,"name":"Text 10","text":"[Headline figure]","textPreview":"[Headline figure]","textChars":17,"textLines":1,"bbox":[688.32,289.92,464.64,30.72]}
+{"kind":"textbox","id":"sh/p43ah47i","slide":14,"name":"Text 11","text":"[Period, baseline, and why it moved.]","textPreview":"[Period, baseline, and why it moved.]","textChars":37,"textLines":1,"bbox":[688.32,322.56,464.64,34.56]}
+{"kind":"shape","id":"sh/21cb698r","slide":14,"name":"!!tileB","bbox":[648,412.8,259.2,216]}
+{"kind":"textbox","id":"sh/n2lsfupc","slide":14,"name":"Text 13","text":"[Tile two]","textPreview":"[Tile two]","textChars":10,"textLines":1,"bbox":[688.32,441.6,182.4,32.64]}
+{"kind":"textbox","id":"sh/47a9wfqt","slide":14,"name":"Text 14","text":"[Two short lines that add one fact the audience did not have.]","textPreview":"[Two short lines that add one fact the audience did not have.]","textChars":62,"textLines":1,"bbox":[688.32,480,187.2,120]}
+{"kind":"shape","id":"sh/58ja5k7y","slide":14,"name":"!!tileC","bbox":[934.08,412.8,259.2,216]}
+{"kind":"textbox","id":"sh/54bq9wz2","slide":14,"name":"Text 16","text":"[Tile three]","textPreview":"[Tile three]","textChars":12,"textLines":1,"bbox":[974.4,441.6,182.4,32.64]}
+{"kind":"textbox","id":"sh/k32p0bih","slide":14,"name":"Text 17","text":"[Two short lines that add one fact the audience did not have.]","textPreview":"[Two short lines that add one fact the audience did not have.]","textChars":62,"textLines":1,"bbox":[974.4,480,187.2,120]}
+{"kind":"image","id":"im/g36tw3id","slide":14,"name":"!!orb","bbox":[-172.8,-115.2,518.4,518.4]}
+{"kind":"image","id":"im/h4fu58zy","slide":14,"name":"!!art","bbox":[86.4,177.6,537.6,451.2]}
+{"kind":"notes","id":"nt/d76c8n","slide":14,"text":"Bento grid. Tiles are named !!tileA to !!tileC, so you can duplicate the slide and expand one tile to full screen for a drill-down."}
+{"kind":"slide","id":"sl/mu94w4","slide":15,"title":"CHAPTER 03","textShapes":5}
+{"kind":"shape","id":"sh/0vmd4fy1","slide":15,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/nixczuhc","slide":15,"name":"!!bar","bbox":[86.4,676.8,826.42,2.88]}
+{"kind":"shape","id":"sh/mhov6pgr","slide":15,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/9kfu14zi","slide":15,"name":"!!kicker","text":"CHAPTER 03","textPreview":"CHAPTER 03","textChars":10,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/8j6d8zyx","slide":15,"name":"pageno","text":"15 / 20","textPreview":"15 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/vmxc3eho","slide":15,"name":"!!num","text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[566.4,72,626.88,537.6]}
+{"kind":"textbox","id":"sh/alova9g3","slide":15,"name":"Text 6","text":"[Chapter three\ntitle]","textPreview":"[Chapter three | title]","textChars":21,"textLines":2,"bbox":[86.4,264,633.6,201.6]}
+{"kind":"textbox","id":"sh/gvudcjut","slide":15,"name":"Text 7","text":"[One line on what this section proves and why it matters to the people in the room.]","textPreview":"[One line on what this section proves and why it matters to the people in the room.]","textChars":84,"textLines":1,"bbox":[86.4,480,566.4,96]}
+{"kind":"image","id":"im/69sri5wn","slide":15,"name":"!!orb","bbox":[-230.4,153.6,710.4,710.4]}
+{"kind":"notes","id":"nt/mu94w4","slide":15,"text":"Third divider. Keep the wording of every divider parallel so the deck reads as one argument, not three."}
+{"kind":"slide","id":"sl/118043","slide":16,"title":"IN THEIR WORDS","textShapes":7}
+{"kind":"shape","id":"sh/lsne9s3q","slide":16,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/mdwvix4v","slide":16,"name":"!!bar","bbox":[86.4,676.8,882.57,2.88]}
+{"kind":"shape","id":"sh/7e5wb2lg","slide":16,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/8fedk7m1","slide":16,"name":"!!kicker","text":"IN THEIR WORDS","textPreview":"IN THEIR WORDS","textChars":14,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/9g7eds3m","slide":16,"name":"pageno","text":"16 / 20","textPreview":"16 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/uhgvmx47","slide":16,"name":"Text 5","text":"”","textPreview":"”","textChars":1,"textLines":1,"bbox":[950.4,48,249.6,288]}
+{"kind":"textbox","id":"sh/vipwf2ls","slide":16,"name":"!!num","text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[86.4,119.04,96,43.2]}
+{"kind":"textbox","id":"sh/n6dcfehg","slide":16,"name":"Text 7","text":"[One quote that says what you cannot say about yourself. Keep it under twenty five words.]","textPreview":"[One quote that says what you cannot say about yourself. Keep it under twenty five words.]","textChars":90,"textLines":1,"bbox":[86.4,196.8,864,278.4]}
+{"kind":"textbox","id":"sh/9sveh4zm","slide":16,"name":"Text 8","text":"[Name]","textPreview":"[Name]","textChars":6,"textLines":1,"bbox":[193.92,518.4,480,32.64]}
+{"kind":"textbox","id":"sh/o7md8zi1","slide":16,"name":"Text 9","text":"[Role, organisation]","textPreview":"[Role, organisation]","textChars":20,"textLines":1,"bbox":[193.92,552.96,480,32.64]}
+{"kind":"image","id":"im/k3654byt","slide":16,"name":"!!orb","bbox":[787.2,249.6,614.4,614.4]}
+{"kind":"image","id":"im/l4fmdgze","slide":16,"name":"!!avatar","geometry":"ellipse","bbox":[86.4,506.88,86.4,86.4]}
+{"kind":"notes","id":"nt/118043","slide":16,"text":"Use a real quote from someone the audience already trusts. Swap the avatar by right-clicking and choosing Change Picture."}
+{"kind":"slide","id":"sl/tm3gjk","slide":17,"title":"WHO IS BEHIND THIS","textShapes":16}
+{"kind":"shape","id":"sh/ml4zqhw3","slide":17,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/1kvyhcvy","slide":17,"name":"!!bar","bbox":[86.4,676.8,938.72,2.88]}
+{"kind":"shape","id":"sh/0jmho7ed","slide":17,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/zitgf2xs","slide":17,"name":"!!kicker","text":"WHO IS BEHIND THIS","textPreview":"WHO IS BEHIND THIS","textChars":18,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/ehkzmxw7","slide":17,"name":"pageno","text":"17 / 20","textPreview":"17 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/5gfitwv2","slide":17,"name":"Text 5","text":"The people doing the work","textPreview":"The people doing the work","textChars":25,"textLines":1,"bbox":[86.4,117.12,864,91.2]}
+{"kind":"textbox","id":"sh/u5kj2hgr","slide":17,"name":"Text 6","text":"[Name 1]","textPreview":"[Name 1]","textChars":8,"textLines":1,"bbox":[57.6,414.72,187.2,30.72]}
+{"kind":"textbox","id":"sh/f6tkvmhw","slide":17,"name":"Text 7","text":"[Role]","textPreview":"[Role]","textChars":6,"textLines":1,"bbox":[57.6,445.44,187.2,30.72]}
+{"kind":"textbox","id":"sh/h8b2xcz2","slide":17,"name":"Text 8","text":"[Name 2]","textPreview":"[Name 2]","textChars":8,"textLines":1,"bbox":[249.6,414.72,187.2,30.72]}
+{"kind":"textbox","id":"sh/610jyxgf","slide":17,"name":"Text 9","text":"[Role]","textPreview":"[Role]","textChars":6,"textLines":1,"bbox":[249.6,445.44,187.2,30.72]}
+{"kind":"textbox","id":"sh/83i107yl","slide":17,"name":"Text 10","text":"[Name 3]","textPreview":"[Name 3]","textChars":8,"textLines":1,"bbox":[441.6,414.72,187.2,30.72]}
+{"kind":"textbox","id":"sh/t4b2tcz6","slide":17,"name":"Text 11","text":"[Role]","textPreview":"[Role]","textChars":6,"textLines":1,"bbox":[441.6,445.44,187.2,30.72]}
+{"kind":"textbox","id":"sh/rydk36h4","slide":17,"name":"Text 12","text":"[Name 4]","textPreview":"[Name 4]","textChars":8,"textLines":1,"bbox":[633.6,414.72,187.2,30.72]}
+{"kind":"textbox","id":"sh/ni5gvyxw","slide":17,"name":"Text 13","text":"[Role]","textPreview":"[Role]","textChars":6,"textLines":1,"bbox":[633.6,445.44,187.2,30.72]}
+{"kind":"textbox","id":"sh/94nyxofm","slide":17,"name":"Text 14","text":"[Name 5]","textPreview":"[Name 5]","textChars":8,"textLines":1,"bbox":[825.6,414.72,187.2,30.72]}
+{"kind":"textbox","id":"sh/ojeh43e1","slide":17,"name":"Text 15","text":"[Role]","textPreview":"[Role]","textChars":6,"textLines":1,"bbox":[825.6,445.44,187.2,30.72]}
+{"kind":"textbox","id":"sh/a5gz6tw7","slide":17,"name":"Text 16","text":"[Name 6]","textPreview":"[Name 6]","textChars":8,"textLines":1,"bbox":[1017.6,414.72,187.2,30.72]}
+{"kind":"textbox","id":"sh/x87y18fy","slide":17,"name":"Text 17","text":"[Role]","textPreview":"[Role]","textChars":6,"textLines":1,"bbox":[1017.6,445.44,187.2,30.72]}
+{"kind":"textbox","id":"sh/w7yh83ed","slide":17,"name":"Text 18","text":"[Add one line on why this group is the right one to deliver it.]","textPreview":"[Add one line on why this group is the right one to deliver it.]","textChars":64,"textLines":1,"bbox":[86.4,539.52,912,48]}
+{"kind":"image","id":"im/c365sbyl","slide":17,"name":"!!orb","bbox":[345.6,441.6,633.6,633.6]}
+{"kind":"image","id":"im/d4fm1gz6","slide":17,"name":"!!avatar1","geometry":"ellipse","bbox":[86.4,264,129.6,129.6]}
+{"kind":"image","id":"im/fi587e1o","slide":17,"name":"!!avatar2","geometry":"ellipse","bbox":[278.4,264,129.6,129.6]}
+{"kind":"image","id":"im/uxw7y903","slide":17,"name":"!!avatar3","geometry":"ellipse","bbox":[470.4,264,129.6,129.6]}
+{"kind":"image","id":"im/hknq9oje","slide":17,"name":"!!avatar4","geometry":"ellipse","bbox":[662.4,264,129.6,129.6]}
+{"kind":"image","id":"im/gje90ji9","slide":17,"name":"!!avatar5","geometry":"ellipse","bbox":[854.4,264,129.6,129.6]}
+{"kind":"image","id":"im/7ul83u1c","slide":17,"name":"!!avatar6","geometry":"ellipse","bbox":[1046.4,264,129.6,129.6]}
+{"kind":"notes","id":"nt/tm3gjk","slide":17,"text":"Works for a team, a board, partner logos, or client logos. Delete the circles you do not need and re-space the rest evenly."}
+{"kind":"slide","id":"sl/htyt1c","slide":18,"title":"WHAT HAPPENS NEXT","textShapes":16}
+{"kind":"shape","id":"sh/fedwjeho","slide":18,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/srmdojid","slide":18,"name":"!!bar","bbox":[86.4,676.8,994.87,2.88]}
+{"kind":"shape","id":"sh/tcvehozy","slide":18,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/6p4vm907","slide":18,"name":"!!kicker","text":"WHAT HAPPENS NEXT","textPreview":"WHAT HAPPENS NEXT","textChars":17,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/rqdcfehs","slide":18,"name":"pageno","text":"18 / 20","textPreview":"18 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/cnqd03ih","slide":18,"name":"Text 5","text":"Three decisions we need from you","textPreview":"Three decisions we need from you","textChars":32,"textLines":1,"bbox":[86.4,115.2,912,91.2]}
+{"kind":"shape","id":"sh/d8zet8z2","slide":18,"name":"!!ask1","bbox":[86.4,240,336,316.8]}
+{"kind":"textbox","id":"sh/lgnm5sza","slide":18,"name":"Text 7","text":"ASK 01","textPreview":"ASK 01","textChars":6,"textLines":1,"bbox":[124.8,274.56,259.2,28.8]}
+{"kind":"textbox","id":"sh/kfe5cnyp","slide":18,"name":"Text 8","text":"[The decision]","textPreview":"[The decision]","textChars":14,"textLines":1,"bbox":[124.8,318.72,259.2,40.32]}
+{"kind":"textbox","id":"sh/zu543ihk","slide":18,"name":"Text 9","text":"[What you need agreed, and by when.]","textPreview":"[What you need agreed, and by when.]","textChars":36,"textLines":1,"bbox":[124.8,370.56,259.2,105.6]}
+{"kind":"textbox","id":"sh/ytwnadgz","slide":18,"name":"Text 10","text":"[Owner] · [Date]","textPreview":"[Owner] · [Date]","textChars":16,"textLines":1,"bbox":[124.8,495.36,259.2,32.64]}
+{"kind":"shape","id":"sh/xsnm1sze","slide":18,"name":"!!ask2","bbox":[471.84,240,336,316.8]}
+{"kind":"textbox","id":"sh/crul8nyt","slide":18,"name":"Text 12","text":"ASK 02","textPreview":"ASK 02","textChars":6,"textLines":1,"bbox":[510.24,274.56,259.2,28.8]}
+{"kind":"textbox","id":"sh/bql4zih8","slide":18,"name":"Text 13","text":"[The decision]","textPreview":"[The decision]","textChars":14,"textLines":1,"bbox":[510.24,318.72,259.2,40.32]}
+{"kind":"textbox","id":"sh/apc36dgn","slide":18,"name":"Text 14","text":"[What you need agreed, and by when.]","textPreview":"[What you need agreed, and by when.]","textChars":36,"textLines":1,"bbox":[510.24,370.56,259.2,105.6]}
+{"kind":"textbox","id":"sh/ho7mdczi","slide":18,"name":"Text 15","text":"[Owner] · [Date]","textPreview":"[Owner] · [Date]","textChars":16,"textLines":1,"bbox":[510.24,495.36,259.2,32.64]}
+{"kind":"shape","id":"sh/gny5k7yx","slide":18,"name":"!!ask3","bbox":[857.28,240,336,316.8]}
+{"kind":"textbox","id":"sh/gr6pgb69","slide":18,"name":"Text 17","text":"ASK 03","textPreview":"ASK 03","textChars":6,"textLines":1,"bbox":[895.68,274.56,259.2,28.8]}
+{"kind":"textbox","id":"sh/1sf6pg7u","slide":18,"name":"Text 18","text":"[The decision]","textPreview":"[The decision]","textChars":14,"textLines":1,"bbox":[895.68,318.72,259.2,40.32]}
+{"kind":"textbox","id":"sh/epo7elo3","slide":18,"name":"Text 19","text":"[What you need agreed, and by when.]","textPreview":"[What you need agreed, and by when.]","textChars":36,"textLines":1,"bbox":[895.68,370.56,259.2,105.6]}
+{"kind":"textbox","id":"sh/fqxonqpo","slide":18,"name":"Text 20","text":"[Owner] · [Date]","textPreview":"[Owner] · [Date]","textChars":16,"textLines":1,"bbox":[895.68,495.36,259.2,32.64]}
+{"kind":"textbox","id":"sh/snmpcb6d","slide":18,"name":"!!close","text":"Thank you","textPreview":"Thank you","textChars":9,"textLines":1,"bbox":[86.4,599.04,480,40.32]}
+{"kind":"image","id":"im/y14nu1w7","slide":18,"name":"!!orb","bbox":[825.6,326.4,595.2,595.2]}
+{"kind":"notes","id":"nt/htyt1c","slide":18,"text":"End on the ask, not the summary. Name the owner and the date on the slide so nobody leaves the room unsure who is doing what."}
+{"kind":"slide","id":"sl/jpf6s5","slide":19,"title":"CLOSING","textShapes":5}
+{"kind":"shape","id":"sh/dcnqlcjy","slide":19,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/sbe9c72d","slide":19,"name":"!!bar","bbox":[86.4,676.8,1051.02,2.88]}
+{"kind":"shape","id":"sh/ra58j21s","slide":19,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/q9wraxk7","slide":19,"name":"!!kicker","text":"CLOSING","textPreview":"CLOSING","textChars":7,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/tg3q983e","slide":19,"name":"pageno","text":"19 / 20","textPreview":"19 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/8fup032t","slide":19,"name":"!!close","text":"Thank you","textPreview":"Thank you","textChars":9,"textLines":1,"bbox":[86.4,244.8,1107.17,182.4]}
+{"kind":"textbox","id":"sh/ed8vutsn","slide":19,"name":"Text 6","text":"[Name the people and partners you are thanking, and the one thing they made possible.]","textPreview":"[Name the people and partners you are thanking, and the one thing they made possible.]","textChars":86,"textLines":1,"bbox":[230.4,443.52,818.88,76.8]}
+{"kind":"textbox","id":"sh/ze1wnyt8","slide":19,"name":"Text 7","text":"[YOUR ORGANISATION]","textPreview":"[YOUR ORGANISATION]","textChars":19,"textLines":1,"bbox":[86.4,547.2,1107.17,34.56]}
+{"kind":"image","id":"im/b6dkz2xs","slide":19,"name":"!!orb","bbox":[240,-86.4,806.4,806.4]}
+{"kind":"image","id":"im/a5kjqhg7","slide":19,"name":"!!orb2","bbox":[748.8,384,537.6,537.6]}
+{"kind":"notes","id":"nt/jpf6s5","slide":19,"text":"The words 'Thank you' morph up from the bottom of the previous slide and grow across the screen, then shrink into the corner of the end card. That single travelling element is what makes the ending feel like a film credit rather than a full stop."}
+{"kind":"slide","id":"sl/utmtom","slide":20,"title":"CONTACT","textShapes":13}
+{"kind":"shape","id":"sh/b6pozytw","slide":20,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/q5g76tcb","slide":20,"name":"!!bar","bbox":[86.4,676.8,1107.17,2.88]}
+{"kind":"shape","id":"sh/ds7q1obm","slide":20,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/c7yp83u1","slide":20,"name":"!!kicker","text":"CONTACT","textPreview":"CONTACT","textChars":7,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/ralo3udc","slide":20,"name":"pageno","text":"20 / 20","textPreview":"20 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/69c7upcr","slide":20,"name":"!!close","text":"Thank you","textPreview":"Thank you","textChars":9,"textLines":1,"bbox":[86.4,113.28,576,57.6]}
+{"kind":"textbox","id":"sh/032lczu9","slide":20,"name":"Text 6","text":"[Your name]","textPreview":"[Your name]","textChars":11,"textLines":1,"bbox":[86.4,220.8,576,48]}
+{"kind":"textbox","id":"sh/l4bm5kvu","slide":20,"name":"Text 7","text":"[Role, organisation]","textPreview":"[Role, organisation]","textChars":20,"textLines":1,"bbox":[86.4,270.72,576,38.4]}
+{"kind":"textbox","id":"sh/yh03apc3","slide":20,"name":"Text 8","text":"EMAIL","textPreview":"EMAIL","textChars":5,"textLines":1,"bbox":[86.4,347.52,115.2,32.64]}
+{"kind":"textbox","id":"sh/zi943udo","slide":20,"name":"Text 9","text":"[you@example.com]","textPreview":"[you@example.com]","textChars":17,"textLines":1,"bbox":[216,347.52,422.4,32.64]}
+{"kind":"textbox","id":"sh/8725gzu5","slide":20,"name":"Text 10","text":"PHONE","textPreview":"PHONE","textChars":5,"textLines":1,"bbox":[86.4,407.04,115.2,32.64]}
+{"kind":"textbox","id":"sh/98bm94vq","slide":20,"name":"Text 11","text":"[+00 000 000 000]","textPreview":"[+00 000 000 000]","textChars":17,"textLines":1,"bbox":[216,407.04,422.4,32.64]}
+{"kind":"textbox","id":"sh/m5k3epcf","slide":20,"name":"Text 12","text":"WEB","textPreview":"WEB","textChars":3,"textLines":1,"bbox":[86.4,466.56,115.2,32.64]}
+{"kind":"textbox","id":"sh/n6t47udk","slide":20,"name":"Text 13","text":"[www.example.com]","textPreview":"[www.example.com]","textChars":17,"textLines":1,"bbox":[216,466.56,422.4,32.64]}
+{"kind":"shape","id":"sh/4bil4fe1","slide":20,"name":"!!tileA","bbox":[710.4,220.8,482.88,316.8]}
+{"kind":"textbox","id":"sh/pcrmx0vm","slide":20,"name":"Text 15","text":"[Drop your QR code, logo\nor one closing image here]","textPreview":"[Drop your QR code, logo | or one closing image here]","textChars":51,"textLines":2,"bbox":[750.72,321.6,402.24,115.2]}
+{"kind":"textbox","id":"sh/58j21wna","slide":20,"name":"anim_cta","text":"[The one action you want from this room, and the date you want it by.]","textPreview":"[The one action you want from this room, and the date you want it by.]","textChars":70,"textLines":1,"bbox":[86.4,576,912,48]}
+{"kind":"image","id":"im/76xojmhg","slide":20,"name":"!!orb","bbox":[729.6,-172.8,633.6,633.6]}
+{"kind":"image","id":"im/8765c7i1","slide":20,"name":"!!orb2","bbox":[-211.2,460.8,499.2,499.2]}
+{"kind":"notes","id":"nt/utmtom","slide":20,"text":"Close on the opportunity, not the recap. Give one action and one date. Everything else on this slide is there so nobody has to ask how to reach you."}

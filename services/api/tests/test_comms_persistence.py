@@ -249,3 +249,4 @@ def test_get_and_list_all_round_trip(repo: CommsDraftRepository) -> None:
     ids = {r.id for r in repo.list_all()}
     assert first.id in ids
     assert second.id in ids
+

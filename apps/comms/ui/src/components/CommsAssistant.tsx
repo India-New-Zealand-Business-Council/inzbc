@@ -1,5 +1,24 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { CommsDraftError, deleteCommsDraft, requestCommsDraft, type ContentType } from '../api/client'
+import {
+  CommsDraftError,
+  KEY_POINT_MAX_LENGTH,
+  MAX_KEY_POINTS,
+  MAX_LINKS,
+  TOPIC_MAX_LENGTH,
+  TOTAL_BRIEF_BUDGET,
+  deleteCommsDraft,
+  requestCommsDraft,
+  type ContentType,
+  type Tone,
+} from '../api/client'
+
+/** Splits a textarea into trimmed, non-empty lines. */
+function lines(value: string): string[] {
+  return value
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+}
 import { downloadAsWord, exportAsPdf } from '../lib/exportDraft'
 
 const CONTENT_TYPES: { value: ContentType; label: string }[] = [
@@ -9,7 +28,6 @@ const CONTENT_TYPES: { value: ContentType; label: string }[] = [
   { value: 'member_spotlight', label: 'Member Spotlight' },
 ]
 
-const BRIEF_MAX_LENGTH = 4000
 const HISTORY_LIMIT = 3
 
 const CONTENT_TYPE_LABELS = Object.fromEntries(
@@ -162,7 +180,13 @@ function DeleteDraftControl({ draftId, onDeleted }: { draftId: string; onDeleted
 
 export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
   const [contentType, setContentType] = useState<ContentType>('newsletter')
-  const [brief, setBrief] = useState('')
+  // #303: the single 4,000-character brief became named fields. Key points and links are held as
+  // one textarea each, split on newlines, rather than eight and five separate inputs - same data,
+  // far less markup, and it keeps the paste-a-list habit people already have.
+  const [topic, setTopic] = useState('')
+  const [keyPointsText, setKeyPointsText] = useState('')
+  const [linksText, setLinksText] = useState('')
+  const [tone, setTone] = useState<Tone>('formal')
   const [draftState, setDraftState] = useState<DraftState>({ kind: 'idle' })
   const [isGenerating, setIsGenerating] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -182,11 +206,38 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
     [],
   )
   const typeId = useId()
-  const briefId = useId()
+  const topicId = useId()
+  const keyPointsId = useId()
+  const linksId = useId()
+  const toneId = useId()
+  const warningId = useId()
+
+  const keyPoints = lines(keyPointsText)
+  const links = lines(linksText)
+
+  // Every rule below mirrors one the server enforces. Adversarial review found the previous
+  // version let the user submit states the server rejects, so the red counters were decorative
+  // and the only feedback was a bare "returned 422".
+  //
+  // Topic is required, not optional: `DraftIn.topic` has min_length=1. The earlier rule here
+  // allowed a key-points-only brief, which the server refuses every time.
+  const overLongKeyPoints = keyPoints.filter((point) => point.length > KEY_POINT_MAX_LENGTH)
+  const totalChars =
+    topic.trim().length +
+    keyPoints.reduce((sum, point) => sum + point.length, 0) +
+    links.reduce((sum, link) => sum + link.length, 0)
+  const problems: string[] = []
+  if (keyPoints.length > MAX_KEY_POINTS) problems.push(`No more than ${MAX_KEY_POINTS} key points.`)
+  if (links.length > MAX_LINKS) problems.push(`No more than ${MAX_LINKS} links.`)
+  if (overLongKeyPoints.length > 0)
+    problems.push(`Each key point must be ${KEY_POINT_MAX_LENGTH} characters or fewer.`)
+  if (totalChars > TOTAL_BRIEF_BUDGET)
+    problems.push(`The brief is ${totalChars} characters; the limit is ${TOTAL_BRIEF_BUDGET}.`)
+
+  const canSubmit = topic.trim().length > 0 && problems.length === 0
 
   async function generateDraft() {
-    const trimmed = brief.trim()
-    if (!trimmed) return
+    if (!canSubmit) return
 
     // Captured before the request starts, so history keeps the content type that was actually
     // selected when this draft was generated — not whatever the dropdown reads later.
@@ -201,7 +252,7 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
 
     try {
       const result = await requestCommsDraft(
-        { contentType, brief: trimmed },
+        { contentType, topic: topic.trim(), keyPoints },
         { signal: controller.signal, baseUrl },
       )
       // Mirrors apps/fta/ui's FtaQuery: abort cannot retract an in-flight response, so only the
@@ -234,12 +285,24 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
     void generateDraft()
   }
 
-  function onBriefKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+  function onBriefKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) {
     // Ctrl+Enter (Cmd+Enter on macOS) submits without leaving the keyboard — plain Enter stays a
-    // newline, since a brief is often more than one line.
+    // newline, since key points and links are one per line.
+    //
+    // Attached to every brief field including the topic input, not only the textareas. #303 split
+    // one textarea into four controls; leaving the shortcut on the textareas alone would mean it
+    // worked or not depending on which field happened to have focus.
     if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
       event.preventDefault()
       void generateDraft()
+      return
+    }
+    // Plain Enter in the topic field must not submit. A lone <input> inside a <form> submits on
+    // Enter natively, so splitting the old textarea into named fields (#303) would otherwise have
+    // quietly turned a deliberate Ctrl+Enter-only design into accidental-submit-while-typing.
+    // The textareas need no such guard: Enter is a newline there, which is what they are for.
+    if (event.key === 'Enter' && event.currentTarget instanceof HTMLInputElement) {
+      event.preventDefault()
     }
   }
 
@@ -247,7 +310,10 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
     inFlight.current?.abort()
     inFlight.current = null
     if (copyResetTimer.current) clearTimeout(copyResetTimer.current)
-    setBrief('')
+    // Aborting the request does not run the catch block that would normally clear this, so
+    // clearing mid-generation used to leave the form stuck in its generating state until reload.
+    setIsGenerating(false)
+    setTopic('')
     setContentType('newsletter')
     setCopyStatus('idle')
     setFeedback(null)
@@ -309,31 +375,126 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
 
         <div>
           <div className="mb-1 flex items-baseline justify-between gap-3">
-            <label htmlFor={briefId} className="block font-semibold text-inzbc-navy">
-              Brief
+            <label htmlFor={topicId} className="block font-semibold text-inzbc-navy">
+              Topic
             </label>
             <span
-              className={`text-xs ${brief.length >= BRIEF_MAX_LENGTH ? 'font-semibold text-inzbc-crimson' : 'text-slate-500'}`}
+              id={`${topicId}-count`}
+              className={`text-xs ${topic.length >= TOPIC_MAX_LENGTH ? 'font-semibold text-inzbc-crimson' : 'text-slate-500'}`}
             >
-              {brief.length} / {BRIEF_MAX_LENGTH}
+              {topic.length} / {TOPIC_MAX_LENGTH}
+            </span>
+          </div>
+          <input
+            id={topicId}
+            type="text"
+            // The counter and the prohibited-data warning are announced with the field rather than
+            // being visual-only. Without this a screen reader user reaches the input with no idea
+            // there is a limit or that the text goes to an external model (WCAG 3.3.2).
+            aria-describedby={`${topicId}-count ${warningId}`}
+            className="w-full rounded-md border border-inzbc-navy/20 px-3 py-2 transition-colors hover:border-inzbc-navy/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
+            value={topic}
+            maxLength={TOPIC_MAX_LENGTH}
+            placeholder="What is this piece about?"
+            onChange={(event) => setTopic(event.target.value)}
+            onKeyDown={onBriefKeyDown}
+          />
+        </div>
+
+        <div>
+          <div className="mb-1 flex items-baseline justify-between gap-3">
+            <label htmlFor={keyPointsId} className="block font-semibold text-inzbc-navy">
+              Key points
+            </label>
+            <span
+              id={`${keyPointsId}-count`}
+              className={`text-xs ${keyPoints.length > MAX_KEY_POINTS ? 'font-semibold text-inzbc-crimson' : 'text-slate-500'}`}
+            >
+              {keyPoints.length} / {MAX_KEY_POINTS}
             </span>
           </div>
           <textarea
-            id={briefId}
-            className="min-h-32 w-full rounded-md border border-inzbc-navy/20 px-3 py-2 transition-colors hover:border-inzbc-navy/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
-            value={brief}
-            maxLength={BRIEF_MAX_LENGTH}
-            placeholder="Describe what you want drafted — audience, key points, tone…"
-            onChange={(event) => setBrief(event.target.value)}
+            id={keyPointsId}
+            aria-describedby={`${keyPointsId}-count ${keyPointsId}-help ${warningId}`}
+            className="min-h-24 w-full rounded-md border border-inzbc-navy/20 px-3 py-2 transition-colors hover:border-inzbc-navy/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
+            value={keyPointsText}
+            placeholder={`One per line, up to ${MAX_KEY_POINTS}.`}
+            onChange={(event) => setKeyPointsText(event.target.value)}
             onKeyDown={onBriefKeyDown}
           />
-          <p className="mt-1 text-xs text-slate-500">Ctrl+Enter (⌘+Enter on Mac) to generate.</p>
+          <p id={`${keyPointsId}-help`} className="mt-1 text-xs text-slate-500">
+            One per line, {KEY_POINT_MAX_LENGTH} characters each.
+          </p>
         </div>
+
+        {/* The prohibited-data warning applies to every field, not just key points. It sat under
+            key points alone, which left it absent from Topic and Links — the two fields the code
+            itself names as carrying the residual #303 risk. Referenced by all four via
+            aria-describedby so it is announced wherever the user is typing. */}
+        <p id={warningId} className="text-xs text-slate-600">
+          <strong className="font-semibold text-inzbc-navy">This text is sent to an external
+          model.</strong>{' '}
+          Do not enter member names, job titles, employers or Board material in any field. Redaction
+          removes formatted identifiers such as emails and phone numbers; it cannot remove a name.
+        </p>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <div className="mb-1 flex items-baseline justify-between gap-3">
+              <label htmlFor={linksId} className="block font-semibold text-inzbc-navy">
+                Links
+              </label>
+              <span
+                id={`${linksId}-count`}
+                className={`text-xs ${links.length > MAX_LINKS ? 'font-semibold text-inzbc-crimson' : 'text-slate-500'}`}
+              >
+                {links.length} / {MAX_LINKS}
+              </span>
+            </div>
+            <textarea
+              id={linksId}
+              aria-describedby={`${linksId}-count ${warningId}`}
+              className="min-h-20 w-full rounded-md border border-inzbc-navy/20 px-3 py-2 transition-colors hover:border-inzbc-navy/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
+              value={linksText}
+              placeholder="One URL per line."
+              onChange={(event) => setLinksText(event.target.value)}
+              onKeyDown={onBriefKeyDown}
+            />
+          </div>
+
+          <div>
+            <label htmlFor={toneId} className="mb-1 block font-semibold text-inzbc-navy">
+              Tone
+            </label>
+            <select
+              id={toneId}
+              className="w-full rounded-md border border-inzbc-navy/20 px-3 py-2 transition-colors hover:border-inzbc-navy/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
+              value={tone}
+              onChange={(event) => setTone(event.target.value as Tone)}
+            >
+              <option value="formal">Formal</option>
+              <option value="warm">Warm</option>
+              <option value="concise">Concise</option>
+            </select>
+            <p className="mt-1 text-xs text-slate-500">Ctrl+Enter (⌘+Enter on Mac) to generate.</p>
+          </div>
+        </div>
+
+        {problems.length > 0 && (
+          // A disabled button with no stated reason is the failure this replaces: the counters
+          // turned red and nothing said why submit stopped working. Colour was also the only
+          // signal, which fails WCAG 1.4.1 — this gives the same information as text.
+          <ul role="alert" className="list-disc space-y-1 pl-5 text-sm text-inzbc-crimson">
+            {problems.map((problem) => (
+              <li key={problem}>{problem}</li>
+            ))}
+          </ul>
+        )}
 
         <div className="flex gap-3">
           <button
             type="submit"
-            disabled={isLoading || brief.trim().length === 0}
+            disabled={isLoading || !canSubmit}
             className="rounded-md bg-inzbc-tangerine px-4 py-2 font-semibold text-inzbc-navy transition-colors hover:enabled:bg-inzbc-tangerine/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue disabled:cursor-progress disabled:opacity-60"
           >
             {isLoading ? 'Generating…' : 'Generate draft'}

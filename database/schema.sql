@@ -207,6 +207,19 @@ create table daily_intelligence (
   approval       approval_state not null default 'Pending'
 );
 
+-- Candidates are almost always read by run: `where run_id = %s` appears at 15 call sites across
+-- services/api, and the review screens page through one run at a time. Without this the read is a
+-- sequential scan of every candidate ever captured.
+--
+-- Measured by scripts/bench_indexes.py at 200 runs / 50,000 candidates:
+--   select ... where run_id = ?                          2.47ms seq scan -> 0.06ms index scan
+--   select ... where run_id = ? group by verification    2.08ms seq scan -> 0.08ms index scan
+--
+-- The composite is not redundant with the first: the rollup reads verification alongside run_id,
+-- so the two-column index answers it without touching the heap.
+create index candidates_run_id_idx on candidates (run_id);
+create index candidates_run_verification_idx on candidates (run_id, verification);
+
 -- A recorded, deliberate exception to the candidate separation-of-duties rule.
 --
 -- INZBC is one person holding every role, and that is the steady state rather than a temporary
@@ -242,6 +255,13 @@ create type comms_draft_status as enum ('Draft','Approved');
 create table comms_drafts (
   id              uuid primary key default gen_random_uuid(),
   content_type    comms_content_type not null,
+  -- The brief as sent to the model, not the form that produced it. Since #303 the API takes
+  -- structured fields (topic, key points, links, tone) and renders them here; rows written before
+  -- that are free text, and the two are deliberately not distinguished, because what a reviewer
+  -- or an incident responder needs is the text that actually left the building.
+  --
+  -- Staff-typed either way. Structuring the input shrank the paste target; it did not make the
+  -- contents safe, which is why the gateway declaration stays STAFF_AUTHORED (#303).
   brief           text not null,
   draft_text      text not null,
   status          comms_draft_status not null default 'Draft',
@@ -694,6 +714,18 @@ create table audit_log (
   reason       text,
   approval_ref text
 );
+
+-- The audit trail is written constantly and read one record at a time: "show me everything that
+-- happened to this run", newest first. That read is the whole point of keeping the log, and
+-- without an index it degrades linearly with the log's total size - the one table guaranteed to
+-- grow forever, since nothing may ever delete from it.
+--
+-- `at desc` is part of the index rather than a separate sort: the query orders by it, so carrying
+-- it here means the ordering comes free instead of sorting the matched rows every time.
+--
+-- Measured by scripts/bench_indexes.py at 40,000 audit rows:
+--   where record_type = ? and record_id = ? order by at desc    3.33ms seq scan -> 0.07ms index scan
+create index audit_log_record_idx on audit_log (record_type, record_id, at desc);
 
 create trigger audit_log_append_only before update or delete on audit_log
   for each row execute function reject_evidence_change();

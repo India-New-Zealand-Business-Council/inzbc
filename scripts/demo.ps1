@@ -7,6 +7,11 @@
 #
 # What it shows: a member question in, a sourced answer out, with the tariff figures the FTA
 # actually changed and the citation they came from.
+#
+# From cmd.exe use scripts\demo.cmd instead. Typing a .ps1 path at a cmd prompt returns
+# silently, which reads like a script that ran and did nothing.
+#
+# Open http://localhost:5173, not 127.0.0.1: Vite binds localhost and ::1 only.
 param([switch]$ApiOnly)
 
 $ErrorActionPreference = "Stop"

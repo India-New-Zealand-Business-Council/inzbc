@@ -15,7 +15,10 @@ from fastapi.testclient import TestClient
 
 from services.api.decisions import (
     CurrentDecisions,
+    DecisionConflictError,
     DecisionNotPermittedError,
+    DecisionRecord,
+    DecisionRejected,
     QaSelfReviewError,
     ReportVersion,
     ReportVersionConflict,
@@ -46,6 +49,13 @@ class FakeReportRepository:
         self.role_error: Exception | None = None
         self.last_submit: dict | None = None
         self.last_qa: dict | None = None
+        self.role_id_error: Exception | None = None
+        self.role_id_result: int = 1
+
+    def role_id_for(self, actor_id: str, role_names: tuple[str, ...]) -> int:
+        if self.role_id_error is not None:
+            raise self.role_id_error
+        return self.role_id_result
 
     def submit(self, **kwargs) -> ReportVersion:
         self.last_submit = kwargs
@@ -77,6 +87,8 @@ class FakeReportRepository:
 class FakeDecisionRepository:
     def __init__(self) -> None:
         self.next_error: Exception | None = None
+        self.record_error: Exception | None = None
+        self.last_record: dict | None = None
 
     def current(self, report_version_id: str) -> CurrentDecisions:
         if self.next_error is not None:
@@ -89,6 +101,22 @@ class FakeDecisionRepository:
             distribution_authority=None,
             distribution_recipient=None,
             revisions={"CEO Ruling": 0, "Report Approval": 1, "Distribution Authority": 0},
+        )
+
+    def record(self, **kwargs) -> DecisionRecord:
+        self.last_record = kwargs
+        if self.record_error is not None:
+            raise self.record_error
+        return DecisionRecord(
+            id="00000000-0000-0000-0000-0000000000d1",
+            stream_id="00000000-0000-0000-0000-0000000000s1",
+            report_version_id=kwargs["report_version_id"],
+            kind=kwargs["kind"],
+            stream_revision=kwargs["expected_head_revision"] + 1,
+            value=kwargs["value"],
+            actor_id=kwargs["actor_id"],
+            decided_at=kwargs["decided_at"].isoformat(),
+            reason=kwargs["reason"],
         )
 
 
@@ -334,3 +362,171 @@ def test_a_negative_critical_count_is_refused(client: TestClient) -> None:
 def test_qa_notes_are_required(client: TestClient) -> None:
     """A QA result with no note records an outcome nobody can act on or dispute."""
     assert _qa(client, notes="").status_code == 422
+
+
+OWNER_ID = "00000000-0000-0000-0000-0000000000ow"
+
+
+def _decision_body(**overrides) -> dict:
+    return {
+        "expected_head_revision": 0,
+        "reason": "On track",
+        "owner_id": OWNER_ID,
+        "evidence_ref": "Doc ref 123",
+        "next_review": "2026-09-01",
+        "decided_at": datetime.now(UTC).isoformat(),
+        # Required by _DecisionIn: a retried decision write must not record two decisions, so the
+        # caller supplies the key that makes the retry recognisable. Fresh per call so tests do
+        # not collide on it.
+        "idempotency_key": str(uuid.uuid4()),
+    } | overrides
+
+
+def _ruling(client: TestClient, **overrides) -> object:
+    return client.post(
+        f"/api/reports/{VERSION_ID}/ruling",
+        json=_decision_body(**({"value": "Continue"} | overrides)),
+    )
+
+
+def _approval(client: TestClient, **overrides) -> object:
+    return client.post(
+        f"/api/reports/{VERSION_ID}/approval",
+        json=_decision_body(**({"value": "Approved"} | overrides)),
+    )
+
+
+def _distribution(client: TestClient, **overrides) -> object:
+    return client.post(
+        f"/api/reports/{VERSION_ID}/distribution",
+        json=_decision_body(**({"value": "Authorised"} | overrides)),
+    )
+
+
+def test_recording_a_ruling_returns_the_new_record(client: TestClient) -> None:
+    response = _ruling(client)
+
+    # 201: a decision is a new append-only record, not an update to an existing one.
+    assert response.status_code == 201
+    body = response.json()
+    assert body["kind"] == "CEO Ruling"
+    assert body["value"] == "Continue"
+    assert body["report_version_id"] == VERSION_ID
+
+
+def test_the_recorded_actor_comes_from_the_session(
+    client: TestClient, fake_decisions: FakeDecisionRepository
+) -> None:
+    _ruling(client)
+
+    assert fake_decisions.last_record["actor_id"] == "00000000-0000-0000-0000-0000000000aa"
+
+
+@pytest.mark.parametrize(
+    "endpoint,bad_value",
+    [("ruling", "Approved"), ("approval", "Continue"), ("distribution", "Continue")],
+)
+def test_a_value_from_the_wrong_stream_is_refused(
+    client: TestClient, endpoint: str, bad_value: str
+) -> None:
+    """`decision_value` is one enum shared by three streams; the schema does not stop a ruling
+    word reaching `/approval`, so the endpoint boundary is what has to."""
+    response = client.post(
+        f"/api/reports/{VERSION_ID}/{endpoint}", json=_decision_body(value=bad_value)
+    )
+    assert response.status_code == 422
+
+
+def test_approval_accepts_returned_for_correction(client: TestClient) -> None:
+    assert _approval(client, value="Returned for Correction").status_code == 201
+
+
+def test_distribution_carries_a_recipient(client: TestClient, fake_decisions: FakeDecisionRepository) -> None:
+    _distribution(client, distribution_recipient="sunilkaushalnz@gmail.com")
+
+    assert fake_decisions.last_record["distribution_recipient"] == "sunilkaushalnz@gmail.com"
+
+
+def test_ruling_never_carries_a_recipient_field(client: TestClient, fake_decisions: FakeDecisionRepository) -> None:
+    """RulingIn has no such field at all — proving the fake never receives one, not just that it
+    defaults to None, since None and absent mean the same thing to record()'s keyword."""
+    _ruling(client)
+
+    assert fake_decisions.last_record["distribution_recipient"] is None
+
+
+def test_an_actor_holding_no_decision_role_is_403(
+    client: TestClient, fake_reports: FakeReportRepository
+) -> None:
+    fake_reports.role_id_error = DecisionNotPermittedError("holds none of SIP Owner, Reviewer, Analyst")
+
+    assert _ruling(client).status_code == 403
+
+
+def test_an_unpermitted_kind_or_role_pair_is_403(
+    client: TestClient, fake_decisions: FakeDecisionRepository
+) -> None:
+    """Distinct from the role-holding check above: this is decision_role_permissions itself
+    refusing, inside DecisionRepository.record, after the coarse role gate already passed."""
+    fake_decisions.record_error = DecisionNotPermittedError("may not record a 'CEO Ruling' decision")
+
+    assert _ruling(client).status_code == 403
+
+
+def test_deciding_on_an_unsubmitted_version_is_404(
+    client: TestClient, fake_decisions: FakeDecisionRepository
+) -> None:
+    fake_decisions.record_error = KeyError("no CEO Ruling stream")
+
+    assert _ruling(client).status_code == 404
+
+
+def test_a_stale_revision_is_409_not_500(client: TestClient, fake_decisions: FakeDecisionRepository) -> None:
+    """Another decision landed after the one this call read; a caller that built on a superseded
+    ruling has to be told to re-read, not shown an opaque failure."""
+    fake_decisions.record_error = DecisionConflictError("stream is at revision 2, not 0")
+
+    assert _ruling(client).status_code == 409
+
+
+def test_a_rejected_write_is_422_not_500(client: TestClient, fake_decisions: FakeDecisionRepository) -> None:
+    """A bad owner_id or sod_exception_id surfaces as an integrity error from the database;
+    DecisionRejected turns that into a naming failure rather than an opaque 500."""
+    fake_decisions.record_error = DecisionRejected("owner_id violates foreign key constraint")
+
+    assert _ruling(client).status_code == 422
+
+
+def test_a_naive_decided_at_is_refused(client: TestClient) -> None:
+    naive = datetime.now(UTC).replace(tzinfo=None).isoformat()
+
+    assert _ruling(client, decided_at=naive).status_code == 422
+
+
+def test_a_negative_expected_head_revision_is_refused(client: TestClient) -> None:
+    assert _ruling(client, expected_head_revision=-1).status_code == 422
+
+
+def test_reason_cannot_be_blank(client: TestClient) -> None:
+    assert _ruling(client, reason="").status_code == 422
+
+
+def test_conditions_defaults_to_empty(client: TestClient, fake_decisions: FakeDecisionRepository) -> None:
+    _ruling(client)
+
+    assert fake_decisions.last_record["conditions"] == []
+
+
+def test_conditions_are_passed_through(client: TestClient, fake_decisions: FakeDecisionRepository) -> None:
+    _ruling(client, conditions=["Subject to legal review"])
+
+    assert fake_decisions.last_record["conditions"] == ["Subject to legal review"]
+
+
+def test_the_decision_response_shape_is_closed(client: TestClient) -> None:
+    body = _ruling(client).json()
+
+    assert set(body) == {
+        "id", "stream_id", "report_version_id", "kind", "stream_revision",
+        "value", "actor_id", "decided_at", "reason",
+    }

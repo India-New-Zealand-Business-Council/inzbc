@@ -23,10 +23,19 @@ found by the #132 privacy verification pass. A retention *period* is still an IN
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, ConfigDict, Field
+from typing import Annotated
 
-from apps.comms.draft import BlankBriefError, ContentType, generate_draft
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    HttpUrl,
+    StringConstraints,
+    model_validator,
+)
+
+from apps.comms.draft import BlankBriefError, Brief, ContentType, Tone, generate_draft
 from services.api.auth import (
     REVIEWER,
     SECRETARIAT,
@@ -50,6 +59,10 @@ from services.api.session import AUTH_RESPONSES, read_access, write_access
 
 router = APIRouter(prefix="/api/comms", tags=["Comms Assistant"], responses=AUTH_RESPONSES)
 
+# The old free-text `brief` cap. Kept as the ceiling across all the structured fields together, so
+# #303 provably shrank the paste target rather than growing it. See `DraftIn._within_total_budget`.
+TOTAL_BRIEF_BUDGET = 4000
+
 
 def get_model_gateway() -> ModelGateway:
     """FastAPI dependency, overridden in tests with a fake - same pattern as
@@ -60,10 +73,67 @@ def get_model_gateway() -> ModelGateway:
 
 
 class DraftIn(BaseModel):
+    """Structured brief (#303), replacing the single 4,000-character free-text box.
+
+    **Breaking change to the request shape only.** `DraftOut` and `CommsDraftOut` are unchanged,
+    because the brief is rendered to text before it is stored - so the list, read and approve
+    paths, and the review UI that uses them, are untouched. Only the submit path moves.
+
+    The limits are the point. A 200-character topic and eight 300-character key points is a much
+    smaller target than one 4,000-character box for pasting whatever is on the clipboard, which is
+    the disclosure route #303 describes. It is mitigation, not a boundary: a staff member can
+    still type a member's name into `topic`, and the source declared to the gateway stays
+    `STAFF_AUTHORED` rather than falsely claiming to be minimised. See `apps/comms/draft.Brief`.
+    """
+
     model_config = ConfigDict(extra="forbid")
 
     content_type: ContentType
-    brief: str = Field(min_length=1, max_length=4000)
+    topic: str = Field(min_length=1, max_length=200)
+    # Capped in both directions: eight points, 300 characters each. Without a per-item limit the
+    # list is a 4,000-character box again, wearing a different name.
+    key_points: list[Annotated[str, StringConstraints(max_length=300)]] = Field(
+        default_factory=list, max_length=8
+    )
+    # HttpUrl rather than str so a pasted paragraph cannot arrive dressed as a link.
+    links: list[HttpUrl] = Field(default_factory=list, max_length=5)
+    tone: Tone = "formal"
+
+    @model_validator(mode="after")
+    def _within_total_budget(self) -> DraftIn:
+        """Caps the total staff-controlled text, not just each field.
+
+        **This exists because the per-field caps alone made the problem worse.** #303 replaced a
+        single 4,000-character box in order to shrink what could be pasted in one action. Summing
+        the individual limits showed the opposite: 200 topic + 8x300 key points + 5 URLs, and
+        pydantic's HttpUrl accepts roughly 2,000 characters per URL, which totals **12,940** -
+        3.2x the box it replaced, with 10,340 of it in the links field.
+
+        Per-field limits do not compose into a total. This one does, and it is set to the old
+        4,000 so the change cannot silently grow the surface it was written to shrink.
+
+        Measured, not assumed: the numbers above come from constructing this model with maximal
+        values, which is what `test_the_total_budget_is_not_larger_than_the_box_it_replaced` does.
+        """
+        total = (
+            len(self.topic)
+            + sum(len(point) for point in self.key_points)
+            + sum(len(str(link)) for link in self.links)
+        )
+        if total > TOTAL_BRIEF_BUDGET:
+            raise ValueError(
+                f"brief is {total} characters; the limit across topic, key points and links is "
+                f"{TOTAL_BRIEF_BUDGET}. Shorten it or use fewer links."
+            )
+        return self
+
+    def to_brief(self) -> Brief:
+        return Brief(
+            topic=self.topic,
+            key_points=tuple(self.key_points),
+            links=tuple(str(link) for link in self.links),
+            tone=self.tone,
+        )
 
 
 class DraftOut(BaseModel):
@@ -150,18 +220,22 @@ def draft(
     - `GatewayCallError` -> 502. The provider call itself failed after a retry - genuinely down,
       distinct from "not configured".
     """
+    brief = body.to_brief()
     try:
-        result = generate_draft(gateway, body.content_type, body.brief)
+        result = generate_draft(gateway, body.content_type, brief)
     except BlankBriefError as error:
-        # Pydantic's min_length=1 already rejects a request body with no characters at all; this
-        # catches a whitespace-only brief, which min_length lets through.
+        # Pydantic's min_length=1 on `topic` already rejects a body with no characters at all;
+        # this catches a whitespace-only topic, which min_length lets through.
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error)) from error
     except (GatewayNotConfiguredError, RedactionNotConfiguredError) as error:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(error)) from error
     except GatewayCallError as error:
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, detail=str(error)) from error
+    # The rendered brief is what is stored, so `comms_drafts.brief` stays text and every read path
+    # keeps working. It is also what was actually sent to the model, which is the thing a reviewer
+    # or an incident responder needs to see - not the form that produced it.
     record = repo.create(
-        body.content_type, body.brief, result.text, authored_by=principal.user_id
+        body.content_type, brief.render(), result.text, authored_by=principal.user_id
     )
     return DraftOut(draft=result.text, id=record.id, status=record.status)
 

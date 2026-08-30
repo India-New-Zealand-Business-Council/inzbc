@@ -319,6 +319,61 @@ class DecisionRepository:
                         actor_role_id=actor_role_id,
                     )
 
+                # ADR-0005 §"Authorised is valid only when": a distribution authority may not be
+                # recorded as `Authorised` unless the same immutable report version already has an
+                # `Approved` report approval and a `Continue` CEO ruling, and carries no open
+                # Critical QA failure.
+                #
+                # **None of this was enforced anywhere.** The route checked only that a recipient
+                # was present, and `record()` checked permission, authorship and revision — so a
+                # report with no approval at all, and a Failed QA status, could be recorded as
+                # authorised for release. That is the platform's central control (REQ-G-04), and
+                # it was specified, documented and absent. Found by adversarial review.
+                #
+                # Checked here rather than in the router because the repository is the authority
+                # in this codebase: a second HTTP surface, a script or a future agent calling
+                # `record()` directly must hit the same refusal. Read inside the same transaction
+                # and after the permission checks, so a concurrent approval cannot slip in between
+                # the read and the write.
+                #
+                # `Continue With Correction` deliberately does not satisfy this: the ADR requires a
+                # corrected version, a fresh approval and a fresh authority decision before
+                # anything is sent.
+                if kind == DISTRIBUTION_AUTHORITY and value == "Authorised":
+                    gate = conn.execute(
+                        "select "
+                        "  (select dr.value from decision_records dr "
+                        "     join decision_streams ds on ds.current_record_id = dr.id "
+                        "    where ds.report_version_id = %(v)s and ds.kind = %(approval)s"
+                        "  ) as approval, "
+                        "  (select dr.value from decision_records dr "
+                        "     join decision_streams ds on ds.current_record_id = dr.id "
+                        "    where ds.report_version_id = %(v)s and ds.kind = %(ruling)s"
+                        "  ) as ruling, "
+                        "  (select r.qa_status from report_versions rv "
+                        "     join runs r on r.id = rv.run_id where rv.id = %(v)s) as qa_status",
+                        {
+                            "v": report_version_id,
+                            "approval": REPORT_APPROVAL,
+                            "ruling": CEO_RULING,
+                        },
+                    ).fetchone()
+                    unmet = []
+                    if gate["approval"] != "Approved":
+                        unmet.append(f"report approval is {gate['approval'] or 'undecided'}")
+                    if gate["ruling"] != "Continue":
+                        unmet.append(f"CEO ruling is {gate['ruling'] or 'undecided'}")
+                    if gate["qa_status"] == "Failed":
+                        unmet.append("QA failed")
+                    if unmet:
+                        raise DecisionRejected(
+                            "cannot authorise distribution: "
+                            + "; ".join(unmet)
+                            + ". ADR-0005 permits Authorised only on a version whose approval is "
+                            "Approved, whose ruling is Continue, and which carries no open "
+                            "Critical QA failure. Record 'Not Authorised' to refuse explicitly."
+                        )
+
                 stream = conn.execute(
                     "select id, current_record_id, head_revision from decision_streams "
                     "where report_version_id = %s and kind = %s for update",
