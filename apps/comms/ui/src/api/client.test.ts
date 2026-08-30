@@ -66,7 +66,9 @@ describe('requestCommsDraft', () => {
   })
 
   it('trims and drops blank key points and links rather than sending them', async () => {
-    const spy = mockFetch({ draft: 'x' })
+    // `id` and `status` are required by `isCommsDraftResult` since drafts became persisted rows;
+    // a mock without them is rejected as an unrecognised response before the assertion is reached.
+    const spy = mockFetch({ draft: 'x', id: DRAFT_ID, status: 'Draft' })
     await requestCommsDraft({
       contentType: 'newsletter',
       topic: 'Q3 update',

@@ -564,7 +564,7 @@ describe('CommsAssistant', () => {
   }
 
   async function generateADraft() {
-    await userEvent.type(screen.getByLabelText(/brief/i), 'Draft this')
+    await userEvent.type(screen.getByLabelText(/topic/i), 'Draft this')
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
     await screen.findByText('Delete me')
   }
@@ -649,8 +649,8 @@ describe('CommsAssistant', () => {
     mockFetchWithDelete({ ok: true, status: 204 })
     render(<CommsAssistant />)
     await generateADraft()
-    await userEvent.clear(screen.getByLabelText(/brief/i))
-    await userEvent.type(screen.getByLabelText(/brief/i), 'Second brief')
+    await userEvent.clear(screen.getByLabelText(/topic/i))
+    await userEvent.type(screen.getByLabelText(/topic/i), 'Second brief')
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
     await screen.findByText('Delete me', { selector: 'pre' })
     expect(await screen.findByText(/recent drafts/i)).toBeInTheDocument()

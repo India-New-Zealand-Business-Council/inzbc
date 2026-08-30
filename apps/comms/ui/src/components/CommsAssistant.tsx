@@ -15,8 +15,7 @@ import {
 /** Splits a textarea into trimmed, non-empty lines. */
 function lines(value: string): string[] {
   return value
-    .split('
-')
+    .split('\n')
     .map((line) => line.trim())
     .filter(Boolean)
 }
