@@ -1,8 +1,0 @@
-INTENTIONAL TEMPLATE DEVIATIONS
-
-- All output slides map one-to-one to the same-numbered source slide. No source slide is omitted and no new slide primitive is added.
-- Slides 5 and 14 replace inherited image frames with real supplied INZBC evidence while preserving frame geometry, crop semantics, object names, and z-order.
-- Slide 8 adjusts the widths of the three inherited comparison bars to encode 99.3%, 88.6%, and 86.4% merge rates. The original chart grammar and colors remain unchanged.
-- Every visible sample or bracketed placeholder is rewritten in its inherited object. No overlay text boxes are used.
-- Masters, layouts, theme parts, background images, decorative orbs, page markers, progress rails, and native transitions are preserved.
-
