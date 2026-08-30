@@ -1,7 +1,10 @@
-"""Postgres persistence for Comms Assistant drafts and their approval (#193/#60/#65 dependency).
+"""Postgres persistence for Comms Assistant drafts, their approval, and their deletion
+(#193/#60/#65 dependency; deletion is #342).
 
-Two acts, two audited writes: `create()` records a generated draft; `approve()` records a named
-human's approval of it. Deliberately no `reject`/`return for correction`/`supersede` path -
+Three acts, three audited writes: `create()` records a generated draft; `approve()` records a
+named human's approval of it; `delete()` removes it outright, for the case #342 was found by -
+`comms_drafts` had no retention rule and no way to remove a row a staff member typed a member's
+name into by mistake. Deliberately no `reject`/`return for correction`/`supersede` path -
 `database/schema.sql`'s `comms_draft_status` enum only has `Draft`/`Approved`, matching what this
 module actually does. Nothing here sends or publishes anything; the send/publish handoff mechanism
 is unspecified anywhere in this codebase (`docs/api-integration-spec.md` Open item #4), so building
@@ -144,36 +147,24 @@ class CommsDraftRepository:
             conn.commit()
         return _row_to_record(row)
 
-    def delete(self, draft_id: str, *, principal: Principal, reason: str) -> None:
-        """Removes a draft. The act is audited; the text is not (#342).
+    def delete(self, draft_id: str, *, actor_id: str, reason: str) -> None:
+        """Removes a draft outright. Any status is deletable, including `Approved` — deleting the
+        row does not erase the approval; `approve()` already wrote its own audit entry and that
+        survives. The act stays on the record; only the text goes.
 
-        **Why this exists.** `comms_drafts.brief` is the one field in the system where personal
-        data can arrive without anyone deciding it should: a staff member types it, and redaction
-        cannot remove a name from prose (ADR-0006). Until this existed, someone who typed a
-        member's name into a brief had no way to remove it.
+        **Deliberately does not pass the brief or draft text to `record_audit`.** `audit_log` is
+        append-only (trigger-enforced, insert/select-only grant) — copying the text into
+        `old_value` would make it permanent in the one table nothing can remove it from, the exact
+        opposite of what someone deleting a draft is trying to achieve. `old_value`/`new_value`
+        here carry only the status word (e.g. `'Approved'` -> `'Deleted'`), the same shape
+        `approve()` already uses, never the brief or the draft.
 
-        **The audit row deliberately does not record what was deleted**, and that is the whole
-        design. `record_audit` normally captures `old_value` so a reader can see what changed;
-        doing that here would copy the brief's text into `audit_log`, which *is* append-only and
-        whose grant is insert/select only. The sensitive text would become permanent in the one
-        table nothing can remove it from - the exact opposite of what a caller invoking this is
-        trying to achieve. So the record says a deletion happened, who did it, and why; it does
-        not say what it contained.
-
-        For the same reason `reason` is operator free text and is stored in an append-only table:
-        it must describe *why*, not repeat the thing being removed. The API docstring says so to
-        the caller, since this function cannot enforce it.
-
-        **Any status may be deleted, including Approved.** Deleting the row does not erase the
-        approval: `comms_draft.approve` already wrote its own audit entry, and that entry survives.
-        The act stays on the record; only the text goes.
+        `SELECT ... FOR UPDATE` before deleting, so a concurrent approve cannot land between the
+        existence check and the delete and record an approval of a row that no longer exists.
         """
         with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
-            # Locked before deleting so a concurrent approve cannot land between the existence
-            # check and the delete, which would record an approval of a row that no longer exists.
             current = conn.execute(
-                "select id, content_type from comms_drafts where id = %s for update",
-                (draft_id,),
+                "select status from comms_drafts where id = %s for update", (draft_id,)
             ).fetchone()
             if current is None:
                 raise KeyError(f"no comms draft {draft_id!r}")
@@ -181,12 +172,12 @@ class CommsDraftRepository:
             conn.execute("delete from comms_drafts where id = %s", (draft_id,))
             record_audit(
                 conn,
-                user_id=principal.user_id,
+                user_id=actor_id,
                 action="comms_draft.delete",
                 record_type="comms_drafts",
                 record_id=draft_id,
-                # No old_value. See the docstring - this omission is the point, not an oversight.
-                new_value=None,
+                old_value=current["status"],
+                new_value="Deleted",
                 reason=reason,
             )
             conn.commit()

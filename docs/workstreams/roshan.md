@@ -41,7 +41,86 @@ the local Postgres verification (114 passed) in the PR body. Worth a standup men
 same branch-level fault hits someone else's PR later; not otherwise unresolved.
 
 ## In review (opened, awaiting merge)
-- [ ] SIP-184 dry run (#55, PR #264): Bhanu's second review round found two real integration
+- [ ] Explainer public/member/internal depth levels (#187, PR #327, **refs #187, not closes** —
+  `answer_query_at_depth()` has no runtime caller yet, wiring it into `/api/fta/query` is
+  `services/api`, tracked as a follow-up): `PublicAnswer`/`MemberAnswer`/`InternalAnswer`
+  alongside the existing `answer_query()`/`ExplainerAnswer` (untouched, for
+  `services/api/main.py` backward compat). **23 Aug, Bhanu's review round — two real audience
+  boundary bugs, both fixed:** `PublicAnswer` had wrongly dropped `citation`/`verified_at`,
+  treating them as evidence to hold back; `docs/modules/fta-centre.md` requires every material
+  answer, public or not, to carry both, so they're restored — the actual public-tier exclusion
+  is `id`/`source_tier`/`notes` only. The member tier reused `ExplainerAnswer` unchanged, which
+  carries reviewer/drafting `notes` some corpus entries have; added `MemberAnswer`, a distinct
+  type (not a re-export) so `notes` is structurally absent there too. Evidence count corrected:
+  **14 new tests** (21→35 in `test_explainer.py`, 37→51 total `apps/fta`), not the 18 first
+  reported. Mutation-tested both fixes: re-added `notes` to `MemberAnswer` and the
+  citation/verified_at strip to `PublicAnswer` in turn, confirmed each exclusion test caught it,
+  reverted. Replied inline to both of Bhanu's findings, re-requested review. **CI blocked as of
+  24 Aug** — every job failing in 2-4s on "recent account payments have failed or your spending
+  limit needs to be increased" (org GitHub Actions billing, not a code issue) — flagged, not
+  something I can fix; will re-verify CI once billing is resolved.
+
+## Next up
+- SHARED-OK: SIP-050 relevance/signal/confidence scoring moved to Bhanu's worklog — it runs
+  through the model gateway he owns. `assessment.py` stays the validation/carry layer here.
+- Comms Assistant service side and #55's dry-run unblock are both **done** — see Done below
+  (PR #317, PR #264). The #31 CI ruff pin is also closed: Bhanu's PR #325 brought
+  `apps/sip/core`, `scripts/board.py` and `services/api` clean under 0.16.0 and bumped the pin,
+  the one thing outside my lane that #31 was waiting on.
+- [ ] End-to-end pipeline run against the SIP-184 SOP (#55, issue stays open). All the code
+  `#264` needed is merged and the dry run runs clean end-to-end against a fixture file — what's
+  left is INZBC's own call, not code: SIP-191's run authority window (27-31 Jul) has expired, so
+  no real production run can happen without a fresh controlled decision, and a live `agent.py`
+  fetch in CI needs a new PAT secret (an infra/admin decision). Nothing to build here until
+  either lands.
+- [ ] Collection-engine reliability (#208, via `daily-india-nz-news-agent`'s own PR flow). All
+  four days built: Day 1 — test harness (`daily-india-nz-news-agent#13`, 49 characterization
+  tests; a real `ModuleNotFoundError` under plain `pytest` found and fixed via
+  `tests/conftest.py`). Days 2-4 (`#14`, stacked on `#13`'s branch) — source freshness
+  classification (`ok`/`no_recent`/`empty`/`error`, RSS vs. GDELT need opposite empty-result
+  rules since GDELT applies its time window server-side); timeout+retry+entry-shape recovery on
+  `fetch_rss_news` (had **no timeout at all** before this); a regression test locking
+  `SIP_AUTOMATED_DISTRIBUTION_ENABLED`'s default-off. 12 commits, 121 tests, every real defect
+  mutation-tested. Both PRs `MERGEABLE`, CI green, **awaiting review** — nothing left to build
+  until they land. Left open by design: cross-run freshness-counter persistence, written up with
+  real tradeoffs in `docs/source-freshness.md` for the team to decide.
+- [ ] FTA content depth and coverage (#186, #187). #187 (public/member/internal depth split) —
+  see In review above, PR #327, addressing Bhanu's 23 Aug findings. #186 (cover the ten
+  client-named sectors — wool, wine, seafood, primary industries, tourism, education, defence
+  and security, investment, immigration, sports) is content-sourcing work, not a code change:
+  the corpus today only has verified facts for four goods categories (Agriculture, Cross-sector,
+  Dairy, Infrastructure — the "goods first" scope #219 settled). Adding a sector means sourcing
+  and verifying real MFAT/treaty facts for it first, per BR2 — nothing gets written about a
+  sector until it has a source. Not started; next once a sector's facts are actually sourced.
+- Not committed scope (#193 Comms newsletter/magazine workflow, #194 sector opportunity briefs):
+  both issues explicitly say "add only if the client raises its priority" — not picked up
+  unless that happens.
+- [ ] Architecture diagrams, **highest priority** (#331, #332, assigned 20 Aug). #331: two
+  sequence diagrams (FTA query flow — the `confirmed` filter and no-match escalation branch,
+  making the "no model call" property explicit; Comms draft-to-approve — the self-approval
+  refusal as a normal outcome, not an error case). #332: a defence-in-depth diagram of the model
+  data boundary — source refusal at the gateway, `minimise()` field allowlisting, policy-driven
+  redaction, the gateway's own fail-closed behaviour, operator procedure as the outermost layer.
+  Both fully scoped with acceptance criteria in their issues; pure documentation, no code risk.
+  Not started.
+- [ ] FTA corpus/collector provenance and measured evidence (#337, assigned 21 Aug). Client
+  feedback was the work "looks like an AI API wrapper with no real backend" — this is proving
+  otherwise: a committed corpus-coverage report (facts per sector, Tier 1 confirmed vs. stale)
+  and a reproducible, measured collector run showing dedupe/malformed-item isolation/mandatory-
+  source gate actually working, with real counts, not descriptions. Not started.
+- [ ] Realistic seed dataset (#338, assigned 22 Aug). Replace the 4-candidate demo seed with a
+  realistic one sourced from the real SIP-185 register, spanning multiple lifecycle states and
+  verification outcomes (including Unverified/Rejected), with duplicates dedupe actually
+  catches — idempotent, replacing the demo seed rather than sitting beside it. Not started.
+
+See Blocked / decisions needed for what's still open before any of this runs live (secrets,
+INZBC sector/disclaimer sign-off).
+
+## Done
+**Merged since (19 Aug 2026) — kept below for the narrative history, checked off as verified
+against `main` rather than deleted; #55 the issue stays open (blocked on INZBC's run-authority
+decision, not on this code) even though PR #264 that unblocked it is merged.**
+- [x] SIP-184 dry run (#55, PR #264, merged 19 Aug). Bhanu's second review round found two real integration
   gaps his first (approving) pass missed — the `workflow_dispatch` job never seeds a `users` row,
   so `runs.initiated_by`'s NOT NULL FK fails the first `create_run` call; and
   `scripts/seed_source_library.py` was added but never invoked, so `source_library` stayed empty.
@@ -126,7 +205,7 @@ same branch-level fault hits someone else's PR later; not otherwise unresolved.
   B008 ignores, which he raised only as a heads-up for #270's ruff bump — inert under the current
   pin, and leaving it means whoever lands #270 meets the failure without the context. 789 passed
   against real Postgres, ruff clean, no codegen drift, lint/typecheck clean, 9/9 CI green, MERGEABLE.
-- [ ] Registers: action-register, watch-lists, exceptions (#209): the controlled launch recorded
+- [x] Registers: action-register, watch-lists, exceptions (#209): the controlled launch recorded
   source outcomes, exceptions and carried-forward actions by hand — schema for all three has
   existed since DB schema v0.1 (Bhanu's Workstream A), nothing wrote to it. Built persistence +
   API only, explicitly not `docs/sip/build-plan.md`'s "Registers UI" (Paras's Workstream C) —
@@ -139,7 +218,7 @@ same branch-level fault hits someone else's PR later; not otherwise unresolved.
   check and confirming the test written for it fails. 842 passed against a real local Postgres,
   ruff clean, `EXPECTED_ROLES` map caught all 12 new routes on first run as designed, `pnpm -r
   lint`/`typecheck` clean, OpenAPI + TS clients regenerated, `schemas/api-contract.md` updated.
-- [ ] Approved facts library (#188, PR #321): `approved_facts` table + `FactRepository`
+- [x] Approved facts library (#188, PR #321): `approved_facts` table + `FactRepository`
   (draft/approve/archive, self-approval refused at both the app layer and a schema CHECK
   constraint) + `/api/facts` (Analyst drafts, Reviewer/SIP Owner approves - same split as
   `candidates/verify`). Corrections chain via `supersedes_id` rather than overwriting, same
@@ -147,19 +226,19 @@ same branch-level fault hits someone else's PR later; not otherwise unresolved.
   Branched fresh off `main` rather than stacked on the existing registers branch, since #319 (also
   mine, also awaiting review) is a separate PR and mixing new scope into it mid-review would have
   changed what its reviewer sees.
-- [ ] Backend restart/rehydration integration test (#130, PR #255): kills a real `uvicorn`
+- [x] Backend restart/rehydration integration test (#130, PR #255): kills a real `uvicorn`
   subprocess mid-run and starts a fresh one on the same port, proving a run's state survives an
   actual process restart, not just a fresh request. CI green (151 passed against a real local
   Postgres running the actual merged `main` — both #120's and #121's routers, plus Bhanu's
   hardening middleware).
-- [ ] Dashboard generated-types drift (#271, PR #274): found while chasing an unrelated `frontend`
+- [x] Dashboard generated-types drift (#271, PR #274): found while chasing an unrelated `frontend`
   CI failure on #273 — `apps/dashboard/ui/src/api/schema.ts` was a generation behind because #268
   branched before #261 added `POST /api/comms/draft`, so `pnpm run codegen`'s drift check fails on
   every PR that touches Python, including mine. Someone had already filed #271 with the exact
   diagnosis and fix; ran `pnpm run codegen` on current `main` and committed just the one stale
   file — no source change. `pnpm -r lint`/`typecheck` clean across all five UI workspaces, all 9
   CI checks green. Once this merges, #273's `frontend` check clears on rebase too.
-- [ ] Central tariff database for the Explainer (#185, PR #273): `TariffOutcome` carries
+- [x] Central tariff database for the Explainer (#185, PR #273): `TariffOutcome` carries
   direction/current/commencement/staged/final tariff + implementation period, sourced from the
   NIA's Key Tariff Outcomes table. Second commit wires those fields into `ExplainerAnswer` itself
   (`_to_answer()`) — the first commit only added them to the corpus, so a member query still
@@ -168,140 +247,6 @@ same branch-level fault hits someone else's PR later; not otherwise unresolved.
   passed) and `docs/fta-source-corpus.md`'s member-facing-mapping section updated to match. The
   `frontend` check that was red here was the #271 generated-types drift, not this diff; #274 fixed
   it on `main`, so the check clears on this rebase (13 Aug 2026).
-
-## Next up
-
-**Top priority, 20 Aug 2026 — architecture diagram pack for the project coordinator.** Ahead of
-the comms service side and the end-to-end run. Standard and the full seventeen-diagram set are in
-[docs/architecture-diagram-plan.md](../architecture-diagram-plan.md). Both are documentation of
-code that already exists, so neither is blocked on anything.
-
-- [ ] **#331 Service flow diagrams: FTA query and Comms draft-to-approve.** Both flows encode a
-      refusal that is the point of the service, and neither refusal appears in any diagram. The
-      FTA one must make the no-model-call boundary explicit.
-- [ ] **#332 Model data boundary: the defence-in-depth layers.** Source refusal, `minimise()`,
-      redaction, gateway, operator procedure. Each layer states what it *cannot* do — a layer
-      documented only by its successes reads as a guarantee, which is what ADR-0006 exists to
-      prevent.
-- [ ] **#338 Replace the demo seed with a realistic dataset.** Four candidates on a run keyed
-      `DEMO-` is what every screenshot and walkthrough currently runs on, and it reads as a toy.
-      Needs your judgement on what realistic intelligence data looks like — real SIP-185 sources,
-      a spread of verification states, runs mid-lifecycle, duplicates dedupe actually catches, at
-      least one uncovered mandatory source. Nothing invented and presented as real
-      (`PROJECT-RULES.md`).
-
-- SHARED-OK: SIP-050 relevance/signal/confidence scoring moved to Bhanu's worklog — it runs
-  through the model gateway he owns. `assessment.py` stays the validation/carry layer here.
-- [ ] Comms Assistant service side (`apps/comms`): draft-generation flow with the named-reviewer
-  gate, per [docs/modules/comms-assistant.md](../modules/comms-assistant.md). **Unblocked as of
-  12 Aug:** the Executive Sponsor approved the redaction policy on 9 August, and it is committed at
-  `config/redaction-policy.json` (`docs/redaction-policy.md`). The service side can now be built.
-  The gateway still refuses every call wherever `REDACTION_POLICY_PATH` is unset, which is the
-  intended default, so a live call needs that set in the environment as well. Non-negotiable per
-  `comms-assistant.md`'s "drafts only, adversarially tested" promise: the named-reviewer gate is
-  not optional. Boundary refusal has since landed too, so every model call declares a
-  `PromptSource` and a prompt built from member records must go through `minimise()` and declare
-  `MINIMISED_RECORD`. The brief itself is `STAFF_AUTHORED`, which is a declaration rather than a
-  guarantee the text is clean, so do not paste member details into one.
-- [ ] End-to-end pipeline run against the SIP-184 SOP (#55). **Progress 8 Aug 2026 — dry run now
-  runs clean, real bugs found and fixed by actually running it, not just testing against fakes:**
-  - Secrets confirmed set (`gh secret list` on both `inzbc` and `daily-india-nz-news-agent`
-    matches `docs/sip/README.md`'s table exactly, since 22-25 Jul).
-  - **SIP-191 run authority has expired** (`docs/sip/launch/launch-config.md`'s window was 27-31
-    Jul 2026; SIP-184's fail-closed list treats an out-of-window run as a Critical stop, never
-    downgradable to a warning). No real SIP-184 production run can happen today without a fresh
-    controlled decision — INZBC's call, not a code blocker. `apps/sip/collector/run_dry_run.py`
-    stamps every run `DRYRUN-...` (never `RUN-...`) so this can't be mistaken for an authorised
-    row.
-  - **Built the orchestration that never existed:** `ingest_articles()`/`create_run` had only ever
-    been called from tests before this. `run_dry_run.py` runs the real SIP-184 step-2/5 sequence
-    against a live `services/api` + Postgres.
-  - **Built the two `services/api` pieces this needed and #55 was actually blocked on** —
-    correcting what I told you 8 Aug earlier today: I'd misread `database/schema.sql:235`'s
-    "deliberately unseeded" comment as being about `source_library`; re-checking it, that comment
-    is on `distribution_configuration`, a different table entirely. `source_library` was just
-    genuinely never seeded, no policy reason, so building it was the right call:
-    `services/api/source_library.py` (`GET /api/source-library`),
-    `scripts/seed_source_library.py` (idempotent seed from the existing SIP-185 CSV loader),
-    `services/api/source_checks.py` (`POST`/`GET .../source-checks`, upserts on
-    `(run_id, source_id)`). Live-Postgres tests for all three. This crosses into Bhanu's
-    `services/api`/`database` lane — recorded here per the worklog's own SHARED-OK convention,
-    one-off, not a lane transfer; flag at standup if it should come back.
-  - **Three real contract bugs, found only by running against a live server, not by any fake-client
-    test:** `SipPipelineClient.create_run` sent `Run`'s full dump including `coverage_timezone`
-    (non-None default) → 422 against `CreateRunIn`'s `extra="forbid"`. `create_candidate` had no
-    way to send `actor_id` at all (`CaptureCandidateIn` requires it; `Candidate` doesn't carry it —
-    audit-only). `create_candidate` also leaked `Candidate.verification`'s `Unverified` default the
-    same way `create_run` leaked `coverage_timezone`. All three fixed in `client.py`, all three now
-    covered by `apps/sip/pipeline/tests/test_client.py` (didn't exist before either). Every fake
-    client in `test_ingest.py`/`test_pipeline_integration.py`/`test_run_dry_run.py` updated to
-    match the new `create_candidate(candidate, actor_id)` signature.
-  - **Deliberately not recording source-check outcomes for the real 112 mandatory sources in the
-    dry run**, even though the write path now exists: nobody actually checked them for a run with
-    no authority, and writing "Included"/"Excluded" against the real SIP-185 register for sources
-    never visited would be inventing data into a real system — the same rule `CLAUDE.md` states
-    for statistics and board names. Evidence honestly reports all 112 as missing.
-  - **Still not wired:** a live `agent.py` fetch. `run_dry_run.py` consumes a fixture file
-    (`apps/sip/collector/data/dry_run_fixture_articles.json`, clearly labelled synthetic) — pulling
-    real output across repos in CI needs a new PAT secret, an infra/admin decision, not something
-    to add unilaterally.
-  - Full local verification before pushing: real Postgres (not CI's — a local instance, schema
-    applied fresh), 392 passed, `ruff` clean, `pnpm` lint/typecheck clean, OpenAPI schema +
-    generated TS client regenerated and committed (new endpoints), and the dry run itself run
-    end-to-end against a live local `services/api`: run created, 2 fixture candidates captured,
-    exit 0. PR #264 (updated), plus `.github/workflows/sip-dry-run.yml` to reproduce this in CI
-    on demand.
-- [ ] Collection-engine reliability (#208, via `daily-india-nz-news-agent`'s own PR flow). Scoped
-  into a 4-day plan, ~6h/day (logged on #208): `agent.py` is 1364 lines with zero test coverage,
-  no retry/timeout on RSS fetches, no per-source freshness tracking, no shape-change detection.
-  Day 1 — test harness: `daily-india-nz-news-agent#13`, 49 characterization tests on the
-  deterministic logic (freshness/date handling, relevance/sector scoring, `clean_articles`).
-  First CI run failed (`ModuleNotFoundError: No module named 'agent'` — `tests/` has no
-  `__init__.py`, so plain `pytest` inserts `tests/` into `sys.path` rather than the repo root;
-  local verification had used `python -m pytest`, which adds cwd for free and hid the gap).
-  Fixed in `tests/conftest.py`, reverified against CI's exact invocation. Day 2 (source freshness
-  enforcement), Day 3 (recovery on source-shape-change), Day 4 (fail-closed gate hardening +
-  wrap-up) not started yet.
-- [ ] End-to-end pipeline run once org-repo secrets land (Bhanu's item): collector → capture →
-  assessment live against the SIP-184 SOP; fix what breaks; record the run. (#55's own detailed
-  progress log lives on `feat/roshan/sip-dry-run`/PR #264 — not duplicated here until it merges,
-  to avoid two branches disagreeing about the same narrative.)
-- [ ] Collection-engine reliability (#208, via `daily-india-nz-news-agent`'s own PR flow). 4-day
-  plan, all four days now built: Day 1 — test harness, `daily-india-nz-news-agent#13` (49
-  characterization tests; a real `ModuleNotFoundError` under plain `pytest` found and fixed via
-  `tests/conftest.py`, reverified against CI's exact invocation). Days 2-4 — `#14`, stacked on
-  `#13`'s branch (not `main`) so review can start without waiting on `#13` to merge: source
-  freshness classification (`ok`/`no_recent`/`empty`/`error`, distinguishing a quiet news day from
-  a dead feed — RSS and the three GDELT-backed sources need opposite rules since GDELT applies its
-  time window server-side); timeout+retry+entry-shape recovery on `fetch_rss_news` (which had
-  **no timeout at all** before this, unlike GDELT's existing `timeout=45`) and retry on
-  `gdelt_query`; a regression test locking `SIP_AUTOMATED_DISTRIBUTION_ENABLED`'s default-off and
-  exact-string comparison. 12 commits, 121 tests, all mutation-tested (each real defect verified
-  by deliberately reintroducing it and confirming the test suite caught it) — including two bugs
-  caught during development itself: the coverage-qualified no-signal line first claimed "all
-  sources answered" with zero outcomes recorded, and `retry_transient`'s default `sleep=time.sleep`
-  bound the real function at import time so a test patching `agent.time.sleep` never reached it,
-  hanging the suite on real sleeps until found. `#14` is `MERGEABLE`, 5/5 CI green. Left open by
-  design rather than solved unilaterally: cross-run freshness-counter persistence, written up with
-  real tradeoffs in `docs/source-freshness.md` for the team to decide.
-- [ ] Bump the CI ruff pin to 0.16.0 (#31): the collector/FTA findings are fixed and merged (PR
-  #152), but the pin itself is still 0.15.22 pending `apps/sip/core`, `scripts/board.py` and
-  `services/api` (Bhanu's lane) going clean under 0.16.0 too.
-
-See Blocked / decisions needed for what's still open before any of this runs live (secrets,
-INZBC sector/disclaimer sign-off).
-
-## Done
-- [x] Backend restart/rehydration integration test (#130, PR #255, merged 7 Aug 2026): kills a real
-  `uvicorn` subprocess mid-run and starts a fresh one on the same port, proving a run's state
-  survives an actual process restart, not just a fresh request. 151 passed against a real local
-  Postgres running the merged `main` — both #120's and #121's routers, plus Bhanu's hardening
-  middleware.
-- [x] Dashboard generated-types drift (#271, PR #274, merged 12 Aug 2026): found while chasing an
-  unrelated `frontend` CI failure on #273 — `apps/dashboard/ui/src/api/schema.ts` was a generation
-  behind because #268 branched before #261 added `POST /api/comms/draft`, so `pnpm run codegen`'s
-  drift check failed on every PR touching Python. #271 already had the exact diagnosis; ran
-  `pnpm run codegen` on current `main` and committed just the one stale file — no source change.
 - [x] FTA Explainer retrieval upgrade (#54): `answer_query` now ranks confirmed matches by
   weighted keyword relevance instead of returning an unordered keyword-overlap set. Self-contained
   TF-IDF-style scorer (`_relevance_score`) — no vector service, no new dependency: topic-keyword

@@ -72,12 +72,6 @@ class FakeCommsDraftRepository:
         self._drafts[record.id] = record
         return record
 
-    def delete(self, draft_id, *, principal, reason) -> None:
-        if draft_id not in self._drafts:
-            raise KeyError(f"no comms draft {draft_id!r}")
-        del self._drafts[draft_id]
-        self.deleted.append((draft_id, reason))
-
     def approve(self, draft_id, *, principal, reason=None) -> CommsDraftRecord:
         self.last_approve_principal = principal
         if self.next_approve_error is not None:
@@ -105,6 +99,12 @@ class FakeCommsDraftRepository:
     def get(self, draft_id: str) -> CommsDraftRecord:
         try:
             return self._drafts[draft_id]
+        except KeyError as error:
+            raise KeyError(f"no comms draft {draft_id!r}") from error
+
+    def delete(self, draft_id: str, *, actor_id: str, reason: str) -> None:
+        try:
+            del self._drafts[draft_id]
         except KeyError as error:
             raise KeyError(f"no comms draft {draft_id!r}") from error
 
@@ -350,41 +350,6 @@ def test_self_approval_returns_403(
 # get / list
 # ---------------------------------------------------------------------------
 
-def test_delete_removes_the_draft(
-    client: TestClient, fake_repo: FakeCommsDraftRepository
-) -> None:
-    draft_id = _post_draft(client).json()["id"]
-    response = client.request(
-        "DELETE",
-        f"/api/comms/drafts/{draft_id}",
-        json={"reason": "contained personal information"},
-    )
-    assert response.status_code == 204
-    assert client.get(f"/api/comms/drafts/{draft_id}").status_code == 404
-    assert fake_repo.deleted == [(draft_id, "contained personal information")]
-
-
-def test_delete_requires_a_reason(client: TestClient) -> None:
-    """Optional would make "deleted, no explanation" the easy default, and the audit row is all
-    that survives the deletion."""
-    draft_id = _post_draft(client).json()["id"]
-    assert client.request("DELETE", f"/api/comms/drafts/{draft_id}", json={}).status_code == 422
-    assert (
-        client.request(
-            "DELETE", f"/api/comms/drafts/{draft_id}", json={"reason": ""}
-        ).status_code
-        == 422
-    )
-
-
-def test_delete_of_an_unknown_draft_is_404(client: TestClient) -> None:
-    assert (
-        client.request(
-            "DELETE", f"/api/comms/drafts/{uuid.uuid4()}", json={"reason": "x"}
-        ).status_code
-        == 404
-    )
-
 
 def test_get_draft_returns_it(client: TestClient) -> None:
     draft_id = _post_draft(client).json()["id"]
@@ -404,3 +369,57 @@ def test_list_drafts_returns_every_created_draft(client: TestClient) -> None:
     response = client.get("/api/comms/drafts")
     assert response.status_code == 200
     assert len(response.json()) == 2
+
+
+# ---------------------------------------------------------------------------
+# delete
+# ---------------------------------------------------------------------------
+
+def test_delete_returns_204(client: TestClient) -> None:
+    draft_id = _post_draft(client).json()["id"]
+    response = client.request(
+        "DELETE", f"/api/comms/drafts/{draft_id}", json={"reason": "contained personal information"}
+    )
+    assert response.status_code == 204
+    assert response.content == b""
+
+
+def test_deleted_draft_is_gone(client: TestClient, fake_repo: FakeCommsDraftRepository) -> None:
+    draft_id = _post_draft(client).json()["id"]
+    client.request("DELETE", f"/api/comms/drafts/{draft_id}", json={"reason": "superseded"})
+
+    assert client.get(f"/api/comms/drafts/{draft_id}").status_code == 404
+    assert fake_repo.list_all() == []
+
+
+def test_delete_a_missing_draft_returns_404(client: TestClient) -> None:
+    response = client.request(
+        "DELETE",
+        "/api/comms/drafts/00000000-0000-0000-0000-000000000000",
+        json={"reason": "created in error"},
+    )
+    assert response.status_code == 404
+
+
+def test_delete_requires_a_reason(client: TestClient) -> None:
+    draft_id = _post_draft(client).json()["id"]
+    response = client.request("DELETE", f"/api/comms/drafts/{draft_id}", json={"reason": ""})
+    assert response.status_code == 422
+
+
+def test_delete_rejects_a_reason_over_500_characters(client: TestClient) -> None:
+    draft_id = _post_draft(client).json()["id"]
+    response = client.request(
+        "DELETE", f"/api/comms/drafts/{draft_id}", json={"reason": "x" * 501}
+    )
+    assert response.status_code == 422
+
+
+def test_delete_rejects_an_unknown_field(client: TestClient) -> None:
+    draft_id = _post_draft(client).json()["id"]
+    response = client.request(
+        "DELETE",
+        f"/api/comms/drafts/{draft_id}",
+        json={"reason": "superseded", "brief_summary": "leaked name"},
+    )
+    assert response.status_code == 422

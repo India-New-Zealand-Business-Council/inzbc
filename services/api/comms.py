@@ -11,10 +11,14 @@ that `draft` is a non-empty string, by its own docstring's stated design.
 Every write here requires a session (ADR-0004): reads declare `read_access`, writes declare
 `write_access`, both via `services/api/session.py`, same as every other business router.
 
-The other three routes (`approve`, `get`, `list`) close the gap #60 (Paras's review UI) and #65
+Three of the other routes (`approve`, `get`, `list`) close the gap #60 (Paras's review UI) and #65
 (Bhanu's streaming API) both name as a dependency: "Comms Assistant service side (Roshan)".
 Neither existed until now - draft generation returned text and persisted nothing, so there was no
 row for a review UI to show or an approval to attach to.
+
+`delete` (#342) exists because `comms_drafts` had no retention rule and no way to remove a row -
+found by the #132 privacy verification pass. A retention *period* is still an INZBC decision
+(`docs/client-questions.md` §4); this only gives a person a manual path to remove one row.
 """
 
 from __future__ import annotations
@@ -151,12 +155,11 @@ class ApproveIn(BaseModel):
     reason: str | None = None
 
 
-class DeleteIn(BaseModel):
-    """`reason` is required, unlike `ApproveIn`'s.
-
-    Deleting the only stored copy of what was sent to an external model is not something to do
-    without saying why, and the audit row is all that remains afterwards. An optional reason would
-    make "deleted, no explanation given" the easy default.
+class DeleteDraftIn(BaseModel):
+    """Body, not a query parameter — a reason in a URL lands in access logs, which is the same
+    leak in a different place. `reason` describes *why* the draft is being removed, not what it
+    contained: it is stored in `audit_log`, which is append-only, so naming what was in the draft
+    would move the disclosure into the one place it can never be deleted from again.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -259,28 +262,19 @@ def approve_draft(
 @router.delete("/drafts/{draft_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_draft(
     draft_id: str,
-    body: DeleteIn,
+    body: DeleteDraftIn,
     principal: Principal = Depends(write_access(SECRETARIAT, SIP_OWNER)),
     repo: CommsDraftRepository = Depends(get_comms_draft_repository),
 ) -> None:
-    """Removes a draft (#342). The act is audited; the text is not.
+    """Removes a draft outright (#342). Same roles as creating one — Secretariat, SIP Owner — not
+    the reviewer roles that approve; deleting is an authoring-side act, not a review one.
 
-    **The reason this route exists is privacy, not tidiness.** `brief` is typed by a staff member,
-    and no automated control can tell whether they typed a member's name — redaction removes
-    formatted identifiers, never a name in prose (ADR-0006). Until this existed there was no way
-    to remove one.
-
-    **`reason` must describe why, not repeat what is being removed.** It is stored in `audit_log`,
-    which is append-only and whose grant is insert/select only, so anything written here is
-    permanent and unremovable. Writing "removing Priya Sharma's name from the brief" would move the
-    disclosure into the one table it can never be deleted from. "Contained personal information"
-    is the right shape.
-
-    Same roles as creating a draft. The audit record names who deleted it, so the act is
-    attributable without being restricted to one person who may be unavailable.
+    Any status is deletable, including `Approved`: the approval's own audit entry survives even
+    though the row it approved is gone. See `CommsDraftRepository.delete`'s docstring for why the
+    audit row this writes never carries the brief or draft text.
     """
     try:
-        repo.delete(draft_id, principal=principal, reason=body.reason)
+        repo.delete(draft_id, actor_id=principal.user_id, reason=body.reason)
     except KeyError as error:
         raise _not_found(draft_id) from error
 

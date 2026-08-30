@@ -472,6 +472,8 @@ export function newDraftReportFixture(): DailyBriefReport {
   return {
     id: 'report-fixture-1',
     runId: 'RUN-20260730-01',
+    runVersion: 0,
+    reportVersionId: null,
     reportDate: '2026-07-30',
     coverageStart: '2026-07-29',
     coverageEnd: '2026-07-30',

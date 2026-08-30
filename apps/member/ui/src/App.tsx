@@ -19,7 +19,9 @@ export function App() {
           Header's "Skip to main content" link would scroll here without moving keyboard/AT focus
           — the next Tab press would carry on from wherever focus was before, defeating the skip
           link (WCAG technique G1/H69). */}
-      <main id="main-content" tabIndex={-1} className="flex-1 bg-slate-50 focus:outline-none">
+      {/* pt-24/pt-28 clears the fixed floating header (Header.tsx) — it no longer sits in
+          normal flow, so the page has to make its own room for it. */}
+      <main id="main-content" tabIndex={-1} className="flex-1 bg-slate-50 pt-24 focus:outline-none sm:pt-28">
         <Container className="py-6 sm:py-8">
           <h1 className="text-2xl font-extrabold text-inzbc-navy sm:text-3xl">Member Portal</h1>
           {/* Per docs/modules/member-portal-spec.md's build gate: membership status, renewal,

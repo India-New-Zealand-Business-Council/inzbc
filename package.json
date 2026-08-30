@@ -11,7 +11,7 @@
     "test": "pnpm -r --if-present test",
     "build": "pnpm -r --if-present build",
     "openapi": "python scripts/dump_openapi.py",
-    "codegen": "pnpm run openapi && pnpm --filter @inzbc/fta-ui run codegen && pnpm --filter @inzbc/dashboard-ui run codegen"
+    "codegen": "pnpm run openapi && pnpm --filter @inzbc/fta-ui run codegen && pnpm --filter @inzbc/sip-ui run codegen && pnpm --filter @inzbc/dashboard-ui run codegen"
   },
   "devDependencies": {
     "openapi-typescript": "^7.13.0",

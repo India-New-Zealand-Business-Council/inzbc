@@ -4,6 +4,12 @@
 // decide whether it carries over" and that call hasn't been made yet. Same component as
 // apps/comms/ui/src/components/Footer.tsx (no shared package between the two apps yet — each
 // app under apps/*/ui is an independent pnpm workspace package).
+//
+// Accent colour is lime, not lavender: inzview's own Footer.tsx (motion.tsx's FOCUS constant,
+// applied throughout) uses lime as the one accent colour across header, footer and CTAs, so this
+// follows suit rather than keeping the Brand Guidelines' navy/lavender pairing.
+const LOGO_URL = 'https://static.wixstatic.com/media/df219d_0b8e6333d53841efaf66f675038a0798~mv2.jpg'
+
 const SOCIAL_LINKS = [
   { label: 'X (Twitter)', href: 'https://twitter.com/inzbc' },
   { label: 'LinkedIn', href: 'https://linkedin.com/company/india-new-zealand-business-council' },
@@ -14,15 +20,18 @@ const SOCIAL_LINKS = [
 export function Footer() {
   return (
     <footer className="bg-inzbc-navy text-white">
-      <div className="mx-auto max-w-4xl px-4 py-6 text-sm">
-        <nav aria-label="Social media" className="flex flex-wrap gap-x-5 gap-y-2">
+      <div className="mx-auto max-w-7xl px-4 py-6 text-sm">
+        <a href="/" aria-label="INZBC home" className="inline-block rounded-sm">
+          <img src={LOGO_URL} alt="INZBC" className="h-8 w-auto" />
+        </a>
+        <nav aria-label="Social media" className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
           {SOCIAL_LINKS.map((link) => (
             <a
               key={link.label}
               href={link.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-sm underline decoration-white/40 underline-offset-2 transition-colors hover:text-inzbc-lavender hover:decoration-inzbc-lavender focus-visible:outline-inzbc-lavender"
+              className="rounded-sm underline decoration-white/40 underline-offset-2 transition-colors hover:text-inzbc-lime hover:decoration-inzbc-lime focus-visible:outline-inzbc-lime"
             >
               {link.label}
             </a>
@@ -32,7 +41,7 @@ export function Footer() {
           <p>&copy; 2026 India New Zealand Business Council. All rights reserved.</p>
           <a
             href="mailto:sunil@inzbc.org"
-            className="rounded-sm underline decoration-white/40 underline-offset-2 transition-colors hover:text-inzbc-lavender hover:decoration-inzbc-lavender focus-visible:outline-inzbc-lavender"
+            className="rounded-sm underline decoration-white/40 underline-offset-2 transition-colors hover:text-inzbc-lime hover:decoration-inzbc-lime focus-visible:outline-inzbc-lime"
           >
             Contact us
           </a>

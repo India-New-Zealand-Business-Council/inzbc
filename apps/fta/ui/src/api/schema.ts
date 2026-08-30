@@ -376,21 +376,12 @@ export interface paths {
         post?: never;
         /**
          * Delete Draft
-         * @description Removes a draft (#342). The act is audited; the text is not.
+         * @description Removes a draft outright (#342). Same roles as creating one — Secretariat, SIP Owner — not
+         *     the reviewer roles that approve; deleting is an authoring-side act, not a review one.
          *
-         *     **The reason this route exists is privacy, not tidiness.** `brief` is typed by a staff member,
-         *     and no automated control can tell whether they typed a member's name — redaction removes
-         *     formatted identifiers, never a name in prose (ADR-0006). Until this existed there was no way
-         *     to remove one.
-         *
-         *     **`reason` must describe why, not repeat what is being removed.** It is stored in `audit_log`,
-         *     which is append-only and whose grant is insert/select only, so anything written here is
-         *     permanent and unremovable. Writing "removing Priya Sharma's name from the brief" would move the
-         *     disclosure into the one table it can never be deleted from. "Contained personal information"
-         *     is the right shape.
-         *
-         *     Same roles as creating a draft. The audit record names who deleted it, so the act is
-         *     attributable without being restricted to one person who may be unavailable.
+         *     Any status is deletable, including `Approved`: the approval's own audit entry survives even
+         *     though the row it approved is gone. See `CommsDraftRepository.delete`'s docstring for why the
+         *     audit row this writes never carries the brief or draft text.
          */
         delete: operations["delete_draft_api_comms_drafts__draft_id__delete"];
         options?: never;
@@ -1414,14 +1405,13 @@ export interface components {
             };
         };
         /**
-         * DeleteIn
-         * @description `reason` is required, unlike `ApproveIn`'s.
-         *
-         *     Deleting the only stored copy of what was sent to an external model is not something to do
-         *     without saying why, and the audit row is all that remains afterwards. An optional reason would
-         *     make "deleted, no explanation given" the easy default.
+         * DeleteDraftIn
+         * @description Body, not a query parameter — a reason in a URL lands in access logs, which is the same
+         *     leak in a different place. `reason` describes *why* the draft is being removed, not what it
+         *     contained: it is stored in `audit_log`, which is append-only, so naming what was in the draft
+         *     would move the disclosure into the one place it can never be deleted from again.
          */
-        DeleteIn: {
+        DeleteDraftIn: {
             /** Reason */
             reason: string;
         };
@@ -2916,7 +2906,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DeleteIn"];
+                "application/json": components["schemas"]["DeleteDraftIn"];
             };
         };
         responses: {

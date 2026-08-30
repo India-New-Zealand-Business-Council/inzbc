@@ -1,0 +1,21 @@
+SOURCE AND PROVENANCE NOTES
+
+Controlling visual reference:
+- C:\Users\brett\Downloads\Morph-Motion-Template-20-Slides.pptx
+
+Primary content source:
+- C:\Users\brett\Downloads\INZBC_Team_Final_Report.docx
+- Consolidates the supplied Bhanu, Roshan, and Paras evidence portfolios.
+- GitHub and ProjectV2 figures were refreshed on 20 August 2026.
+
+Image evidence used in the deck:
+- C:\Users\brett\inzbc\team_report_work\bhanu-media\image5.png — INZBC public-site concept included in Bhanu's final portfolio.
+- C:\Users\brett\inzbc\team_report_work\bhanu-media\image3.png — quality-gate and integration-stewardship evidence graphic from Bhanu's final portfolio.
+
+Repository references used in notes:
+- https://github.com/India-New-Zealand-Business-Council
+- https://github.com/India-New-Zealand-Business-Council/inzbc
+- https://github.com/India-New-Zealand-Business-Council/inzview
+- https://github.com/India-New-Zealand-Business-Council/daily-india-nz-news-agent
+
+No generated screenshots, invented quotations, or fabricated metrics are used.

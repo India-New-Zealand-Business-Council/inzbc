@@ -1,13 +1,18 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as reportsStore from '../api/reportsStore'
+import { stubReportsFetch } from '../api/reportsStore.testSupport'
 import type { DailyBriefReport } from '../domain'
 import { newDraftReportFixture } from '../lib/fixtures'
 import { BriefBuilderScreen } from './BriefBuilderScreen'
 
-afterEach(() => vi.restoreAllMocks())
+beforeEach(() => stubReportsFetch())
+afterEach(() => {
+  vi.restoreAllMocks()
+  vi.unstubAllGlobals()
+})
 
 /** A controlled wrapper so interaction tests exercise real state updates, not a static prop. */
 function ControlledBriefBuilder({ initial }: { initial: DailyBriefReport }) {

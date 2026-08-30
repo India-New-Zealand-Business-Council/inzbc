@@ -1,0 +1,21 @@
+Communication job
+By the end, INZBC and course assessors should understand that the team produced a strong governed implementation whose next phase is validation and readiness work, not immediate handover.
+
+Theory applied to evidence
+- Sociotechnical systems: technical controls and human roles must be designed together (slides 4 and 6).
+- Conway's Law: workstream communication boundaries shaped the platform boundaries (slides 7 and 17).
+- Agile / continuous delivery: small increments, CI and review created rapid feedback without implying production release (slides 10-12 and 14).
+- Double-loop learning: the team changed governing assumptions and controls, not only individual defects (slides 13 and 16).
+- Psychological safety: risks, mistakes and unknown facts were surfaced through review and client escalation (slides 15 and 17).
+
+Readiness correction
+- Replace all claims of immediate handover with continued UAT, client decisions, board reconciliation, operating-model definition and readiness evidence.
+- Keep handover only as a later milestone that follows those gates.
+
+Primary references
+- Trist, E. L. and Bamforth, K. W. (1951), Human Relations, doi:10.1177/001872675100400101.
+- Conway, M. E. (1968), How Do Committees Invent?, Datamation 14(4).
+- Edmondson, A. (1999), Administrative Science Quarterly 44(2), doi:10.2307/2666999.
+- Manifesto for Agile Software Development (2001), https://agilemanifesto.org/.
+- Humble, J. and Farley, D. (2010), Continuous Delivery.
+- Argyris, C. (1977), Double Loop Learning in Organizations, Harvard Business Review.

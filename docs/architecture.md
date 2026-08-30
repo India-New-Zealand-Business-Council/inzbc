@@ -373,6 +373,177 @@ daily digest, while `inzbc` holds the platform and the controlled documentation.
 
 ---
 
+## 8. Service flow diagrams (#331)
+
+Two service flows, both encoding a refusal that is the whole point of the service. Neither
+refusal was visible anywhere in the documentation before this section.
+
+> **Note on source doc.** #331 points to `docs/architecture-diagram-plan.md` for "standard and
+> full diagram set" — that file does not exist anywhere in this repository's history. This
+> section instead extends this file, per #331's own "new file, or extend the SIP file — your
+> call, note which in the PR" instruction, matching the Mermaid/status-tag convention the rest
+> of this file already uses.
+
+### 8.1 FTA query flow
+
+`answer_query()` from request to response — `apps/fta/explainer.py` (built) called from
+`GET /api/fta/query` — `services/api/main.py` (built).
+
+```mermaid
+sequenceDiagram
+    participant M as Member
+    participant API as GET /api/fta/query<br/>services/api/main.py — built
+    participant Q as answer_query()<br/>apps/fta/explainer.py — built
+    participant C as CORPUS<br/>apps/fta/corpus.py — built
+
+    M->>API: GET ?q="wool tariff"
+    API->>Q: answer_query(q)
+    Q->>Q: _keywords(q) — strip stopwords/jurisdiction terms
+    alt no keywords (blank or stopwords only)
+        Q-->>API: []
+    else has keywords
+        Q->>C: rank against CORPUS by weighted keyword relevance
+        Note over Q,C: confirmed filter: entries where confirmed=False<br/>(e.g. unconfirmed ~70% tariff-line figure)<br/>never reach this comparison
+        alt no confirmed entry shares a keyword
+            Q-->>API: []
+        else at least one match
+            Q-->>API: list[ExplainerAnswer], ranked
+        end
+    end
+    alt answers == []
+        API->>API: no_match(q) — builds NoMatch (#187: no evidence fields)
+        API-->>M: HTTP 200, status:"no_match", action_required escalation
+    else answers present
+        API-->>M: HTTP 200, status:"matched", answers[]
+    end
+```
+
+**No model call anywhere in this path.** `answer_query()` matches against a curated, pre-sourced
+corpus and returns an escalation when nothing confirmed matches — it cannot hallucinate a trade
+fact because it contains no code path that generates text. That is a structural property of the
+module, not a prompt instruction that could be bypassed.
+
+**Why a no-match is HTTP 200, not 404.** `services/api/main.py`'s `fta_query()` docstring states
+it directly: a 404 would push callers toward an error branch that discards the guidance. A
+no-match here is a legitimate outcome with its own payload (the Action Required escalation
+path), not a failure of the request — so it gets a success status with a status field, the same
+way `NoMatch` (built, `apps/fta/explainer.py`) is a distinct type from `ExplainerAnswer` rather
+than an exception.
+
+**What this diagram does not cover:** the `answer_query_at_depth()` public/member/internal split
+(#187, in review as of this diagram) — `/api/fta/query` still calls the single-audience
+`answer_query()` shown above; ranking internals (weighted keyword scoring, tie-breaking) — see
+`apps/fta/explainer.py`'s own docstrings; and the FTA UI's rendering of the response, which is
+Paras's lane.
+
+### 8.2 Comms draft-to-approve flow
+
+The draft path through `apps/comms/draft.py` (built) and its persistence/approval layer in
+`services/api/comms.py` / `services/api/comms_persistence.py` (built).
+
+```mermaid
+sequenceDiagram
+    participant S as Staff member
+    participant API as POST /api/comms/draft<br/>services/api/comms.py — built
+    participant D as generate_draft()<br/>apps/comms/draft.py — built
+    participant GW as ModelGateway.complete()<br/>services/api/model_gateway.py — built
+    participant Repo as CommsDraftRepository<br/>services/api/comms_persistence.py — built
+    participant R as Reviewer
+
+    S->>API: {content_type, brief}
+    API->>D: generate_draft(gateway, content_type, brief)
+    D->>D: build_prompt() — generic, no invented voice/statistics
+    D->>GW: complete(prompt, source=STAFF_AUTHORED)
+    Note over GW: prompt boundary + redaction — see §9 for the full<br/>layer sequence inside this one call
+    GW-->>D: GatewayResult
+    D-->>API: draft text
+    API->>Repo: create(draft, authored_by=staff.id)
+    Repo-->>API: CommsDraftRecord, status="draft"
+    API-->>S: {draft, id, status}
+
+    Note over S,R: Nothing sends or publishes here — apps/comms/draft.py's own<br/>docstring: there is no publish path anywhere in this codebase yet
+
+    R->>API: POST /drafts/{id}/approve
+    API->>Repo: approve(draft_id, principal=reviewer, reason)
+    alt reviewer.id == record.authored_by (BR8)
+        Repo-->>API: SelfApprovalError
+        API-->>R: HTTP 403 — refused, not an error to work around
+        Note over R: A normal outcome, not a failure case. INZBC is one person<br/>holding every role today, so this will be common.
+    else different person
+        Repo->>Repo: refuse_self_review() passes, record audited
+        Repo-->>API: CommsDraftRecord, status="approved"
+        API-->>R: {status:"approved", approved_by, approved_at}
+    end
+```
+
+**The self-approval refusal (BR8, `services/api/comms_persistence.py`) is drawn as a normal
+branch, not an error path**, because it is expected to fire routinely: INZBC currently has one
+person capable of holding every role, so an attempted self-approval is an everyday occurrence
+the flow must handle gracefully, not an edge case.
+
+**What this diagram does not cover:** the redaction/prompt-boundary internals inside
+`ModelGateway.complete()` — see §9; the streaming SSE variant (#65, unbuilt); the review UI
+(#60, Paras's lane) that would actually present this to a reviewer; and what happens after
+`status="approved"` — there is no send/publish step in this codebase, by design, so the flow
+ends at approval.
+
+## 9. Model data boundary — defence-in-depth (#332)
+
+Every layer untrusted text passes through before it can reach an external model. ADR-0006's
+own reasoning: rule-based redaction structurally cannot catch a name, title or employer written
+in prose, so the primary control moved to refusing the *source* rather than trying to clean the
+*text*. Reconstructing that argument today means reading four files; this section is that
+reconstruction.
+
+```mermaid
+flowchart TD
+    A["Caller assembles a prompt"] --> B{"Layer 1: Source refusal<br/>services/api/prompt_boundary.py — built<br/>check_source(PromptSource)"}
+    B -->|"MEMBER_RECORD, CRM_NOTE,<br/>BOARD_MATERIAL, PRIVATE_MESSAGE"| REFUSE1["ProhibitedInputError<br/>no policy read, no key looked up, nothing sent"]
+    B -->|"PUBLIC_SOURCE, STAFF_AUTHORED,<br/>MINIMISED_RECORD"| C{"Layer 2: minimise() field allowlist<br/>services/api/prompt_boundary.py — built<br/>(only for MINIMISED_RECORD callers)"}
+    C -->|"non-scalar field, or empty allowlist"| REFUSE2["ProhibitedInputError<br/>a field nobody named cannot reach the prompt"]
+    C -->|"scalar fields only"| D{"Layer 3: Policy-driven redaction<br/>services/api/redaction.py — built<br/>config/redaction-policy.json — built, approved 9 Aug 2026"}
+    D -->|"REDACTION_POLICY_PATH unset<br/>or file missing"| REFUSE3["RedactionNotConfiguredError<br/>fail closed — absence blocks the send,<br/>never silently permits it"]
+    D -->|"policy loaded"| E["Regex rules redact formatted<br/>identifiers (email, phone, tax/company<br/>numbers, cards) against the ORIGINAL text"]
+    E --> F{"Layer 4: Gateway<br/>services/api/model_gateway.py — built<br/>ModelGateway.complete()"}
+    F -->|"OPENAI_API_KEY unset"| REFUSE4["GatewayNotConfiguredError<br/>never fabricates a response"]
+    F -->|"configured"| G["Provider call, one retry on<br/>transient failure"]
+    G --> H["Layer 5: Operator procedure<br/>docs/operator-guide.md — planned/procedural<br/>'Do not paste member details into a brief<br/>and rely on redaction'"]
+```
+
+**What each layer cannot do, not only what it catches** (a layer documented only by its
+successes reads as a guarantee, which is the failure mode ADR-0006 exists to prevent):
+
+- **Layer 1 (source refusal)** cannot verify a caller's declaration — `PromptSource` is *stated*,
+  not checked against the actual data. A caller that mislabels `MEMBER_RECORD` text as
+  `STAFF_AUTHORED` is not caught here. What it does guarantee: a new call site cannot omit the
+  question, since `complete()` has no default source.
+- **Layer 2 (`minimise()`)** cannot inspect what is *inside* a permitted scalar field — a `str`
+  holding serialised JSON with a name embedded in it passes, because the caller allowlisted that
+  field. **Known gap, stated rather than hidden: no module builds prompts through `minimise()`
+  yet** — no caller assembles from raw member records today, so this is the rule the first one
+  must follow, not a control currently running.
+- **Layer 3 (redaction)** cannot catch a name, job title, or employer in ordinary prose — only
+  formatted identifiers (regex-matchable emails, phone numbers, tax/company numbers, cards).
+  `Delegation lead: Priya Sharma, Chief Executive, Koru Exports Ltd` passes through this layer
+  untouched, stated explicitly in `config/redaction-policy.json`'s own approval comment.
+- **Layer 4 (gateway)** cannot un-send a payload once a provider call succeeds — retries only
+  cover transient failures, not policy correctness.
+- **Layer 5 (operator procedure)** is the only layer that can catch what layers 1-4 structurally
+  cannot: prose containing a name. It works only if followed — it is instruction, not code, and
+  is marked `planned/procedural` rather than `built` for that reason.
+
+**Fail-closed points**, marked explicitly because this is the property the whole design rests
+on: a missing `REDACTION_POLICY_PATH` is a refusal (`RedactionNotConfiguredError`), never
+permission to send unredacted text; a missing `OPENAI_API_KEY` is a refusal
+(`GatewayNotConfiguredError`), never a fabricated response; an empty `minimise()` allowlist is a
+refusal, never "send everything." Every one of these defaults to blocking, not to disclosure.
+
+**What this diagram does not cover:** the audit-log write for a completed call (out of this
+module, in `services/api/audit.py`); how a caller decides *which* `PromptSource` applies to its
+data — that judgement call lives with the caller, this layer only enforces the declared answer;
+and the redaction policy's own rule content (see `config/redaction-policy.json` directly for the
+current rule set).
+
 ## Related documents
 - `schemas/api-contract.md` — endpoint contract
 - `schemas/state-machine.md` — the authoritative transition list this encodes

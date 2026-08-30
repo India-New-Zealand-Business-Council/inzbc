@@ -1,0 +1,373 @@
+{"kind":"layout","layoutId":"/ppt/slideMasters/slideMaster1.xml","name":"","type":"master"}
+{"kind":"layout","layoutId":"/ppt/slideLayouts/slideLayout1.xml","name":"DEFAULT"}
+{"kind":"slide","id":"sl/y90nupkv","slide":1,"title":"01 / 20","textShapes":5}
+{"kind":"shape","id":"sh/7qp4be9c","slide":1,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/65g3298r","slide":1,"name":"!!bar","bbox":[86.4,676.8,40.32,2.88]}
+{"kind":"textbox","id":"sh/ts7md4r2","slide":1,"name":"pageno","text":"01 / 20","textPreview":"01 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"shape","id":"sh/sryl4zqx","slide":1,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/fu94fe98","slide":1,"name":"anim_eyebrow","text":"INDIA NEW ZEALAND BUSINESS COUNCIL","textPreview":"INDIA NEW ZEALAND BUSINESS COUNCIL","textChars":34,"textLines":1,"bbox":[86.4,193.92,768,28.8]}
+{"kind":"textbox","id":"sh/utg3698n","slide":1,"name":"!!kicker","text":"INZBC TEAM\nFINAL REPORT","textPreview":"INZBC TEAM | FINAL REPORT","textChars":23,"textLines":2,"bbox":[86.4,232.32,1036.8,244.8]}
+{"kind":"textbox","id":"sh/wn6dc7eh","slide":1,"name":"anim_sub","text":"Three specialist lanes. One governed delivery.","textPreview":"Three specialist lanes. One governed delivery.","textChars":46,"textLines":1,"bbox":[86.4,491.52,729.6,76.8]}
+{"kind":"textbox","id":"sh/hofulsf2","slide":1,"name":"Text 7","text":"BHANU GUPTA   ·   ROSHAN ARYAL   ·   PARAS   ·   20 AUGUST 2026","textPreview":"BHANU GUPTA   ·   ROSHAN ARYAL   ·   PARAS   ·   20 AUGUST 2026","textChars":63,"textLines":1,"bbox":[86.4,612.48,864,30.72]}
+{"kind":"image","id":"im/5cze9svq","slide":1,"name":"!!orb","bbox":[326.4,-19.2,710.4,710.4]}
+{"kind":"image","id":"im/kr6xgnu5","slide":1,"name":"!!orb2","bbox":[-153.6,374.4,480,480]}
+{"kind":"notes","id":"nt/y90nupkv","slide":1,"text":"Open with the final-team framing: this is one delivery, not three disconnected portfolios.\n\n[Sources]\n- C:\\Users\\brett\\Downloads\\INZBC_Team_Final_Report.docx — consolidated team report and evidence refreshed 20 August 2026.\n- https://github.com/India-New-Zealand-Business-Council — organisation repository history.\n[/Sources]"}
+{"kind":"slide","id":"sl/hwbqtkby","slide":2,"title":"THE TEAM RESULT","textShapes":4}
+{"kind":"shape","id":"sh/b29kza94","slide":2,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/a10jqpsj","slide":2,"name":"!!bar","bbox":[86.4,676.8,96.47,2.88]}
+{"kind":"shape","id":"sh/x4r21kru","slide":2,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/w3i1sfa9","slide":2,"name":"!!kicker","text":"THE TEAM RESULT","textPreview":"THE TEAM RESULT","textChars":15,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/r65knqtk","slide":2,"name":"pageno","text":"02 / 20","textPreview":"02 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/q5wjelsz","slide":2,"name":"Text 5","text":"Three focused workstreams became one governed, evidence-led platform.","textPreview":"Three focused workstreams became one governed, evidence-led platform.","textChars":69,"textLines":1,"bbox":[86.4,216,998.4,259.2]}
+{"kind":"textbox","id":"sh/ove9o7yd","slide":2,"name":"Text 6","text":"192 student-authored PRs  ·  184 merged  ·  138 board items","textPreview":"192 student-authored PRs  ·  184 merged  ·  138 board items","textChars":59,"textLines":1,"bbox":[86.4,532.8,806.4,48]}
+{"kind":"image","id":"im/ixwfa50j","slide":2,"name":"!!orb","bbox":[-172.8,134.4,633.6,633.6]}
+{"kind":"image","id":"im/507e5kja","slide":2,"name":"!!orb2","bbox":[883.2,403.2,518.4,518.4]}
+{"kind":"notes","id":"nt/hwbqtkby","slide":2,"text":"State the thesis before explaining the workstreams or technology.\n\n[Sources]\n- C:\\Users\\brett\\Downloads\\INZBC_Team_Final_Report.docx — consolidated team report and evidence refreshed 20 August 2026.\n- https://github.com/India-New-Zealand-Business-Council — organisation repository history.\n[/Sources]"}
+{"kind":"slide","id":"sl/ofy9wn61","slide":3,"title":"CONTENTS","textShapes":15}
+{"kind":"shape","id":"sh/d0jax03i","slide":3,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/298ryl4v","slide":3,"name":"!!bar","bbox":[86.4,676.8,152.62,2.88]}
+{"kind":"shape","id":"sh/3ah8rqlg","slide":3,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/obq90bml","slide":3,"name":"!!kicker","text":"CONTENTS","textPreview":"CONTENTS","textChars":8,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/pcjqtg36","slide":3,"name":"pageno","text":"03 / 20","textPreview":"03 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/m5cra54z","slide":3,"name":"Text 5","text":"What the evidence proves","textPreview":"What the evidence proves","textChars":24,"textLines":1,"bbox":[86.4,122.88,768,91.2]}
+{"kind":"textbox","id":"sh/n6ls3alk","slide":3,"name":"!!num","text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[86.4,251.52,91.2,52.8]}
+{"kind":"textbox","id":"sh/n2l4fq98","slide":3,"name":"Text 7","text":"Mandate + method","textPreview":"Mandate + method","textChars":16,"textLines":1,"bbox":[187.2,251.52,451.2,52.8]}
+{"kind":"textbox","id":"sh/m1c3mlsn","slide":3,"name":"Text 8","text":"Why trust and human authority shaped the build.","textPreview":"Why trust and human authority shaped the build.","textChars":47,"textLines":1,"bbox":[667.2,251.52,526.08,52.8]}
+{"kind":"shape","id":"sh/943mhgre","slide":3,"name":"Shape 9","bbox":[86.4,326.4,1107.17,0.77]}
+{"kind":"textbox","id":"sh/83ulovat","slide":3,"name":"num1","text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[86.4,349.44,91.2,52.8]}
+{"kind":"textbox","id":"sh/v6l4jq94","slide":3,"name":"Text 11","text":"Delivery + evidence","textPreview":"Delivery + evidence","textChars":19,"textLines":1,"bbox":[187.2,349.44,451.2,52.8]}
+{"kind":"textbox","id":"sh/a5c3ql8z","slide":3,"name":"Text 12","text":"What shipped, how it connects, and the live record.","textPreview":"What shipped, how it connects, and the live record.","textChars":51,"textLines":1,"bbox":[667.2,349.44,526.08,52.8]}
+{"kind":"shape","id":"sh/x8nml0ra","slide":3,"name":"Shape 13","bbox":[86.4,424.32,1107.17,0.77]}
+{"kind":"textbox","id":"sh/w7ulsvqp","slide":3,"name":"num2","text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[86.4,447.36,91.2,52.8]}
+{"kind":"textbox","id":"sh/ja54na9g","slide":3,"name":"Text 15","text":"Team + learning","textPreview":"Team + learning","textChars":15,"textLines":1,"bbox":[187.2,447.36,451.2,52.8]}
+{"kind":"textbox","id":"sh/i9w3u58v","slide":3,"name":"Text 16","text":"Why communication and ownership were delivery tools.","textPreview":"Why communication and ownership were delivery tools.","textChars":52,"textLines":1,"bbox":[667.2,447.36,526.08,52.8]}
+{"kind":"shape","id":"sh/e10f2twf","slide":3,"name":"Shape 17","bbox":[86.4,522.24,1107.17,0.77]}
+{"kind":"textbox","id":"sh/f29gbyx0","slide":3,"name":"num3","text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[86.4,545.28,91.2,52.8]}
+{"kind":"textbox","id":"sh/03ix43e5","slide":3,"name":"Text 19","text":"Handover + decisions","textPreview":"Handover + decisions","textChars":20,"textLines":1,"bbox":[187.2,545.28,451.2,52.8]}
+{"kind":"textbox","id":"sh/14ryd8fq","slide":3,"name":"Text 20","text":"What INZBC must decide to authorise operation.","textPreview":"What INZBC must decide to authorise operation.","textChars":46,"textLines":1,"bbox":[667.2,545.28,526.08,52.8]}
+{"kind":"image","id":"im/10bu183q","slide":3,"name":"!!orb","bbox":[825.6,-115.2,614.4,614.4]}
+{"kind":"notes","id":"nt/ofy9wn61","slide":3,"text":"Use the four parts as a narrative arc, not a conventional agenda.\n\n[Sources]\n- C:\\Users\\brett\\Downloads\\INZBC_Team_Final_Report.docx — consolidated team report and evidence refreshed 20 August 2026.\n- https://github.com/India-New-Zealand-Business-Council — organisation repository history.\n[/Sources]"}
+{"kind":"slide","id":"sl/jyx0ra1s","slide":4,"title":"CHAPTER 01","textShapes":5}
+{"kind":"shape","id":"sh/0ba143al","slide":4,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/rm1k7yt4","slide":4,"name":"!!bar","bbox":[86.4,676.8,208.77,2.88]}
+{"kind":"shape","id":"sh/ql8jytsj","slide":4,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/doj29oba","slide":4,"name":"!!kicker","text":"CHAPTER 01","textPreview":"CHAPTER 01","textChars":10,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/sna103ap","slide":4,"name":"pageno","text":"04 / 20","textPreview":"04 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/3ihk3et8","slide":4,"name":"!!num","text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[566.4,72,626.88,537.6]}
+{"kind":"textbox","id":"sh/ih8ju9sn","slide":4,"name":"Text 6","text":"Built for trust,\nnot just demos","textPreview":"Built for trust, | not just demos","textChars":31,"textLines":2,"bbox":[86.4,264,633.6,201.6]}
+{"kind":"textbox","id":"sh/kbm987y5","slide":4,"name":"Text 7","text":"Accuracy, privacy, named approval and handover were product requirements from the start.","textPreview":"Accuracy, privacy, named approval and handover were product requirements from the start.","textChars":88,"textLines":1,"bbox":[86.4,480,566.4,96]}
+{"kind":"image","id":"im/ed4nel0n","slide":4,"name":"!!orb","bbox":[-211.2,211.2,729.6,729.6]}
+{"kind":"notes","id":"nt/jyx0ra1s","slide":4,"text":"Transition from the thesis to the operating constraints that made the project non-trivial.\n\n[Sources]\n- C:\\Users\\brett\\Downloads\\INZBC_Team_Final_Report.docx — consolidated team report and evidence refreshed 20 August 2026.\n- https://github.com/India-New-Zealand-Business-Council — organisation repository history.\n[/Sources]"}
+{"kind":"slide","id":"sl/i107q5of","slide":5,"title":"CHAPTER 01","textShapes":8}
+{"kind":"shape","id":"sh/z2tcnm5s","slide":5,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/yhkbe1o7","slide":5,"name":"!!bar","bbox":[86.4,676.8,264.92,2.88]}
+{"kind":"shape","id":"sh/l4bupwny","slide":5,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/032tgr6d","slide":5,"name":"!!kicker","text":"CHAPTER 01","textPreview":"CHAPTER 01","textChars":10,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/n6dcr65o","slide":5,"name":"pageno","text":"05 / 20","textPreview":"05 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/m5kbi1oj","slide":5,"name":"!!num","text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[86.4,117.12,96,48]}
+{"kind":"textbox","id":"sh/w32dkbuh","slide":5,"name":"Text 6","text":"Four connected outcomes,\none operating standard","textPreview":"Four connected outcomes, | one operating standard","textChars":47,"textLines":2,"bbox":[86.4,180.48,528,91.2]}
+{"kind":"textbox","id":"sh/x4vedgvm","slide":5,"name":"Text 7","text":"INZBC asked for a SIP review workflow, FTA intelligence, a Communications Assistant and a refreshed public website. Every outcome had to preserve evidence, privacy and human authority.","textPreview":"INZBC asked for a SIP review workflow, FTA intelligence, a Communications Assistant and a refreshed public website. Every outcome had to ...","textChars":184,"textLines":1,"bbox":[86.4,328.32,518.4,163.2]}
+{"kind":"shape","id":"sh/ahkvi1cb","slide":5,"name":"Shape 8","bbox":[86.4,504.96,8.64,8.64]}
+{"kind":"textbox","id":"sh/v2twb6dw","slide":5,"name":"Text 9","text":"Trade Intelligence / SIP review","textPreview":"Trade Intelligence / SIP review","textChars":31,"textLines":1,"bbox":[119.04,494.4,480,30.72]}
+{"kind":"shape","id":"sh/k7mxovud","slide":5,"name":"Shape 10","bbox":[86.4,549.12,8.64,8.64]}
+{"kind":"textbox","id":"sh/58vehgvy","slide":5,"name":"Text 11","text":"FTA + communications services","textPreview":"FTA + communications services","textChars":29,"textLines":1,"bbox":[119.04,538.56,480,30.72]}
+{"kind":"shape","id":"sh/i54fmlc7","slide":5,"name":"Shape 12","bbox":[86.4,593.28,8.64,8.64]}
+{"kind":"textbox","id":"sh/j6dwfqds","slide":5,"name":"Text 13","text":"Public website + member surfaces","textPreview":"Public website + member surfaces","textChars":32,"textLines":1,"bbox":[119.04,582.72,480,30.72]}
+{"kind":"image","id":"im/vitwz65k","slide":5,"name":"!!orb","bbox":[-249.6,422.4,499.2,499.2]}
+{"kind":"image","id":"im/uhkvq14z","slide":5,"name":"!!art","alt":"INZBC public-site concept showing the New Zealand to India opportunity","bbox":[672,0,607.97,720]}
+{"kind":"notes","id":"nt/i107q5of","slide":5,"text":"Use the public-site concept as evidence of the design lane, not as a claim that every displayed fact is production-approved.\n\n[Sources]\n- C:\\Users\\brett\\Downloads\\INZBC_Team_Final_Report.docx — project mandate and safeguards.\n- C:\\Users\\brett\\Downloads\\Evidence_Portfolio_Paras.docx — public-site work and design evidence supplied by Paras.\n- C:\\Users\\brett\\inzbc\\team_report_work\\bhanu-media\\image5.png — INZBC public-site concept included in Bhanu's final evidence portfolio.\n[/Sources]"}
+{"kind":"slide","id":"sl/x8f69ofe","slide":6,"title":"THE THESIS","textShapes":4}
+{"kind":"shape","id":"sh/87ipkzal","slide":6,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/98rqt4r6","slide":6,"name":"!!bar","bbox":[86.4,676.8,321.07,2.88]}
+{"kind":"shape","id":"sh/ml07i9sv","slide":6,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/7m98ru9g","slide":6,"name":"!!kicker","text":"THE THESIS","textPreview":"THE THESIS","textChars":10,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/oryp8fah","slide":6,"name":"pageno","text":"06 / 20","textPreview":"06 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/pc76hkr2","slide":6,"name":"Text 5","text":"Trust is a chain\nacross every layer.","textPreview":"Trust is a chain | across every layer.","textChars":36,"textLines":2,"bbox":[86.4,225.6,1056,249.6]}
+{"kind":"textbox","id":"sh/h4bupgn6","slide":6,"name":"Text 6","text":"Sources  →  contracts  →  controls  →  interfaces  →  named human review","textPreview":"Sources  →  contracts  →  controls  →  interfaces  →  named human review","textChars":72,"textLines":1,"bbox":[86.4,513.6,768,38.4]}
+{"kind":"image","id":"im/7ylcjetk","slide":6,"name":"!!orb","bbox":[278.4,48,768,768]}
+{"kind":"image","id":"im/8zutsju5","slide":6,"name":"!!orb2","bbox":[-192,441.6,480,480]}
+{"kind":"notes","id":"nt/x8f69ofe","slide":6,"text":"Explain that a failure at any layer weakens the whole result.\n\n[Sources]\n- C:\\Users\\brett\\Downloads\\INZBC_Team_Final_Report.docx — consolidated team report and evidence refreshed 20 August 2026.\n- https://github.com/India-New-Zealand-Business-Council — organisation repository history.\n[/Sources]"}
+{"kind":"slide","id":"sl/gnmp4jqx","slide":7,"title":"ONE TEAM / THREE LANES","textShapes":12}
+{"kind":"shape","id":"sh/dcbud0ra","slide":7,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/ydkbm5sv","slide":7,"name":"!!bar","bbox":[86.4,676.8,377.22,2.88]}
+{"kind":"shape","id":"sh/zedcfa9g","slide":7,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/kzmdova1","slide":7,"name":"!!kicker","text":"ONE TEAM / THREE LANES","textPreview":"ONE TEAM / THREE LANES","textChars":22,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/l0vuh0rm","slide":7,"name":"pageno","text":"07 / 20","textPreview":"07 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/eh0ba1sr","slide":7,"name":"Text 5","text":"Clear ownership made integration testable","textPreview":"Clear ownership made integration testable","textChars":41,"textLines":1,"bbox":[86.4,117.12,816,91.2]}
+{"kind":"shape","id":"sh/fi9c369c","slide":7,"name":"!!card1","bbox":[86.4,241.92,336,347.52]}
+{"kind":"shape","id":"sh/baxkjqlk","slide":7,"name":"Shape 7","bbox":[126.72,282.24,61.44,61.44]}
+{"kind":"textbox","id":"sh/a9ojq5kz","slide":7,"name":"Text 8","text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[126.72,282.24,61.44,61.44]}
+{"kind":"textbox","id":"sh/xcz2l03q","slide":7,"name":"Text 9","text":"Bhanu Gupta","textPreview":"Bhanu Gupta","textChars":11,"textLines":1,"bbox":[126.72,372.48,255.36,43.2]}
+{"kind":"textbox","id":"sh/cbq1sv25","slide":7,"name":"Text 10","text":"Strong ×6 PDR objectives. Platform, security, review, integration and handover.","textPreview":"Strong ×6 PDR objectives. Platform, security, review, integration and handover.","textChars":79,"textLines":1,"bbox":[126.72,412.8,255.36,134.4]}
+{"kind":"shape","id":"sh/n6x0fqlo","slide":7,"name":"!!card2","bbox":[471.84,241.92,336,347.52]}
+{"kind":"shape","id":"sh/25ojml43","slide":7,"name":"Shape 12","bbox":[512.16,282.24,61.44,61.44]}
+{"kind":"textbox","id":"sh/p8fih03e","slide":7,"name":"Text 13","text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[512.16,282.24,61.44,61.44]}
+{"kind":"textbox","id":"sh/o761ov2t","slide":7,"name":"Text 14","text":"Roshan Aryal","textPreview":"Roshan Aryal","textChars":12,"textLines":1,"bbox":[512.16,372.48,255.36,43.2]}
+{"kind":"textbox","id":"sh/f2d0b6lc","slide":7,"name":"Text 15","text":"Intelligence, sources, FTA, collectors, audit and service-side delivery.","textPreview":"Intelligence, sources, FTA, collectors, audit and service-side delivery.","textChars":72,"textLines":1,"bbox":[512.16,412.8,255.36,134.4]}
+{"kind":"shape","id":"sh/eh4jil4r","slide":7,"name":"!!card3","bbox":[857.28,241.92,336,347.52]}
+{"kind":"shape","id":"sh/id4ju1oz","slide":7,"name":"Shape 17","bbox":[897.6,282.24,61.44,61.44]}
+{"kind":"textbox","id":"sh/jedkn654","slide":7,"name":"Text 18","text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[897.6,282.24,61.44,61.44]}
+{"kind":"textbox","id":"sh/4fm1wb6p","slide":7,"name":"Text 19","text":"Paras","textPreview":"Paras","textChars":5,"textLines":1,"bbox":[897.6,372.48,255.36,43.2]}
+{"kind":"textbox","id":"sh/50v2pgna","slide":7,"name":"Text 20","text":"Product/UX, SIP + Comms interfaces, member surfaces and the Wix public site.","textPreview":"Product/UX, SIP + Comms interfaces, member surfaces and the Wix public site.","textChars":76,"textLines":1,"bbox":[897.6,412.8,255.36,134.4]}
+{"kind":"image","id":"im/50v6tonq","slide":7,"name":"!!orb","bbox":[864,-153.6,576,576]}
+{"kind":"notes","id":"nt/gnmp4jqx","slide":7,"text":"Make the individual strengths explicit while keeping the team result primary.\n\n[Sources]\n- C:\\Users\\brett\\Downloads\\INZBC_Team_Final_Report.docx — consolidated team report and evidence refreshed 20 August 2026.\n- https://github.com/India-New-Zealand-Business-Council — organisation repository history.\n[/Sources]"}
+{"kind":"slide","id":"sl/fu1gfa1s","slide":8,"title":"MERGE QUALITY","textShapes":11}
+{"kind":"shape","id":"sh/g72x4zyd","slide":8,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/ri9g7uhw","slide":8,"name":"!!bar","bbox":[86.4,676.8,433.37,2.88]}
+{"kind":"shape","id":"sh/6h0fypgb","slide":8,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/tkby9kzm","slide":8,"name":"!!kicker","text":"MERGE QUALITY","textPreview":"MERGE QUALITY","textChars":13,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/sjix0zy1","slide":8,"name":"pageno","text":"08 / 20","textPreview":"08 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/je9g3ahk","slide":8,"name":"Text 5","text":"95.8%","textPreview":"95.8%","textChars":5,"textLines":1,"bbox":[86.4,148.8,672,268.8]}
+{"kind":"textbox","id":"sh/id0fu50z","slide":8,"name":"Text 6","text":"of student-authored PRs merged","textPreview":"of student-authored PRs merged","textChars":30,"textLines":1,"bbox":[86.4,432,633.6,48]}
+{"kind":"textbox","id":"sh/o7ydoret","slide":8,"name":"Text 7","text":"184 of 192 across Bhanu, Roshan and Paras · live organisation history refreshed 20 August 2026.","textPreview":"184 of 192 across Bhanu, Roshan and Paras · live organisation history refreshed 20 August 2026.","textChars":95,"textLines":1,"bbox":[86.4,494.4,604.8,115.2]}
+{"kind":"textbox","id":"sh/98rehwve","slide":8,"name":"Text 8","text":"BHANU / 135 PRs","textPreview":"BHANU / 135 PRs","textChars":15,"textLines":1,"bbox":[806.4,191.04,249.6,28.8]}
+{"kind":"shape","id":"sh/m5gvmhwn","slide":8,"name":"Shape 9","bbox":[806.4,225.6,340.8,32.64]}
+{"kind":"textbox","id":"sh/n6pwfmd8","slide":8,"name":"Text 10","text":"99.3%","textPreview":"99.3%","textChars":5,"textLines":1,"bbox":[1162.56,225.6,86.4,32.64]}
+{"kind":"textbox","id":"sh/0jydkreh","slide":8,"name":"Text 11","text":"ROSHAN / 35 PRs","textPreview":"ROSHAN / 35 PRs","textChars":15,"textLines":1,"bbox":[806.4,304.32,249.6,28.8]}
+{"kind":"shape","id":"sh/1k7edwv2","slide":8,"name":"Shape 12","bbox":[806.4,338.88,304.1,32.64]}
+{"kind":"textbox","id":"sh/ehgvihwr","slide":8,"name":"Text 13","text":"88.6%","textPreview":"88.6%","textChars":5,"textLines":1,"bbox":[1042.56,338.88,86.4,32.64]}
+{"kind":"textbox","id":"sh/zipwbmdc","slide":8,"name":"Text 14","text":"PARAS / 22 PRs","textPreview":"PARAS / 22 PRs","textChars":14,"textLines":1,"bbox":[806.4,417.6,249.6,28.8]}
+{"kind":"shape","id":"sh/kfixwbe1","slide":8,"name":"Shape 15","bbox":[806.4,452.16,296.4,32.64]}
+{"kind":"textbox","id":"sh/lgbepgvm","slide":8,"name":"Text 16","text":"86.4%","textPreview":"86.4%","textChars":5,"textLines":1,"bbox":[960.96,452.16,86.4,32.64]}
+{"kind":"image","id":"im/yp8rix47","slide":8,"name":"!!orb","bbox":[-230.4,86.4,672,672]}
+{"kind":"notes","id":"nt/fu1gfa1s","slide":8,"text":"Calculation: 184 ÷ 192 = 95.8%. Individual rates are 134/135, 31/35 and 19/22.\n\n[Sources]\n- C:\\Users\\brett\\Downloads\\INZBC_Team_Final_Report.docx — consolidated team report and evidence refreshed 20 August 2026.\n- https://github.com/India-New-Zealand-Business-Council — organisation repository history.\n[/Sources]"}
+{"kind":"slide","id":"sl/udsvah03","slide":9,"title":"TEAM DELIVERY","textShapes":13}
+{"kind":"shape","id":"sh/0b65obm9","slide":9,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/nex4jq5k","slide":9,"name":"!!bar","bbox":[86.4,676.8,489.52,2.88]}
+{"kind":"shape","id":"sh/mdonql4z","slide":9,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/9gzml0nq","slide":9,"name":"!!kicker","text":"TEAM DELIVERY","textPreview":"TEAM DELIVERY","textChars":13,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/ofq5svm5","slide":9,"name":"pageno","text":"09 / 20","textPreview":"09 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/bih4na5w","slide":9,"name":"Text 5","text":"The live record shows sustained delivery","textPreview":"The live record shows sustained delivery","textChars":40,"textLines":1,"bbox":[86.4,117.12,864,91.2]}
+{"kind":"textbox","id":"sh/ah8nu54b","slide":9,"name":"Text 6","text":"192","textPreview":"192","textChars":3,"textLines":1,"bbox":[86.4,273.6,336,144]}
+{"kind":"textbox","id":"sh/oza1gfyh","slide":9,"name":"Text 7","text":"Student-authored PRs","textPreview":"Student-authored PRs","textChars":20,"textLines":1,"bbox":[86.4,436.8,307.2,38.4]}
+{"kind":"textbox","id":"sh/p0ji9kf2","slide":9,"name":"Text 8","text":"Across all four repositories","textPreview":"Across all four repositories","textChars":28,"textLines":1,"bbox":[86.4,478.08,307.2,76.8]}
+{"kind":"textbox","id":"sh/2xsjepgb","slide":9,"name":"Text 9","text":"184","textPreview":"184","textChars":3,"textLines":1,"bbox":[471.84,273.6,336,144]}
+{"kind":"textbox","id":"sh/3y107axw","slide":9,"name":"Text 10","text":"Merged","textPreview":"Merged","textChars":6,"textLines":1,"bbox":[471.84,436.8,307.2,38.4]}
+{"kind":"textbox","id":"sh/cnu1kzyd","slide":9,"name":"Text 11","text":"95.8% of the student set","textPreview":"95.8% of the student set","textChars":24,"textLines":1,"bbox":[471.84,478.08,307.2,76.8]}
+{"kind":"textbox","id":"sh/do3id4fy","slide":9,"name":"Text 12","text":"138","textPreview":"138","textChars":3,"textLines":1,"bbox":[857.28,273.6,336,144]}
+{"kind":"textbox","id":"sh/qlcjipgn","slide":9,"name":"Text 13","text":"ProjectV2 items","textPreview":"ProjectV2 items","textChars":15,"textLines":1,"bbox":[857.28,436.8,307.2,38.4]}
+{"kind":"textbox","id":"sh/bml0buxs","slide":9,"name":"Text 14","text":"121 unique student-assigned","textPreview":"121 unique student-assigned","textChars":27,"textLines":1,"bbox":[857.28,478.08,307.2,76.8]}
+{"kind":"textbox","id":"sh/0ru1ozyp","slide":9,"name":"!!num","text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[1113.6,119.04,79.68,43.2]}
+{"kind":"image","id":"im/yho7mlc7","slide":9,"name":"!!orb","bbox":[806.4,345.6,595.2,595.2]}
+{"kind":"notes","id":"nt/udsvah03","slide":9,"text":"Keep scopes separate: student-authored PRs, organisation repositories and private-board items are not summed together.\n\n[Sources]\n- C:\\Users\\brett\\Downloads\\INZBC_Team_Final_Report.docx — consolidated team report and evidence refreshed 20 August 2026.\n- https://github.com/India-New-Zealand-Business-Council — organisation repository history.\n[/Sources]"}
+{"kind":"slide","id":"sl/m90b6t0r","slide":10,"title":"CHAPTER 02","textShapes":5}
+{"kind":"shape","id":"sh/cbu58j2h","slide":10,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/zelojyl8","slide":10,"name":"!!bar","bbox":[86.4,676.8,545.67,2.88]}
+{"kind":"shape","id":"sh/ydcnatkn","slide":10,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/l036l83y","slide":10,"name":"!!kicker","text":"CHAPTER 02","textPreview":"CHAPTER 02","textChars":10,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/kzu5c32t","slide":10,"name":"pageno","text":"10 / 20","textPreview":"10 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/725onyl4","slide":10,"name":"!!num","text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[86.4,72,595.2,537.6]}
+{"kind":"textbox","id":"sh/m1cnetkj","slide":10,"name":"Text 6","text":"Delivery that\nconnects","textPreview":"Delivery that | connects","textChars":22,"textLines":2,"bbox":[614.4,264,578.88,201.6]}
+{"kind":"textbox","id":"sh/s7yt4b21","slide":10,"name":"Text 7","text":"Contracts, controls and interfaces meet at explicit, testable boundaries.","textPreview":"Contracts, controls and interfaces meet at explicit, testable boundaries.","textChars":73,"textLines":1,"bbox":[614.4,480,578.88,86.4]}
+{"kind":"image","id":"im/uhgz6tkr","slide":10,"name":"!!orb","bbox":[787.2,172.8,672,672]}
+{"kind":"notes","id":"nt/m90b6t0r","slide":10,"text":"Move from scale to the mechanisms that made the work coherent.\n\n[Sources]\n- C:\\Users\\brett\\Downloads\\INZBC_Team_Final_Report.docx — consolidated team report and evidence refreshed 20 August 2026.\n- https://github.com/India-New-Zealand-Business-Council — organisation repository history.\n[/Sources]"}
+{"kind":"slide","id":"sl/jetc3ut0","slide":11,"title":"CHAPTER 02","textShapes":19}
+{"kind":"shape","id":"sh/wbih4b6d","slide":11,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/n69grmpw","slide":11,"name":"!!bar","bbox":[86.4,676.8,601.82,2.88]}
+{"kind":"shape","id":"sh/250zy18b","slide":11,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/98rytw72","slide":11,"name":"!!kicker","text":"CHAPTER 02","textPreview":"CHAPTER 02","textChars":10,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/o7ih0r6h","slide":11,"name":"pageno","text":"11 / 20","textPreview":"11 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/72t03qp0","slide":11,"name":"Text 5","text":"One system, built in stages","textPreview":"One system, built in stages","textChars":27,"textLines":1,"bbox":[86.4,117.12,768,91.2]}
+{"kind":"textbox","id":"sh/61kzalof","slide":11,"name":"!!num","text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[1113.6,119.04,79.68,43.2]}
+{"kind":"shape","id":"sh/ofqtgnyt","slide":11,"name":"Shape 7","bbox":[192,370.56,895.68,1.73]}
+{"kind":"textbox","id":"sh/9gza9sze","slide":11,"name":"Text 8","text":"FOUNDATION","textPreview":"FOUNDATION","textChars":10,"textLines":1,"bbox":[86.4,309.12,211.2,34.56]}
+{"kind":"shape","id":"sh/mdobedg3","slide":11,"name":"!!node1","bbox":[180.96,360.48,22.08,22.08]}
+{"kind":"textbox","id":"sh/nehs7iho","slide":11,"name":"Text 10","text":"Shared contracts","textPreview":"Shared contracts","textChars":16,"textLines":1,"bbox":[86.4,405.12,211.2,36.48]}
+{"kind":"textbox","id":"sh/0b6tc3yx","slide":11,"name":"Text 11","text":"Schema, APIs, security","textPreview":"Schema, APIs, security","textChars":22,"textLines":1,"bbox":[86.4,443.52,211.2,57.6]}
+{"kind":"textbox","id":"sh/1cfa58zi","slide":11,"name":"Text 12","text":"INTELLIGENCE","textPreview":"INTELLIGENCE","textChars":12,"textLines":1,"bbox":[310.32,309.12,211.2,34.56]}
+{"kind":"shape","id":"sh/epobatgr","slide":11,"name":"!!node2","bbox":[404.88,360.48,22.08,22.08]}
+{"kind":"textbox","id":"sh/zaxs3yhc","slide":11,"name":"Text 14","text":"FTA + sources","textPreview":"FTA + sources","textChars":13,"textLines":1,"bbox":[310.32,405.12,211.2,36.48]}
+{"kind":"textbox","id":"sh/cn6t83y1","slide":11,"name":"Text 15","text":"Collectors, ranking, audit","textPreview":"Collectors, ranking, audit","textChars":26,"textLines":1,"bbox":[310.32,443.52,211.2,57.6]}
+{"kind":"textbox","id":"sh/dofa18z6","slide":11,"name":"Text 16","text":"INTERFACES","textPreview":"INTERFACES","textChars":10,"textLines":1,"bbox":[534.24,309.12,211.2,34.56]}
+{"kind":"shape","id":"sh/tsnip0ny","slide":11,"name":"!!node3","bbox":[628.8,360.48,22.08,22.08]}
+{"kind":"textbox","id":"sh/87ehgv6d","slide":11,"name":"Text 18","text":"SIP + Comms","textPreview":"SIP + Comms","textChars":11,"textLines":1,"bbox":[534.24,405.12,211.2,36.48]}
+{"kind":"textbox","id":"sh/7650nq5s","slide":11,"name":"Text 19","text":"Real data, review states","textPreview":"Real data, review states","textChars":24,"textLines":1,"bbox":[534.24,443.52,211.2,57.6]}
+{"kind":"textbox","id":"sh/65wzelo7","slide":11,"name":"Text 20","text":"PUBLIC SITE","textPreview":"PUBLIC SITE","textChars":11,"textLines":1,"bbox":[758.16,309.12,211.2,34.56]}
+{"kind":"shape","id":"sh/l43ilgn2","slide":11,"name":"!!node4","bbox":[852.72,360.48,22.08,22.08]}
+{"kind":"textbox","id":"sh/k3uhcb6h","slide":11,"name":"Text 22","text":"Wix rebuild","textPreview":"Wix rebuild","textChars":11,"textLines":1,"bbox":[758.16,405.12,211.2,36.48]}
+{"kind":"textbox","id":"sh/j2lgjq5w","slide":11,"name":"Text 23","text":"Content, mobile, navigation","textPreview":"Content, mobile, navigation","textChars":27,"textLines":1,"bbox":[758.16,443.52,211.2,57.6]}
+{"kind":"textbox","id":"sh/y1czalob","slide":11,"name":"Text 24","text":"NOW","textPreview":"NOW","textChars":3,"textLines":1,"bbox":[982.08,309.12,211.2,34.56]}
+{"kind":"shape","id":"sh/p07ixkn6","slide":11,"name":"!!node5","bbox":[1076.64,360.48,22.08,22.08]}
+{"kind":"textbox","id":"sh/4zyhofml","slide":11,"name":"Text 26","text":"Handover","textPreview":"Handover","textChars":8,"textLines":1,"bbox":[982.08,405.12,211.2,36.48]}
+{"kind":"textbox","id":"sh/m58fih43","slide":11,"name":"Text 27","text":"Controls + decisions visible","textPreview":"Controls + decisions visible","textChars":28,"textLines":1,"bbox":[982.08,443.52,211.2,57.6]}
+{"kind":"image","id":"im/orqlgnad","slide":11,"name":"!!orb","bbox":[-192,364.8,537.6,537.6]}
+{"kind":"notes","id":"nt/jetc3ut0","slide":11,"text":"This is a capability progression rather than a literal date-by-date project schedule.\n\n[Sources]\n- C:\\Users\\brett\\Downloads\\INZBC_Team_Final_Report.docx — consolidated team report and evidence refreshed 20 August 2026.\n- https://github.com/India-New-Zealand-Business-Council — organisation repository history.\n[/Sources]"}
+{"kind":"slide","id":"sl/8f2psfyx","slide":12,"title":"THE GOVERNED FLOW","textShapes":15}
+{"kind":"shape","id":"sh/0f2lgnmp","slide":12,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/ra943il8","slide":12,"name":"!!bar","bbox":[86.4,676.8,657.97,2.88]}
+{"kind":"shape","id":"sh/q903ad4n","slide":12,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/dcbm583y","slide":12,"name":"!!kicker","text":"THE GOVERNED FLOW","textPreview":"THE GOVERNED FLOW","textChars":17,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/sb2lcnmd","slide":12,"name":"pageno","text":"12 / 20","textPreview":"12 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/b6d4f2lc","slide":12,"name":"Text 5","text":"Four steps keep trust intact","textPreview":"Four steps keep trust intact","textChars":28,"textLines":1,"bbox":[86.4,117.12,768,91.2]}
+{"kind":"textbox","id":"sh/a543mx4r","slide":12,"name":"!!step1","text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[86.4,240,255.36,105.6]}
+{"kind":"textbox","id":"sh/wvupgz6t","slide":12,"name":"Text 7","text":"Source evidence","textPreview":"Source evidence","textChars":15,"textLines":1,"bbox":[86.4,362.88,255.36,40.32]}
+{"kind":"textbox","id":"sh/xw3q94ne","slide":12,"name":"Text 8","text":"Dated sources, collectors and approved facts.","textPreview":"Dated sources, collectors and approved facts.","textChars":45,"textLines":1,"bbox":[86.4,403.2,255.36,124.8]}
+{"kind":"textbox","id":"sh/atc7epon","slide":12,"name":"!!step2","text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[369.6,240,255.36,105.6]}
+{"kind":"textbox","id":"sh/bulo7u58","slide":12,"name":"Text 10","text":"Analyse in contracts","textPreview":"Analyse in contracts","textChars":20,"textLines":1,"bbox":[369.6,362.88,255.36,40.32]}
+{"kind":"textbox","id":"sh/orapcf6h","slide":12,"name":"Text 11","text":"FTA services, scoring and generated APIs.","textPreview":"FTA services, scoring and generated APIs.","textChars":41,"textLines":1,"bbox":[369.6,403.2,255.36,124.8]}
+{"kind":"textbox","id":"sh/9sj65kn2","slide":12,"name":"!!step3","text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[652.8,240,255.36,105.6]}
+{"kind":"textbox","id":"sh/mps7a5or","slide":12,"name":"Text 13","text":"Review by a human","textPreview":"Review by a human","textChars":17,"textLines":1,"bbox":[652.8,362.88,255.36,40.32]}
+{"kind":"textbox","id":"sh/nq1o3a5w","slide":12,"name":"Text 14","text":"Named approval, QA and refusal paths.","textPreview":"Named approval, QA and refusal paths.","textChars":37,"textLines":1,"bbox":[652.8,403.2,255.36,124.8]}
+{"kind":"textbox","id":"sh/0nap8f6l","slide":12,"name":"!!step4","text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[936,240,255.36,105.6]}
+{"kind":"textbox","id":"sh/1oj61kn6","slide":12,"name":"Text 16","text":"Publish with audit","textPreview":"Publish with audit","textChars":18,"textLines":1,"bbox":[936,362.88,255.36,40.32]}
+{"kind":"textbox","id":"sh/hkbm5wzu","slide":12,"name":"Text 17","text":"Staff UI, public site and operating record.","textPreview":"Staff UI, public site and operating record.","textChars":43,"textLines":1,"bbox":[936,403.2,255.36,124.8]}
+{"kind":"image","id":"im/zuhs7e58","slide":12,"name":"!!orb","bbox":[902.4,403.2,537.6,537.6]}
+{"kind":"notes","id":"nt/8f2psfyx","slide":12,"text":"Describe the cross-lane boundary at each step; no lane silently bypasses the next one.\n\n[Sources]\n- C:\\Users\\brett\\Downloads\\INZBC_Team_Final_Report.docx — consolidated team report and evidence refreshed 20 August 2026.\n- https://github.com/India-New-Zealand-Business-Council — organisation repository history.\n[/Sources]"}
+{"kind":"slide","id":"sl/hgzapcr6","slide":13,"title":"BEFORE AND AFTER","textShapes":11}
+{"kind":"shape","id":"sh/bq9orito","slide":13,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/o3i5w3ad","slide":13,"name":"!!bar","bbox":[86.4,676.8,714.12,2.88]}
+{"kind":"shape","id":"sh/p4r6p8by","slide":13,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/21gnuts7","slide":13,"name":"!!kicker","text":"BEFORE AND AFTER","textPreview":"BEFORE AND AFTER","textChars":16,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/32ponyts","slide":13,"name":"pageno","text":"13 / 20","textPreview":"13 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/gzy5s3a1","slide":13,"name":"Text 5","text":"What changed, precisely","textPreview":"What changed, precisely","textChars":23,"textLines":1,"bbox":[86.4,117.12,816,91.2]}
+{"kind":"shape","id":"sh/1076lobm","slide":13,"name":"!!panelTODAY","bbox":[86.4,225.6,518.4,388.8]}
+{"kind":"textbox","id":"sh/hcfy9k3u","slide":13,"name":"Text 7","text":"STARTING POINT","textPreview":"STARTING POINT","textChars":14,"textLines":1,"bbox":[126.72,261.12,307.2,32.64]}
+{"kind":"shape","id":"sh/gb6x0zm9","slide":13,"name":"Shape 8","bbox":[126.72,341.76,9.6,9.6]}
+{"kind":"textbox","id":"sh/vaxg7ulo","slide":13,"name":"Text 9","text":"Separate specialist lanes","textPreview":"Separate specialist lanes","textChars":25,"textLines":1,"bbox":[168.96,322.56,393.6,48]}
+{"kind":"shape","id":"sh/u9ofyp43","slide":13,"name":"Shape 10","bbox":[126.72,430.08,9.6,9.6]}
+{"kind":"textbox","id":"sh/t8fy5k3i","slide":13,"name":"Text 11","text":"Hidden approval assumptions","textPreview":"Hidden approval assumptions","textChars":27,"textLines":1,"bbox":[168.96,410.88,393.6,48]}
+{"kind":"shape","id":"sh/876xwfmx","slide":13,"name":"Shape 12","bbox":[126.72,518.4,9.6,9.6]}
+{"kind":"textbox","id":"sh/7mdg3als","slide":13,"name":"Text 13","text":"Board state could drift","textPreview":"Board state could drift","textChars":23,"textLines":1,"bbox":[168.96,499.2,393.6,48]}
+{"kind":"shape","id":"sh/6l4fu547","slide":13,"name":"!!panelAFTER","bbox":[674.88,225.6,518.4,388.8]}
+{"kind":"textbox","id":"sh/lkvy103m","slide":13,"name":"Text 15","text":"DELIVERED STATE","textPreview":"DELIVERED STATE","textChars":15,"textLines":1,"bbox":[715.2,261.12,307.2,32.64]}
+{"kind":"shape","id":"sh/kjmxsfm1","slide":13,"name":"Shape 16","bbox":[715.2,341.76,9.6,9.6]}
+{"kind":"textbox","id":"sh/cnqh8fux","slide":13,"name":"Text 17","text":"Shared contracts and APIs","textPreview":"Shared contracts and APIs","textChars":25,"textLines":1,"bbox":[757.44,322.56,393.6,48]}
+{"kind":"shape","id":"sh/xozyhkbi","slide":13,"name":"Shape 18","bbox":[715.2,430.08,9.6,9.6]}
+{"kind":"textbox","id":"sh/q18f65cr","slide":13,"name":"Text 19","text":"Named review + audit trail","textPreview":"Named review + audit trail","textChars":26,"textLines":1,"bbox":[757.44,410.88,393.6,48]}
+{"kind":"shape","id":"sh/bmhgfatc","slide":13,"name":"Shape 20","bbox":[715.2,518.4,9.6,9.6]}
+{"kind":"textbox","id":"sh/oz6x4vul","slide":13,"name":"Text 21","text":"Handover gaps made visible","textPreview":"Handover gaps made visible","textChars":26,"textLines":1,"bbox":[757.44,499.2,393.6,48]}
+{"kind":"image","id":"im/qd4fuhsn","slide":13,"name":"!!orb","bbox":[844.8,-134.4,576,576]}
+{"kind":"notes","id":"nt/hgzapcr6","slide":13,"text":"The board reconciliation finding is intentionally preserved; the report does not rewrite stale status to make delivery look cleaner.\n\n[Sources]\n- C:\\Users\\brett\\Downloads\\INZBC_Team_Final_Report.docx — consolidated team report and evidence refreshed 20 August 2026.\n- https://github.com/India-New-Zealand-Business-Council — organisation repository history.\n[/Sources]"}
+{"kind":"slide","id":"sl/6lsnupw7","slide":14,"title":"INTEGRATION EVIDENCE","textShapes":12}
+{"kind":"shape","id":"sh/wbydknq1","slide":14,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/jepwf2pc","slide":14,"name":"!!bar","bbox":[86.4,676.8,770.27,2.88]}
+{"kind":"shape","id":"sh/idgvmx8r","slide":14,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/5grehs7i","slide":14,"name":"!!kicker","text":"INTEGRATION EVIDENCE","textPreview":"INTEGRATION EVIDENCE","textChars":20,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/kfidonqx","slide":14,"name":"pageno","text":"14 / 20","textPreview":"14 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/zi5c3y98","slide":14,"name":"Text 5","text":"Quality became the integration gate","textPreview":"Quality became the integration gate","textChars":35,"textLines":1,"bbox":[86.4,109.44,672,91.2]}
+{"kind":"textbox","id":"sh/ehwvat8n","slide":14,"name":"!!num","text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[1113.6,111.36,79.68,43.2]}
+{"kind":"textbox","id":"sh/x4ni9ofy","slide":14,"name":"Text 7","text":"Issue → PR → CI → human review → merge","textPreview":"Issue → PR → CI → human review → merge","textChars":38,"textLines":1,"bbox":[119.04,562.56,470.4,38.4]}
+{"kind":"shape","id":"sh/a1wze9g7","slide":14,"name":"!!tileA","bbox":[648,177.6,545.28,206.4]}
+{"kind":"textbox","id":"sh/b2507exs","slide":14,"name":"Text 9","text":"187","textPreview":"187","textChars":3,"textLines":1,"bbox":[688.32,199.68,211.2,86.4]}
+{"kind":"textbox","id":"sh/kre1k3y9","slide":14,"name":"Text 10","text":"Organisation merges","textPreview":"Organisation merges","textChars":19,"textLines":1,"bbox":[688.32,289.92,464.64,30.72]}
+{"kind":"textbox","id":"sh/ls7idofu","slide":14,"name":"Text 11","text":"of 189 total · stewarded by Bhanu","textPreview":"of 189 total · stewarded by Bhanu","textChars":33,"textLines":1,"bbox":[688.32,322.56,464.64,34.56]}
+{"kind":"shape","id":"sh/y5wjitgj","slide":14,"name":"!!tileB","bbox":[648,412.8,259.2,216]}
+{"kind":"textbox","id":"sh/z650byxo","slide":14,"name":"Text 13","text":"60 review events","textPreview":"60 review events","textChars":16,"textLines":1,"bbox":[688.32,441.6,182.4,32.64]}
+{"kind":"textbox","id":"sh/0buh8zy5","slide":14,"name":"Text 14","text":"Across 45 pull requests and multiple revision rounds.","textPreview":"Across 45 pull requests and multiple revision rounds.","textChars":53,"textLines":1,"bbox":[688.32,480,187.2,120]}
+{"kind":"shape","id":"sh/1w3i14fq","slide":14,"name":"!!tileC","bbox":[934.08,412.8,259.2,216]}
+{"kind":"textbox","id":"sh/hsvy50re","slide":14,"name":"Text 16","text":"Strong ×6","textPreview":"Strong ×6","textChars":9,"textLines":1,"bbox":[974.4,441.6,182.4,32.64]}
+{"kind":"textbox","id":"sh/grmxwvqt","slide":14,"name":"Text 17","text":"Bhanu's PDR objectives are fully demonstrated.","textPreview":"Bhanu's PDR objectives are fully demonstrated.","textChars":46,"textLines":1,"bbox":[974.4,480,187.2,120]}
+{"kind":"image","id":"im/8jyx8jmt","slide":14,"name":"!!orb","bbox":[-172.8,-115.2,518.4,518.4]}
+{"kind":"image","id":"im/9k7y1o3e","slide":14,"name":"!!art","alt":"Quality-gate workflow showing issue, pull request, automated gates, human review and merge","bbox":[86.4,177.6,537.6,451.2]}
+{"kind":"notes","id":"nt/6lsnupw7","slide":14,"text":"Use this slide to connect quantitative activity to the controlled merge process.\n\n[Sources]\n- C:\\Users\\brett\\Downloads\\INZBC_Team_Final_Report.docx — Bhanu metrics, PDR assessment and integration findings.\n- C:\\Users\\brett\\inzbc\\team_report_work\\bhanu-media\\image3.png — evidence graphic generated from refreshed GitHub review and merge records.\n- https://github.com/India-New-Zealand-Business-Council — organisation history.\n[/Sources]"}
+{"kind":"slide","id":"sl/vaxsvy10","slide":15,"title":"CHAPTER 03","textShapes":5}
+{"kind":"shape","id":"sh/k3y5ov21","slide":15,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/76p4jqls","slide":15,"name":"!!bar","bbox":[86.4,676.8,826.42,2.88]}
+{"kind":"shape","id":"sh/65gnqlk7","slide":15,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/t87ml0ji","slide":15,"name":"!!kicker","text":"CHAPTER 03","textPreview":"CHAPTER 03","textChars":10,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/s7y5sv2x","slide":15,"name":"pageno","text":"15 / 20","textPreview":"15 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/na5476l8","slide":15,"name":"!!num","text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[566.4,72,626.88,537.6]}
+{"kind":"textbox","id":"sh/m9c3e1kn","slide":15,"name":"Text 6","text":"Ownership made\nteamwork stronger","textPreview":"Ownership made | teamwork stronger","textChars":32,"textLines":2,"bbox":[86.4,264,633.6,201.6]}
+{"kind":"textbox","id":"sh/wrm9kvep","slide":15,"name":"Text 7","text":"Clear lanes reduced collisions; shared quality rules kept the whole system coherent.","textPreview":"Clear lanes reduced collisions; shared quality rules kept the whole system coherent.","textChars":84,"textLines":1,"bbox":[86.4,480,566.4,96]}
+{"kind":"image","id":"im/u9s3etsb","slide":15,"name":"!!orb","bbox":[-230.4,153.6,710.4,710.4]}
+{"kind":"notes","id":"nt/vaxsvy10","slide":15,"text":"Introduce the practices that turned specialist ownership into a team outcome.\n\n[Sources]\n- C:\\Users\\brett\\Downloads\\INZBC_Team_Final_Report.docx — consolidated team report and evidence refreshed 20 August 2026.\n- https://github.com/India-New-Zealand-Business-Council — organisation repository history.\n[/Sources]"}
+{"kind":"slide","id":"sl/gny5sjyp","slide":16,"title":"TEAM REFLECTION","textShapes":7}
+{"kind":"shape","id":"sh/9kby1g7m","slide":16,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/ytkf2h8j","slide":16,"name":"!!bar","bbox":[86.4,676.8,882.57,2.88]}
+{"kind":"shape","id":"sh/zutgvm94","slide":16,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/kv2h4rqp","slide":16,"name":"!!kicker","text":"TEAM REFLECTION","textPreview":"TEAM REFLECTION","textChars":15,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/lwbyxwra","slide":16,"name":"pageno","text":"16 / 20","textPreview":"16 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/ip4zel83","slide":16,"name":"Text 5","text":"”","textPreview":"”","textChars":1,"textLines":1,"bbox":[950.4,48,249.6,288]}
+{"kind":"textbox","id":"sh/3qdg7qpo","slide":16,"name":"!!num","text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[86.4,119.04,96,43.2]}
+{"kind":"textbox","id":"sh/fm1gzq5o","slide":16,"name":"Text 7","text":"“The strongest team result is that the lanes meet at explicit boundaries.”","textPreview":"“The strongest team result is that the lanes meet at explicit boundaries.”","textChars":74,"textLines":1,"bbox":[86.4,196.8,864,278.4]}
+{"kind":"textbox","id":"sh/1ojy10ne","slide":16,"name":"Text 8","text":"Consolidated team report","textPreview":"Consolidated team report","textChars":24,"textLines":1,"bbox":[193.92,518.4,480,32.64]}
+{"kind":"textbox","id":"sh/gnax8v6t","slide":16,"name":"Text 9","text":"Final reflection · 20 August 2026","textPreview":"Final reflection · 20 August 2026","textChars":33,"textLines":1,"bbox":[193.92,552.96,480,32.64]}
+{"kind":"image","id":"im/kji90fa5","slide":16,"name":"!!orb","bbox":[787.2,249.6,614.4,614.4]}
+{"kind":"image","id":"im/5kra9kra","slide":16,"name":"!!avatar","geometry":"ellipse","bbox":[86.4,506.88,86.4,86.4]}
+{"kind":"notes","id":"nt/gny5sjyp","slide":16,"text":"This sentence is quoted directly from the consolidated team report.\n\n[Sources]\n- C:\\Users\\brett\\Downloads\\INZBC_Team_Final_Report.docx — consolidated team report and evidence refreshed 20 August 2026.\n- https://github.com/India-New-Zealand-Business-Council — organisation repository history.\n[/Sources]"}
+{"kind":"slide","id":"sl/14bup87q","slide":17,"title":"HOW THE TEAM WORKED","textShapes":16}
+{"kind":"shape","id":"sh/gbedwfmx","slide":17,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/rm5czq50","slide":17,"name":"!!bar","bbox":[86.4,676.8,938.72,2.88]}
+{"kind":"shape","id":"sh/6lwvql4v","slide":17,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/t8ne10n6","slide":17,"name":"!!kicker","text":"HOW THE TEAM WORKED","textPreview":"HOW THE TEAM WORKED","textChars":19,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/snedsvml","slide":17,"name":"pageno","text":"17 / 20","textPreview":"17 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/jilcvq54","slide":17,"name":"Text 5","text":"Communication was delivery infrastructure","textPreview":"Communication was delivery infrastructure","textChars":41,"textLines":1,"bbox":[86.4,117.12,864,91.2]}
+{"kind":"textbox","id":"sh/4by9or6l","slide":17,"name":"Text 6","text":"Focused PRs","textPreview":"Focused PRs","textChars":11,"textLines":1,"bbox":[57.6,414.72,187.2,30.72]}
+{"kind":"textbox","id":"sh/pc7qhwn6","slide":17,"name":"Text 7","text":"Small, reviewable changes","textPreview":"Small, reviewable changes","textChars":25,"textLines":1,"bbox":[57.6,445.44,187.2,30.72]}
+{"kind":"textbox","id":"sh/3ap8fm50","slide":17,"name":"Text 8","text":"Clear ownership","textPreview":"Clear ownership","textChars":15,"textLines":1,"bbox":[249.6,414.72,187.2,30.72]}
+{"kind":"textbox","id":"sh/gnepkr69","slide":17,"name":"Text 9","text":"One accountable lane","textPreview":"One accountable lane","textChars":20,"textLines":1,"bbox":[249.6,445.44,187.2,30.72]}
+{"kind":"textbox","id":"sh/ulw7ihoj","slide":17,"name":"Text 10","text":"Human review","textPreview":"Human review","textChars":12,"textLines":1,"bbox":[441.6,414.72,187.2,30.72]}
+{"kind":"textbox","id":"sh/fm58bm54","slide":17,"name":"Text 11","text":"No silent publishing","textPreview":"No silent publishing","textChars":20,"textLines":1,"bbox":[441.6,445.44,187.2,30.72]}
+{"kind":"textbox","id":"sh/14rqpgne","slide":17,"name":"Text 12","text":"Real systems","textPreview":"Real systems","textChars":12,"textLines":1,"bbox":[633.6,414.72,187.2,30.72]}
+{"kind":"textbox","id":"sh/90nq9gfi","slide":17,"name":"Text 13","text":"APIs + databases","textPreview":"APIs + databases","textChars":16,"textLines":1,"bbox":[633.6,445.44,187.2,30.72]}
+{"kind":"textbox","id":"sh/ny5876xc","slide":17,"name":"Text 14","text":"Client escalation","textPreview":"Client escalation","textChars":17,"textLines":1,"bbox":[825.6,414.72,187.2,30.72]}
+{"kind":"textbox","id":"sh/mxw7e1gr","slide":17,"name":"Text 15","text":"No guessed facts","textPreview":"No guessed facts","textChars":16,"textLines":1,"bbox":[825.6,445.44,187.2,30.72]}
+{"kind":"textbox","id":"sh/0vepcbyl","slide":17,"name":"Text 16","text":"Handover","textPreview":"Handover","textChars":8,"textLines":1,"bbox":[1017.6,414.72,187.2,30.72]}
+{"kind":"textbox","id":"sh/zul836xg","slide":17,"name":"Text 17","text":"Docs + runbooks","textPreview":"Docs + runbooks","textChars":15,"textLines":1,"bbox":[1017.6,445.44,187.2,30.72]}
+{"kind":"textbox","id":"sh/ytc7a1gv","slide":17,"name":"Text 18","text":"Weekly calls, issues, reviews, ADRs and decision packs turned communication into traceable delivery.","textPreview":"Weekly calls, issues, reviews, ADRs and decision packs turned communication into traceable delivery.","textChars":100,"textLines":1,"bbox":[86.4,539.52,912,48]}
+{"kind":"image","id":"im/i5obi9o7","slide":17,"name":"!!orb","bbox":[345.6,441.6,633.6,633.6]}
+{"kind":"image","id":"im/j6xsreps","slide":17,"name":"!!avatar1","geometry":"ellipse","bbox":[86.4,264,129.6,129.6]}
+{"kind":"image","id":"im/lknexc7a","slide":17,"name":"!!avatar2","geometry":"ellipse","bbox":[278.4,264,129.6,129.6]}
+{"kind":"image","id":"im/0jedorqp","slide":17,"name":"!!avatar3","geometry":"ellipse","bbox":[470.4,264,129.6,129.6]}
+{"kind":"image","id":"im/zy5wvmp4","slide":17,"name":"!!avatar4","geometry":"ellipse","bbox":[662.4,264,129.6,129.6]}
+{"kind":"image","id":"im/yxwvmh8j","slide":17,"name":"!!avatar5","geometry":"ellipse","bbox":[854.4,264,129.6,129.6]}
+{"kind":"image","id":"im/dw3etc7y","slide":17,"name":"!!avatar6","geometry":"ellipse","bbox":[1046.4,264,129.6,129.6]}
+{"kind":"notes","id":"nt/14bup87q","slide":17,"text":"Bhanu's communication evidence is particularly strong: 141 authored issues, 60 review events, client-decision framing and broad handover documentation.\n\n[Sources]\n- C:\\Users\\brett\\Downloads\\INZBC_Team_Final_Report.docx — consolidated team report and evidence refreshed 20 August 2026.\n- https://github.com/India-New-Zealand-Business-Council — organisation repository history.\n[/Sources]"}
+{"kind":"slide","id":"sl/y5wne50z","slide":18,"title":"HANDOVER","textShapes":16}
+{"kind":"shape","id":"sh/hsn2l4bu","slide":18,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/itw3upcf","slide":18,"name":"!!bar","bbox":[86.4,676.8,994.87,2.88]}
+{"kind":"shape","id":"sh/je5knut0","slide":18,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/4felwzu5","slide":18,"name":"!!kicker","text":"HANDOVER","textPreview":"HANDOVER","textChars":8,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/5gnmp4bq","slide":18,"name":"pageno","text":"18 / 20","textPreview":"18 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/6hw3y9sb","slide":18,"name":"Text 5","text":"Three decisions unlock production","textPreview":"Three decisions unlock production","textChars":33,"textLines":1,"bbox":[86.4,115.2,912,91.2]}
+{"kind":"shape","id":"sh/rip4retw","slide":18,"name":"!!ask1","bbox":[86.4,240,336,316.8]}
+{"kind":"textbox","id":"sh/fapkr6pw","slide":18,"name":"Text 7","text":"DECISION 01","textPreview":"DECISION 01","textChars":11,"textLines":1,"bbox":[124.8,274.56,259.2,28.8]}
+{"kind":"textbox","id":"sh/upg3i18r","slide":18,"name":"Text 8","text":"Identity boundary","textPreview":"Identity boundary","textChars":17,"textLines":1,"bbox":[124.8,318.72,259.2,40.32]}
+{"kind":"textbox","id":"sh/1cr2tg72","slide":18,"name":"Text 9","text":"Confirm login ownership and the Member Jungle boundary.","textPreview":"Confirm login ownership and the Member Jungle boundary.","textChars":55,"textLines":1,"bbox":[124.8,370.56,259.2,105.6]}
+{"kind":"textbox","id":"sh/gbylkbqh","slide":18,"name":"Text 10","text":"INZBC · Go-live gate","textPreview":"INZBC · Go-live gate","textChars":20,"textLines":1,"bbox":[124.8,495.36,259.2,32.64]}
+{"kind":"shape","id":"sh/7mpknmp0","slide":18,"name":"!!ask2","bbox":[471.84,240,336,316.8]}
+{"kind":"textbox","id":"sh/6lg3e18f","slide":18,"name":"Text 12","text":"DECISION 02","textPreview":"DECISION 02","textChars":11,"textLines":1,"bbox":[510.24,274.56,259.2,28.8]}
+{"kind":"textbox","id":"sh/to72pw76","slide":18,"name":"Text 13","text":"Reviewer + secrets","textPreview":"Reviewer + secrets","textChars":18,"textLines":1,"bbox":[510.24,318.72,259.2,40.32]}
+{"kind":"textbox","id":"sh/snylgrql","slide":18,"name":"Text 14","text":"Name the reviewer; provide OAuth secrets and a rotation policy.","textPreview":"Name the reviewer; provide OAuth secrets and a rotation policy.","textChars":63,"textLines":1,"bbox":[510.24,370.56,259.2,105.6]}
+{"kind":"textbox","id":"sh/bi94zqp4","slide":18,"name":"Text 15","text":"INZBC · Before UAT","textPreview":"INZBC · Before UAT","textChars":18,"textLines":1,"bbox":[510.24,495.36,259.2,32.64]}
+{"kind":"shape","id":"sh/qh03ql8j","slide":18,"name":"!!ask3","bbox":[857.28,240,336,316.8]}
+{"kind":"textbox","id":"sh/md4nipsr","slide":18,"name":"Text 17","text":"DECISION 03","textPreview":"DECISION 03","textChars":11,"textLines":1,"bbox":[895.68,274.56,259.2,28.8]}
+{"kind":"textbox","id":"sh/nedoru9c","slide":18,"name":"Text 18","text":"Operating owner","textPreview":"Operating owner","textChars":15,"textLines":1,"bbox":[895.68,318.72,259.2,40.32]}
+{"kind":"textbox","id":"sh/8zm5kzax","slide":18,"name":"Text 19","text":"Accept deployment, board reconciliation and long-term support.","textPreview":"Accept deployment, board reconciliation and long-term support.","textChars":62,"textLines":1,"bbox":[895.68,370.56,259.2,105.6]}
+{"kind":"textbox","id":"sh/90v6t4ri","slide":18,"name":"Text 20","text":"INZBC + team · Handover","textPreview":"INZBC + team · Handover","textChars":23,"textLines":1,"bbox":[895.68,495.36,259.2,32.64]}
+{"kind":"textbox","id":"sh/a14nm9s3","slide":18,"name":"!!close","text":"Strong controls are ready for authorised operation.","textPreview":"Strong controls are ready for authorised operation.","textChars":51,"textLines":1,"bbox":[86.4,599.04,480,40.32]}
+{"kind":"image","id":"im/ozqlc36x","slide":18,"name":"!!orb","bbox":[825.6,326.4,595.2,595.2]}
+{"kind":"notes","id":"nt/y5wne50z","slide":18,"text":"These are client-authority decisions, not unfinished engineering choices the team should guess.\n\n[Sources]\n- C:\\Users\\brett\\Downloads\\INZBC_Team_Final_Report.docx — consolidated team report and evidence refreshed 20 August 2026.\n- https://github.com/India-New-Zealand-Business-Council — organisation repository history.\n[/Sources]"}
+{"kind":"slide","id":"sl/nid43ytk","slide":19,"title":"CLOSING","textShapes":5}
+{"kind":"shape","id":"sh/vitozqt8","slide":19,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/ahk7qls3","slide":19,"name":"!!bar","bbox":[86.4,676.8,1051.02,2.88]}
+{"kind":"shape","id":"sh/xkbq10be","slide":19,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/wj2psvat","slide":19,"name":"!!kicker","text":"CLOSING","textPreview":"CLOSING","textChars":7,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/jmd83atk","slide":19,"name":"pageno","text":"19 / 20","textPreview":"19 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/il47u5sz","slide":19,"name":"!!close","text":"Ready for handover","textPreview":"Ready for handover","textChars":18,"textLines":1,"bbox":[86.4,244.8,1107.17,182.4]}
+{"kind":"textbox","id":"sh/cri1gnql","slide":19,"name":"Text 6","text":"Thank you to INZBC, course supervisors and the team for turning four outcomes into one governed delivery.","textPreview":"Thank you to INZBC, course supervisors and the team for turning four outcomes into one governed delivery.","textChars":105,"textLines":1,"bbox":[230.4,443.52,818.88,76.8]}
+{"kind":"textbox","id":"sh/dsri9sr6","slide":19,"name":"Text 7","text":"INDIA NEW ZEALAND BUSINESS COUNCIL","textPreview":"INDIA NEW ZEALAND BUSINESS COUNCIL","textChars":34,"textLines":1,"bbox":[86.4,547.2,1107.17,34.56]}
+{"kind":"image","id":"im/1wzmx8je","slide":19,"name":"!!orb","bbox":[240,-86.4,806.4,806.4]}
+{"kind":"image","id":"im/0v65432t","slide":19,"name":"!!orb2","bbox":[748.8,384,537.6,537.6]}
+{"kind":"notes","id":"nt/nid43ytk","slide":19,"text":"Resolve the opening thesis: the team has a credible path from a controlled implementation to a sustainable service.\n\n[Sources]\n- C:\\Users\\brett\\Downloads\\INZBC_Team_Final_Report.docx — consolidated team report and evidence refreshed 20 August 2026.\n- https://github.com/India-New-Zealand-Business-Council — organisation repository history.\n[/Sources]"}
+{"kind":"slide","id":"sl/zyxsni5k","slide":20,"title":"EVIDENCE TRAIL","textShapes":13}
+{"kind":"shape","id":"sh/4nu1krqh","slide":20,"name":"track","bbox":[86.4,677.28,1107.17,1.73]}
+{"kind":"shape","id":"sh/po3itc72","slide":20,"name":"!!bar","bbox":[86.4,676.8,1107.17,2.88]}
+{"kind":"shape","id":"sh/2lczih8r","slide":20,"name":"!!mark","bbox":[86.4,57.6,14.4,14.4]}
+{"kind":"textbox","id":"sh/3ml0rmpw","slide":20,"name":"!!kicker","text":"EVIDENCE TRAIL","textPreview":"EVIDENCE TRAIL","textChars":14,"textLines":1,"bbox":[119.04,48,672,30.72]}
+{"kind":"textbox","id":"sh/gjuhg7ql","slide":20,"name":"pageno","text":"20 / 20","textPreview":"20 / 20","textChars":7,"textLines":1,"bbox":[1046.4,48,146.88,30.72]}
+{"kind":"textbox","id":"sh/hk3ipcr6","slide":20,"name":"!!close","text":"Evidence lives in the work","textPreview":"Evidence lives in the work","textChars":26,"textLines":1,"bbox":[86.4,113.28,576,57.6]}
+{"kind":"textbox","id":"sh/dkfmp4zy","slide":20,"name":"Text 6","text":"Bhanu · Roshan · Paras","textPreview":"Bhanu · Roshan · Paras","textChars":22,"textLines":1,"bbox":[86.4,220.8,576,48]}
+{"kind":"textbox","id":"sh/cj65wzyd","slide":20,"name":"Text 7","text":"Studio 5 delivery team · INZBC","textPreview":"Studio 5 delivery team · INZBC","textChars":30,"textLines":1,"bbox":[86.4,270.72,576,38.4]}
+{"kind":"textbox","id":"sh/rid4nuhs","slide":20,"name":"Text 8","text":"GITHUB","textPreview":"GITHUB","textChars":6,"textLines":1,"bbox":[86.4,347.52,115.2,32.64]}
+{"kind":"textbox","id":"sh/qh4nupg7","slide":20,"name":"Text 9","text":"India-New-Zealand-Business-Council","textPreview":"India-New-Zealand-Business-Council","textChars":34,"textLines":1,"bbox":[216,347.52,422.4,32.64]}
+{"kind":"textbox","id":"sh/pwvmlkzm","slide":20,"name":"Text 10","text":"BOARD","textPreview":"BOARD","textChars":5,"textLines":1,"bbox":[86.4,407.04,115.2,32.64]}
+{"kind":"textbox","id":"sh/4vm5sfy1","slide":20,"name":"Text 11","text":"INZBC SIP Platform · ProjectV2 #1","textPreview":"INZBC SIP Platform · ProjectV2 #1","textChars":33,"textLines":1,"bbox":[216,407.04,422.4,32.64]}
+{"kind":"textbox","id":"sh/3ud4juhg","slide":20,"name":"Text 12","text":"REPORT","textPreview":"REPORT","textChars":6,"textLines":1,"bbox":[86.4,466.56,115.2,32.64]}
+{"kind":"textbox","id":"sh/2t4nqpgb","slide":20,"name":"Text 13","text":"Refreshed 20 August 2026","textPreview":"Refreshed 20 August 2026","textChars":24,"textLines":1,"bbox":[216,466.56,422.4,32.64]}
+{"kind":"shape","id":"sh/hsvmhkzq","slide":20,"name":"!!tileA","bbox":[710.4,220.8,482.88,316.8]}
+{"kind":"textbox","id":"sh/grm5ofy5","slide":20,"name":"Text 15","text":"Four repositories.\nOne governed delivery.","textPreview":"Four repositories. | One governed delivery.","textChars":41,"textLines":2,"bbox":[750.72,321.6,402.24,115.2]}
+{"kind":"textbox","id":"sh/8b654f61","slide":20,"name":"anim_cta","text":"Next: confirm the operating owner, named reviewer and go-live decisions.","textPreview":"Next: confirm the operating owner, named reviewer and go-live decisions.","textChars":72,"textLines":1,"bbox":[86.4,576,912,48]}
+{"kind":"image","id":"im/ehg3qdwn","slide":20,"name":"!!orb","bbox":[729.6,-172.8,633.6,633.6]}
+{"kind":"image","id":"im/1k7mlsvy","slide":20,"name":"!!orb2","bbox":[-211.2,460.8,499.2,499.2]}
+{"kind":"notes","id":"nt/zyxsni5k","slide":20,"text":"Close on the action required from INZBC and leave the audience with the evidence locations.\n\n[Sources]\n- C:\\Users\\brett\\Downloads\\INZBC_Team_Final_Report.docx — final report and evidence index.\n- https://github.com/India-New-Zealand-Business-Council\n- https://github.com/India-New-Zealand-Business-Council/inzbc\n- https://github.com/India-New-Zealand-Business-Council/inzview\n- https://github.com/India-New-Zealand-Business-Council/daily-india-nz-news-agent\n[/Sources]"}

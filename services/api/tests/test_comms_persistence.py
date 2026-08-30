@@ -161,6 +161,84 @@ def test_approving_a_missing_draft_raises_key_error(repo: CommsDraftRepository) 
         )
 
 
+def test_delete_removes_the_row(repo: CommsDraftRepository) -> None:
+    author = _make_user("Author")
+    record = repo.create("newsletter", "brief", "text", authored_by=author)
+
+    repo.delete(record.id, actor_id=author, reason="superseded")
+
+    with pytest.raises(KeyError):
+        repo.get(record.id)
+
+
+def test_delete_of_an_approved_draft_still_succeeds(repo: CommsDraftRepository) -> None:
+    """Any status is deletable, including Approved: deleting the row does not erase the approval
+    - it already wrote its own audit entry, and that survives even though the row is gone."""
+    author = _make_user("Author")
+    reviewer = _make_user("Reviewer")
+    record = repo.create("newsletter", "brief", "text", authored_by=author)
+    repo.approve(record.id, principal=_principal(reviewer, "Reviewer"))
+
+    repo.delete(record.id, actor_id=reviewer, reason="contained personal information")
+
+    with pytest.raises(KeyError):
+        repo.get(record.id)
+    rows = _audit_rows(record.id)
+    assert any(action == "comms_draft.approve" for action, *_ in rows), (
+        "the approval's own audit row must survive even though the draft row is gone"
+    )
+
+
+def test_delete_writes_an_audit_row_naming_only_the_status_transition(
+    repo: CommsDraftRepository,
+) -> None:
+    author = _make_user("Author")
+    record = repo.create("newsletter", "brief", "text", authored_by=author)
+
+    repo.delete(record.id, actor_id=author, reason="created in error")
+
+    rows = _audit_rows(record.id)
+    assert len(rows) == 2
+    action, old_value, new_value, user_id = rows[1]
+    assert action == "comms_draft.delete"
+    assert old_value == "Draft"
+    assert new_value == "Deleted"
+    assert str(user_id) == author
+
+
+def test_delete_audits_the_act_without_recording_the_text(repo: CommsDraftRepository) -> None:
+    """`audit_log` is append-only - nothing can remove a row from it. Recording what was in a
+    deleted draft would make the sensitive text permanent in the one table nothing can remove it
+    from, the exact opposite of what someone deleting a draft is trying to achieve.
+
+    Scans every `old_value`/`new_value`/`reason` in the whole table, not just this record's own
+    rows - the failure being guarded against is the text leaking into a column nobody thought
+    about, not just the obvious one.
+    """
+    distinctive = f"leaked-name-{uuid.uuid4()}"
+    author = _make_user("Author")
+    record = repo.create("newsletter", "brief", distinctive, authored_by=author)
+
+    repo.delete(record.id, actor_id=author, reason="contained personal information")
+
+    with psycopg.connect(DATABASE_URL) as conn:
+        rows = conn.execute(
+            "select old_value, new_value, reason from audit_log "
+            "where old_value like %s or new_value like %s or reason like %s",
+            (f"%{distinctive}%", f"%{distinctive}%", f"%{distinctive}%"),
+        ).fetchall()
+    assert rows == []
+
+
+def test_deleting_a_missing_draft_raises_key_error(repo: CommsDraftRepository) -> None:
+    with pytest.raises(KeyError):
+        repo.delete(
+            "00000000-0000-0000-0000-000000000000",
+            actor_id=_make_user("Someone"),
+            reason="created in error",
+        )
+
+
 def test_get_and_list_all_round_trip(repo: CommsDraftRepository) -> None:
     author = _make_user("Author")
     first = repo.create("newsletter", "brief one", "text one", authored_by=author)
@@ -172,84 +250,3 @@ def test_get_and_list_all_round_trip(repo: CommsDraftRepository) -> None:
     assert first.id in ids
     assert second.id in ids
 
-
-def test_delete_removes_the_row(repo: CommsDraftRepository) -> None:
-    author = _make_user("Author")
-    draft = repo.create("newsletter", "a brief", "some text", authored_by=author)
-
-    repo.delete(draft.id, principal=_principal(author, "Author"), reason="no longer needed")
-
-    with pytest.raises(KeyError):
-        repo.get(draft.id)
-
-
-def test_delete_audits_the_act_without_recording_the_text(repo: CommsDraftRepository) -> None:
-    """The whole point of #342, and the thing easiest to get backwards.
-
-    `record_audit` normally captures `old_value` so a reader can see what changed. Doing that on a
-    deletion would copy the brief into `audit_log`, which is append-only with an insert/select-only
-    grant - making the sensitive text permanent in the one table nothing can remove it from, which
-    is the exact opposite of what someone deleting a draft is trying to achieve.
-
-    So: the act must be on the record, and the text must not be.
-    """
-    author = _make_user("Author")
-    secret = f"Priya Sharma, Chief Executive {uuid.uuid4()}"
-    draft = repo.create("newsletter", secret, "generated text", authored_by=author)
-
-    repo.delete(
-        draft.id, principal=_principal(author, "Author"), reason="contained personal information"
-    )
-
-    with psycopg.connect(DATABASE_URL) as conn:
-        rows = conn.execute(
-            "select action, old_value, new_value, reason from audit_log where record_id = %s",
-            (draft.id,),
-        ).fetchall()
-
-    actions = [r[0] for r in rows]
-    assert "comms_draft.delete" in actions
-
-    # The brief must appear nowhere in the audit trail for this record.
-    for _action, old_value, new_value, reason in rows:
-        for field in (old_value, new_value, reason):
-            assert secret not in (field or "")
-
-    # And nowhere else in audit_log either - a wider net, because the failure this guards against
-    # is the text leaking into a column nobody thought about.
-    with psycopg.connect(DATABASE_URL) as conn:
-        leaked = conn.execute(
-            "select count(*) from audit_log where coalesce(old_value,'') || coalesce(new_value,'') "
-            "|| coalesce(reason,'') like %s",
-            (f"%{secret}%",),
-        ).fetchone()[0]
-    assert leaked == 0
-
-
-def test_delete_leaves_the_earlier_approval_on_the_record(repo: CommsDraftRepository) -> None:
-    """Deleting the draft removes the text, not the history of who approved it."""
-    author = _make_user("Author")
-    reviewer = _make_user("Reviewer")
-    draft = repo.create("newsletter", "a brief", "some text", authored_by=author)
-    repo.approve(draft.id, principal=_principal(reviewer, "Reviewer"), reason="looks right")
-
-    repo.delete(draft.id, principal=_principal(reviewer, "Reviewer"), reason="superseded")
-
-    with psycopg.connect(DATABASE_URL) as conn:
-        actions = [
-            r[0]
-            for r in conn.execute(
-                "select action from audit_log where record_id = %s order by id", (draft.id,)
-            ).fetchall()
-        ]
-    assert "comms_draft.approve" in actions
-    assert "comms_draft.delete" in actions
-
-
-def test_deleting_a_missing_draft_raises_key_error(repo: CommsDraftRepository) -> None:
-    with pytest.raises(KeyError):
-        repo.delete(
-            "00000000-0000-0000-0000-000000000000",
-            principal=_principal(_make_user("Author"), "Author"),
-            reason="x",
-        )

@@ -1163,7 +1163,7 @@
           "Comms Assistant"
         ],
         "summary": "Delete Draft",
-        "description": "Removes a draft (#342). The act is audited; the text is not.\n\n**The reason this route exists is privacy, not tidiness.** `brief` is typed by a staff member,\nand no automated control can tell whether they typed a member's name \u2014 redaction removes\nformatted identifiers, never a name in prose (ADR-0006). Until this existed there was no way\nto remove one.\n\n**`reason` must describe why, not repeat what is being removed.** It is stored in `audit_log`,\nwhich is append-only and whose grant is insert/select only, so anything written here is\npermanent and unremovable. Writing \"removing Priya Sharma's name from the brief\" would move the\ndisclosure into the one table it can never be deleted from. \"Contained personal information\"\nis the right shape.\n\nSame roles as creating a draft. The audit record names who deleted it, so the act is\nattributable without being restricted to one person who may be unavailable.",
+        "description": "Removes a draft outright (#342). Same roles as creating one \u2014 Secretariat, SIP Owner \u2014 not\nthe reviewer roles that approve; deleting is an authoring-side act, not a review one.\n\nAny status is deletable, including `Approved`: the approval's own audit entry survives even\nthough the row it approved is gone. See `CommsDraftRepository.delete`'s docstring for why the\naudit row this writes never carries the brief or draft text.",
         "operationId": "delete_draft_api_comms_drafts__draft_id__delete",
         "security": [
           {
@@ -1187,7 +1187,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DeleteIn"
+                "$ref": "#/components/schemas/DeleteDraftIn"
               }
             }
           }
@@ -4350,7 +4350,7 @@
         "title": "DecisionsOut",
         "description": "The current decision on each stream, plus the revision each was read at.\n\nA `null` value means undecided *after submission*, which is a different fact from an explicit\nrefusal: `Not Authorised` is a decision, `null` is the absence of one. Keeping them distinct is\nthe whole reason the mutable approvals row was replaced.\n\n`revisions` is not decoration. A caller recording a decision passes back the revision it read,\nand that is what makes a decision built on a superseded ruling detectable."
       },
-      "DeleteIn": {
+      "DeleteDraftIn": {
         "properties": {
           "reason": {
             "type": "string",
@@ -4364,8 +4364,8 @@
         "required": [
           "reason"
         ],
-        "title": "DeleteIn",
-        "description": "`reason` is required, unlike `ApproveIn`'s.\n\nDeleting the only stored copy of what was sent to an external model is not something to do\nwithout saying why, and the audit row is all that remains afterwards. An optional reason would\nmake \"deleted, no explanation given\" the easy default."
+        "title": "DeleteDraftIn",
+        "description": "Body, not a query parameter \u2014 a reason in a URL lands in access logs, which is the same\nleak in a different place. `reason` describes *why* the draft is being removed, not what it\ncontained: it is stored in `audit_log`, which is append-only, so naming what was in the draft\nwould move the disclosure into the one place it can never be deleted from again."
       },
       "DistributionIn": {
         "properties": {

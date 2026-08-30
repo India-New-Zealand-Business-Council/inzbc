@@ -19,6 +19,7 @@ import math
 import re
 from dataclasses import dataclass
 from datetime import date
+from enum import Enum
 
 from .corpus import CORPUS, FTA_STATUS_LINE, TariffOutcome, TradeDirection
 from .standards import AI_INFORMATION_STANDARD, Confidence
@@ -261,3 +262,223 @@ def answer_query(query: str) -> list[ExplainerAnswer]:
     # (e.g. two entries sharing the same single sector keyword and nothing else).
     matched.sort(key=lambda pair: (-pair[1], pair[0].id))
     return [_to_answer(entry) for entry, _score in matched]
+
+
+class Depth(str, Enum):
+    """The three audiences #187 asks for: a non-member public reader, a member relying on the
+    answer for a business decision, and an internal reviewer checking the evidence before
+    approving distribution.
+
+    These are three audiences, not three rewritings of one answer (#187's own framing): the
+    underlying sourced fact never changes across levels, and this module has no authority to
+    invent separate public-facing prose for a treatment that only exists as one sourced string
+    in `docs/fta-source-corpus.md`. What changes is how much of the evidence trail is exposed -
+    PUBLIC still carries citation and verified date (`docs/modules/fta-centre.md` requires every
+    material answer to, public or not - "a simpler explanation" is not "an uncited one"), but
+    withholds `id`/`source_tier`/drafting `notes`; MEMBER adds nothing further sourced, only
+    drops the internal-only `notes` that PUBLIC also withholds; INTERNAL is the only tier that
+    carries the raw source tier and reviewer notes, the record a reviewer actually checks.
+    """
+
+    PUBLIC = "public"
+    MEMBER = "member"
+    INTERNAL = "internal"
+
+
+@dataclass(frozen=True)
+class PublicAnswer:
+    """Non-member view (#187): the finding, its citation and effective date, and what to do
+    next.
+
+    `docs/modules/fta-centre.md` requires every material answer - public or member - to carry
+    its citation and source/effective date, so those are NOT evidence held back at this tier;
+    a "simpler public explanation" still has to be a sourced one. What's actually withheld here
+    is `id` (an internal identifier, not evidence) and `source_tier`/`notes` (the raw citation
+    tier number and any drafting notes - reviewer-facing detail a public reader has no use for).
+    The exclusion is structural, not conventional, the same discipline `NoMatch` uses elsewhere
+    in this module: a public-tier renderer cannot access a field this type was never given.
+    """
+
+    topic: str
+    sector: str
+    treatment: str
+    citation: str
+    verified_at: date
+    status_line: str
+    jurisdiction: str
+    next_step: str
+    disclaimer: str
+    confidence: Confidence
+    confidence_meaning: str
+    # Structured tariff fields (#185) are answer content, the same as `treatment`, not evidence -
+    # a public reader asking "what's the tariff on wool" needs the queryable value as much as a
+    # member does. See ExplainerAnswer's docstring for field meaning.
+    direction: TradeDirection | None = None
+    current_tariff: str | None = None
+    fta_commencement_tariff: str | None = None
+    staged_reductions: str | None = None
+    final_tariff: str | None = None
+    implementation_period_years: int | None = None
+
+
+@dataclass(frozen=True)
+class MemberAnswer:
+    """Member view (#187): everything a member needs to rely on the answer for a business
+    decision - the full sourced finding, citation and verified date, and the internal `id` for
+    reference in support requests.
+
+    Deliberately excludes `notes`: several corpus entries carry reviewer/drafting notes that are
+    editorial record, not member-facing content, and `InternalAnswer` already exists to carry
+    them to the one audience that needs them. This is a distinct type from `ExplainerAnswer`,
+    not a re-export of it, specifically so a member-facing renderer cannot read `.notes` off it
+    even by mistake - `answer_query()`/`ExplainerAnswer` are untouched for backward
+    compatibility with `services/api/main.py`'s existing endpoint, which is not this type.
+    """
+
+    id: str
+    topic: str
+    sector: str
+    treatment: str
+    confirmed: bool
+    citation: str
+    verified_at: date
+    status_line: str
+    jurisdiction: str
+    next_step: str
+    disclaimer: str
+    confidence: Confidence
+    confidence_meaning: str
+    direction: TradeDirection | None = None
+    current_tariff: str | None = None
+    fta_commencement_tariff: str | None = None
+    staged_reductions: str | None = None
+    final_tariff: str | None = None
+    implementation_period_years: int | None = None
+
+
+@dataclass(frozen=True)
+class InternalAnswer:
+    """Reviewer-facing view (#187): everything a reviewer checks before approving distribution,
+    including the raw source tier and any drafting notes that never reach a member.
+    """
+
+    id: str
+    topic: str
+    sector: str
+    treatment: str
+    confirmed: bool
+    citation: str
+    verified_at: date
+    source_tier: int
+    notes: str | None
+    status_line: str
+    jurisdiction: str
+    next_step: str
+    disclaimer: str
+    confidence: Confidence
+    confidence_meaning: str
+    direction: TradeDirection | None = None
+    current_tariff: str | None = None
+    fta_commencement_tariff: str | None = None
+    staged_reductions: str | None = None
+    final_tariff: str | None = None
+    implementation_period_years: int | None = None
+
+
+def _to_public_answer(answer: ExplainerAnswer) -> PublicAnswer:
+    return PublicAnswer(
+        topic=answer.topic,
+        sector=answer.sector,
+        treatment=answer.treatment,
+        citation=answer.citation,
+        verified_at=answer.verified_at,
+        status_line=answer.status_line,
+        jurisdiction=answer.jurisdiction,
+        next_step=answer.next_step,
+        disclaimer=answer.disclaimer,
+        confidence=answer.confidence,
+        confidence_meaning=answer.confidence_meaning,
+        direction=answer.direction,
+        current_tariff=answer.current_tariff,
+        fta_commencement_tariff=answer.fta_commencement_tariff,
+        staged_reductions=answer.staged_reductions,
+        final_tariff=answer.final_tariff,
+        implementation_period_years=answer.implementation_period_years,
+    )
+
+
+def _to_member_answer(answer: ExplainerAnswer) -> MemberAnswer:
+    return MemberAnswer(
+        id=answer.id,
+        topic=answer.topic,
+        sector=answer.sector,
+        treatment=answer.treatment,
+        confirmed=answer.confirmed,
+        citation=answer.citation,
+        verified_at=answer.verified_at,
+        status_line=answer.status_line,
+        jurisdiction=answer.jurisdiction,
+        next_step=answer.next_step,
+        disclaimer=answer.disclaimer,
+        confidence=answer.confidence,
+        confidence_meaning=answer.confidence_meaning,
+        direction=answer.direction,
+        current_tariff=answer.current_tariff,
+        fta_commencement_tariff=answer.fta_commencement_tariff,
+        staged_reductions=answer.staged_reductions,
+        final_tariff=answer.final_tariff,
+        implementation_period_years=answer.implementation_period_years,
+    )
+
+
+def _to_internal_answer(entry: TariffOutcome, answer: ExplainerAnswer) -> InternalAnswer:
+    return InternalAnswer(
+        id=entry.id,
+        topic=answer.topic,
+        sector=answer.sector,
+        treatment=answer.treatment,
+        confirmed=entry.confirmed,
+        citation=answer.citation,
+        verified_at=answer.verified_at,
+        source_tier=entry.source_tier,
+        notes=entry.notes,
+        status_line=answer.status_line,
+        jurisdiction=answer.jurisdiction,
+        next_step=answer.next_step,
+        disclaimer=answer.disclaimer,
+        confidence=answer.confidence,
+        confidence_meaning=answer.confidence_meaning,
+        direction=answer.direction,
+        current_tariff=answer.current_tariff,
+        fta_commencement_tariff=answer.fta_commencement_tariff,
+        staged_reductions=answer.staged_reductions,
+        final_tariff=answer.final_tariff,
+        implementation_period_years=answer.implementation_period_years,
+    )
+
+
+def answer_query_at_depth(
+    query: str, depth: Depth = Depth.MEMBER
+) -> list[PublicAnswer] | list[MemberAnswer] | list[InternalAnswer]:
+    """#187's depth-aware entry point, additive to `answer_query`.
+
+    `answer_query()`/`ExplainerAnswer` are untouched so `services/api/main.py`'s current
+    endpoint keeps working exactly as before - this is the new entry point a depth-aware caller
+    uses instead; wiring a depth parameter into that endpoint itself is `services/api`, Bhanu's
+    lane, not done here (see PR #327 - `Refs #187`, not `Closes #187`, until that lands). Ranking,
+    the confirmed-only filter, and the `[]`-on-no-match behaviour are all inherited unchanged
+    from `answer_query`; only the shape of each matched entry varies by depth, and MEMBER now
+    returns `MemberAnswer` (not raw `ExplainerAnswer`) so the internal-only `notes` field is
+    structurally absent at this tier too, not just at PUBLIC. `no_match()`'s Action Required
+    state is depth-independent - the same escalation applies to every audience, since there is
+    no sourced answer to differentiate.
+    """
+    member_answers = answer_query(query)
+    if depth is Depth.PUBLIC:
+        return [_to_public_answer(answer) for answer in member_answers]
+    if depth is Depth.INTERNAL:
+        entries_by_id = {entry.id: entry for entry in CORPUS}
+        return [
+            _to_internal_answer(entries_by_id[answer.id], answer) for answer in member_answers
+        ]
+    return [_to_member_answer(answer) for answer in member_answers]

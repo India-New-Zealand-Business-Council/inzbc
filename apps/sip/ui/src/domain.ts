@@ -3,10 +3,12 @@
  * docs/sip/launch/SIP-186_daily_brief_template_v0.9.md,
  * docs/sip/launch/SIP-188_qa_checklist_v0.9.md and schemas/state-machine.md.
  *
- * Nothing here is a live API contract — schemas/api-contract.md is v0.1 draft and none of the
- * `/api/reports/*` endpoints are built yet (docs/api-integration-spec.md: "land once the database
- * and orchestrator persistence exist", issue #44). These types describe the shapes this UI is
- * built against per the worklog's instruction to build against contract fixtures.
+ * `POST /api/reports`, `POST /api/reports/{id}/qa`, `GET /api/reports/{id}` and
+ * `POST /api/runs/{id}/fail-qa` are live now (#124, #285) — see api/reportsStore.ts, which calls
+ * them. The report-decision endpoints (`/approval`, `/ruling`, `/distribution`) are still not
+ * mounted; `decision_role_permissions` is unseeded, which is a client decision pending (ADR-0005
+ * follow-up 4), not an engineering gap — reportsStore.ts's `recordCeoDecision` and
+ * `authoriseDistribution` document that and stay fixture-backed until it lands.
  */
 
 // schemas/state-machine.md's state list. 'Continue' and 'Continue With Correction' are included
@@ -173,7 +175,23 @@ export interface DistributionRecord {
 
 export interface DailyBriefReport {
   id: string
+  // A run number in every fixture ('RUN-20260730-01'), not `runs.id`. `reportsStore.submitReportForQa`
+  // sends this as `SubmitReportIn.run_id`, which the server validates as a UUID — known gap, see
+  // that function's doc comment. Not renamed to something like `runNumber` here because nothing in
+  // this UI can supply the real UUID it would need instead; renaming the field without a source for
+  // the value it should hold would just move the confusion, not remove it.
   runId: string
+  // Optimistic-concurrency version of `runId`'s row in `runs` (`services/api/runs.py`'s
+  // `TransitionIn.expected_version`) — a fixture never needed this, since nothing else could race
+  // an in-memory object. A real lifecycle transition (fail-qa, and eventually the others) has to
+  // pass back the version it read, or the server refuses it as stale rather than silently
+  // clobbering a concurrent change. Starts at 0, matching a freshly created run.
+  runVersion: number
+  // The report_version row `POST /api/reports` created for this brief, once it exists —
+  // `services/api/reports.py`'s `ReportVersionOut.id`. `null` until submitted. Needed by
+  // `POST /api/reports/{id}/qa`, which records a result against a specific version, not against
+  // the run.
+  reportVersionId: string | null
   reportDate: string
   coverageStart: string
   coverageEnd: string

@@ -41,6 +41,11 @@ export const TOTAL_BRIEF_BUDGET = 4000
 
 export interface CommsDraftResult {
   draft: string
+  // Additive on the backend (services/api/comms.py's DraftOut docstring) — carried here now so a
+  // caller that wants to delete this draft later has the real persisted id to do it with, instead
+  // of only the generated text.
+  id: string
+  status: string
 }
 
 export class CommsDraftError extends Error {}
@@ -122,6 +127,58 @@ export async function requestCommsDraft(
  */
 function isCommsDraftResult(value: unknown): value is CommsDraftResult {
   if (typeof value !== 'object' || value === null) return false
-  const draft = (value as Record<string, unknown>).draft
-  return typeof draft === 'string' && draft.length > 0
+  const body = value as Record<string, unknown>
+  return (
+    typeof body.draft === 'string' &&
+    body.draft.length > 0 &&
+    typeof body.id === 'string' &&
+    body.id.length > 0 &&
+    typeof body.status === 'string'
+  )
+}
+
+/**
+ * Calls the draft-deletion endpoint (#342, #343). Not undoable, and the reason is permanently
+ * recorded in `audit_log` — this deliberately does not accept anything describing what the draft
+ * *contained*, only why it's being removed, since that log is append-only and cannot be edited or
+ * cleared afterward. `CommsAssistant.tsx`'s reason field enforces the same thing on the way in.
+ *
+ * DELETE with a body: `fetch` sends it fine, but this is exactly the kind of request some HTTP
+ * helpers silently drop the body from — worth remembering if this ever moves off a bare `fetch`.
+ */
+export async function deleteCommsDraft(
+  draftId: string,
+  reason: string,
+  options: { signal?: AbortSignal; baseUrl?: string } = {},
+): Promise<void> {
+  const { signal, baseUrl = '' } = options
+  const csrfToken = await getCsrfToken(baseUrl)
+
+  let response: Response
+  try {
+    response = await fetch(`${baseUrl}/api/comms/drafts/${encodeURIComponent(draftId)}`, {
+      method: 'DELETE',
+      signal,
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        'X-CSRF-Token': csrfToken,
+      },
+      body: JSON.stringify({ reason }),
+    })
+  } catch (cause) {
+    if (cause instanceof DOMException && cause.name === 'AbortError') throw cause
+    throw new CommsDraftError('Could not reach the Comms Assistant service.', { cause })
+  }
+
+  if (response.status === 404) {
+    throw new CommsDraftError('This draft no longer exists — it may already have been deleted.')
+  }
+  if (response.status === 403) {
+    throw new CommsDraftError('You do not have permission to delete this draft.')
+  }
+  if (!response.ok) {
+    throw new CommsDraftError(`Comms Assistant service returned ${response.status}.`)
+  }
 }
