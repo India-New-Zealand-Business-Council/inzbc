@@ -1,6 +1,12 @@
 // Contact + social links are sourced from the live inzbc.org/connect page
 // (docs/client-answers.md D14/D18, apps/site/content/connect.md), not invented — same content
 // as apps/comms/ui's footer. Flickr deliberately excluded per D18 (undecided).
+//
+// Logo and accent match the live inzview build (India-New-Zealand-Business-Council/inzview),
+// same as apps/fta/ui, apps/comms/ui, apps/sip/ui and apps/member/ui's Footer.tsx: lime replacing
+// lavender as the one accent colour, logo pointed at inzview's own Wix Media asset.
+const LOGO_URL = 'https://static.wixstatic.com/media/df219d_0b8e6333d53841efaf66f675038a0798~mv2.jpg'
+
 const SOCIAL_LINKS = [
   { label: 'X (Twitter)', href: 'https://twitter.com/inzbc' },
   { label: 'LinkedIn', href: 'https://linkedin.com/company/india-new-zealand-business-council' },
@@ -11,15 +17,18 @@ const SOCIAL_LINKS = [
 export function Footer() {
   return (
     <footer className="bg-inzbc-navy text-white">
-      <div className="mx-auto max-w-4xl px-4 py-6 text-sm">
-        <nav aria-label="Social media" className="flex flex-wrap gap-x-5 gap-y-2">
+      <div className="mx-auto max-w-7xl px-4 py-6 text-sm">
+        <a href="/" aria-label="INZBC home" className="inline-block rounded-sm">
+          <img src={LOGO_URL} alt="INZBC" className="h-8 w-auto" />
+        </a>
+        <nav aria-label="Social media" className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
           {SOCIAL_LINKS.map((link) => (
             <a
               key={link.label}
               href={link.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-sm underline decoration-white/40 underline-offset-2 transition-colors hover:text-inzbc-lavender hover:decoration-inzbc-lavender focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-lavender"
+              className="rounded-sm underline decoration-white/40 underline-offset-2 transition-colors hover:text-inzbc-lime hover:decoration-inzbc-lime focus-visible:outline-inzbc-lime"
             >
               {link.label}
             </a>
@@ -27,7 +36,10 @@ export function Footer() {
         </nav>
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/20 pt-4">
           <p>&copy; 2026 India New Zealand Business Council. All rights reserved.</p>
-          <a href="mailto:sunil@inzbc.org" className="underline decoration-white/40 underline-offset-2">
+          <a
+            href="mailto:sunil@inzbc.org"
+            className="rounded-sm underline decoration-white/40 underline-offset-2 transition-colors hover:text-inzbc-lime hover:decoration-inzbc-lime focus-visible:outline-inzbc-lime"
+          >
             Contact us
           </a>
         </div>
