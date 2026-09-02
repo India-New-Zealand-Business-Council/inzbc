@@ -501,6 +501,10 @@ export async function recordCeoDecision(
       evidence_ref: decision.evidenceReference.trim(),
       next_review: decision.nextReviewDate,
       decided_at: decision.decidedAt,
+      // Caller-supplied per services/api/reports.py's `_DecisionIn`: only the caller knows
+      // whether a retry is the same act or a second one, so a fresh key per submission is what
+      // makes this specific click retryable without becoming a duplicate decision.
+      idempotency_key: crypto.randomUUID(),
     },
     options.signal,
   )
@@ -575,6 +579,7 @@ export async function authoriseDistribution(
       // recipient (CeoDecisionScreen.tsx) — repeated here as the value the endpoint needs, not
       // fabricated for this call.
       distribution_recipient: 'sunilkaushalnz@gmail.com',
+      idempotency_key: crypto.randomUUID(),
     },
     options.signal,
   )
