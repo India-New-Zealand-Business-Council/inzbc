@@ -139,13 +139,11 @@ def _seed_accounts(database_url: str) -> dict[str, Account]:
 
 
 def _post(session: requests.Session, path: str, body: dict | None = None) -> dict:
-    response = session.request(
-        "POST",
-        f"{session.base_url}{path}",
-        json=body,
-        timeout=30,  # type: ignore[attr-defined]
-    )
-    if not response.ok:
+    kwargs: dict = {"json": body}
+    if isinstance(session, requests.Session):  # a TestClient rejects `timeout`
+        kwargs["timeout"] = 30
+    response = session.request("POST", f"{session.base_url}{path}", **kwargs)  # type: ignore[attr-defined]
+    if response.status_code >= 400:
         raise SystemExit(f"POST {path} -> {response.status_code}: {response.text}")
     return response.json() if response.content else {}
 
@@ -167,7 +165,20 @@ def _decision_body(
     }
 
 
-def run_walk(base_url: str, database_url: str) -> dict:
+def run_walk(base_url: str, database_url: str, *, client_factory=None) -> dict:
+    """Take one run the whole length of the state machine and return the read-back evidence.
+
+    `client_factory(account) -> client` builds the per-account HTTP client. The default is a
+    `requests.Session` pointed at `base_url`; the test passes one that returns a FastAPI
+    `TestClient` bound to the same session cookie, so the walk exercises the real routes without a
+    running server. Whatever it returns needs a `.request(method, url, json=, timeout=)` and a
+    `.base_url`.
+    """
+    if client_factory is None:
+
+        def client_factory(account: Account) -> requests.Session:
+            return account.session(base_url)
+
     accounts = _seed_accounts(database_url)
     analyst = accounts["Analyst"]
     reviewer = accounts["Reviewer"]
@@ -178,10 +189,10 @@ def run_walk(base_url: str, database_url: str) -> dict:
     now = datetime.now(UTC)
     coverage_start, coverage_end = _locked_coverage_window(now)
 
-    analyst_http = analyst.session(base_url)
-    sip_owner_http = sip_owner.session(base_url)
-    reviewer_http = reviewer.session(base_url)
-    secretariat_http = secretariat.session(base_url)
+    analyst_http = client_factory(analyst)
+    sip_owner_http = client_factory(sip_owner)
+    reviewer_http = client_factory(reviewer)
+    secretariat_http = client_factory(secretariat)
 
     steps: list[dict] = []
 
