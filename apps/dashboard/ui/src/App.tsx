@@ -9,7 +9,7 @@ export function App() {
     <div className="flex min-h-screen flex-col">
       <Header />
       <main id="main-content" className="flex-1 bg-slate-50">
-        <div className="mx-auto max-w-4xl space-y-8 px-4 py-6 sm:py-8">
+        <div className="mx-auto max-w-7xl space-y-8 px-4 pt-24 pb-6 sm:pt-28 sm:pb-8">
           <div>
             <h1 className="text-2xl font-extrabold text-inzbc-navy sm:text-3xl">
               Executive Dashboard
