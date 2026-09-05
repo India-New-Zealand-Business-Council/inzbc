@@ -196,15 +196,15 @@ def test_an_unpermitted_role_cannot_decide(repo: DecisionRepository, seeded: dic
     control rather than a collision with one.
     """
     with psycopg.connect(DATABASE_URL, row_factory=psycopg.rows.dict_row) as conn:
-        conn.execute("insert into roles (id, name) values (9, 'Board Viewer') on conflict do nothing")
+        board_viewer = role_id(conn, "Board Viewer")
         conn.execute(
-            "insert into user_roles (user_id, role_id) values (%s, 9) on conflict do nothing",
-            (seeded["user_id"],),
+            "insert into user_roles (user_id, role_id) values (%s, %s) on conflict do nothing",
+            (seeded["user_id"], board_viewer),
         )
         conn.commit()
 
     with pytest.raises(DecisionNotPermittedError):
-        repo.record(**_kwargs(seeded, kind=CEO_RULING, value="Continue", actor_role_id=9))
+        repo.record(**_kwargs(seeded, kind=CEO_RULING, value="Continue", actor_role_id=board_viewer))
 
 
 def test_two_concurrent_decisions_on_one_stream_cannot_both_commit(
