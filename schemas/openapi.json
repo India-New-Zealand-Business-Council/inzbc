@@ -619,6 +619,125 @@
         }
       }
     },
+    "/api/runs/{run_id}/authorisations": {
+      "post": {
+        "tags": [
+          "Run authorisations"
+        ],
+        "summary": "Authorise Run",
+        "operationId": "authorise_run_api_runs__run_id__authorisations_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthoriseRunIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunAuthorisationOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Run authorisations"
+        ],
+        "summary": "List Run Authorisations",
+        "operationId": "list_run_authorisations_api_runs__run_id__authorisations_get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RunAuthorisationOut"
+                  },
+                  "title": "Response List Run Authorisations Api Runs  Run Id  Authorisations Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/candidates": {
       "post": {
         "tags": [
@@ -3578,6 +3697,41 @@
         "title": "AuditPageOut",
         "description": "A page of audit entries plus the cursor for the next one.\n\n`next_before_id` rather than a page number, so a caller pages by passing back what it was\ngiven instead of computing an offset. `null` means this is the last page."
       },
+      "AuthoriseRunIn": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "pattern": "^(Launch|Resumption)$",
+            "title": "Kind"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Reason"
+          },
+          "evidence_ref": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Evidence Ref"
+          },
+          "decided_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Decided At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "reason",
+          "evidence_ref",
+          "decided_at"
+        ],
+        "title": "AuthoriseRunIn"
+      },
       "CandidateOut": {
         "properties": {
           "id": {
@@ -5377,6 +5531,55 @@
           "value"
         ],
         "title": "RulingIn"
+      },
+      "RunAuthorisationOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "actor_id": {
+            "type": "string",
+            "title": "Actor Id"
+          },
+          "decided_at": {
+            "type": "string",
+            "title": "Decided At"
+          },
+          "recorded_at": {
+            "type": "string",
+            "title": "Recorded At"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "evidence_ref": {
+            "type": "string",
+            "title": "Evidence Ref"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "run_id",
+          "kind",
+          "actor_id",
+          "decided_at",
+          "recorded_at",
+          "reason",
+          "evidence_ref"
+        ],
+        "title": "RunAuthorisationOut"
       },
       "RunOut": {
         "properties": {

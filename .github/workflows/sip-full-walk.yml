@@ -1,0 +1,76 @@
+name: SIP full walk (#55)
+
+# Manual only, same standing as sip-dry-run.yml. This is NOT a SIP-184 production run: SIP-191's
+# launch window (docs/sip/launch/launch-config.md) was 27-31 Jul 2026 and expired with no
+# re-approval, and SIP-184's fail-closed list treats an out-of-window run as a Critical stop. This
+# workflow takes one run the whole length of the state machine (Draft -> Distributed -> Closed)
+# against a real backend, every human gate crossed over HTTP by a distinct role account, and
+# uploads the decision_records + audit_log read-back as evidence - it proves the wiring works, it
+# does not produce a Production Run Register entry. See apps/sip/collector/walk_full_run.py's
+# module docstring for the full picture.
+on:
+  workflow_dispatch:
+
+jobs:
+  full-walk:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16.2
+        env:
+          POSTGRES_USER: inzbc
+          POSTGRES_PASSWORD: inzbc
+          POSTGRES_DB: inzbc_full_walk
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://inzbc:inzbc@localhost:5432/inzbc_full_walk
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install "uv==0.8.17"
+          uv sync --locked --extra dev
+      - name: Apply database schema
+        run: psql -v ON_ERROR_STOP=1 --single-transaction "$DATABASE_URL" -f database/schema.sql
+      - name: Seed roles and decision permissions
+        # Unlike sip-dry-run.yml, this walk crosses the report-level gates, and every decision
+        # kind is refused until decision_role_permissions has rows. Migration 0003 seeds them.
+        # #360 tracks two unrelated pre-existing tests 0003 breaks locally; it does not affect
+        # this walk.
+        run: |
+          psql -v ON_ERROR_STOP=1 --single-transaction "$DATABASE_URL" \
+            -f database/migrations/0003_seed_roles_and_decision_permissions.sql
+      - name: Seed source library
+        run: uv run python scripts/seed_source_library.py
+      - name: Start services/api
+        run: |
+          uv run uvicorn services.api.main:app --host 127.0.0.1 --port 8000 &
+          for _ in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:8000/health >/dev/null 2>&1 && break
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:8000/health
+      - name: Walk one run Draft -> Distributed -> Closed
+        # The script seeds its own four role accounts (one per gate) and mints their sessions
+        # in-process - it needs DATABASE_URL directly for that, the same way scripts/dev_session.py
+        # does, because there is no sign-in route to call over HTTP.
+        run: |
+          uv run python -m apps.sip.collector.walk_full_run \
+            --base-url http://127.0.0.1:8000 \
+            --evidence-out full_walk_evidence.json
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: sip-full-walk-evidence
+          path: full_walk_evidence.json

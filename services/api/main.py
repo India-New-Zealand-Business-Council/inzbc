@@ -36,6 +36,7 @@ from services.api.registers import (
     watch_list_router,
 )
 from services.api.reports import router as reports_router
+from services.api.run_authorisations import router as run_authorisations_router
 from services.api.runs import router as runs_router
 from services.api.session import router as session_router
 from services.api.source_checks import router as source_checks_router
@@ -47,6 +48,7 @@ app = FastAPI(
     summary="Trade intelligence and FTA services for the India New Zealand Business Council.",
 )
 app.include_router(runs_router)
+app.include_router(run_authorisations_router)
 
 # Rate limiting, one error shape, security headers, and CORS only when configured (#98). Applied
 # here rather than per endpoint so a route added later is covered by default instead of by

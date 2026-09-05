@@ -288,6 +288,13 @@ EXPECTED_ROLES: dict[tuple[str, str], set[str]] = {
     # this. Restricting it to the owner would let the person most likely to be audited decide
     # who sees the record.
     ("GET", "/api/runs/{run_id}/audit"): set(STAFF_READ),
+    # Launch and resumption authority itself (#55/#227) — the record `/start` and `/resume`
+    # check `approval_ref` against. Owner only, matching the weight `decision_role_permissions`
+    # (migration 0003) gives CEO Ruling: see run_authorisations.py's module docstring for why
+    # this is a judgement call rather than a table-driven answer the way the three ADR-0005
+    # decision kinds are.
+    ("POST", "/api/runs/{run_id}/authorisations"): {"SIP Owner"},
+    ("GET", "/api/runs/{run_id}/authorisations"): set(STAFF_READ),
     # Launch, CEO and resumption authority. Owner only.
     ("POST", "/api/runs/{run_id}/start"): {"SIP Owner"},
     ("POST", "/api/runs/{run_id}/pause"): {"SIP Owner"},

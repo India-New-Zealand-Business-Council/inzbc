@@ -60,6 +60,24 @@ same branch-level fault hits someone else's PR later; not otherwise unresolved.
   limit needs to be increased" (org GitHub Actions billing, not a code issue) — flagged, not
   something I can fix; will re-verify CI once billing is resolved.
 
+- [ ] Run authorisation write path + full SIP-184 walk (#55, PRs #359 + the walk branch).
+  **#359:** `#227` built `run_authorisations`, `#120` built the transition endpoints that *read*
+  it, and neither built the endpoint that *writes* a row — so a real client holding every role
+  still had no way to get a run past `Draft`, because `apply_transition` had no `approval_ref` it
+  would accept. Added `POST`/`GET /api/runs/{run_id}/authorisations` (SIP Owner only). CI green,
+  1159 tests. **The walk:** `apps/sip/collector/walk_full_run.py` takes one run the whole length
+  of the state machine — `Draft → Run Authorised → … → Distributed → Closed` — with every human
+  gate crossed over HTTP by a distinct role account (Analyst creates and drafts; SIP Owner
+  authorises and rules; Reviewer QA-passes and approves; Secretariat authorises distribution),
+  then reads `decision_records` and `audit_log` back as evidence. Hybrid by necessity: no HTTP
+  endpoint exists for the *mechanical* advances (`Run Authorised → … → QA In Progress`,
+  `Awaiting CEO Decision → Approved → Distributed`), which are not human gates, so those go
+  straight through `RunRepository.apply_transition` — the same call the unbuilt endpoints would
+  make. `sip-full-walk.yml` runs it end to end against a real Postgres + `services/api` and
+  uploads the evidence JSON; a DATABASE_URL-gated test drives the same path through a `TestClient`
+  with no server. Not a SIP-184 production run — SIP-191's window is still expired,
+  `production_enabled` stays false.
+
 ## Next up
 - SHARED-OK: SIP-050 relevance/signal/confidence scoring moved to Bhanu's worklog — it runs
   through the model gateway he owns. `assessment.py` stays the validation/carry layer here.
@@ -67,12 +85,13 @@ same branch-level fault hits someone else's PR later; not otherwise unresolved.
   (PR #317, PR #264). The #31 CI ruff pin is also closed: Bhanu's PR #325 brought
   `apps/sip/core`, `scripts/board.py` and `services/api` clean under 0.16.0 and bumped the pin,
   the one thing outside my lane that #31 was waiting on.
-- [ ] End-to-end pipeline run against the SIP-184 SOP (#55, issue stays open). All the code
-  `#264` needed is merged and the dry run runs clean end-to-end against a fixture file — what's
-  left is INZBC's own call, not code: SIP-191's run authority window (27-31 Jul) has expired, so
-  no real production run can happen without a fresh controlled decision, and a live `agent.py`
-  fetch in CI needs a new PAT secret (an infra/admin decision). Nothing to build here until
-  either lands.
+- [ ] End-to-end pipeline run against the SIP-184 SOP (#55, issue stays open). The code path is
+  now walked the whole way — see PR #359 + the full-walk branch under *In review*: a run goes
+  `Draft → Distributed → Closed` locally with every gate crossed by its own role account and the
+  `decision_records`/`audit_log` read back. What still cannot happen is a *production* run:
+  SIP-191's authority window (27–31 Jul) has expired, so no real run without a fresh controlled
+  decision, and a live `agent.py` fetch in CI needs a new PAT secret (an infra/admin decision).
+  Both are INZBC's call, not code.
 - [ ] Collection-engine reliability (#208, via `daily-india-nz-news-agent`'s own PR flow). All
   four days built: Day 1 — test harness (`daily-india-nz-news-agent#13`, 49 characterization
   tests; a real `ModuleNotFoundError` under plain `pytest` found and fixed via

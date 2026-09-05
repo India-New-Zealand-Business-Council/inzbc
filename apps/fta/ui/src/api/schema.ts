@@ -209,6 +209,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/runs/{run_id}/authorisations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Run Authorisations */
+        get: operations["list_run_authorisations_api_runs__run_id__authorisations_get"];
+        put?: never;
+        /** Authorise Run */
+        post: operations["authorise_run_api_runs__run_id__authorisations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/candidates": {
         parameters: {
             query?: never;
@@ -1188,6 +1206,20 @@ export interface components {
             /** Next Before Id */
             next_before_id: number | null;
         };
+        /** AuthoriseRunIn */
+        AuthoriseRunIn: {
+            /** Kind */
+            kind: string;
+            /** Reason */
+            reason: string;
+            /** Evidence Ref */
+            evidence_ref: string;
+            /**
+             * Decided At
+             * Format: date-time
+             */
+            decided_at: string;
+        };
         /** CandidateOut */
         CandidateOut: {
             /** Id */
@@ -1769,6 +1801,25 @@ export interface components {
              * @enum {string}
              */
             value: "Continue" | "Continue With Correction" | "Pause" | "Stop";
+        };
+        /** RunAuthorisationOut */
+        RunAuthorisationOut: {
+            /** Id */
+            id: string;
+            /** Run Id */
+            run_id: string;
+            /** Kind */
+            kind: string;
+            /** Actor Id */
+            actor_id: string;
+            /** Decided At */
+            decided_at: string;
+            /** Recorded At */
+            recorded_at: string;
+            /** Reason */
+            reason: string;
+            /** Evidence Ref */
+            evidence_ref: string;
         };
         /** RunOut */
         RunOut: {
@@ -2393,6 +2444,100 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AuditPageOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_run_authorisations_api_runs__run_id__authorisations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunAuthorisationOut"][];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    authorise_run_api_runs__run_id__authorisations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuthoriseRunIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunAuthorisationOut"];
                 };
             };
             /** @description No session, or the session has expired or been idle too long. */
