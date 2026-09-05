@@ -1,19 +1,24 @@
 @import "tailwindcss";
 
-/* Big Shoulders Display and Merriweather are the two brand fonts (Typography Breakdown, p.20 of
-   INZBC Brand Guidelines 2026 v1.0) — self-hosted via @fontsource (offline, no external request
-   at runtime), matching apps/comms/ui and apps/sip/ui. */
-@import "@fontsource/big-shoulders-display/latin-500";
-@import "@fontsource/big-shoulders-display/latin-700";
-@import "@fontsource/big-shoulders-display/latin-800";
-@import "@fontsource/merriweather/latin-300";
-@import "@fontsource/merriweather/latin-400";
-@import "@fontsource/merriweather/latin-500";
-@import "@fontsource/merriweather/latin-700";
+/* Poppins, self-hosted via @fontsource (offline, no external request at runtime) — matches the
+   live inzview build (India-New-Zealand-Business-Council/inzview, src/components/Head.tsx),
+   which loads Poppins 300/400/500/600/700 for both heading and body. Supersedes the Big Shoulders
+   Display / Merriweather pairing from the Brand Guidelines PDF (docs/design-decisions.md): that
+   doc reflects what the guidelines specify, this reflects what inzview actually ships. Same
+   package set as apps/fta/ui, apps/comms/ui, apps/sip/ui and apps/member/ui's index.css so all
+   five tools match the live site's visual language. */
+@import "@fontsource/poppins/latin-300";
+@import "@fontsource/poppins/latin-400";
+@import "@fontsource/poppins/latin-500";
+@import "@fontsource/poppins/latin-600";
+@import "@fontsource/poppins/latin-700";
 
 @theme {
-  /* Brand palette — INZBC Brand Guidelines 2026 v1.0 (docs/design-decisions.md). Usage ratio per
-     the guide: 50% Navy, 30% Blue/Purple, 5% each accent. */
+  /* Brand palette. navy/forest/lime/purple come from docs/design-decisions.md (INZBC Brand
+     Guidelines 2026 v1.0) and already match inzview's tailwind.config.mjs values exactly. ink,
+     deep and mist are added here to match inzview's palette — the guide doesn't name them, but
+     inzview uses them for its header/footer chrome ("Sunil confirmed, carried over from the
+     Studio build where every pair was checked against WCAG AA" per that repo's own comment). */
   --color-inzbc-navy: #160933;
   --color-inzbc-blue: #261866;
   --color-inzbc-purple: #61145f;
@@ -22,24 +27,34 @@
   --color-inzbc-forest: #1b4640;
   --color-inzbc-lavender: #c1acfb;
   --color-inzbc-lime: #b8f07c;
+  --color-inzbc-ink: #1a0b3f;
+  --color-inzbc-deep: #0e0522;
+  --color-inzbc-mist: #f4f2f8;
 
-  --font-heading: "Big Shoulders Display", system-ui, sans-serif;
-  --font-body: "Merriweather", Georgia, serif;
+  --font-heading: "Poppins", system-ui, sans-serif;
+  --font-body: "Poppins", system-ui, sans-serif;
 }
 
 @layer base {
-  /* Guide, p.20: Merriweather "should be used for all other copy". */
-  body {
-    font-family: var(--font-body);
-    font-weight: 300;
+  /* App now renders at max-w-7xl instead of max-w-4xl — a wider, website-style layout. Every
+     Tailwind text-* size is rem-based, so bumping the root size scales all of them
+     proportionally, matching apps/sip/ui and apps/comms/ui's same fix for the same reason. */
+  html {
+    font-size: 112.5%;
   }
 
-  /* Guide, p.20: "Use in UPPERCASE in the Bold weight". */
+  body {
+    font-family: var(--font-body);
+    font-weight: 400;
+  }
+
+  /* No forced uppercase here — inzview's headings render in normal case (font-heading text-4xl
+     font-semibold, per its Sections.tsx/InnerPage.tsx), unlike the Brand Guidelines' display
+     treatment this previously matched. */
   h1,
   h2,
   h3 {
     font-family: var(--font-heading);
     font-weight: 700;
-    text-transform: uppercase;
   }
 }
