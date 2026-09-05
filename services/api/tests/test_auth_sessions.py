@@ -23,6 +23,7 @@ from services.api.auth import (
     SessionRepository,
     storage_id,
 )
+from services.api.tests.role_seed import role_id
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
@@ -31,13 +32,14 @@ pytestmark = pytest.mark.skipif(
     reason="DATABASE_URL not set - session tests need a real Postgres with schema.sql applied",
 )
 
-# Role ids and names are shared across every database-backed suite in this directory, and
-# `roles.name` is unique. Claiming a name another suite already uses at a different id makes
-# `on conflict do nothing` silently skip the insert, so the id never exists and the following
-# `user_roles` insert fails a foreign key - in whichever suite happens to run second. Other
-# suites use id 1 for 'Analyst' and 'SIP Owner', so this one takes a name and id nobody else
-# claims.
-REVIEWER_ROLE = 3
+# `roles.name` is unique and migration 0003 now pre-seeds ids 1-7 by name (#360). Picking an id
+# nobody else claims stopped working the day that migration shipped: 'Reviewer' lives at whatever
+# id migration 0003 gave it, so a literal `insert (3, 'Reviewer') on conflict do nothing` either
+# no-ops against that existing row (leaving `user_roles` pointing at id 3's real name, whatever it
+# is) or, worse, silently hands 'Reviewer' to an id already claimed by another seeded role.
+# Resolved by name through `role_id()` instead - the same fix `_sip_owner_role` already needed in
+# test_decisions.py.
+REVIEWER_ROLE = "Reviewer"
 
 
 @pytest.fixture
@@ -45,7 +47,7 @@ def repo() -> SessionRepository:
     return SessionRepository(DATABASE_URL)
 
 
-def _make_user(*, active: bool = True, github_login: str | None = None, role: int | None = None) -> dict:
+def _make_user(*, active: bool = True, github_login: str | None = None, role: str | None = None) -> dict:
     """Seeded directly rather than through app code, so these tests do not inherit another
     module's bugs."""
     login = github_login or f"gh-{uuid.uuid4().hex[:12]}"
@@ -56,13 +58,10 @@ def _make_user(*, active: bool = True, github_login: str | None = None, role: in
             (f"User {uuid.uuid4()}", f"{uuid.uuid4()}@example.test", login, active),
         ).fetchone()
         if role is not None:
-            conn.execute(
-                "insert into roles (id, name) values (%s, 'Reviewer') on conflict do nothing",
-                (role,),
-            )
+            role_pk = role_id(conn, role)
             conn.execute(
                 "insert into user_roles (user_id, role_id) values (%s, %s)",
-                (user["id"], role),
+                (user["id"], role_pk),
             )
         conn.commit()
     return {"id": str(user["id"]), "github_login": login}
