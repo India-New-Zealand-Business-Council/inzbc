@@ -175,7 +175,7 @@ describe('returnForCorrection', () => {
 
 describe('recordCeoDecision', () => {
   function awaitingDecisionReport() {
-    return { ...submittableReport(), state: 'Awaiting CEO Decision' as const }
+    return { ...submittableReport(), state: 'Awaiting CEO Decision' as const, reportVersionId: 'rv-1' }
   }
   function baseDecision(overrides: Partial<Parameters<typeof recordCeoDecision>[1]> = {}) {
     return {
@@ -248,7 +248,11 @@ describe('recordCeoDecision', () => {
 
 describe('authoriseDistribution', () => {
   async function reportWithDecision(decision: 'continue' | 'continue_with_correction' = 'continue') {
-    const report = { ...submittableReport(), state: 'Awaiting CEO Decision' as const }
+    const report = {
+      ...submittableReport(),
+      state: 'Awaiting CEO Decision' as const,
+      reportVersionId: 'rv-1',
+    }
     return recordCeoDecision(report, {
       reportVersion: 'v0.9 Review Draft',
       decision,
@@ -294,7 +298,11 @@ describe('authoriseDistribution', () => {
   })
 
   it('rejects from Paused — a paused/stopped run never reaches a distribution question', async () => {
-    const report = { ...submittableReport(), state: 'Awaiting CEO Decision' as const }
+    const report = {
+      ...submittableReport(),
+      state: 'Awaiting CEO Decision' as const,
+      reportVersionId: 'rv-1',
+    }
     const paused = await recordCeoDecision(report, {
       reportVersion: 'v0.9 Review Draft',
       decision: 'pause',
