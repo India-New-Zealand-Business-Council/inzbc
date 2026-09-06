@@ -323,7 +323,10 @@ def run_walk(base_url: str, database_url: str, *, client_factory=None) -> dict:
             secretariat.user_id,
             "Authorised",
             head_revision=0,
-            distribution_recipient="INZBC members (walk-through, not sent)",
+            # The one controlled recipient named in launch-config.md, not "INZBC members":
+            # `member_distribution = false` there, and minting member-distribution authority as
+            # walk evidence would record an authorisation the launch never granted.
+            distribution_recipient="Sunil Kaushal <sunilkaushalnz@gmail.com> (walk-through, not sent)",
         ),
     )
     print(f"  Distribution Authority 'Authorised' recorded by {secretariat.role}")
