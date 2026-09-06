@@ -233,6 +233,22 @@ def _authorise_distribution(version_id: str, recipient: str) -> str:
         with conn.transaction():
             grant(conn, owner, "SIP Owner")
             owner_role = role_id(conn, "SIP Owner")
+            # Seed the full migration-0003 permission set here, so this runs on CI's schema-only
+            # database (0003 is not applied there) and leaves `decision_role_permissions` in the
+            # same state 0003 would - a partial seed would break other suites' "non-empty means
+            # fully seeded" heuristic. Mirrors 0003 exactly.
+            for kind, role_name in (
+                ("CEO Ruling", "SIP Owner"),
+                ("Report Approval", "SIP Owner"),
+                ("Report Approval", "Reviewer"),
+                ("Distribution Authority", "SIP Owner"),
+                ("Distribution Authority", "Secretariat"),
+            ):
+                conn.execute(
+                    "insert into decision_role_permissions (kind, actor_role_id) values (%s, %s) "
+                    "on conflict (kind, actor_role_id) do update set enabled = true",
+                    (kind, role_id(conn, role_name)),
+                )
         conn.commit()
 
     repo = DecisionRepository(DATABASE_URL)
