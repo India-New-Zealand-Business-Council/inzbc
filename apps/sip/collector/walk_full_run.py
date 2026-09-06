@@ -19,11 +19,15 @@ directly through `RunRepository.apply_transition`, the same call the (unbuilt) e
 make. **Every human gate is still crossed over HTTP, by a distinct role account:**
 
     Draft -> Run Authorised                     POST /api/runs/{id}/authorisations + /start   SIP Owner
-    QA In Progress -> Awaiting CEO Decision      apply_transition, approval_ref = CEO Ruling record
-    Awaiting CEO Decision -> Approved for ...    apply_transition, approval_ref = Distribution record
-    Approved for ... -> Distributed              apply_transition, approval_ref = Distribution record
+    QA In Progress -> Awaiting CEO Decision      apply_transition, approval_ref = report.qa audit row
+    Awaiting CEO Decision -> Approved for ...    apply_transition, approval_ref = CEO Ruling record
+    Approved for ... -> Distributed              apply_transition, approval_ref = distribution_deliveries row
 
-The three decision records those gates point at are recorded over HTTP through
+Each gate cites evidence of the one kind it means (`services/api/persistence.py._REPORT_LEVEL_GATES`):
+the QA pass is the append-only `report.qa` audit row (there is deliberately no QA decision table),
+the CEO decision is the CEO Ruling, and the manual send is a `distribution_deliveries` row recorded
+over HTTP through `POST /api/reports/{id}/deliveries` - authority to distribute is not evidence that
+the send happened. The three ADR-0005 decisions are recorded over HTTP through
 `POST /api/reports/{id}/ruling|approval|distribution` by the SIP Owner, Reviewer and Secretariat
 respectively; the report version is submitted over HTTP by the Analyst. Separation of duties
 (`services/api/decisions.py`) holds because the Analyst who authors the report never decides on
@@ -291,8 +295,10 @@ def run_walk(base_url: str, database_url: str, *, client_factory=None) -> dict:
     )
     print(f"  report version {report['version_number']} submitted by {analyst.role}")
 
-    # --- Reviewer records the SIP-188 QA pass over HTTP. --------------------------------------
-    _post(
+    # --- Reviewer records the SIP-188 QA pass over HTTP. Its evidence_ref (the append-only
+    #     report.qa audit row) is what the QA sign-off gate is crossed with - there is no QA
+    #     decision_records row to cite. -------------------------------------------------------
+    qa = _post(
         reviewer_http,
         f"/api/reports/{report_version_id}/qa",
         {
@@ -331,50 +337,69 @@ def run_walk(base_url: str, database_url: str, *, client_factory=None) -> dict:
     )
     print(f"  Distribution Authority 'Authorised' recorded by {secretariat.role}")
 
-    # --- Gate 2: QA In Progress -> Awaiting CEO Decision, pointing at the CEO Ruling record. ---
+    # --- Gate 2: QA In Progress -> Awaiting CEO Decision. Evidence is the QA pass itself (the
+    #     report.qa audit row), not a decision of another kind. -------------------------------
     runs.apply_transition(
         run_id,
         expected_version=6,
         new_state=RunState.AWAITING_CEO_DECISION,
         actor_id=sip_owner.user_id,
         reason="QA sign-off",
-        approval_ref=ruling["id"],
+        approval_ref=qa["evidence_ref"],
     )
     record(
         "QA In Progress -> Awaiting CEO Decision",
-        "apply_transition (CEO Ruling record)",
+        "apply_transition (report.qa audit row)",
         sip_owner,
         RunState.AWAITING_CEO_DECISION,
     )
 
-    # --- Gate 3: Awaiting CEO Decision -> Approved for Manual Distribution. ------------------
+    # --- Gate 3: Awaiting CEO Decision -> Approved for Manual Distribution. The CEO's go ruling
+    #     is the explicit decision this gate records. ----------------------------------------
     runs.apply_transition(
         run_id,
         expected_version=7,
         new_state=RunState.APPROVED_FOR_MANUAL_DISTRIBUTION,
         actor_id=sip_owner.user_id,
-        reason="distribution authorised",
-        approval_ref=distribution["id"],
+        reason="CEO ruled Continue",
+        approval_ref=ruling["id"],
     )
     record(
         "Awaiting CEO Decision -> Approved for Manual Distribution",
-        "apply_transition (Distribution record)",
+        "apply_transition (CEO Ruling record)",
         sip_owner,
         RunState.APPROVED_FOR_MANUAL_DISTRIBUTION,
     )
 
-    # --- Gate 4: Approved for Manual Distribution -> Distributed (manual send recorded). ------
+    # --- Manual send: Secretariat records the delivery over HTTP, citing the Distribution
+    #     Authority in force. This is what the manual-send gate checks - authority to distribute
+    #     is not evidence that it happened. --------------------------------------------------
+    delivery = _post(
+        secretariat_http,
+        f"/api/reports/{report_version_id}/deliveries",
+        {
+            "authority_record_id": distribution["id"],
+            "recipient_address": "Sunil Kaushal <sunilkaushalnz@gmail.com> (walk-through, not sent)",
+            "channel": "manual email (walk-through, not sent)",
+            "sent_at": datetime.now(UTC).isoformat(),
+            "delivery_result": "walk-through: send not performed, delivery row recorded for #55 evidence",
+            "idempotency_key": str(uuid.uuid4()),
+        },
+    )
+    print(f"  distribution delivery recorded by {secretariat.role}")
+
+    # --- Gate 4: Approved for Manual Distribution -> Distributed, citing the delivery. --------
     runs.apply_transition(
         run_id,
         expected_version=8,
         new_state=RunState.DISTRIBUTED,
         actor_id=secretariat.user_id,
         reason="manual send recorded",
-        approval_ref=distribution["id"],
+        approval_ref=delivery["id"],
     )
     record(
         "Approved for Manual Distribution -> Distributed",
-        "apply_transition (Distribution record)",
+        "apply_transition (distribution_deliveries record)",
         secretariat,
         RunState.DISTRIBUTED,
     )
@@ -409,7 +434,8 @@ def _evidence(
     steps: list[dict],
 ) -> dict:
     """Read the durable record back: the run row, every decision_records row for this report
-    version, and every audit_log row for this run. This is the artefact #55 asks for.
+    version, every distribution_deliveries row for it, and every audit_log row for this run. This
+    is the artefact #55 asks for.
     """
     with psycopg.connect(database_url, row_factory=psycopg.rows.dict_row) as conn:
         run_row = conn.execute(
@@ -423,6 +449,12 @@ def _evidence(
             "select id::text, kind, stream_revision, value, actor_id::text, "
             "actor_role_id, decided_at::text, reason from decision_records "
             "where report_version_id = %s order by decided_at",
+            (report_version_id,),
+        ).fetchall()
+        deliveries = conn.execute(
+            "select id::text, authority_record_id::text, sender_id::text, recipient_address, "
+            "channel, sent_at::text, delivery_result, recorded_at::text "
+            "from distribution_deliveries where report_version_id = %s order by recorded_at",
             (report_version_id,),
         ).fetchall()
         audit = conn.execute(
@@ -443,6 +475,7 @@ def _evidence(
         "steps": steps,
         "run_row": run_row,
         "decision_records": decisions,
+        "distribution_deliveries": deliveries,
         "audit_log": audit,
     }
 

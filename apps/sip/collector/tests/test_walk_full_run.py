@@ -128,7 +128,27 @@ def test_walk_takes_a_run_to_closed_with_every_gate_recorded() -> None:
     ):
         assert by_new[mechanical]["approval_ref"] is None
 
-    # The two report-level gates point at real decision_records rows.
-    decision_ids = {d["id"] for d in evidence["decision_records"]}
-    assert by_new["Awaiting CEO Decision"]["approval_ref"] in decision_ids
-    assert by_new["Approved for Manual Distribution"]["approval_ref"] in decision_ids
+    # Each report-level gate points at evidence of the kind it means, not just any row.
+    #
+    # QA sign-off: the append-only report.qa audit row for this run, showing qa_status became
+    # 'Passed'. Not a decision_records row - there is deliberately no QA decision table.
+    qa_row = next(
+        r for r in evidence["audit_log"]
+        if r["action"] == "report.qa" and r["new_value"] == "Passed"
+    )
+    assert by_new["Awaiting CEO Decision"]["approval_ref"] == str(qa_row["id"])
+
+    # CEO decision: a CEO Ruling decision_records row (the explicit go), not the Distribution
+    # Authority the walk used to cite here.
+    ruling_ids = {d["id"] for d in evidence["decision_records"] if d["kind"] == "CEO Ruling"}
+    assert by_new["Approved for Manual Distribution"]["approval_ref"] in ruling_ids
+
+    # Manual send: a distribution_deliveries row recorded over HTTP - evidence the send happened,
+    # not the authority that permitted it.
+    delivery_ids = {d["id"] for d in evidence["distribution_deliveries"]}
+    assert by_new["Distributed"]["approval_ref"] in delivery_ids
+    assert len(delivery_ids) == 1
+    only_delivery = evidence["distribution_deliveries"][0]
+    assert only_delivery["sender_id"] == evidence["accounts"]["Secretariat"]["user_id"]
+    # The one controlled recipient, never member distribution.
+    assert "member" not in only_delivery["recipient_address"].lower()
