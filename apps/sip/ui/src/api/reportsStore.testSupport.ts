@@ -12,7 +12,21 @@ export function jsonResponse(body: unknown, status = 200): Response {
  * 0 for every stream, every decision POST returns stream_revision 1 — enough to prove a screen
  * wires to the real calls, not a re-test of the optimistic-concurrency conflict itself, which
  * `services/api/tests/test_reports_api.py` already covers against the real repository. */
-export function stubReportsFetch(): void {
+export interface StubReportsFetchOptions {
+  /** Overrides the GET /api/reports/:id decisions block — e.g. `{ report_approval: 'Approved',
+   * ceo_ruling: 'Continue' }` to stand in for an approval some other client already recorded
+   * out-of-band (services/api/reports.py's `recordCeoDecision` doc comment: this UI never builds
+   * that control itself). Defaults to every stream undecided, the real default state and the one
+   * that matches `fetchDistributionReadiness` refusing until something else records approval. */
+  decisions?: Partial<{
+    ceo_ruling: string | null
+    report_approval: string | null
+    distribution_authority: string | null
+    distribution_recipient: string | null
+  }>
+}
+
+export function stubReportsFetch(options: StubReportsFetchOptions = {}): void {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string, init?: RequestInit) => {
@@ -44,6 +58,7 @@ export function stubReportsFetch(): void {
             report_approval: null,
             distribution_authority: null,
             distribution_recipient: null,
+            ...options.decisions,
             revisions: { 'CEO Ruling': 0, 'Report Approval': 0, 'Distribution Authority': 0 },
           },
         })

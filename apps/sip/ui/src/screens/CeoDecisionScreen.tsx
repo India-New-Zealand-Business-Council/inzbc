@@ -1,5 +1,10 @@
-import { useId, useRef, useState } from 'react'
-import { authoriseDistribution, recordCeoDecision, ReportsApiError } from '../api/reportsStore'
+import { useEffect, useId, useRef, useState } from 'react'
+import {
+  authoriseDistribution,
+  fetchDistributionReadiness,
+  recordCeoDecision,
+  ReportsApiError,
+} from '../api/reportsStore'
 import { GOVERNANCE_LINE, type DailyBriefReport, type ReportDecisionType } from '../domain'
 
 /**
@@ -117,13 +122,58 @@ export function CeoDecisionScreen({ report, onChange }: Props) {
   const [submitState, setSubmitState] = useState<SubmitState>({ kind: 'idle' })
   const [distributionState, setDistributionState] = useState<SubmitState>({ kind: 'idle' })
   const [confirmingDistribution, setConfirmingDistribution] = useState(false)
+  // Which report version + state the `ready` value was actually fetched for, alongside the value
+  // itself — both in state (not a ref) because render needs to read the pairing to tell a fresh
+  // answer from a stale one, and a ref's `.current` may not be read during render. A mismatch (or
+  // no result yet) reads as `null`: unknown, loading, or a failed check all fail closed the same
+  // way an absent redaction policy or missing API key refuses rather than assumes.
+  const [distributionReadiness, setDistributionReadiness] = useState<{
+    identity: string
+    ready: boolean
+  } | null>(null)
   const inFlight = useRef<AbortController | null>(null)
   const distributionInFlight = useRef<AbortController | null>(null)
+  // One key per submission attempt, not per call: services/api's `_DecisionIn.idempotency_key` is
+  // caller-supplied so a retry of the same click can be deduplicated against the first attempt
+  // rather than recorded as a second decision (reportsStore.ts's `recordCeoDecision` doc comment).
+  // Cleared on success and whenever the underlying choice changes, since that is a new intent, not
+  // a retry of the old one.
+  const rulingIdempotencyKey = useRef<string | null>(null)
+  const distributionIdempotencyKey = useRef<string | null>(null)
   const reasonId = useId()
   const conditionsId = useId()
   const ownerId = useId()
+  const ownerHintId = useId()
   const evidenceId = useId()
   const nextReviewId = useId()
+
+  const distributionIdentity =
+    report.state === 'Continue' && report.decision && !report.decision.distributionDecidedAt
+      ? report.reportVersionId
+      : null
+
+  // Checked only for `Continue`: `Continue With Correction` can never be authorised regardless of
+  // approval state (ADR-0005), so there's nothing useful to fetch for it. setDistributionReadiness
+  // is called only from the async callbacks below, never synchronously in the effect body.
+  useEffect(() => {
+    if (!distributionIdentity) return
+    const identity = distributionIdentity
+    const controller = new AbortController()
+    fetchDistributionReadiness(identity, { signal: controller.signal })
+      .then((ready) => {
+        if (!controller.signal.aborted) setDistributionReadiness({ identity, ready })
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') return
+        // Fail closed: an unknown readiness state disables the control — the ambiguity should
+        // never read as permission.
+        if (!controller.signal.aborted) setDistributionReadiness({ identity, ready: false })
+      })
+    return () => controller.abort()
+  }, [distributionIdentity])
+
+  const effectiveDistributionReady =
+    distributionReadiness?.identity === distributionIdentity ? distributionReadiness.ready : null
 
   const missingFields: string[] = []
   if (selectedDecision) {
@@ -139,6 +189,9 @@ export function CeoDecisionScreen({ report, onChange }: Props) {
     inFlight.current?.abort()
     const controller = new AbortController()
     inFlight.current = controller
+    // Generated once per decision, reused on every retry of it — a lost response and a resend of
+    // the same click must reach the server as the same act, not a second one.
+    rulingIdempotencyKey.current ??= crypto.randomUUID()
     setSubmitState({ kind: 'loading' })
     try {
       const updated = await recordCeoDecision(
@@ -153,9 +206,10 @@ export function CeoDecisionScreen({ report, onChange }: Props) {
           nextReviewDate,
           decidedAt: new Date().toISOString(),
         },
-        { signal: controller.signal },
+        { signal: controller.signal, idempotencyKey: rulingIdempotencyKey.current },
       )
       if (inFlight.current !== controller) return
+      rulingIdempotencyKey.current = null
       setSubmitState({ kind: 'idle' })
       onChange(updated)
     } catch (error) {
@@ -172,10 +226,15 @@ export function CeoDecisionScreen({ report, onChange }: Props) {
     distributionInFlight.current?.abort()
     const controller = new AbortController()
     distributionInFlight.current = controller
+    distributionIdempotencyKey.current ??= crypto.randomUUID()
     setDistributionState({ kind: 'loading' })
     try {
-      const updated = await authoriseDistribution(report, authorised, { signal: controller.signal })
+      const updated = await authoriseDistribution(report, authorised, {
+        signal: controller.signal,
+        idempotencyKey: distributionIdempotencyKey.current,
+      })
       if (distributionInFlight.current !== controller) return
+      distributionIdempotencyKey.current = null
       setDistributionState({ kind: 'idle' })
       setConfirmingDistribution(false)
       onChange(updated)
@@ -254,7 +313,12 @@ export function CeoDecisionScreen({ report, onChange }: Props) {
                   type="button"
                   role="radio"
                   aria-checked={selectedDecision === option.value}
-                  onClick={() => setSelectedDecision(option.value)}
+                  onClick={() => {
+                    // A different decision is a new intent, not a retry of the old one — an
+                    // abandoned Stop attempt's key must never be reused for a Continue.
+                    rulingIdempotencyKey.current = null
+                    setSelectedDecision(option.value)
+                  }}
                   className={`rounded-md border px-3 py-2 text-sm font-medium ${
                     selectedDecision === option.value
                       ? option.tone === 'approve'
@@ -296,15 +360,25 @@ export function CeoDecisionScreen({ report, onChange }: Props) {
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label htmlFor={ownerId} className="block text-xs font-medium text-inzbc-navy">
-                    Owner
+                    Owner (display only)
                   </label>
                   <input
                     id={ownerId}
                     type="text"
+                    aria-describedby={ownerHintId}
                     className="mt-1 w-full rounded-md border border-inzbc-navy/20 p-2 text-sm transition-colors hover:border-inzbc-navy/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
                     value={owner}
                     onChange={(event) => setOwner(event.target.value)}
                   />
+                  {/* services/api's decision_records.owner_id is a real users.id FK with no
+                      user-directory endpoint yet to resolve free text against (reportsStore.ts's
+                      recordCeoDecision doc comment) — the signed-in account is what's actually
+                      recorded, not this field. Said here rather than left implicit, so what's on
+                      screen doesn't disagree with what's in the audit record. */}
+                  <p id={ownerHintId} className="mt-1 text-xs text-slate-500">
+                    Shown here for context only — the decision is recorded against your signed-in
+                    account, not this text.
+                  </p>
                 </div>
                 <div>
                   <label htmlFor={evidenceId} className="block text-xs font-medium text-inzbc-navy">
@@ -372,15 +446,37 @@ export function CeoDecisionScreen({ report, onChange }: Props) {
               <p className="text-xs text-slate-500">
                 A second, independent decision — approving the report is not permission to send.
               </p>
+              {/* ADR-0005/REQ-G-04 (services/api/decisions.py's `record()`) accepts `Authorised`
+                  only when the ruling is exactly `Continue` — never `Continue With Correction`,
+                  since a corrected version needs its own fresh approval and authority decision.
+                  Refusing this control from the state that can never succeed, rather than letting
+                  the person click into a guaranteed 422, matches `authoriseDistribution`'s own
+                  client-side refusal in reportsStore.ts. */}
+              {report.state === 'Continue With Correction' ? (
+                <p className="text-xs text-slate-500">
+                  Authorisation is not available for a corrected version — it needs its own fresh
+                  report approval first. Record "No" to refuse explicitly, or wait for the fresh
+                  approval on the corrected version.
+                </p>
+              ) : null}
               <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setConfirmingDistribution(true)}
-                  disabled={distributionState.kind === 'loading'}
-                  className="rounded-md bg-inzbc-forest px-3 py-2 text-sm font-semibold text-white disabled:cursor-progress disabled:opacity-60"
-                >
-                  Yes, authorise
-                </button>
+                {report.state === 'Continue' ? (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingDistribution(true)}
+                    disabled={
+                      distributionState.kind === 'loading' || effectiveDistributionReady !== true
+                    }
+                    title={
+                      effectiveDistributionReady === false
+                        ? 'Not yet authorisable: the report approval is not recorded as Approved.'
+                        : undefined
+                    }
+                    className="rounded-md bg-inzbc-forest px-3 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Yes, authorise
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   onClick={() => void onAuthoriseDistribution(false)}
@@ -390,6 +486,14 @@ export function CeoDecisionScreen({ report, onChange }: Props) {
                   No
                 </button>
               </div>
+              {/* `report_approval` has no UI anywhere yet (reportsStore.ts's `recordCeoDecision`
+                  doc comment) — until something else records it, this stays false in the
+                  ordinary flow, and that is accurate, not a bug in this check. */}
+              {report.state === 'Continue' && effectiveDistributionReady === false ? (
+                <p role="status" className="text-xs text-slate-500">
+                  Waiting on report approval before distribution can be authorised.
+                </p>
+              ) : null}
               {distributionState.kind === 'error' ? (
                 <p role="alert" className="text-sm text-inzbc-crimson">
                   {distributionState.message}

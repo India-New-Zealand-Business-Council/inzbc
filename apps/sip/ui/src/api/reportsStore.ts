@@ -357,6 +357,14 @@ interface ReportOut {
   }
 }
 
+/** The three decision streams' current values, for a caller deciding whether an act would even
+ * be accepted before asking the person to attempt it. */
+export interface DecisionReadiness {
+  ceoRuling: string | null
+  reportApproval: string | null
+  revisions: Record<string, number>
+}
+
 interface DecisionRecordOut {
   id: string
   stream_id: string
@@ -369,14 +377,14 @@ interface DecisionRecordOut {
   reason: string
 }
 
-/** The revision each decision stream is currently at, read fresh immediately before deciding.
+/** The current state of every decision stream, read fresh immediately before deciding.
  * `expected_head_revision` is the whole concurrency control (`services/api/decisions.py`'s
  * `DecisionRepository.record`) — passing a stale one is exactly the race it exists to catch, not a
  * formality this client could skip by caching an earlier read. */
-async function fetchCurrentRevisions(
+async function fetchCurrentDecisions(
   reportVersionId: string,
   signal?: AbortSignal,
-): Promise<Record<string, number>> {
+): Promise<DecisionReadiness> {
   let response: Response
   try {
     response = await fetch(`/api/reports/${encodeURIComponent(reportVersionId)}`, {
@@ -392,7 +400,30 @@ async function fetchCurrentRevisions(
     throw await errorFromResponse(response, 'Could not read the current decision state')
   }
   const body = (await response.json()) as ReportOut
-  return body.decisions.revisions
+  return {
+    ceoRuling: body.decisions.ceo_ruling,
+    reportApproval: body.decisions.report_approval,
+    revisions: body.decisions.revisions,
+  }
+}
+
+/** Whether `authoriseDistribution(report, true)` would currently be accepted, without spending an
+ * attempt to find out. `services/api/decisions.py`'s `record()` (ADR-0005, REQ-G-04) refuses
+ * `Authorised` unless the report approval is `Approved` and the CEO ruling is exactly `Continue`
+ * — `Continue With Correction` never satisfies this, deliberately (a corrected version needs a
+ * fresh approval and a fresh authority decision). This screen has never had UI for the Report
+ * Approval stream (see `recordCeoDecision`'s doc comment), so in the ordinary flow that stream
+ * stays undecided and this reads `false` until some other client records it — exposing the gate
+ * a caller can check is the fix in scope here; building the missing approval screen is a
+ * separate UI-spec question. Does not check QA status: `GET /api/reports/{id}` does not return
+ * it, so a version with an open Critical failure still reads ready here and only the server's own
+ * refusal catches that case. */
+export async function fetchDistributionReadiness(
+  reportVersionId: string,
+  options: { signal?: AbortSignal } = {},
+): Promise<boolean> {
+  const decisions = await fetchCurrentDecisions(reportVersionId, options.signal)
+  return decisions.reportApproval === 'Approved' && decisions.ceoRuling === 'Continue'
 }
 
 async function postDecision(
@@ -436,18 +467,30 @@ const RULING_VALUE: Record<ReportDecisionType, string> = {
  * **`Report Approval` is a third, independent stream this screen never collects.** `services/api`
  * tracks `ceo_ruling`, `report_approval` and `distribution_authority` as three separate decisions
  * (ADR-0005) — `GET /api/dashboard`'s own `gates` shape reports all three. This screen only ever
- * built UI for two of them. Not fixed here: adding a third decision control is a UI-spec question,
- * not something to slip into wiring the two that already exist.
+ * built UI for two of them, so in the ordinary flow `report_approval` stays undecided and
+ * `authoriseDistribution(report, true)` cannot succeed until some other client records it. Not
+ * fixed here: adding a third decision control is a UI-spec question, not something to slip into
+ * wiring the two that already exist. What is in scope: `fetchDistributionReadiness` below, so a
+ * caller can check before offering the control rather than letting the person hit a guaranteed
+ * refusal.
  *
  * **`owner_id` known gap.** `decision_records.owner_id` is a real `users.id` foreign key;
  * `decision.owner` here is free text with no user-directory endpoint to resolve it against. The
  * deciding principal's own id is sent instead — `decision.owner` still displays on screen, it just
- * isn't the value this call sends.
+ * isn't the value this call sends. `CeoDecisionScreen.tsx` labels the field accordingly rather
+ * than implying it is what gets recorded.
+ *
+ * **`idempotencyKey`.** Caller-supplied, not generated here: only the caller knows whether a
+ * second call is a retry of the same submission or a genuinely new one. Generate it once per
+ * submission attempt and pass the same value back in on a retry (`CeoDecisionScreen.tsx` keeps
+ * one in a ref for exactly this) — generating a fresh one per call, as an earlier version of this
+ * function did, means a retry after a lost response is recorded as a second decision rather than
+ * deduplicated against the first.
  */
 export async function recordCeoDecision(
   report: DailyBriefReport,
   decision: Omit<CeoDecisionRecord, 'distributionAuthorised' | 'distributionDecidedAt'>,
-  options: { signal?: AbortSignal } = {},
+  options: { signal?: AbortSignal; idempotencyKey?: string } = {},
 ): Promise<DailyBriefReport> {
   if (report.state !== 'Awaiting CEO Decision') {
     throw new ReportsApiError(`Cannot record a CEO decision from state "${report.state}".`)
@@ -485,7 +528,7 @@ export async function recordCeoDecision(
   } catch (cause) {
     throw new ReportsApiError('You are not signed in. Sign in and try again.', { cause })
   }
-  const revisions = await fetchCurrentRevisions(report.reportVersionId, options.signal)
+  const { revisions } = await fetchCurrentDecisions(report.reportVersionId, options.signal)
 
   await postDecision(
     report.reportVersionId,
@@ -501,10 +544,7 @@ export async function recordCeoDecision(
       evidence_ref: decision.evidenceReference.trim(),
       next_review: decision.nextReviewDate,
       decided_at: decision.decidedAt,
-      // Caller-supplied per services/api/reports.py's `_DecisionIn`: only the caller knows
-      // whether a retry is the same act or a second one, so a fresh key per submission is what
-      // makes this specific click retryable without becoming a duplicate decision.
-      idempotency_key: crypto.randomUUID(),
+      idempotency_key: options.idempotencyKey ?? crypto.randomUUID(),
     },
     options.signal,
   )
@@ -537,11 +577,22 @@ function resolveStateAfterDecision(decision: ReportDecisionType): DailyBriefRepo
  * "nothing ... offers a 'send' action"), and authorising distribution is reasoning about the
  * report decision just recorded, not a fresh judgement that needs its own evidence trail. Same
  * `owner_id` gap as `recordCeoDecision` above.
+ *
+ * **`Continue With Correction` can only ever refuse.** `services/api/decisions.py`'s ADR-0005
+ * gate (REQ-G-04) accepts `Authorised` only when the ruling is exactly `Continue` — never on
+ * `Continue With Correction`, deliberately, since a corrected version needs its own fresh
+ * approval and authority decision. Refused here before a call is even made, the same refusal the
+ * server would return, so a caller gets it without spending a round trip; `CeoDecisionScreen.tsx`
+ * additionally never renders the "Yes, authorise" control in that state. `authorised: false`
+ * (`Not Authorised`) is unaffected — refusing distribution is always a valid act regardless of
+ * ruling, approval or QA status.
+ *
+ * Same `idempotencyKey` contract as `recordCeoDecision` above.
  */
 export async function authoriseDistribution(
   report: DailyBriefReport,
   authorised: boolean,
-  options: { signal?: AbortSignal } = {},
+  options: { signal?: AbortSignal; idempotencyKey?: string } = {},
 ): Promise<DailyBriefReport> {
   if (!report.decision) {
     throw new ReportsApiError('Cannot authorise distribution before a report decision is recorded.')
@@ -551,6 +602,12 @@ export async function authoriseDistribution(
   }
   if (report.state !== 'Continue' && report.state !== 'Continue With Correction') {
     throw new ReportsApiError(`Cannot authorise distribution from state "${report.state}".`)
+  }
+  if (authorised && report.state !== 'Continue') {
+    throw new ReportsApiError(
+      `Cannot authorise distribution from state "${report.state}" — ADR-0005 permits Authorised ` +
+        'only when the ruling is Continue. Record "Not Authorised" to refuse explicitly.',
+    )
   }
   if (!report.reportVersionId) {
     throw new ReportsApiError('This report has not been submitted yet — nothing to decide on.')
@@ -562,7 +619,7 @@ export async function authoriseDistribution(
   } catch (cause) {
     throw new ReportsApiError('You are not signed in. Sign in and try again.', { cause })
   }
-  const revisions = await fetchCurrentRevisions(report.reportVersionId, options.signal)
+  const { revisions } = await fetchCurrentDecisions(report.reportVersionId, options.signal)
 
   await postDecision(
     report.reportVersionId,
@@ -579,7 +636,7 @@ export async function authoriseDistribution(
       // recipient (CeoDecisionScreen.tsx) — repeated here as the value the endpoint needs, not
       // fabricated for this call.
       distribution_recipient: 'sunilkaushalnz@gmail.com',
-      idempotency_key: crypto.randomUUID(),
+      idempotency_key: options.idempotencyKey ?? crypto.randomUUID(),
     },
     options.signal,
   )

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -195,8 +195,18 @@ describe('CeoDecisionScreen', () => {
     expect(screen.getByText(/distribution authorised:/i)).toHaveTextContent('Yes')
   })
 
-  it('gates "Yes" behind a confirmation modal that does not fire until confirmed', async () => {
+  // "Yes, authorise" is gated on a fetched report-approval readiness check (ADR-0005/REQ-G-04 —
+  // Authorised only when report approval is Approved and the ruling is Continue), so these three
+  // stand in for an approval already recorded out-of-band and wait for the check to resolve
+  // before clicking, the same as a real signed-in reviewer would see the button enable.
+  async function stubApprovedAndWaitForAuthoriseEnabled() {
+    stubReportsFetch({ decisions: { report_approval: 'Approved', ceo_ruling: 'Continue' } })
     render(<ControlledCeoDecision initial={reportDecided('Continue')} />)
+    await waitFor(() => expect(screen.getByRole('button', { name: /yes, authorise/i })).toBeEnabled())
+  }
+
+  it('gates "Yes" behind a confirmation modal that does not fire until confirmed', async () => {
+    await stubApprovedAndWaitForAuthoriseEnabled()
     await userEvent.click(screen.getByRole('button', { name: /yes, authorise/i }))
 
     const dialog = screen.getByRole('dialog', { name: /authorise distribution/i })
@@ -209,7 +219,7 @@ describe('CeoDecisionScreen', () => {
   })
 
   it('names the authorised recipient and confirms automated channels are off, in the modal', async () => {
-    render(<ControlledCeoDecision initial={reportDecided('Continue')} />)
+    await stubApprovedAndWaitForAuthoriseEnabled()
     await userEvent.click(screen.getByRole('button', { name: /yes, authorise/i }))
 
     const dialog = screen.getByRole('dialog', { name: /authorise distribution/i })
@@ -218,12 +228,27 @@ describe('CeoDecisionScreen', () => {
   })
 
   it('confirming the modal authorises distribution and advances to Approved for Manual Distribution', async () => {
-    render(<ControlledCeoDecision initial={reportDecided('Continue')} />)
+    await stubApprovedAndWaitForAuthoriseEnabled()
     await userEvent.click(screen.getByRole('button', { name: /yes, authorise/i }))
     await userEvent.click(screen.getByRole('button', { name: /confirm authorisation/i }))
 
     expect(await screen.findByText(/distribution authorised:/i)).toHaveTextContent('Yes')
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('disables "Yes, authorise" until report approval is fetched as Approved, and explains why', async () => {
+    render(<ControlledCeoDecision initial={reportDecided('Continue')} />)
+    expect(
+      await screen.findByText(/waiting on report approval before distribution/i),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /yes, authorise/i })).toBeDisabled()
+  })
+
+  it('never offers "Yes, authorise" from Continue With Correction — only Continue can be Authorised', () => {
+    render(<CeoDecisionScreen report={reportDecided('Continue With Correction')} onChange={vi.fn()} />)
+    expect(screen.queryByRole('button', { name: /yes, authorise/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'No' })).toBeInTheDocument()
+    expect(screen.getByText(/authorisation is not available for a corrected version/i)).toBeInTheDocument()
   })
 
   it('"No" does not open a modal and records a valid, complete decline', async () => {

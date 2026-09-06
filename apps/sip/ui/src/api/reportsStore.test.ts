@@ -280,10 +280,15 @@ describe('authoriseDistribution', () => {
     expect(result.decision?.distributionDecidedAt).not.toBeNull()
   })
 
-  it('works from Continue With Correction too', async () => {
+  it('refuses Authorised from Continue With Correction — ADR-0005 accepts it only on Continue', async () => {
     const decided = await reportWithDecision('continue_with_correction')
-    const result = await authoriseDistribution(decided, true)
-    expect(result.state).toBe('Approved for Manual Distribution')
+    await expect(authoriseDistribution(decided, true)).rejects.toThrow(/ADR-0005 permits Authorised/i)
+  })
+
+  it('still allows Not Authorised from Continue With Correction — refusing is always valid', async () => {
+    const decided = await reportWithDecision('continue_with_correction')
+    const result = await authoriseDistribution(decided, false)
+    expect(result.decision?.distributionAuthorised).toBe(false)
   })
 
   it('rejects before a report decision has been recorded', async () => {
