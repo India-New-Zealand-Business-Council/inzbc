@@ -31,7 +31,7 @@ from psycopg.rows import dict_row
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from services.api.auth import SIP_OWNER, STAFF_READ, Principal
-from services.api.decisions import DecisionNotPermittedError, ReportRepository
+from services.api.decisions import DecisionNotPermittedError, _role_id_for
 from services.api.session import AUTH_RESPONSES, read_access, write_access
 
 router = APIRouter(prefix="/api/runs", tags=["Run authorisations"], responses=AUTH_RESPONSES)
@@ -90,15 +90,14 @@ class RunAuthorisationRepository:
         """Records one authorisation and returns it, for use as `approval_ref` on
         `RunRepository.apply_transition`.
 
-        Resolves the actor's role via `ReportRepository.role_id_for` rather than duplicating that
-        lookup - one place decides "which role was this act performed in" for every act that
-        needs the answer, the same reasoning that method's own docstring gives for reusing it
-        instead of re-resolving the role inline.
+        Resolves the actor's role through `_role_id_for` - the shared resolver that answers "which
+        role was this act performed in" for every act that needs it - on this transaction's own
+        connection. `_role_id_for`'s docstring requires the caller's connection precisely because
+        `user_roles.enabled` is not encoded by the foreign key: resolve on a separate connection
+        and a role disabled between the lookup and this insert is still recorded as the authority.
         """
         with psycopg.connect(self._database_url, row_factory=dict_row) as conn, conn.transaction():
-            actor_role_id = ReportRepository(self._database_url).role_id_for(
-                actor_id, (SIP_OWNER,)
-            )
+            actor_role_id = _role_id_for(conn, actor_id, (SIP_OWNER,))
             row = conn.execute(
                 "insert into run_authorisations (run_id, kind, actor_id, actor_role_id, "
                 "decided_at, reason, evidence_ref) values (%s, %s, %s, %s, %s, %s, %s) "
