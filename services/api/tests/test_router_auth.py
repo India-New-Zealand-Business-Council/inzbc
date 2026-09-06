@@ -334,6 +334,9 @@ EXPECTED_ROLES: dict[tuple[str, str], set[str]] = {
     ("POST", "/api/reports/{report_version_id}/ruling"): {"SIP Owner"},
     ("POST", "/api/reports/{report_version_id}/approval"): {"Reviewer", "SIP Owner"},
     ("POST", "/api/reports/{report_version_id}/distribution"): {"Secretariat", "SIP Owner"},
+    # Recording a manual send. Same two roles as the distribution decision: the Secretariat
+    # operates the send, and this is execution evidence for the manual-send gate (#55).
+    ("POST", "/api/reports/{report_version_id}/deliveries"): {"Secretariat", "SIP Owner"},
     # The SIP-185 mandatory-source register. Reference data every role needs to read to know
     # which sources a run was obliged to cover; nothing personal in it and no write path here,
     # but it is the register an auditor checks a run against, so it is not public either.

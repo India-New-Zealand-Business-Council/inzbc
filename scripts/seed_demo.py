@@ -40,12 +40,11 @@ of it should be read as one (`PROJECT-RULES.md`). Users are fictional placements
 
 **What this dataset does not prove.** It is representative, not real operating history: no real
 SIP-184 run has ever executed against this schema (`#55` is still open), so nothing here reflects
-an actual day's collection. The decision-kind choices behind each human gate (which
-`decision_records` row authorises which state transition) are this script's own reading of
-`apps/sip/core/orchestrator.py`'s gate table applied to `apps/sip/pipeline/models.py`'s three
-decision kinds — `services/api/persistence.py.apply_transition` only checks that the referenced
-`decision_records` row exists, not that its `kind` matches the gate's purpose, so this is a
-plausible narrative fit, not a verified one. Full rationale in `docs/seed-demo-dataset.md`.
+an actual day's collection. Each human gate is crossed with evidence of the kind
+`services/api/persistence.py._REPORT_LEVEL_GATES` requires for it — the `report.qa` audit row for
+QA sign-off, a go CEO Ruling for the CEO decision, a `distribution_deliveries` row for the manual
+send — so the gate wiring here is the same one `apply_transition` enforces, not a plausible
+guess. Full rationale in `docs/seed-demo-dataset.md`.
 """
 
 from __future__ import annotations
@@ -706,13 +705,15 @@ def _seed_runs(
             RunState.PAUSED,
         ):
             # Every one of these states sits past Awaiting CEO Decision (or, for QA Failed, past
-            # the QA gate) per apps/sip/core/orchestrator.py's `_LEGAL` table, and every gate past
-            # Report Drafted needs a `decision_records` row to point `approval_ref` at — there is
-            # no other kind of evidence the persistence layer accepts. `decisions.py`'s `record`
-            # only requires the referenced report version to exist and the decider to differ from
-            # its author; it does not require the run to already be sitting in a matching state,
-            # so recording all three decisions right after submission and walking the run through
-            # its gates afterwards is a legal, if narratively compressed, sequence.
+            # the QA gate) per apps/sip/core/orchestrator.py's `_LEGAL` table. Each gate past
+            # Report Drafted needs an `approval_ref` of the kind it means (persistence.py
+            # `_REPORT_LEVEL_GATES`): the QA sign-off gate a `report.qa` audit row, the CEO
+            # decision gate a go CEO Ruling, the manual-send gate a `distribution_deliveries`
+            # row. `decisions.py`'s `record` only requires the referenced report version to exist
+            # and the decider to differ from its author; it does not require the run to already
+            # be sitting in a matching state, so recording all three decisions right after
+            # submission and walking the run through its gates afterwards is a legal, if
+            # narratively compressed, sequence.
             report_value = (
                 "Rejected" if spec.target_state == RunState.QA_FAILED else "Approved"
             )
@@ -737,23 +738,37 @@ def _seed_runs(
                 report_value=report_value,
                 distribution_value=distribution_value,
             )
-            refs[RunState.QA_FAILED] = decision_ids.get(REPORT_APPROVAL)
-            refs[RunState.AWAITING_CEO_DECISION] = decision_ids.get(REPORT_APPROVAL)
-            refs[RunState.APPROVED_FOR_MANUAL_DISTRIBUTION] = decision_ids.get(
-                DISTRIBUTION_AUTHORITY
-            )
-            refs[RunState.DISTRIBUTED] = decision_ids.get(DISTRIBUTION_AUTHORITY)
-            refs[RunState.STOPPED] = decision_ids.get(CEO_RULING)
-            refs[RunState.PAUSED] = decision_ids.get(CEO_RULING)
 
             qa_result = "Fail" if spec.target_state == RunState.QA_FAILED else "Pass"
-            ReportRepository(_database_url()).record_qa(
+            qa = ReportRepository(_database_url()).record_qa(
                 version_id,
                 result=qa_result,
                 critical_failures=1 if qa_result == "Fail" else 0,
                 actor_id=user_ids["owner"],
                 notes=f"{_TAG} seed SIP-188 QA {qa_result.lower()}",
             )
+
+            # Each report-level gate takes evidence of its own kind (persistence.py
+            # `_REPORT_LEVEL_GATES`): the QA sign-off gate takes the report.qa audit row, the CEO
+            # decision gate a go CEO Ruling, the manual-send gate a distribution_deliveries row.
+            refs[RunState.QA_FAILED] = decision_ids.get(REPORT_APPROVAL)
+            refs[RunState.AWAITING_CEO_DECISION] = qa.evidence_ref
+            refs[RunState.APPROVED_FOR_MANUAL_DISTRIBUTION] = decision_ids.get(CEO_RULING)
+            refs[RunState.STOPPED] = decision_ids.get(CEO_RULING)
+            refs[RunState.PAUSED] = decision_ids.get(CEO_RULING)
+
+            if spec.target_state == RunState.DISTRIBUTED:
+                delivery = ReportRepository(_database_url()).record_delivery(
+                    version_id,
+                    authority_record_id=decision_ids[DISTRIBUTION_AUTHORITY],
+                    sender_id=user_ids["owner"],
+                    recipient_address="board@seed.inzbc.test",
+                    channel=f"{_TAG} seed manual email",
+                    sent_at=datetime.now(UTC),
+                    delivery_result=f"{_TAG} seed: delivery recorded for the walkthrough dataset",
+                    idempotency_key=str(uuid.uuid4()),
+                )
+                refs[RunState.DISTRIBUTED] = delivery.id
 
         _walk_run(run.id, spec.target_state, actor_id=user_ids["owner"], refs=refs)
         print(f"  {spec.number}: seeded to {spec.target_state.value}")
