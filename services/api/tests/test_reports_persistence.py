@@ -17,8 +17,10 @@ import psycopg
 import pytest
 
 from services.api.decisions import (
+    DISTRIBUTION_AUTHORITY,
     DecisionNotPermittedError,
     DecisionRepository,
+    DeliveryRejected,
     ReportRepository,
     ReportVersionConflict,
 )
@@ -216,3 +218,108 @@ def test_two_concurrent_submissions_cannot_both_take_the_same_version(
     numbers = [o for o in outcomes if o != "conflict"]
     assert len(set(numbers)) == len(numbers), f"two rows took the same version: {outcomes}"
     assert numbers, "both submissions were refused; at least one must succeed"
+
+
+def _authorise_distribution(version_id: str, recipient: str) -> str:
+    """Records the release predicate (Report Approval 'Approved', CEO Ruling 'Continue') and then
+    an Authorised Distribution Authority to `recipient`, all by a fresh SIP Owner (never the
+    version's author). Returns the Distribution Authority's decision_records id.
+    """
+    with psycopg.connect(DATABASE_URL) as conn:
+        owner = conn.execute(
+            "insert into users (name, email) values (%s, %s) returning id",
+            (f"Owner {uuid.uuid4()}", f"{uuid.uuid4()}@example.com"),
+        ).fetchone()[0]
+        with conn.transaction():
+            grant(conn, owner, "SIP Owner")
+            owner_role = role_id(conn, "SIP Owner")
+        conn.commit()
+
+    repo = DecisionRepository(DATABASE_URL)
+
+    def _record(kind: str, value: str, **extra):
+        return repo.record(
+            report_version_id=version_id,
+            kind=kind,
+            value=value,
+            actor_id=str(owner),
+            actor_role_id=owner_role,
+            reason=f"test {kind}",
+            evidence_ref="test evidence",
+            owner_id=str(owner),
+            next_review=datetime.now(UTC).date() + timedelta(days=90),
+            decided_at=datetime.now(UTC),
+            idempotency_key=uuid.uuid4(),
+            expected_head_revision=0,
+            **extra,
+        )
+
+    _record("Report Approval", "Approved")
+    _record("CEO Ruling", "Continue")
+    return _record(
+        DISTRIBUTION_AUTHORITY, "Authorised", distribution_recipient=recipient
+    ).id
+
+
+def test_record_delivery_returns_the_row_for_the_authorised_recipient(
+    run_id: str, actor_id: str
+):
+    version = _submit(run_id, actor_id)
+    recipient = "controlled@recipient.test"
+    authority = _authorise_distribution(version.id, recipient)
+
+    delivery = ReportRepository(DATABASE_URL).record_delivery(
+        version.id,
+        authority_record_id=authority,
+        sender_id=actor_id,
+        recipient_address=recipient,
+        channel="manual email",
+        sent_at=datetime.now(UTC),
+        delivery_result="sent",
+        idempotency_key=str(uuid.uuid4()),
+    )
+
+    assert delivery.report_version_id == version.id
+    assert delivery.authority_record_id == authority
+    assert delivery.recipient_address == recipient
+    assert delivery.sender_id == actor_id
+
+
+def test_record_delivery_refuses_a_recipient_the_authority_did_not_name(
+    run_id: str, actor_id: str
+):
+    version = _submit(run_id, actor_id)
+    authority = _authorise_distribution(version.id, "authorised@recipient.test")
+
+    with pytest.raises(DeliveryRejected, match="not the authorised recipient"):
+        ReportRepository(DATABASE_URL).record_delivery(
+            version.id,
+            authority_record_id=authority,
+            sender_id=actor_id,
+            recipient_address="someone.else@recipient.test",
+            channel="manual email",
+            sent_at=datetime.now(UTC),
+            delivery_result="sent",
+            idempotency_key=str(uuid.uuid4()),
+        )
+
+
+def test_record_delivery_refuses_a_reused_idempotency_key(run_id: str, actor_id: str):
+    version = _submit(run_id, actor_id)
+    recipient = "controlled@recipient.test"
+    authority = _authorise_distribution(version.id, recipient)
+    key = str(uuid.uuid4())
+    repo = ReportRepository(DATABASE_URL)
+
+    kwargs = {
+        "authority_record_id": authority,
+        "sender_id": actor_id,
+        "recipient_address": recipient,
+        "channel": "manual email",
+        "sent_at": datetime.now(UTC),
+        "delivery_result": "sent",
+        "idempotency_key": key,
+    }
+    repo.record_delivery(version.id, **kwargs)
+    with pytest.raises(DeliveryRejected, match="already recorded a delivery"):
+        repo.record_delivery(version.id, **kwargs)

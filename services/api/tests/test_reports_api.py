@@ -19,6 +19,7 @@ from services.api.decisions import (
     DecisionNotPermittedError,
     DecisionRecord,
     DecisionRejected,
+    QaResult,
     QaSelfReviewError,
     ReportVersion,
     ReportVersionConflict,
@@ -72,7 +73,7 @@ class FakeReportRepository:
             raise error
         return _version()
 
-    def record_qa(self, report_version_id: str, **kwargs) -> str:
+    def record_qa(self, report_version_id: str, **kwargs) -> QaResult:
         self.last_qa = {"report_version_id": report_version_id, **kwargs}
         if self.next_error is not None:
             error, self.next_error = self.next_error, None
@@ -81,7 +82,8 @@ class FakeReportRepository:
         # rather than letting a contradiction through that Postgres would have refused.
         if kwargs["result"] == "Pass" and kwargs["critical_failures"] > 0:
             raise ValueError("a Pass cannot record Critical failures")
-        return "Passed" if kwargs["result"] == "Pass" else "Failed"
+        status = "Passed" if kwargs["result"] == "Pass" else "Failed"
+        return QaResult(qa_status=status, evidence_ref="fake-report-qa-audit-row")
 
 
 class FakeDecisionRepository:
@@ -305,6 +307,7 @@ def test_recording_a_qa_pass_returns_the_stored_status(client: TestClient) -> No
         "report_version_id": VERSION_ID,
         "qa_status": "Passed",
         "critical_failures": 0,
+        "evidence_ref": "fake-report-qa-audit-row",
     }
 
 

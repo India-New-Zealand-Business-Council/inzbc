@@ -53,6 +53,7 @@ from services.api.decisions import (
     DecisionRecord,
     DecisionRejected,
     DecisionRepository,
+    DeliveryRejected,
     QaSelfReviewError,
     ReportRepository,
     ReportVersion,
@@ -197,6 +198,11 @@ class QaResultOut(BaseModel):
     # echoing the request's `Pass`/`Fail` back and leaving two spellings in circulation.
     qa_status: str
     critical_failures: int
+    # The id of the append-only `report.qa` audit row this recorded. The QA sign-off gate
+    # (`QA In Progress -> Awaiting CEO Decision`) has no `decision_records` row - there is
+    # deliberately no second QA table - so a caller crossing that gate passes this back as the
+    # transition's `approval_ref`, and `apply_transition` checks it names that exact row.
+    evidence_ref: str
 
 
 @router.post("", response_model=ReportVersionOut, status_code=status.HTTP_201_CREATED)
@@ -262,7 +268,7 @@ def record_qa(
     The reviewer records the result, then stops the run. Two acts, because they are two acts.
     """
     try:
-        qa_status = repo.record_qa(
+        result = repo.record_qa(
             report_version_id,
             result=body.result,
             critical_failures=body.critical_failures,
@@ -279,8 +285,9 @@ def record_qa(
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(error)) from error
     return QaResultOut(
         report_version_id=report_version_id,
-        qa_status=qa_status,
+        qa_status=result.qa_status,
         critical_failures=body.critical_failures,
+        evidence_ref=result.evidence_ref,
     )
 
 
@@ -571,4 +578,95 @@ def record_distribution(
         report_version_id=report_version_id, kind=DISTRIBUTION_AUTHORITY, body=body,
         value=body.value, role_names=_DISTRIBUTION_ROLES, principal=principal, reports=reports,
         decisions=decisions, distribution_recipient=body.distribution_recipient,
+    )
+
+
+class RecordDeliveryIn(BaseModel):
+    """Evidence that a report version was manually sent. Distinct from the Distribution Authority
+    that permitted it: this records that the send happened, to whom, when, and with what result.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    # The Distribution Authority `decision_records` row in force when the send was made. The
+    # repository refuses one that is superseded, `Not Authorised`, or for another recipient.
+    authority_record_id: str
+    recipient_address: str = Field(min_length=1, max_length=500)
+    channel: str = Field(min_length=1, max_length=100)
+    sent_at: datetime
+    delivery_result: str = Field(min_length=1, max_length=500)
+    # Caller-supplied so a retried request records one send, not two (`distribution_deliveries`
+    # has `unique (idempotency_key)`).
+    idempotency_key: str
+
+    @field_validator("sent_at")
+    @classmethod
+    def _not_in_the_future(cls, value: datetime) -> datetime:
+        """A send cannot have happened later than now, the same rule the decision endpoints apply
+        to `decided_at`: the record would claim something that has not occurred.
+        """
+        if value.tzinfo is None:
+            raise ValueError("sent_at must carry a timezone")
+        if value > datetime.now(UTC) + _CLOCK_SKEW_ALLOWANCE:
+            raise ValueError("sent_at is in the future")
+        return value
+
+
+class DeliveryOut(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    report_version_id: str
+    authority_record_id: str
+    sender_id: str
+    recipient_address: str
+    channel: str
+    sent_at: str
+    delivery_result: str
+    recorded_at: str
+
+
+@router.post(
+    "/{report_version_id}/deliveries", response_model=DeliveryOut, status_code=201
+)
+def record_delivery(
+    report_version_id: str,
+    body: RecordDeliveryIn,
+    principal: Principal = Depends(write_access(SECRETARIAT, SIP_OWNER)),
+    reports: ReportRepository = Depends(get_report_repository),
+) -> DeliveryOut:
+    """Records a manual send of this report version (#55).
+
+    Secretariat operates the send (SIP Owner may as well, matching the Distribution Authority
+    role list), so the same two roles write it. `sender_id` comes from the session, never the
+    body: the record names who actually sent it.
+
+    This is the evidence the manual-send gate (`Approved for Manual Distribution -> Distributed`)
+    checks. That gate no longer accepts the Distribution Authority record - authority to
+    distribute is not proof of distribution - so a run cannot reach `Distributed` until a send is
+    recorded here.
+    """
+    try:
+        delivery = reports.record_delivery(
+            report_version_id,
+            authority_record_id=body.authority_record_id,
+            sender_id=principal.user_id,
+            recipient_address=body.recipient_address,
+            channel=body.channel,
+            sent_at=body.sent_at,
+            delivery_result=body.delivery_result,
+            idempotency_key=body.idempotency_key,
+        )
+    except DeliveryRejected as error:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(error)) from error
+    return DeliveryOut(
+        id=delivery.id,
+        report_version_id=delivery.report_version_id,
+        authority_record_id=delivery.authority_record_id,
+        sender_id=delivery.sender_id,
+        recipient_address=delivery.recipient_address,
+        channel=delivery.channel,
+        sent_at=delivery.sent_at,
+        delivery_result=delivery.delivery_result,
+        recorded_at=delivery.recorded_at,
     )
