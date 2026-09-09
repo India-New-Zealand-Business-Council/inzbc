@@ -361,11 +361,15 @@ RUN_SPECS = (
 )
 
 
-def _run_exists(conn: psycopg.Connection, run_number: str) -> str | None:
+def _run_exists(conn: psycopg.Connection, run_number: str) -> dict | None:
+    """The run's id, state and version, or None. State and version together are what let the
+    caller tell a run an interrupted seed abandoned from one that has simply moved on."""
     row = conn.execute(
-        "select id from runs where run_number = %s", (run_number,)
+        "select id, state, version from runs where run_number = %s", (run_number,)
     ).fetchone()
-    return str(row["id"]) if row else None
+    if row is None:
+        return None
+    return {"id": str(row["id"]), "state": row["state"], "version": row["version"]}
 
 
 def _record_all_source_checks(
@@ -663,6 +667,33 @@ def _seed_runs(
     for run_index, spec in enumerate(RUN_SPECS):
         existing = _run_exists(conn, spec.number)
         if existing is not None:
+            # Skipping a run that is already at its target state is the whole point of being
+            # re-runnable. Skipping one that is *not* is how a half-finished seed becomes
+            # permanent: `create_run` commits before `_walk_run` starts, so an interrupted run
+            # is left at Draft, and every later re-seed skips it and prints success over the
+            # top. The dataset then contradicts RUN_SPECS with nothing saying so.
+            #
+            # Refusing rather than repairing, for the same reason `migrate.py` refuses a
+            # checksum mismatch: the records a walk needs (launch authorisation, QA result,
+            # decision rows) are created alongside it, so re-walking half a run would have to
+            # guess which of those already exist. A fresh database is one command and cannot
+            # be half-right.
+            # Never walked at all: still Draft, still version 0, when the spec says otherwise.
+            # A run that has advanced somewhere else has version > 0 and is somebody's deliberate
+            # act - a test moving a seeded run through a transition, most often - which is not
+            # this script's business to refuse.
+            abandoned = (
+                existing["state"] == RunState.DRAFT.value
+                and existing["version"] == 0
+                and spec.target_state is not RunState.DRAFT
+            )
+            if abandoned:
+                raise SystemExit(
+                    f"{spec.number} is still an unwalked Draft but this seed defines it as "
+                    f"{spec.target_state.value!r}. An earlier seed was interrupted partway. "
+                    f"Seed into a fresh database (SEED_DATABASE_URL=...inzbc_fresh) rather than "
+                    f"re-running against this one."
+                )
             print(f"  {spec.number}: already seeded, skipping")
             continue
 
