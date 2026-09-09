@@ -348,3 +348,64 @@ describe('BriefBuilderScreen', () => {
     expect(screen.getByRole('button', { name: /submit for qa/i })).toBeInTheDocument()
   })
 })
+
+describe('BriefBuilderScreen candidate source', () => {
+  it('lists the run\'s real candidates with their source names', async () => {
+    // The list was fixture-only while the rows sat in the database, and every row carried a
+    // [FIXTURE] prefix, so the first thing anyone saw on this screen was placeholder data.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input)
+        if (url.includes('/api/session')) {
+          return new Response(JSON.stringify({ csrf_token: 't' }), { status: 200 })
+        }
+        if (url.includes('/api/runs')) {
+          return new Response(JSON.stringify([{ id: 'run-1' }]), { status: 200 })
+        }
+        if (url.includes('/api/source-library')) {
+          return new Response(
+            JSON.stringify([{ id: 'src-1', sip185_code: 'NZ-OFF-001', name: 'Beehive' }]),
+            { status: 200 },
+          )
+        }
+        if (url.includes('/api/candidates')) {
+          return new Response(
+            JSON.stringify([
+              {
+                id: 'cand-1',
+                run_id: 'run-1',
+                headline: 'A real captured candidate',
+                source_id: 'src-1',
+                verification: 'Verified',
+                signal: 'High',
+                confidence: 'High',
+                captured_at: '2026-09-01T00:00:00Z',
+              },
+            ]),
+            { status: 200 },
+          )
+        }
+        return new Response('[]', { status: 200 })
+      }),
+    )
+
+    render(<ControlledBriefBuilder initial={newDraftReportFixture()} />)
+
+    expect(await screen.findByText(/A real captured candidate/)).toBeInTheDocument()
+    // Resolved through the source register rather than shown as a raw foreign key.
+    expect(await screen.findByText(/Beehive/)).toBeInTheDocument()
+  })
+
+  it('keeps the labelled fixture when the API cannot be reached', async () => {
+    // A brief builder rendering nothing because the API is down is less useful than one
+    // rendering rows that say plainly what they are.
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('nope', { status: 500 })))
+
+    render(<ControlledBriefBuilder initial={newDraftReportFixture()} />)
+
+    // All four fixture rows, each still carrying its prefix: which dataset is on screen is
+    // never ambiguous, whichever way the fetch went.
+    expect(await screen.findAllByText(/\[FIXTURE\]/)).toHaveLength(4)
+  })
+})
