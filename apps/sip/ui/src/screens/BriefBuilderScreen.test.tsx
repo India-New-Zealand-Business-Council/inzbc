@@ -14,6 +14,12 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
+/** A report on a run the stub serves, so the screen loads that run's candidates. A report with
+ *  no `runId` has no run to load and renders the empty state instead, which is its own test. */
+function reportOnRun(): DailyBriefReport {
+  return { ...newDraftReportFixture(), runId: 'run-1' }
+}
+
 /** A controlled wrapper so interaction tests exercise real state updates, not a static prop. */
 function ControlledBriefBuilder({ initial }: { initial: DailyBriefReport }) {
   const [report, setReport] = useState(initial)
@@ -26,7 +32,7 @@ function ControlledBriefBuilder({ initial }: { initial: DailyBriefReport }) {
 // 'records a source-outcome change via onChange' below covers that), so re-driving every row
 // through fireEvent per test only multiplies render cost without covering anything new.
 function reportReadyForQa(): DailyBriefReport {
-  const report = newDraftReportFixture()
+  const report = reportOnRun()
   report.sourceCoverage = report.sourceCoverage.map((row) => ({ ...row, outcome: 'Included' }))
   report.selectedCandidateIds = ['cand-1']
   return report
@@ -71,25 +77,31 @@ describe('BriefBuilderScreen', () => {
     expect(report.coverageStart).not.toBe('2026-08-01')
   })
 
-  it('lists fixture candidates for source selection and tracks the count selected', async () => {
+  it("lists the working run's candidates for selection and tracks the count selected", async () => {
     // Controlled: selection now lives on `report` (lifted state), not inside this component, so
     // seeing the count actually update needs a caller that re-renders with the new report on
     // onChange — a static prop + no-op onChange can't observe it.
-    render(<ControlledBriefBuilder initial={newDraftReportFixture()} />)
+    render(<ControlledBriefBuilder initial={reportOnRun()} />)
 
     expect(screen.getByText('0 candidate(s) selected')).toBeInTheDocument()
-    const checkboxes = screen.getAllByRole('checkbox')
+    const checkboxes = await screen.findAllByRole('checkbox')
     await userEvent.click(checkboxes[0]!)
 
     expect(screen.getByText('1 candidate(s) selected')).toBeInTheDocument()
   })
 
+  it("says which run has no candidates yet rather than rendering an empty list", async () => {
+    // A report with no run cannot load anything, and a bare gap looks like a failed load.
+    render(<BriefBuilderScreen report={newDraftReportFixture()} onChange={vi.fn()} />)
+    expect(await screen.findByText(/No run selected/i)).toBeInTheDocument()
+  })
+
   it('candidate selection reports via onChange onto the report, not local state that navigation would wipe', async () => {
-    const report = newDraftReportFixture()
+    const report = reportOnRun()
     const onChange = vi.fn()
     render(<BriefBuilderScreen report={report} onChange={onChange} />)
 
-    await userEvent.click(screen.getAllByRole('checkbox')[0]!)
+    await userEvent.click((await screen.findAllByRole('checkbox'))[0]!)
 
     const latestCall = onChange.mock.calls.at(-1)
     if (!latestCall) throw new Error('onChange was not called')
@@ -310,7 +322,7 @@ describe('BriefBuilderScreen', () => {
   })
 
   it('clears a source from the red box and its own red border once its outcome is recorded', async () => {
-    render(<ControlledBriefBuilder initial={newDraftReportFixture()} />)
+    render(<ControlledBriefBuilder initial={reportOnRun()} />)
 
     await userEvent.click(screen.getByRole('button', { name: /nz official/i }))
     const outcomeSelect = screen.getAllByRole('combobox')[0]!
@@ -392,7 +404,7 @@ describe('BriefBuilderScreen candidate source', () => {
       }),
     )
 
-    render(<ControlledBriefBuilder initial={newDraftReportFixture()} />)
+    render(<ControlledBriefBuilder initial={reportOnRun()} />)
 
     expect(await screen.findByText(/A real captured candidate/)).toBeInTheDocument()
     // Resolved through the source register rather than shown as a raw foreign key.
@@ -435,7 +447,7 @@ describe('BriefBuilderScreen candidate source', () => {
       }),
     )
 
-    render(<ControlledBriefBuilder initial={newDraftReportFixture()} />)
+    render(<ControlledBriefBuilder initial={reportOnRun()} />)
 
     // One source resolved and applied; the other 111 stay blank, because "not checked" and
     // "checked and inaccessible" are the distinction the coverage gate exists to make.
@@ -447,7 +459,7 @@ describe('BriefBuilderScreen candidate source', () => {
     // rendering rows that say plainly what they are.
     vi.stubGlobal('fetch', vi.fn(async () => new Response('nope', { status: 500 })))
 
-    render(<ControlledBriefBuilder initial={newDraftReportFixture()} />)
+    render(<ControlledBriefBuilder initial={reportOnRun()} />)
 
     // All four fixture rows, each still carrying its prefix: which dataset is on screen is
     // never ambiguous, whichever way the fetch went.
