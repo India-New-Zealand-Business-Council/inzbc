@@ -37,7 +37,9 @@ describe('BriefBuilderScreen', () => {
     const report = newDraftReportFixture()
     render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)
 
-    const runIdCell = screen.getByText(report.runId)
+    // The number, not `runId`: the header is for a person, and `runId` now carries the UUID the
+    // API needs. A fixture has no database row, so its `runId` is empty.
+    const runIdCell = screen.getByText(report.runNumber)
     expect(runIdCell).toBeInTheDocument()
     expect(screen.getByText(report.analyst)).toBeInTheDocument()
     // Scoped to the run-header <dl>, not screen.queryByLabelText: the full page also carries 112

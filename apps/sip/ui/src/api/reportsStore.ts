@@ -103,14 +103,9 @@ interface ReportVersionOut {
  * this UI's own behaviour, not the server's — a reviewer's second pass should review the corrected
  * content on its own terms rather than inherit a stale, already-failed result.
  *
- * **Known gap, found by manual testing against a real backend, not yet fixed:** `report.runId`
- * comes from `newDraftReportFixture()` as a human-readable run number (`'RUN-20260730-01'`), but
- * `SubmitReportIn.run_id` is validated server-side as a UUID (`runs.id`) — a run number is not
- * accepted and this call 500s (`psycopg.errors.InvalidTextRepresentation`). Nothing in the SIP UI
- * ever calls `GET /api/runs` to obtain a real one, so this can't be fixed inside this function — it
- * needs the SIP UI to actually select a real run first, which is bigger than #336's scope (wiring
- * the report/QA actions to endpoints that already exist). Left as a known limitation rather than a
- * silent one; a run-selection screen is the real fix.
+ * `report.runId` is `runs.id`, the UUID `SubmitReportIn.run_id` validates. It used to be a run
+ * number and this call 500'd on it; the fix was the run selection that now supplies a real id,
+ * which is why the field and the number it used to hold are two fields.
  */
 export async function submitReportForQa(
   report: DailyBriefReport,

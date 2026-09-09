@@ -96,7 +96,8 @@ function isoDay(utc: string): string {
 function briefForRun(run: RunOut): DailyBriefReport {
   return {
     ...newDraftReportFixture(),
-    runId: run.run_number,
+    runId: run.id,
+    runNumber: run.run_number,
     runVersion: run.version,
     state: run.state as RunState,
     reportDate: isoDay(run.coverage_end_utc),

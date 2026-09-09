@@ -351,7 +351,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
       <dl className="grid grid-cols-2 gap-x-4 gap-y-2 rounded-md border border-inzbc-navy/10 bg-white shadow-sm p-4 text-sm sm:grid-cols-4">
         <div>
           <dt className="font-semibold text-inzbc-navy">Run ID</dt>
-          <dd className="text-slate-700">{report.runId}</dd>
+          <dd className="text-slate-700">{report.runNumber}</dd>
         </div>
         <div>
           <dt className="font-semibold text-inzbc-navy">Analyst</dt>
