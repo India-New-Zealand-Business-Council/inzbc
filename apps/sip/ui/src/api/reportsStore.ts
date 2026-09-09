@@ -24,9 +24,11 @@ function delay(ms: number, signal?: AbortSignal): Promise<void> {
 /**
  * `POST /api/reports`, `POST /api/reports/{id}/qa` and `POST /api/runs/{id}/fail-qa` are live
  * (#124, #285) and `submitReportForQa`/`submitQaResult` below call them for real — issue #336.
- * `returnForCorrection`, `recordCeoDecision` and `authoriseDistribution` stay fixture-backed:
- * there is no HTTP route for any of the three, for two different reasons documented at each
- * function below, not because nobody got to them yet.
+ * `recordCeoDecision` and `authoriseDistribution` are live too, against
+ * `POST /api/reports/{id}/ruling` and `/distribution` (#348, #352, #361). This comment said they
+ * stayed fixture-backed for want of a route, which stopped being true when the routes were
+ * mounted; the note outlived the gap it described. `returnForCorrection` is the one that is still
+ * fixture-backed, for the reason documented at that function.
  *
  * Every real call needs `credentials: 'same-origin'` plus an `X-CSRF-Token` header fetched from
  * `GET /api/session` first — the same pattern apps/comms/ui/src/api/client.ts already proved,
