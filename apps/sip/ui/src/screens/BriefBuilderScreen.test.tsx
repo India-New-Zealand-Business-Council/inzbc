@@ -397,6 +397,49 @@ describe('BriefBuilderScreen candidate source', () => {
     expect(await screen.findByText(/Beehive/)).toBeInTheDocument()
   })
 
+  it("applies the run's recorded source outcomes to the coverage list", async () => {
+    // Coverage read 0 of 112 against a run whose 112 checks were all in the database. Not
+    // cosmetic: an unrecorded mandatory source is a Critical stop at QA (SIP-184 §4), so a fully
+    // covered run looked like one that could not be submitted at all.
+    //
+    // The bug was the join. A check carries `source_id`, a UUID; a coverage row carries the
+    // SIP-185 code. Matching them directly compares a UUID against `NZ-OFF-001` and never hits,
+    // which is why this test seeds the two with deliberately different values.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input)
+        if (url.includes('/api/session')) {
+          return new Response(JSON.stringify({ csrf_token: 't' }), { status: 200 })
+        }
+        if (url.includes('/api/runs') && url.includes('source-checks')) {
+          return new Response(
+            JSON.stringify([{ source_id: 'uuid-not-a-code', outcome: 'Included' }]),
+            { status: 200 },
+          )
+        }
+        if (url.includes('/api/runs')) {
+          return new Response(JSON.stringify([{ id: 'run-1' }]), { status: 200 })
+        }
+        if (url.includes('/api/source-library')) {
+          return new Response(
+            JSON.stringify([
+              { id: 'uuid-not-a-code', sip185_code: 'NZ-OFF-001', name: 'Beehive' },
+            ]),
+            { status: 200 },
+          )
+        }
+        return new Response('[]', { status: 200 })
+      }),
+    )
+
+    render(<ControlledBriefBuilder initial={newDraftReportFixture()} />)
+
+    // One source resolved and applied; the other 111 stay blank, because "not checked" and
+    // "checked and inaccessible" are the distinction the coverage gate exists to make.
+    expect(await screen.findByText(/1 \/ 112 sources recorded/)).toBeInTheDocument()
+  })
+
   it('keeps the labelled fixture when the API cannot be reached', async () => {
     // A brief builder rendering nothing because the API is down is less useful than one
     // rendering rows that say plainly what they are.
