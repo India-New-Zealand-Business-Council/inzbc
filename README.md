@@ -16,6 +16,9 @@ and delegations, executive/board dashboards, and the security/audit/backup/hando
 political systems. No data is shared between organisations without a documented lawful purpose.
 
 ## Status
+**Current release: [v1.0.0](../../releases/tag/v1.0.0)** — one application, four modules, on one
+governed backend. See [CHANGELOG.md](./CHANGELOG.md).
+
 - **Phase 0 — SIP controlled launch, 27–31 July 2026:** ran manually on the Intelligence Database
   workbook + the collection agent + the v0.9 launch pack. Complete.
 - **Phase 2 — app build, in progress.** [ADR-0004](./docs/decisions/0004-platform-graduation.md)
@@ -25,6 +28,12 @@ political systems. No data is shared between organisations without a documented 
   endpoints (`/api/candidates`), transactional append-only audit, a decision/approval/distribution
   record layer ([ADR-0005](./docs/decisions/0005-decision-approval-distribution.md)), and a member
   portal UI shell.
+
+What a run looks like end to end, as of v1.0.0: a run is chosen under **Runs & Candidates**; the
+Brief Builder loads that run's own candidates and its recorded source coverage; submitting for QA
+records a `report_versions` row hashed over the candidates actually selected; and the CEO decision
+screen refuses to open until QA has passed, naming the state it is refusing from. Each of those
+reads from the database rather than a fixture.
 - **Formal sign-off is still open.** The four foundation decisions themselves
   (`docs/client-answers.md` E1) are tracked as `PROPOSED`, not yet confirmed by INZBC — the team is
   building against ADR-0004's documented resolution of them in the meantime, not against a signed
@@ -88,6 +97,9 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) and the team workflow in
 [docs/workstreams/README.md](./docs/workstreams/README.md). Short version: work from your worklog,
 branch, open a PR into `main` to the quality standard; Bhanu reviews and merges. No direct pushes
 to `main`.
+
+## Releases
+[CHANGELOG.md](./CHANGELOG.md) records what changed per release and what is known to be unresolved.
 
 ## Key documents
 Full index, organised by what you're trying to do: [`docs/README.md`](./docs/README.md).
