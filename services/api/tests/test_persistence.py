@@ -512,9 +512,12 @@ def test_a_run_authorisation_cannot_be_edited_after_the_fact(repo, initiated_by)
 def test_a_report_level_gate_needs_a_real_decision_record(repo, initiated_by) -> None:
     """Free text cannot authorise a gated transition that has somewhere to point.
 
-    The report-level gates are checked against `decision_records`, which is append-only, so the
-    reference cannot later be edited into saying something else. The run-level gates get the same
-    treatment against `run_authorisations`, tested above.
+    The QA sign-off gate's evidence is the append-only `report.qa` audit row (there is no QA
+    decision table); free text names no such row. The other report-level gates get the same
+    treatment against `decision_records` / `distribution_deliveries`, and the run-level gates
+    against `run_authorisations`, tested above. The end-to-end kind-matching - a Distribution
+    Authority refused as a CEO ruling, an authority reused as delivery evidence - is asserted in
+    `apps/sip/collector/tests/test_walk_full_run.py`.
     """
     run = repo.create_run(
         run_number=_run_number(),
@@ -539,7 +542,7 @@ def test_a_report_level_gate_needs_a_real_decision_record(repo, initiated_by) ->
             actor_id=initiated_by, reason="walk to the QA gate", approval_ref=ref,
         )
 
-    with pytest.raises(HumanGateNotSatisfied, match="not a decision record"):
+    with pytest.raises(HumanGateNotSatisfied, match="not a recorded QA pass"):
         repo.apply_transition(
             run.id, expected_version=len(walk), new_state=RunState.AWAITING_CEO_DECISION,
             actor_id=initiated_by, reason="QA sign-off",

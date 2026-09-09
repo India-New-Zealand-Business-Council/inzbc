@@ -619,6 +619,125 @@
         }
       }
     },
+    "/api/runs/{run_id}/authorisations": {
+      "post": {
+        "tags": [
+          "Run authorisations"
+        ],
+        "summary": "Authorise Run",
+        "operationId": "authorise_run_api_runs__run_id__authorisations_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthoriseRunIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunAuthorisationOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Run authorisations"
+        ],
+        "summary": "List Run Authorisations",
+        "operationId": "list_run_authorisations_api_runs__run_id__authorisations_get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RunAuthorisationOut"
+                  },
+                  "title": "Response List Run Authorisations Api Runs  Run Id  Authorisations Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/candidates": {
       "post": {
         "tags": [
@@ -1680,6 +1799,71 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DecisionOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reports/{report_version_id}/deliveries": {
+      "post": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Record Delivery",
+        "description": "Records a manual send of this report version (#55).\n\nSecretariat operates the send (SIP Owner may as well, matching the Distribution Authority\nrole list), so the same two roles write it. `sender_id` comes from the session, never the\nbody: the record names who actually sent it.\n\nThis is the evidence the manual-send gate (`Approved for Manual Distribution -> Distributed`)\nchecks. That gate no longer accepts the Distribution Authority record - authority to\ndistribute is not proof of distribution - so a run cannot reach `Distributed` until a send is\nrecorded here.",
+        "operationId": "record_delivery_api_reports__report_version_id__deliveries_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "report_version_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Report Version Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordDeliveryIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryOut"
                 }
               }
             }
@@ -3578,6 +3762,41 @@
         "title": "AuditPageOut",
         "description": "A page of audit entries plus the cursor for the next one.\n\n`next_before_id` rather than a page number, so a caller pages by passing back what it was\ngiven instead of computing an offset. `null` means this is the last page."
       },
+      "AuthoriseRunIn": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "pattern": "^(Launch|Resumption)$",
+            "title": "Kind"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Reason"
+          },
+          "evidence_ref": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Evidence Ref"
+          },
+          "decided_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Decided At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "reason",
+          "evidence_ref",
+          "decided_at"
+        ],
+        "title": "AuthoriseRunIn"
+      },
       "CandidateOut": {
         "properties": {
           "id": {
@@ -4367,6 +4586,60 @@
         "title": "DeleteDraftIn",
         "description": "Body, not a query parameter \u2014 a reason in a URL lands in access logs, which is the same\nleak in a different place. `reason` describes *why* the draft is being removed, not what it\ncontained: it is stored in `audit_log`, which is append-only, so naming what was in the draft\nwould move the disclosure into the one place it can never be deleted from again."
       },
+      "DeliveryOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "report_version_id": {
+            "type": "string",
+            "title": "Report Version Id"
+          },
+          "authority_record_id": {
+            "type": "string",
+            "title": "Authority Record Id"
+          },
+          "sender_id": {
+            "type": "string",
+            "title": "Sender Id"
+          },
+          "recipient_address": {
+            "type": "string",
+            "title": "Recipient Address"
+          },
+          "channel": {
+            "type": "string",
+            "title": "Channel"
+          },
+          "sent_at": {
+            "type": "string",
+            "title": "Sent At"
+          },
+          "delivery_result": {
+            "type": "string",
+            "title": "Delivery Result"
+          },
+          "recorded_at": {
+            "type": "string",
+            "title": "Recorded At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "report_version_id",
+          "authority_record_id",
+          "sender_id",
+          "recipient_address",
+          "channel",
+          "sent_at",
+          "delivery_result",
+          "recorded_at"
+        ],
+        "title": "DeliveryOut"
+      },
       "DistributionIn": {
         "properties": {
           "reason": {
@@ -5050,6 +5323,10 @@
           "critical_failures": {
             "type": "integer",
             "title": "Critical Failures"
+          },
+          "evidence_ref": {
+            "type": "string",
+            "title": "Evidence Ref"
           }
         },
         "additionalProperties": false,
@@ -5057,9 +5334,57 @@
         "required": [
           "report_version_id",
           "qa_status",
-          "critical_failures"
+          "critical_failures",
+          "evidence_ref"
         ],
         "title": "QaResultOut"
+      },
+      "RecordDeliveryIn": {
+        "properties": {
+          "authority_record_id": {
+            "type": "string",
+            "title": "Authority Record Id"
+          },
+          "recipient_address": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Recipient Address"
+          },
+          "channel": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Channel"
+          },
+          "sent_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Sent At"
+          },
+          "delivery_result": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Delivery Result"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "title": "Idempotency Key"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "authority_record_id",
+          "recipient_address",
+          "channel",
+          "sent_at",
+          "delivery_result",
+          "idempotency_key"
+        ],
+        "title": "RecordDeliveryIn",
+        "description": "Evidence that a report version was manually sent. Distinct from the Distribution Authority\nthat permitted it: this records that the send happened, to whom, when, and with what result."
       },
       "RecordExceptionIn": {
         "properties": {
@@ -5377,6 +5702,55 @@
           "value"
         ],
         "title": "RulingIn"
+      },
+      "RunAuthorisationOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "actor_id": {
+            "type": "string",
+            "title": "Actor Id"
+          },
+          "decided_at": {
+            "type": "string",
+            "title": "Decided At"
+          },
+          "recorded_at": {
+            "type": "string",
+            "title": "Recorded At"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "evidence_ref": {
+            "type": "string",
+            "title": "Evidence Ref"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "run_id",
+          "kind",
+          "actor_id",
+          "decided_at",
+          "recorded_at",
+          "reason",
+          "evidence_ref"
+        ],
+        "title": "RunAuthorisationOut"
       },
       "RunOut": {
         "properties": {

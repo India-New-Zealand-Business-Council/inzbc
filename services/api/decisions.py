@@ -451,6 +451,47 @@ class QaSelfReviewError(RuntimeError):
     """
 
 
+@dataclass(frozen=True)
+class QaResult:
+    """A recorded SIP-188 QA outcome.
+
+    `evidence_ref` is the id of the append-only `report.qa` audit row this write produced. The
+    QA-sign-off gate (`QA In Progress -> Awaiting CEO Decision`) has deliberately no
+    `decision_records` row to cite - there is no second QA table - so the caller carries this ref
+    forward as the transition's `approval_ref`, and `apply_transition` checks it names that exact
+    audit row with `new_value = 'Passed'` for the run.
+    """
+
+    qa_status: str
+    evidence_ref: str
+
+
+class DeliveryRejected(ValueError):
+    """A distribution delivery could not be recorded: no current Authorised Distribution Authority
+    for this version and recipient, or a reused idempotency key.
+
+    A `ValueError` (like `DecisionRejected`) so the router maps it to 422, not 500: the request
+    named a delivery the authority record does not support, which is the caller's to fix.
+    """
+
+
+@dataclass(frozen=True)
+class DistributionDelivery:
+    """One recorded manual send. `distribution_deliveries` is execution evidence - that the send
+    happened - not an authority state, and it is append-only at the database level.
+    """
+
+    id: str
+    report_version_id: str
+    authority_record_id: str
+    sender_id: str
+    recipient_address: str
+    channel: str
+    sent_at: str
+    delivery_result: str
+    recorded_at: str
+
+
 class ReportVersionConflict(RuntimeError):
     """Two submissions raced for the same version number on one run.
 
@@ -553,7 +594,7 @@ class ReportRepository:
         critical_failures: int,
         actor_id: str,
         notes: str,
-    ) -> str:
+    ) -> QaResult:
         """Records a SIP-188 QA result against the report version's run (#124).
 
         Writes `runs.qa_status`, which is the field `GET /api/dashboard` already reads, so the
@@ -601,7 +642,7 @@ class ReportRepository:
             # display, and the run-state vocabulary in schema.sql already says 'QA Failed'.
             qa_status = "Passed" if result == "Pass" else "Failed"
             conn.execute("update runs set qa_status = %s where id = %s", (qa_status, row["run_id"]))
-            record_audit(
+            audit_id = record_audit(
                 conn,
                 user_id=actor_id,
                 action="report.qa",
@@ -611,7 +652,7 @@ class ReportRepository:
                 new_value=qa_status,
                 reason=notes,
             )
-        return qa_status
+        return QaResult(qa_status=qa_status, evidence_ref=str(audit_id))
 
     def role_id_for(self, actor_id: str, role_names: tuple[str, ...]) -> int:
         """The actor's enabled role id for the first of `role_names` they actually hold.
@@ -622,6 +663,86 @@ class ReportRepository:
         """
         with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
             return _role_id_for(conn, actor_id, role_names)
+
+    def record_delivery(
+        self,
+        report_version_id: str,
+        *,
+        authority_record_id: str,
+        sender_id: str,
+        recipient_address: str,
+        channel: str,
+        sent_at: datetime,
+        delivery_result: str,
+        idempotency_key: str,
+    ) -> DistributionDelivery:
+        """Records that a report version was manually sent (#55).
+
+        `distribution_deliveries` is execution evidence, not an authority state: it says the send
+        happened, and the manual-send gate (`Approved for Manual Distribution -> Distributed`)
+        checks a row here rather than reusing the Distribution Authority, because authority to
+        distribute is not proof of distribution.
+
+        The cited `authority_record_id` must be the *current* Distribution Authority for this
+        version, `Authorised`, and to the recipient actually sent to - the composite foreign key
+        enforces the last three; currency is checked here because the key cannot see
+        `decision_streams.current_record_id`. A superseded authority, a `Not Authorised`, or a
+        recipient other than the one authorised is a `DeliveryRejected`, as is a reused
+        `idempotency_key`.
+        """
+        with psycopg.connect(self._database_url, row_factory=dict_row) as conn, conn.transaction():
+            current = conn.execute(
+                "select dr.value, dr.distribution_recipient "
+                "from decision_streams ds join decision_records dr "
+                "on dr.id = ds.current_record_id and dr.stream_id = ds.id "
+                "where ds.report_version_id = %s and ds.kind = %s and dr.id::text = %s",
+                (report_version_id, DISTRIBUTION_AUTHORITY, authority_record_id),
+            ).fetchone()
+            if current is None:
+                raise DeliveryRejected(
+                    f"authority_record_id {authority_record_id!r} is not the current Distribution "
+                    f"Authority for report version {report_version_id!r}. A delivery cites the "
+                    "authority in force when it was sent, not a superseded one."
+                )
+            if current["value"] != "Authorised":
+                raise DeliveryRejected(
+                    "the current Distribution Authority for this version is "
+                    f"{current['value']!r}, not 'Authorised'; nothing may be recorded as sent "
+                    "under it."
+                )
+            if current["distribution_recipient"] != recipient_address:
+                raise DeliveryRejected(
+                    f"recipient_address {recipient_address!r} is not the authorised recipient "
+                    f"({current['distribution_recipient']!r}). The delivery has to be to whom "
+                    "distribution was authorised."
+                )
+            try:
+                row = conn.execute(
+                    "insert into distribution_deliveries "
+                    "(authority_record_id, report_version_id, sender_id, recipient_address, "
+                    " channel, sent_at, delivery_result, idempotency_key) "
+                    "values (%s, %s, %s, %s, %s, %s, %s, %s) "
+                    "returning id, report_version_id, authority_record_id, sender_id, "
+                    "recipient_address, channel, sent_at, delivery_result, recorded_at",
+                    (authority_record_id, report_version_id, sender_id, recipient_address,
+                     channel, sent_at, delivery_result, idempotency_key),
+                ).fetchone()
+            except psycopg.errors.UniqueViolation as error:
+                raise DeliveryRejected(
+                    f"idempotency_key {idempotency_key!r} has already recorded a delivery; a "
+                    "resend is a new send with its own key."
+                ) from error
+        return DistributionDelivery(
+            id=str(row["id"]),
+            report_version_id=str(row["report_version_id"]),
+            authority_record_id=str(row["authority_record_id"]),
+            sender_id=str(row["sender_id"]),
+            recipient_address=row["recipient_address"],
+            channel=row["channel"],
+            sent_at=row["sent_at"].isoformat(),
+            delivery_result=row["delivery_result"],
+            recorded_at=row["recorded_at"].isoformat(),
+        )
 
 
 def _to_report_version(row: dict) -> ReportVersion:

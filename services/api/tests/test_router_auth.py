@@ -288,6 +288,13 @@ EXPECTED_ROLES: dict[tuple[str, str], set[str]] = {
     # this. Restricting it to the owner would let the person most likely to be audited decide
     # who sees the record.
     ("GET", "/api/runs/{run_id}/audit"): set(STAFF_READ),
+    # Launch and resumption authority itself (#55/#227) — the record `/start` and `/resume`
+    # check `approval_ref` against. Owner only, matching the weight `decision_role_permissions`
+    # (migration 0003) gives CEO Ruling: see run_authorisations.py's module docstring for why
+    # this is a judgement call rather than a table-driven answer the way the three ADR-0005
+    # decision kinds are.
+    ("POST", "/api/runs/{run_id}/authorisations"): {"SIP Owner"},
+    ("GET", "/api/runs/{run_id}/authorisations"): set(STAFF_READ),
     # Launch, CEO and resumption authority. Owner only.
     ("POST", "/api/runs/{run_id}/start"): {"SIP Owner"},
     ("POST", "/api/runs/{run_id}/pause"): {"SIP Owner"},
@@ -327,6 +334,9 @@ EXPECTED_ROLES: dict[tuple[str, str], set[str]] = {
     ("POST", "/api/reports/{report_version_id}/ruling"): {"SIP Owner"},
     ("POST", "/api/reports/{report_version_id}/approval"): {"Reviewer", "SIP Owner"},
     ("POST", "/api/reports/{report_version_id}/distribution"): {"Secretariat", "SIP Owner"},
+    # Recording a manual send. Same two roles as the distribution decision: the Secretariat
+    # operates the send, and this is execution evidence for the manual-send gate (#55).
+    ("POST", "/api/reports/{report_version_id}/deliveries"): {"Secretariat", "SIP Owner"},
     # The SIP-185 mandatory-source register. Reference data every role needs to read to know
     # which sources a run was obliged to cover; nothing personal in it and no write path here,
     # but it is the register an auditor checks a run against, so it is not public either.

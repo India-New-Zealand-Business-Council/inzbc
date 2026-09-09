@@ -209,6 +209,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/runs/{run_id}/authorisations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Run Authorisations */
+        get: operations["list_run_authorisations_api_runs__run_id__authorisations_get"];
+        put?: never;
+        /** Authorise Run */
+        post: operations["authorise_run_api_runs__run_id__authorisations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/candidates": {
         parameters: {
             query?: never;
@@ -586,6 +604,35 @@ export interface paths {
          *     rather than a boolean on the approval.
          */
         post: operations["record_distribution_api_reports__report_version_id__distribution_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/{report_version_id}/deliveries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record Delivery
+         * @description Records a manual send of this report version (#55).
+         *
+         *     Secretariat operates the send (SIP Owner may as well, matching the Distribution Authority
+         *     role list), so the same two roles write it. `sender_id` comes from the session, never the
+         *     body: the record names who actually sent it.
+         *
+         *     This is the evidence the manual-send gate (`Approved for Manual Distribution -> Distributed`)
+         *     checks. That gate no longer accepts the Distribution Authority record - authority to
+         *     distribute is not proof of distribution - so a run cannot reach `Distributed` until a send is
+         *     recorded here.
+         */
+        post: operations["record_delivery_api_reports__report_version_id__deliveries_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1188,6 +1235,20 @@ export interface components {
             /** Next Before Id */
             next_before_id: number | null;
         };
+        /** AuthoriseRunIn */
+        AuthoriseRunIn: {
+            /** Kind */
+            kind: string;
+            /** Reason */
+            reason: string;
+            /** Evidence Ref */
+            evidence_ref: string;
+            /**
+             * Decided At
+             * Format: date-time
+             */
+            decided_at: string;
+        };
         /** CandidateOut */
         CandidateOut: {
             /** Id */
@@ -1414,6 +1475,27 @@ export interface components {
         DeleteDraftIn: {
             /** Reason */
             reason: string;
+        };
+        /** DeliveryOut */
+        DeliveryOut: {
+            /** Id */
+            id: string;
+            /** Report Version Id */
+            report_version_id: string;
+            /** Authority Record Id */
+            authority_record_id: string;
+            /** Sender Id */
+            sender_id: string;
+            /** Recipient Address */
+            recipient_address: string;
+            /** Channel */
+            channel: string;
+            /** Sent At */
+            sent_at: string;
+            /** Delivery Result */
+            delivery_result: string;
+            /** Recorded At */
+            recorded_at: string;
         };
         /** DistributionIn */
         DistributionIn: {
@@ -1649,6 +1731,30 @@ export interface components {
             qa_status: string;
             /** Critical Failures */
             critical_failures: number;
+            /** Evidence Ref */
+            evidence_ref: string;
+        };
+        /**
+         * RecordDeliveryIn
+         * @description Evidence that a report version was manually sent. Distinct from the Distribution Authority
+         *     that permitted it: this records that the send happened, to whom, when, and with what result.
+         */
+        RecordDeliveryIn: {
+            /** Authority Record Id */
+            authority_record_id: string;
+            /** Recipient Address */
+            recipient_address: string;
+            /** Channel */
+            channel: string;
+            /**
+             * Sent At
+             * Format: date-time
+             */
+            sent_at: string;
+            /** Delivery Result */
+            delivery_result: string;
+            /** Idempotency Key */
+            idempotency_key: string;
         };
         /** RecordExceptionIn */
         RecordExceptionIn: {
@@ -1769,6 +1875,25 @@ export interface components {
              * @enum {string}
              */
             value: "Continue" | "Continue With Correction" | "Pause" | "Stop";
+        };
+        /** RunAuthorisationOut */
+        RunAuthorisationOut: {
+            /** Id */
+            id: string;
+            /** Run Id */
+            run_id: string;
+            /** Kind */
+            kind: string;
+            /** Actor Id */
+            actor_id: string;
+            /** Decided At */
+            decided_at: string;
+            /** Recorded At */
+            recorded_at: string;
+            /** Reason */
+            reason: string;
+            /** Evidence Ref */
+            evidence_ref: string;
         };
         /** RunOut */
         RunOut: {
@@ -2393,6 +2518,100 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AuditPageOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_run_authorisations_api_runs__run_id__authorisations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunAuthorisationOut"][];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    authorise_run_api_runs__run_id__authorisations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuthoriseRunIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunAuthorisationOut"];
                 };
             };
             /** @description No session, or the session has expired or been idle too long. */
@@ -3271,6 +3490,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DecisionOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_delivery_api_reports__report_version_id__deliveries_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordDeliveryIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeliveryOut"];
                 };
             };
             /** @description No session, or the session has expired or been idle too long. */

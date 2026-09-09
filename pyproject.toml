@@ -49,6 +49,7 @@ dev = [
 "services/api/registers.py" = ["B008"]
 "services/api/reports.py" = ["B008"]
 "services/api/runs.py" = ["B008"]
+"services/api/run_authorisations.py" = ["B008"]
 "services/api/session.py" = ["B008"]
 "services/api/oauth.py" = ["B008"]
 "services/api/source_checks.py" = ["B008"]
