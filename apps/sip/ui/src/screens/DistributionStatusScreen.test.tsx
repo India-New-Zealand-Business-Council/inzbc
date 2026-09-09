@@ -1,8 +1,15 @@
-import { render, screen, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { render, screen, waitFor, within } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { DailyBriefReport } from '../domain'
-import { archiveFixture, newDraftReportFixture } from '../lib/fixtures'
+import { newDraftReportFixture } from '../lib/fixtures'
+import { stubReportsFetch } from '../api/reportsStore.testSupport'
 import { DistributionStatusScreen } from './DistributionStatusScreen'
+
+beforeEach(() => stubReportsFetch())
+afterEach(() => {
+  vi.restoreAllMocks()
+  vi.unstubAllGlobals()
+})
 
 describe('DistributionStatusScreen', () => {
   it('is reachable at any run state and renders no write controls', () => {
@@ -107,23 +114,38 @@ describe('DistributionStatusScreen', () => {
     expect(screen.getByText('Delivered', { exact: false })).toBeInTheDocument()
   })
 
-  it('renders the run archive as a read-only table, one row per past run', () => {
+  it("lists every run the API returns, newest-first as the API orders them", async () => {
     render(<DistributionStatusScreen report={newDraftReportFixture()} />)
     const table = screen.getByRole('table')
-    const rows = within(table).getAllByRole('row')
-    // Header row + one row per fixture run.
-    expect(rows).toHaveLength(archiveFixture().length + 1)
+    await waitFor(() => expect(within(table).getByText('RUN-20260908-01')).toBeInTheDocument())
 
-    const firstRun = archiveFixture()[0]!
-    expect(within(table).getByText(firstRun.runId)).toBeInTheDocument()
-    expect(within(table).getByText(firstRun.reportDate)).toBeInTheDocument()
+    // Header row + one row per run the API returned.
+    expect(within(table).getAllByRole('row')).toHaveLength(3)
+    expect(within(table).getByText('RUN-20260909-01')).toBeInTheDocument()
   })
 
-  it('shows Pending in the archive for a run with no QA/decision/distribution recorded yet', () => {
+  it("distinguishes a recorded QA result from QA that has not run", async () => {
     render(<DistributionStatusScreen report={newDraftReportFixture()} />)
-    const undecidedRun = archiveFixture().find((run) => run.decision === null)!
-    const row = screen.getByText(undecidedRun.runId).closest('tr')
-    expect(row).not.toBeNull()
-    expect(within(row!).getAllByText('Pending').length).toBeGreaterThan(0)
+    await waitFor(() => expect(screen.getByText('RUN-20260908-01')).toBeInTheDocument())
+
+    const passed = screen.getByText('RUN-20260908-01').closest('tr')!
+    expect(within(passed).getByText('Passed')).toBeInTheDocument()
+
+    // Null qa_status is "not yet run", which is a different fact from a failure.
+    const notRun = screen.getByText('RUN-20260909-01').closest('tr')!
+    expect(within(notRun).getByText('Not yet run')).toBeInTheDocument()
+    expect(within(notRun).queryByText('Failed')).not.toBeInTheDocument()
   })
+
+  it("surfaces a failure to load the archive instead of showing an empty table", async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('Network unreachable') }))
+    render(<DistributionStatusScreen report={newDraftReportFixture()} />)
+    // httpClient normalises a transport failure to one stable sentence rather than leaking the
+    // browser's own wording, so that is what a reader sees.
+    await waitFor(() =>
+      expect(screen.getByText(/could not reach the SIP service/i)).toBeInTheDocument(),
+    )
+    expect(screen.queryByText(/loading past runs/i)).not.toBeInTheDocument()
+  })
+
 })

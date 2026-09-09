@@ -19,6 +19,7 @@ const RUN = {
   coverage_start_utc: '2026-08-08T00:00:00Z',
   coverage_end_utc: '2026-08-08T23:59:59Z',
   initiated_by: ACTOR_ID,
+  qa_status: null,
 }
 
 function stubCandidates() {

@@ -32,6 +32,7 @@ def _run() -> RunRecord:
         coverage_start_utc="2026-08-12T07:00:00+12:00",
         coverage_end_utc="2026-08-13T07:00:00+12:00",
         initiated_by="00000000-0000-0000-0000-0000000000aa",
+        qa_status=None,
     )
 
 

@@ -5850,6 +5850,17 @@
           "initiated_by": {
             "type": "string",
             "title": "Initiated By"
+          },
+          "qa_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qa Status"
           }
         },
         "additionalProperties": false,
@@ -5862,7 +5873,8 @@
           "prompt_version",
           "coverage_start_utc",
           "coverage_end_utc",
-          "initiated_by"
+          "initiated_by",
+          "qa_status"
         ],
         "title": "RunOut"
       },

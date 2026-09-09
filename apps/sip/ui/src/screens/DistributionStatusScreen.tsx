@@ -1,5 +1,12 @@
+import { useEffect, useState } from 'react'
 import type { DailyBriefReport } from '../domain'
-import { archiveFixture } from '../lib/fixtures'
+import { listRuns, type RunOut } from '../api/runsClient'
+
+/** Both ends of the window a run covered, as plain local dates. */
+function formatCoverage(startUtc: string, endUtc: string): string {
+  const day = (iso: string) => new Date(iso).toLocaleDateString('en-NZ', { day: '2-digit', month: 'short' })
+  return `${day(startUtc)} - ${day(endUtc)}`
+}
 
 interface Props {
   report: DailyBriefReport
@@ -17,6 +24,20 @@ interface Props {
  * so this renders that field as-is rather than inventing a numeric count it doesn't have.
  */
 export function DistributionStatusScreen({ report }: Props) {
+  const [archive, setArchive] = useState<RunOut[] | null>(null)
+  const [archiveError, setArchiveError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const controller = new AbortController()
+    listRuns({ signal: controller.signal })
+      .then(setArchive)
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return
+        setArchiveError(error instanceof Error ? error.message : 'Could not load past runs.')
+      })
+    return () => controller.abort()
+  }, [])
+
   return (
     <section className="space-y-6">
       <div>
@@ -105,9 +126,14 @@ export function DistributionStatusScreen({ report }: Props) {
       <div>
         <h3 className="text-sm font-semibold text-inzbc-navy">Run archive</h3>
         <p className="mt-1 text-xs text-slate-500">
-          Past runs — for local development only, standing in for a not-yet-built history list
-          (no `GET /api/reports` list endpoint exists yet).
+          Every run this instance has recorded, newest first, from{' '}
+          <code className="text-[11px]">GET /api/runs</code>.
         </p>
+        {archiveError && (
+          <p className="mt-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            {archiveError}
+          </p>
+        )}
         <div className="mt-2 overflow-x-auto rounded-md border border-inzbc-navy/10 bg-white shadow-sm">
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead>
@@ -116,32 +142,42 @@ export function DistributionStatusScreen({ report }: Props) {
                   Run
                 </th>
                 <th scope="col" className="px-3 py-2">
-                  Date
-                </th>
-                <th scope="col" className="px-3 py-2">
                   State
                 </th>
                 <th scope="col" className="px-3 py-2">
                   QA
                 </th>
                 <th scope="col" className="px-3 py-2">
-                  Decision
-                </th>
-                <th scope="col" className="px-3 py-2">
-                  Distribution
+                  Coverage window
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {archiveFixture().map((run) => (
-                <tr key={run.runId}>
-                  <td className="whitespace-nowrap px-3 py-2 text-slate-700">{run.runId}</td>
-                  <td className="whitespace-nowrap px-3 py-2 text-slate-700">{run.reportDate}</td>
+              {archive === null && !archiveError && (
+                <tr>
+                  <td className="px-3 py-3 text-slate-500" colSpan={4}>
+                    Loading past runs...
+                  </td>
+                </tr>
+              )}
+              {archive?.length === 0 && (
+                <tr>
+                  <td className="px-3 py-3 text-slate-500" colSpan={4}>
+                    No runs recorded yet.
+                  </td>
+                </tr>
+              )}
+              {archive?.map((run) => (
+                <tr key={run.id}>
+                  <td className="whitespace-nowrap px-3 py-2 font-medium text-inzbc-navy">
+                    {run.run_number}
+                  </td>
                   <td className="whitespace-nowrap px-3 py-2 text-slate-700">{run.state}</td>
-                  <td className="whitespace-nowrap px-3 py-2 text-slate-700">{run.qaResult ?? 'Pending'}</td>
-                  <td className="whitespace-nowrap px-3 py-2 text-slate-700">{run.decision ?? 'Pending'}</td>
                   <td className="whitespace-nowrap px-3 py-2 text-slate-700">
-                    {run.distributionAuthorised === null ? 'Pending' : run.distributionAuthorised ? 'Yes' : 'No'}
+                    {run.qa_status ?? 'Not yet run'}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2 text-slate-500">
+                    {formatCoverage(run.coverage_start_utc, run.coverage_end_utc)}
                   </td>
                 </tr>
               ))}

@@ -1947,6 +1947,8 @@ export interface components {
             coverage_end_utc: string;
             /** Initiated By */
             initiated_by: string;
+            /** Qa Status */
+            qa_status: string | null;
         };
         /** ScoreIn */
         ScoreIn: {

@@ -179,11 +179,14 @@ class RunRecord:
     coverage_start_utc: str
     coverage_end_utc: str
     initiated_by: str
+    # `Passed`/`Failed`, written by `record_qa`. NULL until QA has run, which is a third fact
+    # rather than a missing one: a run that has not reached QA has no QA result to report.
+    qa_status: str | None
 
 
 _SELECT_COLUMNS = (
     "id, run_number, state, version, prompt_version, "
-    "coverage_start_utc, coverage_end_utc, initiated_by"
+    "coverage_start_utc, coverage_end_utc, initiated_by, qa_status"
 )
 
 
@@ -197,6 +200,7 @@ def _row_to_record(row: dict) -> RunRecord:
         coverage_start_utc=row["coverage_start_utc"].isoformat(),
         coverage_end_utc=row["coverage_end_utc"].isoformat(),
         initiated_by=str(row["initiated_by"]),
+        qa_status=row["qa_status"],
     )
 
 
@@ -727,9 +731,6 @@ class DashboardRepository:
             # reaches them, and null here means "not reached yet" rather than "unknown".
             gates = GateStatus(None, None, None, None)
             if run_row is not None:
-                qa = conn.execute(
-                    "select qa_status from runs where id = %s", (run_row["id"],)
-                ).fetchone()
                 decision = conn.execute(
                     "select report_approval, distribution_authority, distribution_recipient "
                     "from current_report_decisions where run_id = %s "
@@ -737,7 +738,7 @@ class DashboardRepository:
                     (run_row["id"],),
                 ).fetchone()
                 gates = GateStatus(
-                    qa_status=qa["qa_status"] if qa else None,
+                    qa_status=run_row["qa_status"],
                     report_approval=decision["report_approval"] if decision else None,
                     distribution_authority=decision["distribution_authority"] if decision else None,
                     distribution_recipient=decision["distribution_recipient"] if decision else None,
