@@ -1,6 +1,9 @@
-import { useId, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { ReportsApiError, submitReportForQa } from '../api/reportsStore'
 import { GOVERNANCE_LINE, type Candidate, type DailyBriefReport, type SourceCoverageRow, type SourceOutcome } from '../domain'
+import { type CandidateOut, listCandidates } from '../api/candidatesClient'
+import { listRuns } from '../api/runsClient'
+import { type SourceLibraryOut, sourceLookup } from '../api/sourceLibraryClient'
 import { candidatesFixture } from '../lib/fixtures'
 import { FOCUS_NOTE_MAX_LENGTH, validateBrief } from '../lib/validation'
 
@@ -89,8 +92,64 @@ interface Props {
  * identity "comes from the authenticated session, not a free field" — there is no live auth yet
  * (docs/api-integration-spec.md), so these render as fixed run-header data, not editable inputs.
  */
+/** `CandidateOut` (the API shape) to `Candidate` (what this screen renders).
+ *
+ * `sip185Code` and `sourceName` are not on the candidate itself -- it carries `source_id`, a
+ * foreign key into `source_library`. The register is fetched once and passed in as a lookup, so
+ * twelve candidates cost one request rather than twelve.
+ *
+ * An unresolved id renders as the id, not as a plausible-looking source name. A candidate whose
+ * source is missing from the register is a real condition worth seeing.
+ */
+function toDomainCandidate(
+  candidate: CandidateOut,
+  sources: Map<string, SourceLibraryOut>,
+): Candidate {
+  const source = candidate.source_id ? sources.get(candidate.source_id) : undefined
+  return {
+    id: candidate.id,
+    headline: candidate.headline,
+    sourceName:
+      source?.name ??
+      (candidate.source_id ? `Unregistered source ${candidate.source_id.slice(0, 8)}` : 'Unattributed'),
+    sip185Code: source?.sip185_code ?? '',
+    sector: candidate.proposed_routing ?? 'Unrouted',
+    signalStrength: (candidate.signal ?? 'Low') as Candidate['signalStrength'],
+    sourceConfidence: candidate.confidence ?? 'Unrated',
+    verificationStatus: candidate.verification as Candidate['verificationStatus'],
+  }
+}
+
 export function BriefBuilderScreen({ report, onChange }: Props) {
-  const [candidates] = useState<Candidate[]>(() => candidatesFixture())
+  // Real candidates for the newest run, with the fixture as the fallback rather than the default.
+  // The list was fixture-only, and every row carried a `[FIXTURE]` prefix so it could not be
+  // mistaken for real output -- honest, and also the first thing anyone looking at the screen saw.
+  // The rows exist in the database; nothing was fetching them.
+  //
+  // The fixture stays for the case it was written for: no run yet, or the API unreachable. It
+  // keeps its prefix, so which one is on screen is never ambiguous.
+  const [candidates, setCandidates] = useState<Candidate[]>(() => candidatesFixture())
+
+  useEffect(() => {
+    const controller = new AbortController()
+    void (async () => {
+      try {
+        const runs = await listRuns({ signal: controller.signal })
+        const newest = runs[0]
+        if (!newest) return
+        const [live, sources] = await Promise.all([
+          listCandidates(newest.id, { signal: controller.signal }),
+          sourceLookup({ signal: controller.signal }),
+        ])
+        if (live.length === 0) return
+        setCandidates(live.map((candidate) => toDomainCandidate(candidate, sources)))
+      } catch {
+        // Leaves the fixture in place. A brief builder that renders nothing because the API is
+        // down is less useful than one that renders clearly-labelled placeholder rows.
+      }
+    })()
+    return () => controller.abort()
+  }, [])
   const [submitState, setSubmitState] = useState<SubmitState>({ kind: 'idle' })
   // False until the analyst actually tries to submit — see onSubmitForQa. A fresh brief starts
   // with all 112 mandatory sources blank; showing the full "Before this brief can be submitted"
