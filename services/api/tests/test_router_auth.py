@@ -299,6 +299,10 @@ EXPECTED_ROLES: dict[tuple[str, str], set[str]] = {
     ("POST", "/api/runs/{run_id}/start"): {"SIP Owner"},
     ("POST", "/api/runs/{run_id}/pause"): {"SIP Owner"},
     ("POST", "/api/runs/{run_id}/resume"): {"SIP Owner"},
+    # The one edge out of QA Failed. Same roles as fail-qa: whoever can fail a run's QA can
+    # return it for correction, and the analyst who wrote the brief cannot wave their own work
+    # back through.
+    ("POST", "/api/runs/{run_id}/return-for-correction"): {"Reviewer", "SIP Owner"},
     ("POST", "/api/runs/{run_id}/stop"): {"SIP Owner"},
     # REQ-U-01: the reviewer's independent stop. Deliberately not the owner's alone.
     ("POST", "/api/runs/{run_id}/fail-qa"): {"Reviewer", "SIP Owner"},

@@ -69,6 +69,12 @@ export function stubReportsFetch(options: StubReportsFetchOptions = {}): void {
       if (url.endsWith('/fail-qa') && init?.method === 'POST') {
         return jsonResponse({ id: 'RUN-1', state: 'QA Failed', version: 1 })
       }
+      // The one edge out of QA Failed. Returns a bumped version, like every other transition:
+      // a caller that reuses the version it started from is refused as stale, so a stub handing
+      // back an unchanged one would hide that.
+      if (url.endsWith('/return-for-correction') && init?.method === 'POST') {
+        return jsonResponse({ id: 'RUN-1', state: 'Report Drafted', version: 2 })
+      }
       const decisionMatch = /\/(ruling|approval|distribution)$/.exec(url)
       if (decisionMatch && init?.method === 'POST') {
         const body = JSON.parse(String(init.body)) as { value: string }

@@ -217,6 +217,43 @@ _HEADLINE_TOPICS = (
 )
 
 
+# Routing sector per topic keyword. `proposed_routing` was never set, so every seeded candidate
+# read "Unrouted" in the brief builder -- the routing step is part of the analyst's work
+# (`record_routing`), and a walkthrough that never shows it makes the column look decorative.
+#
+# Derived from the topic rather than added to every CandidateSpec: the topics already say what
+# sector they are about, and duplicating that into a second field is one more thing to keep in
+# step. A topic matching nothing stays unrouted, which is a real state, not a gap to paper over.
+_ROUTING_BY_KEYWORD = (
+    ("kiwifruit", "Horticulture"),
+    ("horticulture", "Horticulture"),
+    ("dairy", "Dairy"),
+    ("wine", "Wine"),
+    ("honey", "Apiculture"),
+    ("wool", "Wool"),
+    ("forestry", "Forestry"),
+    ("services chapter", "Services"),
+    ("seafood", "Seafood"),
+    ("red meat", "Red meat"),
+    ("education", "Education"),
+    ("investment", "Investment"),
+    ("implementation committee", "FTA implementation"),
+    ("customs", "Trade facilitation"),
+    ("compliance-cost", "Compliance"),
+    ("trade office", "Bilateral"),
+    ("pharma", "Pharmaceuticals"),
+    ("technology", "Technology"),
+)
+
+
+def _routing_for(headline: str) -> str | None:
+    lowered = headline.lower()
+    for keyword, sector in _ROUTING_BY_KEYWORD:
+        if keyword in lowered:
+            return sector
+    return None
+
+
 def _build_candidates(run_index: int, count: int) -> list[CandidateSpec]:
     specs: list[CandidateSpec] = []
     for i in range(count):
@@ -438,6 +475,20 @@ def _capture_and_work_candidates(
                 actor_id=captor_id if captor_id != verifier_id else owner_id,
                 reason=f"{_TAG} seed scoring pass",
             )
+
+            # Routing is a separate analyst act from scoring, and it is what decides whether a
+            # candidate reaches a reader at all. Included follows the verification gate rather
+            # than being set flat: an Unverified or Rejected row is routed to a sector and left
+            # out of the brief, which is the ordinary case the include column exists to record.
+            routing = _routing_for(spec.headline)
+            if routing is not None:
+                cand_repo.record_routing(
+                    row["id"],
+                    proposed_routing=routing,
+                    included=spec.verification in ("Verified", "Partially Verified"),
+                    actor_id=captor_id if captor_id != verifier_id else owner_id,
+                    reason=f"{_TAG} seed routing pass",
+                )
 
     # Cross-run + within-run duplicate detection, via the real dedupe logic (dedupe.py), not a
     # hand-picked flag — #338 wants the dedupe logic shown doing real work, not asserted.
