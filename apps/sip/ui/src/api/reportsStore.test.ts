@@ -175,7 +175,7 @@ describe('returnForCorrection', () => {
 
 describe('recordCeoDecision', () => {
   function awaitingDecisionReport() {
-    return { ...submittableReport(), state: 'Awaiting CEO Decision' as const }
+    return { ...submittableReport(), state: 'Awaiting CEO Decision' as const, reportVersionId: 'rv-1' }
   }
   function baseDecision(overrides: Partial<Parameters<typeof recordCeoDecision>[1]> = {}) {
     return {
@@ -248,7 +248,11 @@ describe('recordCeoDecision', () => {
 
 describe('authoriseDistribution', () => {
   async function reportWithDecision(decision: 'continue' | 'continue_with_correction' = 'continue') {
-    const report = { ...submittableReport(), state: 'Awaiting CEO Decision' as const }
+    const report = {
+      ...submittableReport(),
+      state: 'Awaiting CEO Decision' as const,
+      reportVersionId: 'rv-1',
+    }
     return recordCeoDecision(report, {
       reportVersion: 'v0.9 Review Draft',
       decision,
@@ -276,10 +280,15 @@ describe('authoriseDistribution', () => {
     expect(result.decision?.distributionDecidedAt).not.toBeNull()
   })
 
-  it('works from Continue With Correction too', async () => {
+  it('refuses Authorised from Continue With Correction — ADR-0005 accepts it only on Continue', async () => {
     const decided = await reportWithDecision('continue_with_correction')
-    const result = await authoriseDistribution(decided, true)
-    expect(result.state).toBe('Approved for Manual Distribution')
+    await expect(authoriseDistribution(decided, true)).rejects.toThrow(/ADR-0005 permits Authorised/i)
+  })
+
+  it('still allows Not Authorised from Continue With Correction — refusing is always valid', async () => {
+    const decided = await reportWithDecision('continue_with_correction')
+    const result = await authoriseDistribution(decided, false)
+    expect(result.decision?.distributionAuthorised).toBe(false)
   })
 
   it('rejects before a report decision has been recorded', async () => {
@@ -294,7 +303,11 @@ describe('authoriseDistribution', () => {
   })
 
   it('rejects from Paused — a paused/stopped run never reaches a distribution question', async () => {
-    const report = { ...submittableReport(), state: 'Awaiting CEO Decision' as const }
+    const report = {
+      ...submittableReport(),
+      state: 'Awaiting CEO Decision' as const,
+      reportVersionId: 'rv-1',
+    }
     const paused = await recordCeoDecision(report, {
       reportVersion: 'v0.9 Review Draft',
       decision: 'pause',
