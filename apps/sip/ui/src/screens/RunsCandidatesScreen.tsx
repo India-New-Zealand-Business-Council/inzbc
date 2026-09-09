@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { CandidateDetailScreen } from './CandidateDetailScreen'
 import { RunDetailScreen } from './RunDetailScreen'
 import { RunsListScreen } from './RunsListScreen'
+import type { RunOut } from '../api/runsClient'
 
 type View =
   | { kind: 'runs-list' }
@@ -19,7 +20,14 @@ type View =
  * (`extra="forbid"` on every request model) rather than silently ignoring it. `vitest.setup.ts`
  * seeds a session before each test, matching what the real API now expects.
  */
-export function RunsCandidatesScreen() {
+interface Props {
+  /** Make this run the one the Brief Builder, QA, CEO and Distribution screens act on. */
+  onWorkRun: (run: RunOut) => void
+  /** The run those screens are currently following, so this list can say which one that is. */
+  workingRunId: string | null
+}
+
+export function RunsCandidatesScreen({ onWorkRun, workingRunId }: Props) {
   const [view, setView] = useState<View>({ kind: 'runs-list' })
 
   return (
@@ -29,13 +37,17 @@ export function RunsCandidatesScreen() {
           Runs &amp; Candidates
         </h2>
         <p className="mt-1 text-sm text-slate-600">
-          Live SIP pipeline data (`/api/runs`, `/api/candidates`) — not the fixture-backed screens
-          above.
+          Live SIP pipeline data (`/api/runs`, `/api/candidates`). Choosing a run here is what
+          the Brief Builder, QA Review, CEO Decision and Distribution screens then act on.
         </p>
       </div>
 
       {view.kind === 'runs-list' ? (
-        <RunsListScreen onSelectRun={(runId) => setView({ kind: 'run-detail', runId })} />
+        <RunsListScreen
+          onSelectRun={(runId) => setView({ kind: 'run-detail', runId })}
+          onWorkRun={onWorkRun}
+          workingRunId={workingRunId}
+        />
       ) : null}
 
       {view.kind === 'run-detail' ? (
