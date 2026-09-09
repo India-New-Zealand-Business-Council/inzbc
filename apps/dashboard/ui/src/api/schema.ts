@@ -130,6 +130,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/runs/{run_id}/return-for-correction": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Return For Correction
+         * @description QA Failed -> Report Drafted. The only way out of a failed QA.
+         *
+         *     `QA Failed` is not terminal: `schemas/state-machine.md` allows exactly one edge out of it,
+         *     back to `Report Drafted`, "after correction + re-review only". The state machine and the
+         *     orchestrator both had that edge and nothing could travel it, because no route existed. A run
+         *     that failed QA was stuck at the one state the specification says is recoverable, and the QA
+         *     Failed screen could offer a correction it had no way to record.
+         *
+         *     Human gated, like the failure it reverses: `apps/sip/core/orchestrator.py` lists this pair in
+         *     `_HUMAN_GATED`, so `approval_ref` must name a `decision_records` row. Returning a brief for
+         *     correction is a judgement about the work, not a mechanical step, and it is the act that lets a
+         *     run reach the CEO after being stopped short of them.
+         *
+         *     Reviewer or SIP Owner, matching `fail-qa`. Whoever can fail a run's QA can return it for
+         *     correction; the analyst who wrote the brief cannot wave their own work back through.
+         */
+        post: operations["return_for_correction_api_runs__run_id__return_for_correction_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/runs/{run_id}/stop": {
         parameters: {
             query?: never;
@@ -2351,6 +2385,55 @@ export interface operations {
         };
     };
     fail_qa_api_runs__run_id__fail_qa_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransitionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    return_for_correction_api_runs__run_id__return_for_correction_post: {
         parameters: {
             query?: never;
             header?: never;

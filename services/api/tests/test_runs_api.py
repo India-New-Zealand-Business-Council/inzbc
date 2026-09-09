@@ -286,14 +286,23 @@ def test_the_caller_s_authority_reaches_the_repository(
 
 @pytest.mark.parametrize(
     ("route", "expected_state"),
-    [("fail-qa", "QA Failed"), ("stop", "Stopped")],
+    [
+        ("fail-qa", "QA Failed"),
+        ("stop", "Stopped"),
+        ("return-for-correction", "Report Drafted"),
+    ],
 )
 def test_the_new_lifecycle_routes_map_to_their_own_states(
     client: TestClient, route: str, expected_state: str
 ) -> None:
-    """Neither route existed. The reviewer could record QA findings without being able to stop
-    the run, and the CEO's Stop decision had no way to be recorded at all: a run they wanted
-    stopped could only be paused, which says something different and leaves it resumable."""
+    """None of these routes existed. The reviewer could record QA findings without being able to
+    stop the run; the CEO's Stop decision had no way to be recorded at all, so a run they wanted
+    stopped could only be paused, which says something different and leaves it resumable; and
+    QA Failed had no way out, despite the state machine allowing exactly one edge from it.
+
+    `return-for-correction` is the recovery path. Without it a run that failed QA was stuck at
+    the one state the specification calls recoverable, and the QA Failed screen offered a
+    correction it had no way to record."""
     created = _create(client)
     response = client.post(
         f"/api/runs/{created['id']}/{route}",

@@ -161,10 +161,13 @@ describe('submitQaResult', () => {
 })
 
 describe('returnForCorrection', () => {
-  it('moves QA Failed back to Report Drafted', async () => {
+  it("moves QA Failed back to Report Drafted, carrying the run's new version", async () => {
     const report = { ...submittableReport(), state: 'QA Failed' as const }
     const result = await returnForCorrection(report)
     expect(result.state).toBe('Report Drafted')
+    // The transition bumps the run's version, and the next write has to cite the new one.
+    // Returning the report unchanged here would make the following call fail as stale.
+    expect(result.runVersion).toBe(2)
   })
 
   it('rejects from any other state', async () => {

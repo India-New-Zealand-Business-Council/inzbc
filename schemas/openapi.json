@@ -406,6 +406,71 @@
         }
       }
     },
+    "/api/runs/{run_id}/return-for-correction": {
+      "post": {
+        "tags": [
+          "Runs"
+        ],
+        "summary": "Return For Correction",
+        "description": "QA Failed -> Report Drafted. The only way out of a failed QA.\n\n`QA Failed` is not terminal: `schemas/state-machine.md` allows exactly one edge out of it,\nback to `Report Drafted`, \"after correction + re-review only\". The state machine and the\norchestrator both had that edge and nothing could travel it, because no route existed. A run\nthat failed QA was stuck at the one state the specification says is recoverable, and the QA\nFailed screen could offer a correction it had no way to record.\n\nHuman gated, like the failure it reverses: `apps/sip/core/orchestrator.py` lists this pair in\n`_HUMAN_GATED`, so `approval_ref` must name a `decision_records` row. Returning a brief for\ncorrection is a judgement about the work, not a mechanical step, and it is the act that lets a\nrun reach the CEO after being stopped short of them.\n\nReviewer or SIP Owner, matching `fail-qa`. Whoever can fail a run's QA can return it for\ncorrection; the analyst who wrote the brief cannot wave their own work back through.",
+        "operationId": "return_for_correction_api_runs__run_id__return_for_correction_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransitionIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/runs/{run_id}/stop": {
       "post": {
         "tags": [

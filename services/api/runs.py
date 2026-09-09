@@ -232,6 +232,32 @@ def fail_qa(
     return _apply(run_id, RunState.QA_FAILED, body, repo, principal)
 
 
+@router.post("/{run_id}/return-for-correction", response_model=RunOut)
+def return_for_correction(
+    run_id: str,
+    body: TransitionIn,
+    principal: Principal = Depends(write_access(REVIEWER, SIP_OWNER)),
+    repo: RunRepository = Depends(get_run_repository),
+) -> RunOut:
+    """QA Failed -> Report Drafted. The only way out of a failed QA.
+
+    `QA Failed` is not terminal: `schemas/state-machine.md` allows exactly one edge out of it,
+    back to `Report Drafted`, "after correction + re-review only". The state machine and the
+    orchestrator both had that edge and nothing could travel it, because no route existed. A run
+    that failed QA was stuck at the one state the specification says is recoverable, and the QA
+    Failed screen could offer a correction it had no way to record.
+
+    Human gated, like the failure it reverses: `apps/sip/core/orchestrator.py` lists this pair in
+    `_HUMAN_GATED`, so `approval_ref` must name a `decision_records` row. Returning a brief for
+    correction is a judgement about the work, not a mechanical step, and it is the act that lets a
+    run reach the CEO after being stopped short of them.
+
+    Reviewer or SIP Owner, matching `fail-qa`. Whoever can fail a run's QA can return it for
+    correction; the analyst who wrote the brief cannot wave their own work back through.
+    """
+    return _apply(run_id, RunState.REPORT_DRAFTED, body, repo, principal)
+
+
 @router.post("/{run_id}/stop", response_model=RunOut)
 def stop_run(
     run_id: str,

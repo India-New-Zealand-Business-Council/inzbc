@@ -5,21 +5,7 @@ import { getCsrfToken, getSession, NotSignedInError, SessionUnavailableError } f
 
 export class ReportsApiError extends Error {}
 
-const SIMULATED_LATENCY_MS = 350
 
-function delay(ms: number, signal?: AbortSignal): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (signal?.aborted) {
-      reject(new DOMException('Aborted', 'AbortError'))
-      return
-    }
-    const timer = setTimeout(resolve, ms)
-    signal?.addEventListener('abort', () => {
-      clearTimeout(timer)
-      reject(new DOMException('Aborted', 'AbortError'))
-    })
-  })
-}
 
 /**
  * `POST /api/reports`, `POST /api/reports/{id}/qa` and `POST /api/runs/{id}/fail-qa` are live
@@ -327,16 +313,15 @@ export async function submitQaResult(
 }
 
 /**
- * QA Failed -> Report Drafted — **no live endpoint**, and not for the same reason as the two
- * decision functions below.
+ * `POST /api/runs/:id/return-for-correction` — QA Failed -> Report Drafted, the one edge out of
+ * a failed QA.
  *
- * `services/api/runs.py`'s own module docstring draws the line: `start`/`pause`/`resume`/
- * `fail-qa`/`stop`/`complete` are "the one HTTP-triggered move" in their edge's position — the
- * mechanical steps in between, including Report Drafted, are "driven by the pipeline/agent loop
- * ... not this router." A human sending a run from QA Failed back to Report Drafted isn't one of
- * this router's edges; the correction itself (editing the digest, per this screen) is manual, but
- * re-entering Report Drafted is not a control a person exercises over HTTP today. Stays
- * fixture-backed until that's built, which is separate work from wiring the calls that do exist.
+ * This was fixture-backed on the grounds that re-entering Report Drafted was not a control a
+ * person exercised over HTTP. The state machine disagreed: `schemas/state-machine.md` allows
+ * exactly one transition from `QA Failed`, "after correction + re-review only", and
+ * `orchestrator.py` lists the pair in `_HUMAN_GATED`. The edge was specified and human-gated
+ * with nothing able to travel it, so a run that failed QA was stuck at the one state the
+ * specification calls recoverable. The route now exists and this calls it.
  */
 export async function returnForCorrection(
   report: DailyBriefReport,
@@ -345,8 +330,34 @@ export async function returnForCorrection(
   if (report.state !== 'QA Failed') {
     throw new ReportsApiError(`Cannot return for correction from state "${report.state}".`)
   }
-  await delay(SIMULATED_LATENCY_MS, options.signal)
-  return { ...report, state: 'Report Drafted' }
+
+  let response: Response
+  try {
+    response = await authedFetch(
+      `/api/runs/${encodeURIComponent(report.runId)}/return-for-correction`,
+      {
+        method: 'POST',
+        signal: options.signal,
+        body: {
+          expected_version: report.runVersion,
+          reason: 'Returned to the analyst for correction after a failed QA.',
+          approval_ref: null,
+        },
+      },
+    )
+  } catch (cause) {
+    if (cause instanceof DOMException && cause.name === 'AbortError') throw cause
+    if (cause instanceof ReportsApiError) throw cause
+    throw new ReportsApiError('Could not reach the run service to return the brief.', { cause })
+  }
+  if (!response.ok) {
+    throw await errorFromResponse(response, 'Returning the brief for correction failed')
+  }
+
+  // The run's version moves with the transition, and the next write has to cite the new one --
+  // sending back the version this call started from would be refused as stale.
+  const run = (await response.json()) as { version: number }
+  return { ...report, state: 'Report Drafted', runVersion: run.version }
 }
 
 interface ReportOut {
