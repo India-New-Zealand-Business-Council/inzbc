@@ -266,7 +266,7 @@ export function CeoDecisionScreen({ report, onChange }: Props) {
       <div>
         <h2 className="text-lg font-semibold text-inzbc-navy">CEO Decision</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Deciding against report version <strong>{report.reportVersion}</strong>. Run: {report.runId}.
+          Deciding against report version <strong>{report.reportVersion}</strong>. Run: {report.runNumber}.
           Built against controlling documents {report.approvedVersionSet}.
         </p>
         <p className="mt-2 rounded-md border border-inzbc-navy/20 bg-inzbc-navy/5 p-2 text-xs font-medium text-inzbc-navy">

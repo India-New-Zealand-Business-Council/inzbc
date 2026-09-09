@@ -49,6 +49,17 @@ describe('submitReportForQa', () => {
     expect(result.state).toBe('QA In Progress')
   })
 
+  it("sends the run's UUID as run_id, never its run number", async () => {
+    // The server validates `SubmitReportIn.run_id` as a UUID against `runs.id`. Sending a run
+    // number is not a validation error there, it is a 500 out of psycopg, so this is worth
+    // pinning: the two values now live in separate fields precisely so this cannot be confused.
+    const report = { ...submittableReport(), runId: 'f2b3c7e1-0000-4000-8000-000000000001', runNumber: 'RUN-SEED-06' }
+    await submitReportForQa(report)
+
+    const [, init] = vi.mocked(fetch).mock.calls.find(([url]) => url === '/api/reports')!
+    expect(JSON.parse(String(init?.body)).run_id).toBe('f2b3c7e1-0000-4000-8000-000000000001')
+  })
+
   it('rejects when the brief still fails validation, without transitioning', async () => {
     await expect(submitReportForQa(newDraftReportFixture())).rejects.toBeInstanceOf(ReportsApiError)
   })

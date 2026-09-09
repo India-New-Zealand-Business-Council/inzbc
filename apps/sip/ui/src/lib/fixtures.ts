@@ -471,7 +471,10 @@ export function generatedDigestContent(
 export function newDraftReportFixture(): DailyBriefReport {
   return {
     id: 'report-fixture-1',
-    runId: 'RUN-20260730-01',
+    // No database row stands behind a fixture, so there is no UUID to give. Empty rather than a
+    // plausible-looking one: a write built on this should fail at the server, not half-succeed.
+    runId: '',
+    runNumber: 'RUN-20260730-01',
     runVersion: 0,
     reportVersionId: null,
     reportDate: '2026-07-30',
