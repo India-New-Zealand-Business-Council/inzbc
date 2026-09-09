@@ -75,6 +75,14 @@ class RateLimiter:
         self.window = window
         self._hits: dict[str, deque[float]] = defaultdict(deque)
 
+    def reset(self) -> None:
+        """Forget every counter. The window is elapsed real time, so a test suite sharing one app makes
+        hundreds of requests from one client address and would otherwise carry another test's
+        traffic into the one it is running - a limit trip that depends on how fast the preceding
+        tests happened to run. Production has no reason to call this; a restart does it anyway.
+        """
+        self._hits.clear()
+
     def check(self, client: str, now: float | None = None) -> bool:
         """True if this request is allowed. Records it when it is."""
         now = time.monotonic() if now is None else now
@@ -116,6 +124,9 @@ def _client_key(request: Request) -> str:
 def install(app: FastAPI, limiter: RateLimiter | None = None) -> FastAPI:
     """Adds the error envelope, rate limiting, security headers and optional CORS to `app`."""
     limiter = limiter or RateLimiter()
+    # Reachable after install: the counters are process state worth being able to inspect, and a
+    # test suite that shares one app needs to clear them between tests.
+    app.state.rate_limiter = limiter
 
     @app.exception_handler(StarletteHTTPException)
     async def _http_error(_request: Request, exc: StarletteHTTPException) -> JSONResponse:

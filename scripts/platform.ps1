@@ -20,7 +20,11 @@ param(
     # awkwardly, a migration checksum from whenever they were last baselined -- migrate.py then
     # refuses to run against them, correctly, and a demo should not be the thing that discovers
     # it. A fresh name means the first run creates and migrates cleanly.
-    [string]$Database = "inzbc_platform"
+    #
+    # Bumped from inzbc_platform: seed_demo now refuses a database holding a run an interrupted
+    # seed left behind, and an existing inzbc_platform can be in exactly that state. Bumping the
+    # name is the fix the refusal asks for. Pass -Database to point at another one.
+    [string]$Database = "inzbc_demo_v1"
 )
 
 $ErrorActionPreference = "Stop"
