@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
@@ -16,7 +20,34 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "types": ["node", "vitest/globals", "@testing-library/jest-dom"]
+    "types": [
+      "node",
+      "vitest/globals",
+      "@testing-library/jest-dom"
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@fta/*": [
+        "../../fta/ui/src/*"
+      ],
+      "@comms/*": [
+        "../../comms/ui/src/*"
+      ],
+      "@dashboard/*": [
+        "../../dashboard/ui/src/*"
+      ],
+      "@member/*": [
+        "../../member/ui/src/*"
+      ]
+    }
   },
-  "include": ["src", "vite.config.ts", "vitest.setup.ts"]
+  "include": [
+    "src",
+    "vite.config.ts",
+    "vitest.setup.ts",
+    "../../fta/ui/src",
+    "../../comms/ui/src",
+    "../../dashboard/ui/src",
+    "../../member/ui/src"
+  ]
 }

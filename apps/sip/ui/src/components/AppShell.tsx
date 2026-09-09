@@ -6,10 +6,65 @@ import { CeoDecisionScreen } from '../screens/CeoDecisionScreen'
 import { DistributionStatusScreen } from '../screens/DistributionStatusScreen'
 import { QaReviewScreen } from '../screens/QaReviewScreen'
 import { RunsCandidatesScreen } from '../screens/RunsCandidatesScreen'
-import { SCREENS, type ScreenId } from '../types'
+import { PlatformOverviewScreen } from '../screens/PlatformOverviewScreen'
+import { SCREEN_GROUPS, type ScreenId } from '../types'
+import { CommsAssistant } from '@comms/components/CommsAssistant'
+import { FtaQuery } from '@fta/components/FtaQuery'
+import { Dashboard as MemberDashboard } from '@member/pages/Dashboard'
 import { Footer } from './Footer'
 
 const LOGO_URL = 'https://static.wixstatic.com/media/df219d_0b8e6333d53841efaf66f675038a0798~mv2.jpg'
+
+// Each screen says what it is and, where it matters, what it is honest about. The blurbs carry
+// the caveats rather than the screens implying more than they do: a fixture-backed screen says
+// so, and the Explainer says it makes no model call, because that is its whole design.
+const HEADINGS: Record<ScreenId, { title: string; blurb: string }> = {
+  overview: {
+    title: 'INZBC Platform',
+    blurb:
+      'Four modules on one governed backend: trade intelligence, FTA guidance, communications drafting and member services.',
+  },
+  'runs-candidates': {
+    title: 'Runs & Candidates',
+    blurb:
+      'Live from the database. Every candidate carries who captured it, who assessed it and who verified it, and the same person cannot do two of those.',
+  },
+  'brief-builder': {
+    title: 'Brief Builder',
+    blurb:
+      'Assemble the daily brief against the SIP-185 mandatory source register. A source with no recorded outcome is a Critical stop at QA, not a warning.',
+  },
+  'qa-review': {
+    title: 'QA Review',
+    blurb:
+      'The SIP-188 checklist, worked item by item. The reviewer cannot be the run’s analyst, and any Critical failure blocks release.',
+  },
+  'ceo-decision': {
+    title: 'CEO Decision',
+    blurb:
+      'Ruling, approval and distribution authority are three separate recorded acts. Approving a report never causes anything to be sent.',
+  },
+  'distribution-status': {
+    title: 'Distribution',
+    blurb:
+      'Distribution stays disabled by default and opens only on a recorded authority naming its recipient.',
+  },
+  fta: {
+    title: 'FTA Explainer',
+    blurb:
+      'Answers from a curated, citation-carrying corpus and makes no model call at all, so it cannot invent a trade fact. No match returns a route to INZBC rather than a guess.',
+  },
+  comms: {
+    title: 'Comms Assistant',
+    blurb:
+      'Drafts only. Nothing here publishes, a named reviewer approves every draft, and the author of a draft may not approve it.',
+  },
+  member: {
+    title: 'Member Portal',
+    blurb:
+      'The member-facing surface. Interface shell against the live design system; membership itself remains in Member Jungle rather than duplicated here.',
+  },
+}
 
 // A 4-screen internal tool with no deep-linking requirement in docs/sip-ui-spec.md — plain state
 // avoids a router dependency for something this small. `report` is the one run moving through
@@ -17,7 +72,7 @@ const LOGO_URL = 'https://static.wixstatic.com/media/df219d_0b8e6333d53841efaf66
 // screen) because later screens' availability depends on this same report's state
 // (schemas/state-machine.md — e.g. the CEO decision screen isn't reachable until QA has passed).
 export function AppShell() {
-  const [screen, setScreen] = useState<ScreenId>('brief-builder')
+  const [screen, setScreen] = useState<ScreenId>('overview')
   const [report, setReport] = useState<DailyBriefReport>(() => newDraftReportFixture())
 
   return (
@@ -43,24 +98,36 @@ export function AppShell() {
           <div className="flex shrink-0 items-center gap-2">
             <img src={LOGO_URL} alt="INZBC" className="h-auto w-[clamp(120px,16vw,150px)]" />
             <span aria-hidden="true" className="h-4 w-px bg-inzbc-ink/20" />
-            <span className="hidden text-sm font-medium text-inzbc-ink sm:inline">SIP Review</span>
+            <span className="hidden text-sm font-medium text-inzbc-ink sm:inline">Platform</span>
           </div>
-          <nav aria-label="Screens" className="overflow-x-auto">
-            <ul className="flex gap-1">
-              {SCREENS.map((option) => (
-                <li key={option.id}>
-                  <button
-                    type="button"
-                    aria-current={screen === option.id ? 'page' : undefined}
-                    onClick={() => setScreen(option.id)}
-                    className={`whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-lime ${
-                      screen === option.id
-                        ? 'border-inzbc-lime text-inzbc-ink'
-                        : 'border-transparent text-inzbc-ink/60 hover:text-inzbc-ink'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
+          <nav aria-label="Modules" className="overflow-x-auto">
+            <ul className="flex items-center gap-1">
+              {SCREEN_GROUPS.map((group, groupIndex) => (
+                <li key={group.label} className="flex items-center gap-1">
+                  {groupIndex > 0 ? (
+                    <span aria-hidden="true" className="mx-1 h-4 w-px shrink-0 bg-inzbc-ink/15" />
+                  ) : null}
+                  {/* The group name is the accessible label for its own list rather than a
+                      visible heading: nine tabs in one strip needs the grouping announced, and
+                      there is no room in the pill for three more headings. */}
+                  <ul aria-label={group.label} className="flex gap-1">
+                    {group.screens.map((option) => (
+                      <li key={option.id}>
+                        <button
+                          type="button"
+                          aria-current={screen === option.id ? 'page' : undefined}
+                          onClick={() => setScreen(option.id)}
+                          className={`whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-lime ${
+                            screen === option.id
+                              ? 'border-inzbc-lime text-inzbc-ink'
+                              : 'border-transparent text-inzbc-ink/60 hover:text-inzbc-ink'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 </li>
               ))}
             </ul>
@@ -72,17 +139,18 @@ export function AppShell() {
           so the page has to make its own room for it. */}
       <main id="main-content" className="mx-auto w-full max-w-7xl flex-1 px-4 pb-6 pt-24 sm:pt-28">
         <div className="mb-6">
-          <h1 className="text-2xl font-extrabold text-inzbc-navy sm:text-3xl">SIP Review</h1>
-          <p className="mt-2 text-slate-700">
-            Staff review and approval for the Trade Intelligence Platform's daily brief — brief
-            builder, QA, CEO decision, distribution status (docs/sip-ui-spec.md).
-          </p>
+          <h1 className="text-2xl font-extrabold text-inzbc-navy sm:text-3xl">{HEADINGS[screen].title}</h1>
+          <p className="mt-2 max-w-3xl text-slate-700">{HEADINGS[screen].blurb}</p>
         </div>
         {screen === 'brief-builder' ? <BriefBuilderScreen report={report} onChange={setReport} /> : null}
         {screen === 'qa-review' ? <QaReviewScreen report={report} onChange={setReport} /> : null}
         {screen === 'ceo-decision' ? <CeoDecisionScreen report={report} onChange={setReport} /> : null}
         {screen === 'distribution-status' ? <DistributionStatusScreen report={report} /> : null}
         {screen === 'runs-candidates' ? <RunsCandidatesScreen /> : null}
+        {screen === 'overview' ? <PlatformOverviewScreen /> : null}
+        {screen === 'fta' ? <FtaQuery /> : null}
+        {screen === 'comms' ? <CommsAssistant /> : null}
+        {screen === 'member' ? <MemberDashboard /> : null}
       </main>
       <Footer />
     </div>

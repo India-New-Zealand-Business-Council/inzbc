@@ -96,6 +96,14 @@ _ANCHOR = date(
 )  # a fixed Monday; deterministic so reruns compute the same dates
 
 
+# report_versions requires submitted_at >= created_at. `created_at` comes from this process's
+# clock and `submitted_at` defaults to the database server's, so on a containerised Postgres a
+# few hundred milliseconds of drift is enough to make content look like it was written after it
+# was submitted, and the CHECK refuses the row. Backdating by a minute is well clear of ordinary
+# drift and still honest: the brief genuinely was drafted before it was handed over.
+_CONTENT_AGE = timedelta(minutes=1)
+
+
 def _database_url() -> str:
     return os.environ["DATABASE_URL"]
 
@@ -499,7 +507,7 @@ def _report_and_decide(
         content_sha256=hashlib.sha256(content).hexdigest(),
         actor_id=author_id,
         role_names=author_role_names,
-        created_at=datetime.now(UTC),
+        created_at=datetime.now(UTC) - _CONTENT_AGE,
     )
 
     decided_at = datetime.now(UTC)
@@ -695,7 +703,7 @@ def _seed_runs(
                 content_sha256=hashlib.sha256(content).hexdigest(),
                 actor_id=user_ids[spec.reviewer_key],
                 role_names=("Reviewer", "Analyst", "SIP Owner"),
-                created_at=datetime.now(UTC),
+                created_at=datetime.now(UTC) - _CONTENT_AGE,
             )
 
         elif spec.target_state in (
