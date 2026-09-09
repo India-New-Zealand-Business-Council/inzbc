@@ -1,6 +1,7 @@
-import { useState } from 'react'
-import type { DailyBriefReport } from '../domain'
+import { useEffect, useState } from 'react'
+import type { DailyBriefReport, RunState } from '../domain'
 import { newDraftReportFixture } from '../lib/fixtures'
+import { listRuns, type RunOut } from '../api/runsClient'
 import { BriefBuilderScreen } from '../screens/BriefBuilderScreen'
 import { CeoDecisionScreen } from '../screens/CeoDecisionScreen'
 import { DistributionStatusScreen } from '../screens/DistributionStatusScreen'
@@ -66,6 +67,44 @@ const HEADINGS: Record<ScreenId, { title: string; blurb: string }> = {
   },
 }
 
+// A run in one of these has finished; nothing on the four workflow screens can act on it. Used
+// only to pick a sensible run to open on -- every run stays selectable from Runs & Candidates,
+// because looking at a closed run's record is a normal thing to want.
+// The screens that act on one particular run, as opposed to the whole instance.
+const WORKFLOW_SCREENS: ReadonlySet<ScreenId> = new Set<ScreenId>([
+  'brief-builder',
+  'qa-review',
+  'ceo-decision',
+  'distribution-status',
+])
+
+const TERMINAL: ReadonlySet<string> = new Set(['Distributed', 'Stopped', 'Closed', 'Withdrawn'])
+
+/** A day, from the run's coverage window, in the `YYYY-MM-DD` form the brief header uses. */
+function isoDay(utc: string): string {
+  return utc.slice(0, 10)
+}
+
+/**
+ * The brief for a real run: the SIP-050 section skeleton, carrying that run's identity and state.
+ *
+ * The sections stay empty. They are the template from the specification, and a run whose brief has
+ * not been written has nothing in them -- inventing content here is exactly what the fixture id
+ * this replaces was doing wrong. What changes is that the run number, state and coverage window
+ * are now the ones in the database, so the workflow screens gate on the run's real state.
+ */
+function briefForRun(run: RunOut): DailyBriefReport {
+  return {
+    ...newDraftReportFixture(),
+    runId: run.run_number,
+    runVersion: run.version,
+    state: run.state as RunState,
+    reportDate: isoDay(run.coverage_end_utc),
+    coverageStart: isoDay(run.coverage_start_utc),
+    coverageEnd: isoDay(run.coverage_end_utc),
+  }
+}
+
 // A 4-screen internal tool with no deep-linking requirement in docs/sip-ui-spec.md — plain state
 // avoids a router dependency for something this small. `report` is the one run moving through
 // the four screens in this session; it is lifted here (rather than fetched independently by each
@@ -73,7 +112,39 @@ const HEADINGS: Record<ScreenId, { title: string; blurb: string }> = {
 // (schemas/state-machine.md — e.g. the CEO decision screen isn't reachable until QA has passed).
 export function AppShell() {
   const [screen, setScreen] = useState<ScreenId>('overview')
-  const [report, setReport] = useState<DailyBriefReport>(() => newDraftReportFixture())
+  const [workingRun, setWorkingRun] = useState<RunOut | null>(null)
+  // Edits are held against the run they were made on. The brief itself is derived below rather
+  // than copied into state and kept in step with an effect: two sources for one value is how they
+  // drift, and switching runs then has to remember to clear the stale one.
+  const [edited, setEdited] = useState<{ runId: string; brief: DailyBriefReport } | null>(null)
+
+  // Open on a real run rather than an invented one. The newest run that has not finished is the
+  // one someone arriving at this tool is most likely working on; if every run has finished, the
+  // newest of those is still a truer thing to show than a run number that exists nowhere.
+  // A failure here leaves the empty draft in place, which is what the screens already handle.
+  useEffect(() => {
+    const controller = new AbortController()
+    listRuns({ signal: controller.signal })
+      .then((runs) => {
+        const opening = runs.find((run) => !TERMINAL.has(run.state)) ?? runs[0]
+        if (opening) setWorkingRun(opening)
+      })
+      .catch(() => {})
+    return () => controller.abort()
+  }, [])
+
+  // Switching runs drops the previous run's edits by construction: they are keyed to a run id that
+  // no longer matches, so no clearing step exists to forget. Carrying them across would attribute
+  // one run's work to another.
+  const report =
+    edited && edited.runId === (workingRun?.id ?? '')
+      ? edited.brief
+      : workingRun
+        ? briefForRun(workingRun)
+        : newDraftReportFixture()
+
+  const setReport = (next: DailyBriefReport) =>
+    setEdited({ runId: workingRun?.id ?? '', brief: next })
 
   return (
     // flex-col + flex-1 on main (not min-h-screen on main alone) so the footer sits at the
@@ -141,12 +212,28 @@ export function AppShell() {
         <div className="mb-6">
           <h1 className="text-2xl font-extrabold text-inzbc-navy sm:text-3xl">{HEADINGS[screen].title}</h1>
           <p className="mt-2 max-w-3xl text-slate-700">{HEADINGS[screen].blurb}</p>
+          {/* Which run the workflow screens are acting on. Named on every one of them, because a
+              screen that gates on a run's state should say which run it means. */}
+          {WORKFLOW_SCREENS.has(screen) ? (
+            <p className="mt-2 text-sm text-slate-600">
+              {workingRun ? (
+                <>
+                  Working run <strong className="text-inzbc-navy">{workingRun.run_number}</strong> ·{' '}
+                  {workingRun.state} — change it under Runs &amp; Candidates.
+                </>
+              ) : (
+                <>No run selected yet — choose one under Runs &amp; Candidates.</>
+              )}
+            </p>
+          ) : null}
         </div>
         {screen === 'brief-builder' ? <BriefBuilderScreen report={report} onChange={setReport} /> : null}
         {screen === 'qa-review' ? <QaReviewScreen report={report} onChange={setReport} /> : null}
         {screen === 'ceo-decision' ? <CeoDecisionScreen report={report} onChange={setReport} /> : null}
         {screen === 'distribution-status' ? <DistributionStatusScreen report={report} /> : null}
-        {screen === 'runs-candidates' ? <RunsCandidatesScreen /> : null}
+        {screen === 'runs-candidates' ? (
+          <RunsCandidatesScreen onWorkRun={setWorkingRun} workingRunId={workingRun?.id ?? null} />
+        ) : null}
         {screen === 'overview' ? <PlatformOverviewScreen /> : null}
         {screen === 'fta' ? <FtaQuery /> : null}
         {screen === 'comms' ? <CommsAssistant /> : null}

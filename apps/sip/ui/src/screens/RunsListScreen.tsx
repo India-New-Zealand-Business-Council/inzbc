@@ -5,6 +5,10 @@ import { stateBadgeClass } from '../lib/runState'
 
 interface Props {
   onSelectRun: (runId: string) => void
+  /** Make this run the one the brief, QA, CEO and distribution screens act on. */
+  onWorkRun: (run: RunOut) => void
+  /** Which run those screens follow now, so the list can mark it rather than offer it again. */
+  workingRunId: string | null
 }
 
 type LoadState = { kind: 'loading' } | { kind: 'error'; message: string } | { kind: 'loaded'; runs: RunOut[] }
@@ -13,7 +17,7 @@ type ActionState = { kind: 'idle' } | { kind: 'loading' } | { kind: 'error'; mes
 
 
 /** Runs list (#237): fetches on mount, and every lifecycle action (start/pause/resume/complete). */
-export function RunsListScreen({ onSelectRun }: Props) {
+export function RunsListScreen({ onSelectRun, onWorkRun, workingRunId }: Props) {
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
   // Only one run's action panel open at a time, mirroring QaReviewScreen's editingId pattern.
   const [openRunId, setOpenRunId] = useState<string | null>(null)
@@ -139,9 +143,16 @@ export function RunsListScreen({ onSelectRun }: Props) {
                     Prompt {run.prompt_version} · v{run.version}
                   </p>
                 </div>
-                <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ${stateBadgeClass(run.state)}`}>
-                  {run.state}
-                </span>
+                <div className="flex items-center gap-2">
+                  {run.id === workingRunId ? (
+                    <span className="whitespace-nowrap rounded-full bg-inzbc-navy/10 px-2 py-0.5 text-xs font-medium text-inzbc-navy">
+                      Working run
+                    </span>
+                  ) : null}
+                  <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ${stateBadgeClass(run.state)}`}>
+                    {run.state}
+                  </span>
+                </div>
               </div>
               <div className="mt-2 flex flex-wrap gap-2">
                 <button
@@ -151,6 +162,15 @@ export function RunsListScreen({ onSelectRun }: Props) {
                 >
                   View run and candidates
                 </button>
+                {run.id === workingRunId ? null : (
+                  <button
+                    type="button"
+                    onClick={() => onWorkRun(run)}
+                    className="min-h-11 rounded-md border border-inzbc-navy/20 px-3 py-2 text-sm font-medium text-inzbc-navy transition-colors hover:border-inzbc-navy/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue"
+                  >
+                    Work this run
+                  </button>
+                )}
                 {nextAction(run.state) ? (
                   <button
                     type="button"

@@ -48,7 +48,7 @@ describe('RunsCandidatesScreen', () => {
     vi.spyOn(candidatesClient, 'listCandidates').mockResolvedValue([CANDIDATE])
     vi.spyOn(candidatesClient, 'getCandidate').mockResolvedValue(CANDIDATE)
 
-    render(<RunsCandidatesScreen />)
+    render(<RunsCandidatesScreen onWorkRun={vi.fn()} workingRunId={null} />)
 
     await userEvent.click(await screen.findByRole('button', { name: 'View run and candidates' }))
     expect(await screen.findByRole('heading', { name: 'RUN-20260808-01' })).toBeInTheDocument()

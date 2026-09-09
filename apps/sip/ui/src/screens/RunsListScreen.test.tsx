@@ -24,7 +24,7 @@ const DRAFT_RUN = {
 describe('RunsListScreen', () => {
   it('shows a loading state, then the fetched runs', async () => {
     vi.spyOn(runsClient, 'listRuns').mockResolvedValue([DRAFT_RUN])
-    render(<RunsListScreen onSelectRun={vi.fn()} />)
+    render(<RunsListScreen onSelectRun={vi.fn()} onWorkRun={vi.fn()} workingRunId={null} />)
     expect(screen.getByRole('status')).toHaveTextContent('Loading runs…')
     expect(await screen.findByText('RUN-20260808-01')).toBeInTheDocument()
     expect(screen.getByText('Draft')).toBeInTheDocument()
@@ -32,20 +32,20 @@ describe('RunsListScreen', () => {
 
   it('shows an empty state when there are no runs', async () => {
     vi.spyOn(runsClient, 'listRuns').mockResolvedValue([])
-    render(<RunsListScreen onSelectRun={vi.fn()} />)
+    render(<RunsListScreen onSelectRun={vi.fn()} onWorkRun={vi.fn()} workingRunId={null} />)
     expect(await screen.findByText('No runs recorded yet.')).toBeInTheDocument()
   })
 
   it('shows an error message on fetch failure', async () => {
     vi.spyOn(runsClient, 'listRuns').mockRejectedValue(new SipApiError('database is down'))
-    render(<RunsListScreen onSelectRun={vi.fn()} />)
+    render(<RunsListScreen onSelectRun={vi.fn()} onWorkRun={vi.fn()} workingRunId={null} />)
     expect(await screen.findByRole('alert')).toHaveTextContent('database is down')
   })
 
   it('calls onSelectRun when "View run and candidates" is clicked', async () => {
     vi.spyOn(runsClient, 'listRuns').mockResolvedValue([DRAFT_RUN])
     const onSelectRun = vi.fn()
-    render(<RunsListScreen onSelectRun={onSelectRun} />)
+    render(<RunsListScreen onSelectRun={onSelectRun} onWorkRun={vi.fn()} workingRunId={null} />)
     await userEvent.click(await screen.findByRole('button', { name: 'View run and candidates' }))
     expect(onSelectRun).toHaveBeenCalledWith('run-1')
   })
@@ -56,7 +56,7 @@ describe('RunsListScreen', () => {
       .spyOn(runsClient, 'startRun')
       .mockResolvedValue({ ...DRAFT_RUN, state: 'Run Authorised', version: 1 })
 
-    render(<RunsListScreen onSelectRun={vi.fn()} />)
+    render(<RunsListScreen onSelectRun={vi.fn()} onWorkRun={vi.fn()} workingRunId={null} />)
     await userEvent.click(await screen.findByRole('button', { name: 'Start' }))
     await userEvent.type(screen.getByLabelText('Reason'), 'Launching the run')
     await userEvent.type(screen.getByLabelText(/Approval reference/), 'launch-approval-1')
@@ -77,7 +77,7 @@ describe('RunsListScreen', () => {
   it('requires a reason before submitting an action', async () => {
     vi.spyOn(runsClient, 'listRuns').mockResolvedValue([DRAFT_RUN])
     const startSpy = vi.spyOn(runsClient, 'startRun')
-    render(<RunsListScreen onSelectRun={vi.fn()} />)
+    render(<RunsListScreen onSelectRun={vi.fn()} onWorkRun={vi.fn()} workingRunId={null} />)
     await userEvent.click(await screen.findByRole('button', { name: 'Start' }))
     await userEvent.click(screen.getByRole('button', { name: 'Confirm Start' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('A reason is required.')
@@ -87,7 +87,7 @@ describe('RunsListScreen', () => {
   it('surfaces a 409 conflict from the server as an alert, without reloading', async () => {
     vi.spyOn(runsClient, 'listRuns').mockResolvedValue([DRAFT_RUN])
     vi.spyOn(runsClient, 'startRun').mockRejectedValue(new SipApiError('version mismatch', { status: 409 }))
-    render(<RunsListScreen onSelectRun={vi.fn()} />)
+    render(<RunsListScreen onSelectRun={vi.fn()} onWorkRun={vi.fn()} workingRunId={null} />)
     await userEvent.click(await screen.findByRole('button', { name: 'Start' }))
     await userEvent.type(screen.getByLabelText('Reason'), 'go')
     await userEvent.type(screen.getByLabelText(/Approval reference/), 'ref-1')
@@ -98,8 +98,29 @@ describe('RunsListScreen', () => {
 
   it('does not offer an action button for a state with no legal next action', async () => {
     vi.spyOn(runsClient, 'listRuns').mockResolvedValue([{ ...DRAFT_RUN, state: 'Closed' }])
-    render(<RunsListScreen onSelectRun={vi.fn()} />)
+    render(<RunsListScreen onSelectRun={vi.fn()} onWorkRun={vi.fn()} workingRunId={null} />)
     await screen.findByText('RUN-20260808-01')
     expect(screen.queryByRole('button', { name: 'Start' })).not.toBeInTheDocument()
+  })
+
+  it("hands the whole run to the caller when one is chosen to work on", async () => {
+    vi.spyOn(runsClient, 'listRuns').mockResolvedValue([DRAFT_RUN])
+    const onWorkRun = vi.fn()
+    render(<RunsListScreen onSelectRun={vi.fn()} onWorkRun={onWorkRun} workingRunId={null} />)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Work this run' }))
+
+    // The run, not its id: the screens that follow it gate on state and version, and re-fetching
+    // what the list already holds would let the two disagree.
+    expect(onWorkRun).toHaveBeenCalledWith(DRAFT_RUN)
+  })
+
+  it("marks the run already being worked instead of offering to work it again", async () => {
+    vi.spyOn(runsClient, 'listRuns').mockResolvedValue([DRAFT_RUN])
+    render(<RunsListScreen onSelectRun={vi.fn()} onWorkRun={vi.fn()} workingRunId={DRAFT_RUN.id} />)
+
+    await screen.findByText('RUN-20260808-01')
+    expect(screen.getByText('Working run')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Work this run' })).not.toBeInTheDocument()
   })
 })
