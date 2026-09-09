@@ -205,8 +205,8 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
 
   // Selection lives on `report` (lifted in AppShell), not component state — an earlier version
   // kept it here, so switching screens and back unmounted this component and silently cleared
-  // it. It's also what actually reaches the generated digest now: reportsStore.submitReportForQa
-  // resolves these ids against candidatesFixture() rather than taking a bare count.
+  // it. These ids are resolved against `candidates` below at submit time, so the digest that is
+  // hashed is the list on screen rather than a stand-in for it.
   const selectedCandidateIds = useMemo(() => new Set(report.selectedCandidateIds), [report.selectedCandidateIds])
 
   const errors = useMemo(() => validateBrief(report), [report])
@@ -261,7 +261,9 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
     setSubmitState({ kind: 'loading' })
 
     try {
-      const updated = await submitReportForQa(report, { signal: controller.signal })
+      // The candidates on screen, so the digest that gets hashed is the list the analyst was
+      // actually looking at when they ticked it.
+      const updated = await submitReportForQa(report, candidates, { signal: controller.signal })
       if (inFlight.current !== controller) return
       setSubmitState({ kind: 'idle' })
       onChange(updated)
