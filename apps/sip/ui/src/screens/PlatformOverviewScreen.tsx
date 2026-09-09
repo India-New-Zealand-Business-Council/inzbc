@@ -49,12 +49,28 @@ const CONTROLS: Control[] = [
   },
 ]
 
-/** Counted from the repository, not asserted. Each has the command that produces it. */
+// Counted from the running system, not asserted, with the command that produces each one. These
+// drift every time the surface grows -- they were last wrong by four operations and seventy-eight
+// tests -- so the commands are recorded here rather than in someone's memory. A number on this
+// screen that nobody can reproduce is worth less than no number at all.
+//
+//   operations/paths  curl -s localhost:8000/openapi.json | python -c "import json,sys;
+//                       d=json.load(sys.stdin);p=d['paths'];
+//                       print(sum(len(v) for v in p.values()), len(p))"
+//   routers           ls services/api/*.py | xargs grep -l 'APIRouter(' | wc -l
+//   tables/keys       select count(*) from information_schema.tables
+//                       where table_schema='public' and table_type='BASE TABLE';
+//                     ...table_constraints where constraint_type='FOREIGN KEY';
+//   triggers          select count(distinct tgname) from pg_trigger t
+//                       join pg_class c on c.oid=t.tgrelid where not t.tgisinternal;
+//   tests             pytest services apps scripts -q --collect-only
+//   CI jobs           the job keys in .github/workflows/ci.yml
+//   AI SDK            grep -rl 'anthropic\|openai' --include=*.py services apps scripts
 const SCALE: { value: string; label: string; note: string }[] = [
-  { value: '56', label: 'REST operations', note: 'across 48 paths, 13 routers' },
-  { value: '25', label: 'database tables', note: '39 foreign keys, 31 CHECK constraints' },
+  { value: '60', label: 'REST operations', note: 'across 51 paths, 12 routers' },
+  { value: '26', label: 'database tables', note: '50 foreign keys, 31 CHECK constraints' },
   { value: '15', label: 'append-only triggers', note: 'plus TRUNCATE guards' },
-  { value: '1,113', label: 'automated tests', note: 'against a real Postgres' },
+  { value: '1,191', label: 'automated tests', note: 'against a real Postgres' },
   { value: '9', label: 'CI jobs', note: 'gating every merge' },
   { value: '1', label: 'file importing an AI SDK', note: 'of ~10,000 lines' },
 ]
