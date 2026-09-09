@@ -33,6 +33,13 @@ export type RunState =
   | 'Closed'
   | 'Paused'
   | 'Stopped'
+  // Both exist in the `run_state` enum and were missing here, so `run.state as RunState` in
+  // AppShell was an unsound cast: a run in either state satisfied the type at compile time and
+  // contradicted it at runtime. Nothing broke, because every consumer takes a `string` and
+  // defaults -- but a later exhaustive switch would have been wrong and TypeScript would have
+  // agreed with it. `Corrected` is deliberately not terminal; a corrected run goes on.
+  | 'Corrected'
+  | 'Withdrawn'
 
 export type SignalStrength = 'Critical' | 'High' | 'Medium' | 'Low'
 export type VerificationStatus = 'Verified' | 'Unverified' | 'Pending'
