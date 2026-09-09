@@ -33,6 +33,21 @@ os.environ.setdefault("RATE_LIMIT_REQUESTS", "100000")
 # written for. It deliberately does NOT prove the routes are protected: that would be circular,
 # since the fixture is what makes them pass. `services/api/tests/test_router_auth.py` asserts the
 # protection separately, against an app with no overrides.
+# The rate limiter counts requests per client address over elapsed real time, in memory, and the
+# whole suite shares one app and one client address. Without this, a test's requests are counted
+# against traffic from whatever ran in the previous 60 seconds, so a test near the end of a long
+# suite can trip the limit and fail on timing alone. Clearing per test makes each one carry only
+# its own requests. `test_hardening.py` builds its own limiter, so nothing here weakens that.
+@pytest.fixture(autouse=True)
+def _reset_rate_limiter():
+    from services.api.main import app
+
+    limiter = getattr(app.state, "rate_limiter", None)
+    if limiter is not None:
+        limiter.reset()
+    yield
+
+
 @pytest.fixture(autouse=True)
 def _authenticated_principal():
     from services.api.auth import Principal

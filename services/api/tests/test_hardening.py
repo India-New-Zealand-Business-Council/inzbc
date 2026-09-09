@@ -187,3 +187,27 @@ def test_cors_allows_only_the_configured_origin(monkeypatch):
 
     other = client.get("/ok", headers={"Origin": "https://evil.test"})
     assert other.headers.get("access-control-allow-origin") != "https://evil.test"
+
+
+def test_reset_clears_the_counters_so_one_caller_does_not_inherit_earlier_traffic():
+    """The counters are process-wide and the window is wall-clock, so anything sharing one app
+    -- a test suite above all -- accumulates another caller's requests. `reset` is what stops a
+    request being refused because of traffic that has nothing to do with it.
+    """
+    limiter = RateLimiter(limit=2, window=60)
+    assert limiter.check("caller") is True
+    assert limiter.check("caller") is True
+    assert limiter.check("caller") is False
+
+    limiter.reset()
+
+    assert limiter.check("caller") is True
+
+
+def test_the_installed_limiter_is_reachable_on_the_app():
+    """Reaching the limiter is what makes the reset above usable against the real app; a limiter
+    sealed inside `install` could only be cleared by rebuilding the application.
+    """
+    app = FastAPI()
+    install(app)
+    assert isinstance(app.state.rate_limiter, RateLimiter)
