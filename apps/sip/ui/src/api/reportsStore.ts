@@ -1,5 +1,11 @@
-import type { CeoDecisionRecord, DailyBriefReport, QaChecklistGroup, ReportDecisionType } from '../domain'
-import { candidatesFixture, generatedDigestContent, qaChecklistFixture } from '../lib/fixtures'
+import type {
+  Candidate,
+  CeoDecisionRecord,
+  DailyBriefReport,
+  QaChecklistGroup,
+  ReportDecisionType,
+} from '../domain'
+import { generatedDigestContent, qaChecklistFixture } from '../lib/fixtures'
 import { validateBrief } from '../lib/validation'
 import { getCsrfToken, getSession, NotSignedInError, SessionUnavailableError } from './session'
 
@@ -109,6 +115,7 @@ interface ReportVersionOut {
  */
 export async function submitReportForQa(
   report: DailyBriefReport,
+  candidates: readonly Candidate[],
   options: { signal?: AbortSignal } = {},
 ): Promise<DailyBriefReport> {
   const errors = validateBrief(report)
@@ -118,10 +125,22 @@ export async function submitReportForQa(
   if (report.state !== 'Report Drafted') {
     throw new ReportsApiError(`Cannot submit for QA from state "${report.state}".`)
   }
-  const selectedCandidates = candidatesFixture().filter((candidate) =>
-    report.selectedCandidateIds.includes(candidate.id),
-  )
-  const digest = generatedDigestContent(selectedCandidates)
+  // The candidates the caller is showing, resolved against the ids the analyst ticked. These used
+  // to be resolved against `candidatesFixture()`, whose ids ('cand-1') cannot match a live
+  // candidate's UUID -- so nothing matched, and every brief was submitted with a hash over an
+  // empty digest no matter what had been selected.
+  const byId = new Map(candidates.map((candidate) => [candidate.id, candidate]))
+  const selectedCandidates = report.selectedCandidateIds.map((id) => byId.get(id))
+  // Refusing an id with no candidate rather than dropping it. A missing one means the list being
+  // hashed is not the list that was chosen, and the whole point of the hash is that it stands for
+  // what was submitted -- a digest quietly short of an item is worse than no submission.
+  const missing = report.selectedCandidateIds.filter((id) => !byId.has(id))
+  if (missing.length > 0) {
+    throw new ReportsApiError(
+      `Cannot submit: ${missing.length} selected candidate(s) are not in the list being shown.`,
+    )
+  }
+  const digest = generatedDigestContent(selectedCandidates as Candidate[])
   const contentSha256 = await sha256Hex(JSON.stringify(digest))
   const createdAt = new Date().toISOString()
 

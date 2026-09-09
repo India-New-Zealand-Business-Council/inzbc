@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { DailyBriefReport, QaChecklistGroup } from '../domain'
-import { newDraftReportFixture, qaChecklistFixture } from '../lib/fixtures'
+import { candidatesFixture, newDraftReportFixture, qaChecklistFixture } from '../lib/fixtures'
 import {
   authoriseDistribution,
   recordCeoDecision,
@@ -45,7 +45,7 @@ afterEach(() => {
 
 describe('submitReportForQa', () => {
   it('transitions Report Drafted -> QA In Progress once the brief is valid', async () => {
-    const result = await submitReportForQa(submittableReport())
+    const result = await submitReportForQa(submittableReport(), candidatesFixture())
     expect(result.state).toBe('QA In Progress')
   })
 
@@ -54,24 +54,46 @@ describe('submitReportForQa', () => {
     // number is not a validation error there, it is a 500 out of psycopg, so this is worth
     // pinning: the two values now live in separate fields precisely so this cannot be confused.
     const report = { ...submittableReport(), runId: 'f2b3c7e1-0000-4000-8000-000000000001', runNumber: 'RUN-SEED-06' }
-    await submitReportForQa(report)
+    await submitReportForQa(report, candidatesFixture())
 
     const [, init] = vi.mocked(fetch).mock.calls.find(([url]) => url === '/api/reports')!
     expect(JSON.parse(String(init?.body)).run_id).toBe('f2b3c7e1-0000-4000-8000-000000000001')
   })
 
+  it("hashes the candidates it was given, not a stand-in for them", async () => {
+    // The digest used to be resolved against candidatesFixture(), whose ids cannot match a live
+    // candidate's UUID -- so nothing resolved and every brief was hashed as if empty. Two
+    // different selections must not produce the same hash.
+    const one = { ...submittableReport(), selectedCandidateIds: ['cand-1'] }
+    const two = { ...submittableReport(), selectedCandidateIds: ['cand-1', 'cand-2'] }
+
+    await submitReportForQa(one, candidatesFixture())
+    const first = JSON.parse(String(vi.mocked(fetch).mock.calls.at(-1)?.[1]?.body)).content_sha256
+    await submitReportForQa(two, candidatesFixture())
+    const second = JSON.parse(String(vi.mocked(fetch).mock.calls.at(-1)?.[1]?.body)).content_sha256
+
+    expect(first).not.toBe(second)
+  })
+
+  it("refuses a selection it cannot resolve rather than hashing a shorter list", async () => {
+    // A selected id with no candidate means the list being hashed is not the list that was
+    // chosen. Dropping it silently would submit a brief that understates what it contains.
+    const report = { ...submittableReport(), selectedCandidateIds: ['cand-1', 'not-a-candidate'] }
+    await expect(submitReportForQa(report, candidatesFixture())).rejects.toThrow(/not in the list/i)
+  })
+
   it('rejects when the brief still fails validation, without transitioning', async () => {
-    await expect(submitReportForQa(newDraftReportFixture())).rejects.toBeInstanceOf(ReportsApiError)
+    await expect(submitReportForQa(newDraftReportFixture(), candidatesFixture())).rejects.toBeInstanceOf(ReportsApiError)
   })
 
   it('rejects submitting from a state other than Report Drafted', async () => {
     const report = { ...submittableReport(), state: 'QA In Progress' as const }
-    await expect(submitReportForQa(report)).rejects.toThrow(/cannot submit for qa/i)
+    await expect(submitReportForQa(report, candidatesFixture())).rejects.toThrow(/cannot submit for qa/i)
   })
 
   it('propagates an abort rather than a service error', async () => {
     const controller = new AbortController()
-    const promise = submitReportForQa(submittableReport(), { signal: controller.signal })
+    const promise = submitReportForQa(submittableReport(), candidatesFixture(), { signal: controller.signal })
     controller.abort()
     await expect(promise).rejects.toMatchObject({ name: 'AbortError' })
   })
@@ -83,18 +105,18 @@ describe('submitReportForQa', () => {
       throw new Error(`Unexpected fetch in test: ${url}`)
     }))
 
-    await expect(submitReportForQa(submittableReport())).rejects.toThrow(/not signed in/i)
+    await expect(submitReportForQa(submittableReport(), candidatesFixture())).rejects.toThrow(/not signed in/i)
   })
 
   it('only carries signals for the candidates actually selected, not a fixed pair', async () => {
     const report = { ...submittableReport(), selectedCandidateIds: ['cand-3'] } // Medium, non-Critical/High
-    const result = await submitReportForQa(report)
+    const result = await submitReportForQa(report, candidatesFixture())
     expect(result.criticalHighSignals).toEqual([])
   })
 
   it('carries a signal for a selected Critical candidate', async () => {
     const report = { ...submittableReport(), selectedCandidateIds: ['cand-2'] } // Critical ministerial statement
-    const result = await submitReportForQa(report)
+    const result = await submitReportForQa(report, candidatesFixture())
     expect(result.criticalHighSignals).toHaveLength(1)
     expect(result.criticalHighSignals[0]!.headline).toMatch(/ministerial statement/i)
   })
