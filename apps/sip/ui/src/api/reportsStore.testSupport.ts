@@ -31,6 +31,39 @@ export function stubReportsFetch(options: StubReportsFetchOptions = {}): void {
     'fetch',
     vi.fn(async (url: string, init?: RequestInit) => {
       if (init?.signal?.aborted) throw new DOMException('Aborted', 'AbortError')
+      // The Brief Builder loads its working run's candidates, the source register that names
+      // them, and the run's recorded source checks. Ids match the fixture's ('cand-1'), so a
+      // report that selects one stays valid against this list.
+      if (url.startsWith('/api/candidates')) {
+        return jsonResponse([
+          {
+            id: 'cand-1',
+            run_id: 'run-1',
+            headline: 'Tariff schedule update noted for dairy exports',
+            source_id: 'src-1',
+            proposed_routing: 'Dairy',
+            signal: 'High',
+            confidence: 'Official',
+            verification: 'Verified',
+          },
+          {
+            id: 'cand-2',
+            run_id: 'run-1',
+            headline: 'Horticulture access briefing published',
+            source_id: 'src-1',
+            proposed_routing: 'Horticulture',
+            signal: 'Medium',
+            confidence: 'Official',
+            verification: 'Partially Verified',
+          },
+        ])
+      }
+      if (url.startsWith('/api/source-library')) {
+        return jsonResponse([{ id: 'src-1', sip185_code: 'NZ-OFF-001', name: 'Beehive' }])
+      }
+      if (url.includes('/source-checks')) {
+        return jsonResponse([])
+      }
       if (url === '/api/runs' && (!init?.method || init.method === 'GET')) {
         // Two runs, one past QA and one not, so a caller can tell a recorded QA result apart
         // from an absent one without composing its own stub.

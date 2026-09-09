@@ -2,7 +2,6 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { ReportsApiError, submitReportForQa } from '../api/reportsStore'
 import { GOVERNANCE_LINE, type Candidate, type DailyBriefReport, type SourceCoverageRow, type SourceOutcome } from '../domain'
 import { type CandidateOut, listCandidates } from '../api/candidatesClient'
-import { listRuns } from '../api/runsClient'
 import { listSourceChecks, type SourceLibraryOut, sourceLookup } from '../api/sourceLibraryClient'
 import { candidatesFixture } from '../lib/fixtures'
 import { FOCUS_NOTE_MAX_LENGTH, validateBrief } from '../lib/validation'
@@ -121,26 +120,29 @@ function toDomainCandidate(
 }
 
 export function BriefBuilderScreen({ report, onChange }: Props) {
-  // Real candidates for the newest run, with the fixture as the fallback rather than the default.
-  // The list was fixture-only, and every row carried a `[FIXTURE]` prefix so it could not be
-  // mistaken for real output -- honest, and also the first thing anyone looking at the screen saw.
-  // The rows exist in the database; nothing was fetching them.
+  // The working run's candidates. Empty until the load lands rather than seeded with the fixture:
+  // seeding it meant a run's own rows were preceded by a paint of `[FIXTURE]`-prefixed ones, and
+  // the digest hashes whatever is in this list, so a stale paint is not only cosmetic.
   //
-  // The fixture stays for the case it was written for: no run yet, or the API unreachable. It
-  // keeps its prefix, so which one is on screen is never ambiguous.
-  const [candidates, setCandidates] = useState<Candidate[]>(() => candidatesFixture())
+  // The fixture stays for the case it was written for -- the API unreachable -- where rendering
+  // clearly-labelled placeholder rows beats rendering nothing. It keeps its prefix, so which one
+  // is on screen is never ambiguous.
+  const [candidates, setCandidates] = useState<Candidate[]>([])
 
   useEffect(() => {
     const controller = new AbortController()
+    // The run the shell is working on, not whichever run is newest. This screen used to ask for
+    // the newest itself, which since run selection exists means it could show one run's
+    // candidates under another run's number -- and then hash those candidates against the
+    // selected run's id on submit.
+    const runId = report.runId
+    if (!runId) return
     void (async () => {
       try {
-        const runs = await listRuns({ signal: controller.signal })
-        const newest = runs[0]
-        if (!newest) return
         const [live, sources, checks] = await Promise.all([
-          listCandidates(newest.id, { signal: controller.signal }),
+          listCandidates(runId, { signal: controller.signal }),
           sourceLookup({ signal: controller.signal }),
-          listSourceChecks(newest.id, { signal: controller.signal }),
+          listSourceChecks(runId, { signal: controller.signal }),
         ])
         if (live.length > 0) {
           setCandidates(live.map((candidate) => toDomainCandidate(candidate, sources)))
@@ -180,16 +182,19 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
           })
         }
       } catch {
-        // Leaves the fixture in place. A brief builder that renders nothing because the API is
-        // down is less useful than one that renders clearly-labelled placeholder rows.
+        // A brief builder that renders nothing because the API is down is less useful than one
+        // that renders clearly-labelled placeholder rows, so the fixture appears here and only
+        // here -- on a failure, never before a successful load.
+        setCandidates(candidatesFixture())
       }
     })()
     return () => controller.abort()
-    // Deliberately once, on mount. Adding `report` and `onChange` would refetch the run on every
-    // keystroke and overwrite what was just typed with the values this load started from, which
-    // is the opposite of what the dependency rule is protecting against here.
+    // Keyed on the run, so choosing a different one loads its candidates. `report` and `onChange`
+    // are deliberately absent: including them refetches on every keystroke and overwrites what
+    // was just typed with the values that load started from, which is the opposite of what the
+    // dependency rule protects against here.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [report.runId])
   const [submitState, setSubmitState] = useState<SubmitState>({ kind: 'idle' })
   // False until the analyst actually tries to submit — see onSubmitForQa. A fresh brief starts
   // with all 112 mandatory sources blank; showing the full "Before this brief can be submitted"
@@ -578,6 +583,13 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
         <h3 className="mb-2 text-sm font-semibold text-inzbc-navy">
           Source selection — scored candidates for this run
         </h3>
+        {candidates.length === 0 ? (
+          <p className="rounded-md border border-inzbc-navy/10 bg-white p-3 text-sm text-slate-500">
+            {report.runId
+              ? 'Loading this run’s candidates…'
+              : 'No run selected — choose one under Runs & Candidates.'}
+          </p>
+        ) : null}
         <ul className="space-y-2">
           {candidates.map((candidate) => (
             <li key={candidate.id} className="rounded-md border border-inzbc-navy/10 bg-white shadow-sm p-3">
