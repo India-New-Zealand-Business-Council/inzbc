@@ -3,7 +3,7 @@ import { ReportsApiError, submitReportForQa } from '../api/reportsStore'
 import { GOVERNANCE_LINE, type Candidate, type DailyBriefReport, type SourceCoverageRow, type SourceOutcome } from '../domain'
 import { type CandidateOut, listCandidates } from '../api/candidatesClient'
 import { listRuns } from '../api/runsClient'
-import { type SourceLibraryOut, sourceLookup } from '../api/sourceLibraryClient'
+import { listSourceChecks, type SourceLibraryOut, sourceLookup } from '../api/sourceLibraryClient'
 import { candidatesFixture } from '../lib/fixtures'
 import { FOCUS_NOTE_MAX_LENGTH, validateBrief } from '../lib/validation'
 
@@ -137,18 +137,58 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
         const runs = await listRuns({ signal: controller.signal })
         const newest = runs[0]
         if (!newest) return
-        const [live, sources] = await Promise.all([
+        const [live, sources, checks] = await Promise.all([
           listCandidates(newest.id, { signal: controller.signal }),
           sourceLookup({ signal: controller.signal }),
+          listSourceChecks(newest.id, { signal: controller.signal }),
         ])
-        if (live.length === 0) return
-        setCandidates(live.map((candidate) => toDomainCandidate(candidate, sources)))
+        if (live.length > 0) {
+          setCandidates(live.map((candidate) => toDomainCandidate(candidate, sources)))
+        }
+
+        // Coverage came from the fixture, which starts every source blank, so the screen read
+        // 0 of 112 recorded against a run whose checks were all in the database. That is not
+        // cosmetic: an unrecorded mandatory source is a Critical stop at QA (SIP-184 §4), so a
+        // fully covered run looked like one that could not be submitted at all.
+        //
+        // Only outcomes that were actually recorded are applied. A source with no check stays
+        // blank rather than being defaulted to something benign, because "not checked" and
+        // "checked and inaccessible" are the distinction the coverage gate exists to make.
+        if (checks.length > 0) {
+          // Keyed by SIP-185 code, not by id. A check carries `source_id`, a UUID, while a
+          // coverage row carries the SIP-185 code the register is organised by, so matching the
+          // two directly compares a UUID against `NZ-OFF-001` and never hits. The register
+          // fetched above is what translates between them.
+          const bySource = new Map(
+            checks
+              .map((check) => [sources.get(check.source_id)?.sip185_code, check] as const)
+              .filter((entry): entry is readonly [string, typeof checks[number]] =>
+                entry[0] !== undefined,
+              ),
+          )
+          // `report` and `onChange` as they were at mount, which is what this wants: the load
+          // runs once, before anything has been edited, so there is nothing newer to preserve.
+          // Reading them through refs to keep the dependency list empty is the usual trick and
+          // the React Compiler rejects it, because mutating a ref is a side effect in what is
+          // meant to be a pure render.
+          onChange({
+            ...report,
+            sourceCoverage: report.sourceCoverage.map((row) => {
+              const check = bySource.get(row.sip185Code)
+              return check ? { ...row, outcome: check.outcome as typeof row.outcome } : row
+            }),
+          })
+        }
       } catch {
         // Leaves the fixture in place. A brief builder that renders nothing because the API is
         // down is less useful than one that renders clearly-labelled placeholder rows.
       }
     })()
     return () => controller.abort()
+    // Deliberately once, on mount. Adding `report` and `onChange` would refetch the run on every
+    // keystroke and overwrite what was just typed with the values this load started from, which
+    // is the opposite of what the dependency rule is protecting against here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   const [submitState, setSubmitState] = useState<SubmitState>({ kind: 'idle' })
   // False until the analyst actually tries to submit — see onSubmitForQa. A fresh brief starts

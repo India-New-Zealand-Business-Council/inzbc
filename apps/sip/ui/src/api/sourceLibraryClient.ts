@@ -23,3 +23,22 @@ export async function sourceLookup(
   const sources = await listSourceLibrary(options)
   return new Map(sources.map((source) => [source.id, source]))
 }
+
+export type SourceCheckOut = components['schemas']['SourceCheckOut']
+
+/**
+ * `GET /api/runs/{id}/source-checks` — what was recorded against each mandatory source for a run.
+ *
+ * SIP-184 §4 makes this the coverage evidence QA checks: a mandatory source with no recorded
+ * outcome is a Critical stop, not a warning, so the difference between "no outcome" and "an
+ * outcome of Inaccessible" is the difference between a blocked run and a documented one.
+ */
+export async function listSourceChecks(
+  runId: string,
+  options: RequestOptions = {},
+): Promise<SourceCheckOut[]> {
+  return apiRequest<SourceCheckOut[]>(
+    `/api/runs/${encodeURIComponent(runId)}/source-checks`,
+    options,
+  )
+}
