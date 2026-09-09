@@ -142,6 +142,11 @@ def _seed_accounts(database_url: str) -> dict[str, Account]:
     return accounts
 
 
+# How far back a report version is dated. See its use in `run_walk` -- this exists because the
+# clock writing `created_at` and the clock writing `submitted_at` are different clocks.
+_CONTENT_AGE = timedelta(minutes=1)
+
+
 def _post(session: requests.Session, path: str, body: dict | None = None) -> dict:
     kwargs: dict = {"json": body}
     if isinstance(session, requests.Session):  # a TestClient rejects `timeout`
@@ -280,7 +285,17 @@ def run_walk(base_url: str, database_url: str, *, client_factory=None) -> dict:
         {
             "run_id": run_id,
             "content_sha256": content_sha,
-            "created_at": datetime.now(UTC).isoformat(),
+            # Dated a minute back, not "now". `created_at` is read from this process's clock while
+            # `submitted_at` is set by the database's, and `report_versions` checks
+            # `submitted_at >= created_at`. Under Docker the two clocks are not the same clock:
+            # the VM's drifts behind the host's, so a `now()` here is sometimes a few hundred
+            # milliseconds ahead of the timestamp the row is about to be given, and the insert is
+            # refused. That is what made this walk fail intermittently and never in isolation.
+            #
+            # A minute is far past any skew worth tolerating and still reads as "just now" in the
+            # evidence. `scripts/seed_demo.py` backdates for the same reason and calls it
+            # `_CONTENT_AGE`; the constraint is doing its job in both cases.
+            "created_at": (datetime.now(UTC) - _CONTENT_AGE).isoformat(),
         },
     )
     report_version_id = report["id"]

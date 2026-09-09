@@ -6,6 +6,47 @@ This file records what changed and why it mattered, not every commit — the com
 complete record. Nothing here is deployed anywhere: `production_enabled` is `false` and no release
 below is a SIP-184 production run.
 
+## [v1.1.0] — 2026-09-10
+
+Fixes found by reviewing the v1.0.0 diff rather than by anything going wrong.
+
+### Fixed
+
+- **The intermittent `test_walk_full_run` failure was clock skew.** `created_at` was read from
+  this process's clock and `submitted_at` written by the database's, and `report_versions` checks
+  `submitted_at >= created_at`. Under Docker those are not the same clock: the VM's runs behind
+  the host's — measured at 0.44s on the machine where this reproduced — so a `now()` in the
+  request was sometimes ahead of the timestamp the row was about to be given, and the insert was
+  refused.
+
+  This is also why it only failed at the end of a full suite and never in isolation.
+  `submitted_at` is set when the insert lands, so it catches up whenever the request takes longer
+  than the skew; run alone the app is cold and the round trip exceeds it, run warm it does not.
+  "Passes in isolation" looked like evidence of test pollution and was evidence of speed.
+
+  The walk now backdates `created_at` by a minute, which is what `scripts/seed_demo.py` already
+  did for the same reason and calls `_CONTENT_AGE`. The constraint was correct throughout.
+
+- **The seed's refusal missed a seed interrupted partway through the walk.** The check added in
+  v1.0.0 fired only on `state == Draft and version == 0`, which catches a seed interrupted before
+  the walk began. The walk takes one transition at a time, so stopping midway leaves the run at
+  `version > 0` on an intermediate state — past the check, skipped by every later re-seed, exactly
+  the corruption the check was added to stop. It now compares the run's position on the walk's own
+  path against its target, so a walk that stopped anywhere short is refused, while a run something
+  deliberately advanced is still allowed.
+
+- **The UI's `RunState` union was missing `Corrected` and `Withdrawn`**, two of the eighteen values
+  in the `run_state` enum, while `AppShell` casts `run.state` to that union. Nothing broke, because
+  every consumer takes a string and defaults — but an exhaustive switch would have been wrong and
+  TypeScript would have agreed with it. A test now reads the enum from `database/schema.sql` and
+  compares.
+
+### Corrected
+
+- The v1.0.0 changelog said the walk-test flake did not reproduce against a fresh database. That
+  was drawn from three passing runs and was wrong — it reproduced on a fresh one twice. The entry
+  above is what it actually was.
+
 ## [v1.0.0] — 2026-09-10
 
 First full release. One application. Four modules on one governed backend — trade intelligence
@@ -55,9 +96,9 @@ Each of these was found by running the system rather than reading it.
 
 ### Known and unresolved
 
-- `test_walk_full_run` fails intermittently against a long-lived local database (three of five
-  full-suite runs). It does not reproduce against a fresh one, and CI builds a fresh database per
-  run and has been green throughout. Recorded rather than closed: the cause is not proven.
+- ~~`test_walk_full_run` fails intermittently~~ — **diagnosed and fixed in v1.1.0.** It was clock
+  skew, not the test: `created_at` came from this process's clock and `submitted_at` from the
+  database's, and under Docker those are different clocks. See v1.1.0 below.
 - Separation of duties is enforced against recorded acts rather than job titles, but one person
   currently holds every role, so most runs would proceed through a recorded `sod_exceptions` row.
   That is the control working for a single-operator organisation, not a workaround.
