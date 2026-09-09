@@ -601,13 +601,13 @@ def _build_source_lookup_by_code(conn: psycopg.Connection) -> dict[str, str]:
     return {row["sip185_code"]: str(row["id"]) for row in rows.fetchall()}
 
 
-def _walk_run(
-    run_id: str, target: RunState, *, actor_id: str, refs: dict[RunState, str | None]
-) -> None:
-    """Drives a run from Draft to `target`, one legal transition at a time, supplying whatever
-    `approval_ref` each gate needs from `refs` (keyed by the *target* state of the gated hop).
+def _walk_path(target: RunState) -> list[RunState]:
+    """The states a run passes through on its way to `target`, in order.
+
+    Shared with the pre-seed check rather than kept inside the walk: knowing the order is what
+    tells a run the walk never finished from one somebody moved on deliberately, and deriving
+    that from a second hand-written list would let the two disagree.
     """
-    run_repo = RunRepository(_database_url())
     path = [
         RunState.DRAFT,
         RunState.RUN_AUTHORISED,
@@ -634,6 +634,17 @@ def _walk_run(
         elif target in (RunState.PAUSED, RunState.STOPPED):
             path += [target]
 
+    return path
+
+
+def _walk_run(
+    run_id: str, target: RunState, *, actor_id: str, refs: dict[RunState, str | None]
+) -> None:
+    """Drives a run from Draft to `target`, one legal transition at a time, supplying whatever
+    `approval_ref` each gate needs from `refs` (keyed by the *target* state of the gated hop).
+    """
+    run_repo = RunRepository(_database_url())
+    path = _walk_path(target)
     idx = path.index(target)
     steps = path[: idx + 1]
 
@@ -678,18 +689,21 @@ def _seed_runs(
             # decision rows) are created alongside it, so re-walking half a run would have to
             # guess which of those already exist. A fresh database is one command and cannot
             # be half-right.
-            # Never walked at all: still Draft, still version 0, when the spec says otherwise.
-            # A run that has advanced somewhere else has version > 0 and is somebody's deliberate
-            # act - a test moving a seeded run through a transition, most often - which is not
-            # this script's business to refuse.
-            abandoned = (
-                existing["state"] == RunState.DRAFT.value
-                and existing["version"] == 0
-                and spec.target_state is not RunState.DRAFT
-            )
-            if abandoned:
+            # The walk stopped short: the run sits at a state that comes *earlier* on its own
+            # path than the state this seed defines. That covers a seed interrupted before the
+            # walk started (still Draft, version 0) and one interrupted partway through it, which
+            # a Draft-and-version-0 test misses entirely -- the walk takes one transition at a
+            # time, so stopping midway is at least as likely as stopping before it began.
+            #
+            # A run that is at its target, past it, or somewhere off the path is not this
+            # script's business: it got there by somebody's deliberate act, most often a test
+            # moving a seeded run through a transition.
+            path = [state.value for state in _walk_path(spec.target_state)]
+            here = path.index(existing["state"]) if existing["state"] in path else None
+            stopped_short = here is not None and here < path.index(spec.target_state.value)
+            if stopped_short:
                 raise SystemExit(
-                    f"{spec.number} is still an unwalked Draft but this seed defines it as "
+                    f"{spec.number} stopped at {existing['state']!r} on the way to "
                     f"{spec.target_state.value!r}. An earlier seed was interrupted partway. "
                     f"Seed into a fresh database (SEED_DATABASE_URL=...inzbc_fresh) rather than "
                     f"re-running against this one."
