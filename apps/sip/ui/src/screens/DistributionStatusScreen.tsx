@@ -43,7 +43,7 @@ export function DistributionStatusScreen({ report }: Props) {
       <div>
         <h2 className="text-lg font-semibold text-inzbc-navy">Distribution Status</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Read-only status for run {report.runId} — no write controls on this screen.
+          Read-only status for run {report.runNumber} — no write controls on this screen.
         </p>
       </div>
 
