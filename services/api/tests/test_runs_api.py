@@ -60,6 +60,7 @@ class FakeRunRepository:
             coverage_start_utc=coverage_start_utc,
             coverage_end_utc=coverage_end_utc,
             initiated_by=initiated_by,
+            qa_status=None,
         )
         self._runs[run.id] = run
         return run

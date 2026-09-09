@@ -64,6 +64,9 @@ class RunOut(BaseModel):
     coverage_start_utc: str
     coverage_end_utc: str
     initiated_by: str
+    # Null until QA has run. The archive shows this as "Not yet run" rather than a pass or a
+    # fail, because "QA has not happened" and "QA found nothing" are different states of a run.
+    qa_status: str | None
 
 
 def _run_out(run: RunRecord) -> RunOut:
@@ -76,6 +79,7 @@ def _run_out(run: RunRecord) -> RunOut:
         coverage_start_utc=run.coverage_start_utc,
         coverage_end_utc=run.coverage_end_utc,
         initiated_by=run.initiated_by,
+        qa_status=run.qa_status,
     )
 
 

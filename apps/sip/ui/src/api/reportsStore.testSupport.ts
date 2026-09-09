@@ -31,6 +31,34 @@ export function stubReportsFetch(options: StubReportsFetchOptions = {}): void {
     'fetch',
     vi.fn(async (url: string, init?: RequestInit) => {
       if (init?.signal?.aborted) throw new DOMException('Aborted', 'AbortError')
+      if (url === '/api/runs' && (!init?.method || init.method === 'GET')) {
+        // Two runs, one past QA and one not, so a caller can tell a recorded QA result apart
+        // from an absent one without composing its own stub.
+        return jsonResponse([
+          {
+            id: 'run-1',
+            run_number: 'RUN-20260908-01',
+            state: 'Distributed',
+            version: 6,
+            prompt_version: 'SIP-050 v1.1',
+            coverage_start_utc: '2026-09-07T19:00:00+00:00',
+            coverage_end_utc: '2026-09-08T19:00:00+00:00',
+            initiated_by: 'user-1',
+            qa_status: 'Passed',
+          },
+          {
+            id: 'run-2',
+            run_number: 'RUN-20260909-01',
+            state: 'Report Drafted',
+            version: 2,
+            prompt_version: 'SIP-050 v1.1',
+            coverage_start_utc: '2026-09-08T19:00:00+00:00',
+            coverage_end_utc: '2026-09-09T19:00:00+00:00',
+            initiated_by: 'user-1',
+            qa_status: null,
+          },
+        ])
+      }
       if (url === '/api/reports' && init?.method === 'POST') {
         return jsonResponse({
           id: 'rv-1',
