@@ -62,6 +62,27 @@ only when a component genuinely needs isolation; the monorepo is the default.
 - Membership currently runs on **Member Jungle**. Do **not** rebuild membership on Wix before the
   retain / integrate / replace assessment. Member Jungle is the provisional system of record.
 
+## Running it
+
+One command brings up Postgres, applies the schema and migrations, seeds a demonstration dataset,
+starts the API and serves the platform UI:
+
+```
+scripts\platform.cmd            # cmd.exe
+.\scripts\platform.ps1          # PowerShell
+```
+
+Then open <http://localhost:5173>. `scripts\platform.ps1 -ApiOnly` stops after the API, which is
+what CI-shaped checks and API probing want.
+
+**One UI, not five.** `apps/sip/ui` is the shell; the FTA Explainer, Comms Assistant and Member
+Portal screens are mounted into it through Vite aliases rather than run as separate dev servers.
+Each still builds and tests on its own, so the module boundaries are intact -- they are just not
+five things to start.
+
+`scripts/demo.ps1` remains for the FTA Explainer alone. It needs no database and no session, which
+makes it the right thing when the point is one sourced answer rather than the governed pipeline.
+
 ## Working on this repo
 See [CONTRIBUTING.md](./CONTRIBUTING.md) and the team workflow in
 [docs/workstreams/README.md](./docs/workstreams/README.md). Short version: work from your worklog,
