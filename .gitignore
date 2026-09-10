@@ -91,3 +91,6 @@ INZBC_Group_Final_Report_*.pptx.inspect.ndjson
 ppt_group_report_work/
 team_report_work/
 bhanu_evidence_work/
+
+# Demo recording output — regenerate with scripts/record_demo.mjs
+scripts/demo-recording/
