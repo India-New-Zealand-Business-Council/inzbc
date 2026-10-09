@@ -21,71 +21,154 @@ SIP review/approval UI + Comms Assistant UI + FTA Explainer embed.
 ## Depends on
 The shared API + auth for anything that reads/writes data. Roshan's FTA service for the Explainer UI.
 
-## Next up
+## Next up — 8-week plan, Studio 6 (from 10 Oct 2026)
 
-**Top priority, 20 Aug 2026 — architecture diagram pack for the project coordinator.** Ahead of
-the design system and the Explorer embed. Standard and the full seventeen-diagram set are in
-[docs/architecture-diagram-plan.md](../architecture-diagram-plan.md).
+Rewritten from scratch against the real repo state, not the previous draft of this file: v1.0.0
+shipped 9 Sep 2026 with a real Postgres database, a real API, and the SIP UI reading real runs and
+candidates instead of fixtures. Several items below that used to be blocked are now unblocked, and
+one whole item (the Wix site build) is **obsolete** — the public site moved to a different stack
+entirely while this file was last updated. Read `## Stale items to retire` before trusting anything
+that still sounds like late July.
 
-- [ ] **#329 Container diagram: the whole platform on one page.** Do this one first and alone —
-      every other diagram in the pack hangs off it and has to match its naming. The repo has a C4
-      Level 1 context diagram and one Level 3 component diagram, and no Level 2 container diagram
-      at all, so the five UIs you own appear in no diagram anywhere. Draw shells as shells:
-      `apps/member/ui` has no API client and `apps/sip/ui` runs on fixtures.
-- [ ] **#330 UI architecture: integration patterns and SIP screen flow against run states.** The
-      four integration patterns (anonymous read, authenticated write with CSRF, authenticated
-      read, fixture-backed) plus which screen drives which state transition. Starts once #329 is
-      merged.
+Ordered by what actually blocks the next thing, not by week number — but a rough shape for an
+8-week block, assuming this is close to full-time:
 
-- [ ] Design system from `docs/design-direction.md` (the system is what's outstanding, not the
-      source doc): token-driven component library on
-      the real brand tokens documented in `docs/design-decisions.md` (#155) (colours, typography,
-      logo rules from the INZBC Brand Guidelines 2026 — no placeholder swap needed, kit already
-      arrived), WCAG 2.2 AA behaviour — focus order, contrast, keyboard paths — built into each
-      component rather than audited at the end. Two gaps before the library is buildable:
-      no font files for Big Shoulders or Merriweather are sourced in the repo, so the typography
-      half of the tokens cannot be applied; and the palette's contrast rule has to be enforced in
-      the components, not just recorded. `docs/design-decisions.md` now states it: tangerine
-      `#f05b29` behind white body-size text is 3.37:1 against the 4.5:1 AA minimum. PR #162's
-      primary button had that exact failure, which is what the rule exists to prevent — fixed
-      there (navy-on-tangerine, 5.56:1) during review, but the library still needs the rule
-      enforced in the components generally, not fixed one button at a time. Two figures in that doc
-      still need Sunil's confirmation before they're load-bearing (two-way trade $3.68b vs $3.95bn;
-      member count 160+ vs 200+) — don't bake either into a token or copy without it.
-- [ ] FTA Explorer embed UI against Roshan's service contract: query → sourced answer rendering
-      (citation, effective date, next step, escalation path when the service returns no match).
-      Local implementation landed in #85–#87/#89/#91; what remains is the deployed website
-      integration, which is what REQ-U-04 actually asks for.
-- [ ] Playwright E2E for the FTA slice (task 1.2). Three cases, the third specifically:
-      1. query → sourced answer, with citation, effective date and confidence rendered;
-      2. query → no-match, asserting the Action Required escalation renders and no citation
-         appears anywhere;
-      3. **320px reflow (WCAG 2.2 §1.4.10)** — open at 320px width, submit a query, assert
-         `document.documentElement.scrollWidth <= clientWidth` (no horizontal scrolling), and
-         assert the input, submit button, answer cards and citation text all stay visible and
-         usable. The CSS fix landed in #91 and was verified by a one-off Chromium measurement;
-         until this test exists, that behaviour is **not** guarded by CI.
-- [ ] Comms Assistant review UI (#60): draft view with diff-against-previous and the
-      named-reviewer approval gate (nothing publishable without a recorded human approval).
-      Blocked on the service side (#53). **Not the same screen as the drafting UI below** —
-      #60's scope is reviewing/approving a draft already produced, not producing one.
-- [ ] Build the public site in Wix from `apps/site/content/` — content for all seven pages
-      (home, about, events, members, trade, partners, connect) is drafted and merged; homepage
-      changes are additionally already made in the Wix editor (see `docs/wix-changes-log.md`).
-      **Unblocked as of 31 Jul 2026:** OI-9 is closed, the duplicate `INZBC Staging` exists and the
-      team have access, so the build can start there. Still do not edit `inzbc.org` directly; the
-      duplicate is the only build target until the OI-8 cutover. Programmatic build additionally
-      needs the Wix MCP connected (OI-1).
-- [ ] CMS collection schemas mapped to page-specs now (news, events, sector reports, board,
-      sponsors), ready to create as dynamic pages now that Wix account access is in place.
-- [ ] Forms UI: confirmation email + owner notification. SHARED-OK: the webhook-to-internal
-      delivery (contract + receiver service) moved to Bhanu's worklog.
-- [ ] Executive dashboard UI (control state, open actions, QA/distribution status) — reads
-      Bhanu's dashboards data-layer endpoints.
-- [ ] Final WCAG 2.2 AA audit across every public page (components already carry the behaviour;
-      this is the end-to-end verification pass).
+**Weeks 1–2 — close the gap between what's built and what's tracked, then finish SIP's own UI**
+- [ ] **Bookkeeping first, costs an hour, not a sprint.** #292 (QA review interface, REQ-U-01) is
+      still open but `QaReviewScreen.tsx` already calls the real `POST /api/reports/{id}/qa`
+      endpoint (`reportsStore.submitQaResult`) — the same wiring pass that closed #293 and #336.
+      Confirm with Bhanu whether #292's acceptance criteria are actually met and close it, or find
+      the real remaining gap before planning more work against a stale issue.
+- [ ] **#61 Executive dashboard UI, for real this time.** What exists today (`apps/dashboard/ui`)
+      is `SipOverview.tsx` plus the branding pass — a first SIP-only slice, by the dashboard
+      module's own description. `docs/modules/dashboards.md` lists executive view (control state,
+      open Critical/High actions, next CEO decision, exceptions) and the board scorecards
+      (membership, trade/FTA, sponsors) — none of that is built. Reads Bhanu's data-layer
+      endpoints; confirm what's actually live on `/api/dashboard` before scoping the UI, don't
+      assume the shape from the module doc alone.
+- [ ] **Final WCAG 2.2 AA audit across every public page and every app.** Components already carry
+      the behaviour from each build's own accessibility pass; this is the end-to-end verification
+      sweep, including the real-browser check that both member-portal Done entries below flag as
+      never having happened (`Chrome tools weren't enabled` at the time).
+
+**Weeks 2–4 — the website, on the stack it's actually on**
+- [ ] **Figure out what "fully developed" means for `inzview` and write it down.** 209 commits in
+      that repo are real, working pages — this is not a from-scratch build. What's missing is a
+      proper gap list: CMS-backed dynamic content (news, events, sector reports — see `## Stale
+      items to retire` for why the old "Wix CMS collections" plan doesn't apply here), forms that
+      actually deliver somewhere, SEO/share metadata coverage, and anything `ADR-0007` flagged as
+      structurally different about this site (no CI type-check, "merged" and "live" are separate
+      events). Start here, not with code — an accurate gap list is the actual Week 2 deliverable.
+- [ ] **Forms UI: confirmation + owner notification**, once the gap list above says which forms
+      still need it. SHARED-OK: the webhook-to-internal delivery (contract + receiver service)
+      stays on Bhanu's worklog; this is the form UI and the confirmation messaging only.
+- [ ] **#196/#197 site-rebuild issues — reconcile against `inzview`, don't execute as written.**
+      Both predate the Studio→Vibe move and describe rebuilding "on the Wix duplicate." Check with
+      the team whether they should be closed as superseded or rewritten against the real stack
+      before treating them as live backlog.
+
+**Weeks 4–6 — Comms Assistant and FTA, the two still genuinely unfinished AI-facing surfaces**
+- [ ] **Comms Assistant review UI.** #60 is closed in GitHub, but check what it actually shipped
+      against before assuming the reviewer-approval screen exists — the service side
+      (`services/api/comms.py`, draft + approve + delete endpoints) is real and live; confirm
+      whether a UI was ever built against it or whether #60 was closed for a narrower reason.
+      Drafting UI (`apps/comms/ui`) and the delete-draft flow are both Done, below.
+- [ ] **FTA Explorer embed, deployed.** Local implementation (query → sourced answer, citation,
+      confidence, escalation) has been done since #85–#91. What's still open is the actual
+      integration into the live public site — REQ-U-04's real ask — now that the site has a real
+      home (`inzview`) to embed it into.
+- [ ] **#100/#129/#127/#128 — Playwright E2E,** including the 320px reflow case (WCAG 2.2 §1.4.10)
+      that's been flagged as a real gap since the FTA slice shipped: the CSS fix landed in #91,
+      verified once by hand, never guarded by CI since. Client-side state-survives-a-refresh and
+      illegal-action-rejected cases (#127/#129) matter more now there's a real backend to test
+      against, not fixtures.
+
+**Weeks 6–8 — design system, member portal depth, and whatever the gap list surfaced**
+- [ ] **#58 Design system from `docs/design-direction.md`.** Token-driven component library on the
+      real brand tokens (`docs/design-decisions.md`), WCAG behaviour built into each component
+      rather than audited after. Two blockers to check first, not assume still true: are Big
+      Shoulders/Merriweather font files sourced yet, and is the tangerine-contrast rule (3.37:1,
+      below the 4.5:1 minimum — the exact bug PR #162 shipped and review caught) enforced in
+      components generally, or still only fixed where someone happened to notice.
+- [ ] **#198 Member portal: gated resources, renewals, briefings, request forms** — real depth
+      beyond the current link-out shell. **Hard gate, check before starting:** the
+      retain/integrate/replace decision for Member Jungle is still open (see Blocked, below). Login
+      forms, a real dashboard/profile and a member directory are explicitly out of scope until
+      that's resolved — confirm it's resolved before touching any of those three.
+- [ ] **#199/#200 Events/delegations and Sponsors/trade services** — scope these properly rather
+      than starting blind; both are large, multi-actor modules (`docs/modules/events-delegations.md`,
+      `docs/modules/sponsors-trade-services.md`) that likely split the way SIP's UI did.
+- [ ] **#69 Frontend testing & tooling stack** (Storybook, Chromatic) if time remains — lower
+      priority than the above since Vitest/RTL/Playwright already cover correctness; this is
+      visual-regression tooling, a nice-to-have against an 8-week budget, not a blocker for anything
+      else on this list.
+
+## Stale items to retire — read before trusting the old plan
+
+- **"Build the public site in Wix from `apps/site/content/`" is gone, not done.** This file
+  previously planned a Wix Studio build. That never happened — the whole site moved to **Wix
+  Vibe** (Astro/React/Tailwind) in the separate `inzview` repository instead
+  (`ADR-0007`), and nearly all 209 commits there are already yours. If anyone — including a future
+  read of this file — cites the old Wix-Studio plan, it's wrong; point them at `inzview` and
+  `ADR-0007`.
+- **"CMS collection schemas mapped to page-specs... ready to create as dynamic pages"** was written
+  against the Wix-native CMS plan above. `inzview` is a plain Astro/React site with content in
+  `src/components/inzbc/content.ts` per `ADR-0007` — there is no Wix CMS to map collections into on
+  this stack. Re-scope as "how does dynamic content work on `inzview`" if it's still needed, rather
+  than carrying the old Wix-shaped task forward unchanged.
+- **#329 (container diagram) and #330 (UI integration patterns + screen flow)** were the prior
+  top-priority item here — both shipped (PRs #340, #341) and are recorded in Done, below. Don't
+  re-open them.
 
 ## Done
+- **CEO Decision screen wired to the real decision endpoints** (PR #361, closes #293). Rescued
+  from a stranded branch (#352/#353 were abandoned when Bhanu's reconciliation in #357 landed the
+  real `/ruling`/`/approval`/`/distribution` endpoints instead) — rebased the one real UI commit
+  onto `main`, then found and fixed a genuine contract drift: `idempotency_key` had become
+  caller-supplied during #357's reconciliation and the stranded commit predated that, so every
+  decision POST would have 422'd. Bhanu's review then found four real data-integrity blockers, all
+  fixed and re-reviewed before merge (9 Sep 2026): `Authorised` was offered from `Continue With
+  Correction`, a state ADR-0005/REQ-G-04 can never accept it from; the free-text Owner field
+  displayed as if it were the authoritative record when the real audit record is the signed-in
+  account; `idempotency_key` was regenerated per call instead of once per submission attempt,
+  defeating its own purpose on a retry; and the distribution control offered itself with no check
+  that Report Approval was ever recorded, which in the live flow it never can be since no screen
+  writes it. Fixed with a client-side readiness check (`fetchDistributionReadiness`) rather than
+  building the missing approval screen, which stayed a separate scope question.
+- **Dashboard rebranded to match the live inzview build** (PR #362, refs #58/#61). Found by
+  comparing it side-by-side against SIP/Comms/FTA/Member: Dashboard was the one app the original
+  branding pass (#333) never touched — still Big Shoulders/Merriweather, lavender accent, a local
+  logo SVG, a docked navy header, `max-w-4xl`. Brought in line: Poppins, the ink/deep/mist tokens,
+  the floating glass-pill header (no CTA in its third slot — no membership action fits an
+  internal-only tool), the real logo, lime accent, `max-w-7xl`.
+- **Comms draft delete** (PR #355, closes #343 and #342). `DELETE /api/comms/drafts/{id}` —
+  rebuilt after finding the endpoint didn't actually exist despite an earlier issue claiming it
+  shipped. Secretariat/SIP Owner roles, a required reason (1–500 chars, in the body not a query
+  parameter so it never lands in access logs), any status deletable including Approved, `SELECT
+  ... FOR UPDATE` so a concurrent approval can't land mid-delete, and the audit row never carries
+  the deleted text — only the status transition, since `audit_log` is append-only and copying the
+  text in would make it permanently unremovable. UI: delete is two steps (reason, then confirm),
+  never one click, with a stated reason since it feeds a record that can't be edited afterward.
+- **C4 container diagram for the whole platform** (#329, PR #340) and **UI-to-API integration
+  patterns + SIP screen-flow diagrams** (#330, PR #341). The repo had Level 1 (context) and one
+  Level 3 (component) diagram and nothing at Level 2 — all five UIs appeared in no diagram
+  anywhere. Drew shells as shells rather than implying more than existed at the time.
+- **Runs/Candidates review screen** (#263) — the four candidate commands (verify/score/route/merge)
+  against `services/api/candidates.py`, each a plain database write with its own guard (the
+  verification gate re-checked at score, route and inclusion; same-person-can't-verify-then-score).
+- **Branding matched to the live inzview build** across FTA/Comms/SIP/Member (#333) — Poppins,
+  the floating glass-pill header, lime replacing lavender/tangerine, the real Wix Media logo, and
+  the `max-w-7xl` width-and-type-scale pass. Dashboard was missed in this round and caught later
+  (above).
+- **`inzview` — the live public website**, essentially built single-handedly: 209 commits, real
+  content fixes found and corrected along the way (a stale "last issue Dec 2023" when the real one
+  was June 2024, a tariff figure missing its base percentage, a partner logo rendering at 0×0), and
+  one real traced bug — Wix's Embed Code element sandboxes its iframe with no way to grant
+  top-navigation access, so plain `<a target="_top">` links were silently swallowed; fixed per
+  Wix's own documented `postMessage()`/`onMessage()` pattern, scoped to the real site origin rather
+  than a wildcard target (MDN's own warning against `"*"`). This whole line of work is not reflected
+  anywhere else in this file before this rewrite — the previous version of this worklog still
+  planned the site as a Wix Studio build that never happened. See `## Stale items to retire` below.
 - Member portal Dashboard (`apps/member/ui`, `feat/paras/member-dashboard`, 11 commits) — the
   main overview screen on top of the link-out shell (issue #198, PR #217). Not a routed page:
   no router exists anywhere in this codebase and this app has exactly one screen, so `Dashboard`
@@ -237,27 +320,32 @@ come back.
   `box-sizing` reset for 320px reflow, stale-request identity check, deeper response validation.
 - **Two member-facing strings still need a named reviewer**: the `<h1>` and intro paragraph in
   `apps/fta/ui/src/App.tsx`. Everything else on screen comes from the API.
-- **Still yours:** the design system and brand tokens, the Comms review UI, the Wix site build,
-  and the accessibility audit. (The SIP review/approval UI itself is now Done, above — against
-  contract fixtures; still needs the live `/api/reports/*` endpoints and REQ-U-01/U-02 sign-off
-  once real data is behind it.)
+- **Still yours:** the design system and brand tokens, the Comms review UI (check #60's actual
+  scope before assuming it's unbuilt — see Next up), the accessibility audit, and the public site
+  — now `inzview` (Wix Vibe), not the Wix Studio build this line used to name. (The SIP
+  review/approval UI is Done, above, and has been reading real data since v1.0.0 shipped 9 Sep
+  2026 — the "still needs the live endpoints" caveat that used to be here no longer applies.)
 
 ## Blocked / decisions needed
-- Wix MCP connection, for programmatic build (`docs/discovery.md` OI-1) — **and** manual editor
-  work is now also blocked: per OI-9, live-site editing has stopped pending Sunil duplicating the
-  site and adding the team as collaborators there. Do not edit `inzbc.org` in the meantime.
-- ~~Brand kit from Sunil~~ Resolved 29 Jul 2026: INZBC Brand Guidelines 2026 (colours, typography,
-  logo rules) found in Drive and documented in `docs/design-decisions.md`. Logo asset files
-  (svg/png/jpg) and approved photography still not supplied — see that doc's Open items.
-- Membership platform decision (retain/integrate/replace Member Jungle) — `docs/client-answers.md`
-  C1 proposes retain-and-integrate, but it's `PROPOSED`, not Sunil-confirmed. Build the portal
-  against the confirmed choice, not the proposal.
-- ~~SIP UI can start once there is a running API.~~ Resolved 26 Jul 2026: `GET /api/fta/query`
-  is live (#85) and the frontend workspace with a generated client is in place (#86). The SIP
-  endpoints themselves still need the database, scheduled in Phase 2.
+- **Membership platform decision (retain/integrate/replace Member Jungle) — still the real
+  blocker, check before starting #198.** `docs/client-answers.md` C1 proposes retain-and-integrate,
+  but as of this rewrite it's still `PROPOSED`, not Sunil-confirmed. Build the portal against the
+  confirmed choice, not the proposal — login forms, a real dashboard/profile and a member directory
+  all stay out of scope until this resolves.
+- ~~Brand kit from Sunil~~ Resolved 29 Jul 2026, logo assets since sourced and in use across every
+  app (`docs/design-decisions.md`'s Open items from this period are stale — check that doc directly
+  rather than trusting this line's age).
+- ~~Wix MCP / OI-9 live-editor block~~ **Moot, not resolved** — the site moved to `inzview`
+  entirely, so the Wix Studio editor constraints this used to name no longer apply to where the
+  real work happens. If Wix Studio editing of `inzbc.org` itself is ever needed again (unlikely
+  given the `inzview` move), re-check OI-1/OI-9's live status before assuming either way.
+- ~~SIP UI can start once there is a running API.~~ Resolved — long since superseded by v1.0.0
+  (9 Sep 2026): real Postgres, real API, SIP UI reads real runs and candidates.
 
 ## Definition of done
-Public site matches the specs and is WCAG 2.2 AA; forms deliver to the right owner; SIP UI lets a
-brief be QA'd, approved and packaged for manual send; dashboards read the DB. No pipeline writes.
+Public site (`inzview`) matches the gap list from Next up and is WCAG 2.2 AA; forms deliver to the
+right owner; SIP UI lets a brief be QA'd, approved and packaged for manual send, against real data
+(already true since v1.0.0); dashboards read the DB for real, not just the SIP slice. No pipeline
+writes.
 
-Base: main @ <short-sha> — record when you start a task; rebase if behind.
+Base: main @ 3c8899a (10 Oct 2026) — record when you start a task; rebase if behind.
