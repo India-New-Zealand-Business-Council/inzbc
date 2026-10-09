@@ -95,3 +95,32 @@ raises priority).
 | Date | Change | Why |
 |---|---|---|
 | 8 Oct | Plan created | Studio 6 Week 1 |
+| 9 Oct | Added feedback, mentoring and conflict logs, PDR worksheets | Criteria ask for stakeholder feedback integrated into planning, and peer-recognised mentoring |
+
+## Stakeholder and mentor feedback log (1.2)
+
+Log feedback the day it arrives. The last column shows feedback feeding into the plan.
+
+| Date | From | Feedback | What I changed | Evidence | Obj |
+|---|---|---|---|---|---|
+| | | | | | |
+
+## Mentoring log (3.2)
+
+Ask the person helped to confirm each entry in a reply or comment.
+
+| Date | Who | Topic and what I showed | Outcome | Evidence |
+|---|---|---|---|---|
+| | | | | |
+
+## Conflict resolution record (3.2)
+
+| Field | Entry |
+|---|---|
+| Issue | #320: six PRs mergeable and unreviewed |
+| People involved | |
+| Date raised | |
+| Steps I took | |
+| Outcome | |
+| Evidence | |
+| What I would do differently | |
