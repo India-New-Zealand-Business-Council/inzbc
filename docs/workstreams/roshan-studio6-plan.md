@@ -9,7 +9,7 @@ Key dates from the Studio 6 PDR brief:
 |---|---|
 | Practice PDR | Week 5, 2 to 6 Nov |
 | Evidence submission to Moodle | Fri 27 Nov 2026, 10:30 AM, no late submissions |
-| Final PDR meeting | Week 9, 30 Nov to 4 Dec (the brief also says Week 8, confirm with the facilitator) |
+| Final PDR meeting | Week 8, 23 to 27 Nov (confirmed with the facilitator). All evidence ready by Fri 20 Nov |
 
 ## Gantt
 
@@ -29,7 +29,7 @@ gantt
     section 3.2 Support the team
     Review rota for the PR backlog (#320)       :b1, 2026-10-12, 5d
     Mentoring log, pair sessions with Paras     :b2, 2026-10-19, 33d
-    Peer feedback forms                         :b3, 2026-11-23, 3d
+    Peer feedback forms                         :b3, 2026-11-16, 3d
 
     section 1.1 Choose a process
     Compare Kanban, Scrum, Waterfall            :c1, 2026-10-08, 8d
@@ -41,7 +41,7 @@ gantt
     Retro 1                                     :milestone, 2026-10-23, 0d
     Retro 2                                     :milestone, 2026-11-06, 0d
     Retro 3                                     :milestone, 2026-11-20, 0d
-    Weekly reflective journal                   :d2, 2026-10-09, 48d
+    Weekly reflective journal                   :d2, 2026-10-09, 43d
 
     section 2.1 Specialist research
     Literature review, retrieval and provenance :e1, 2026-10-12, 19d
@@ -50,17 +50,18 @@ gantt
     section 2.2 Integrate
     Land collector PRs #13 and #14 (#208)       :f1, 2026-10-12, 5d
     FTA retrieval eval set and baseline         :f2, 2026-10-27, 8d
-    Embeddings for retrieval and dedupe (#63)   :f3, 2026-11-04, 15d
-    Re-measure, before vs after                 :f4, 2026-11-18, 6d
+    Embeddings for retrieval and dedupe (#63)   :f3, 2026-11-04, 13d
+    Re-measure, before vs after                 :f4, 2026-11-16, 4d
     Production run, needs INZBC (#55)           :crit, f5, 2026-10-12, 40d
 
     section PDR
     Confirm PDR week, book slots                :g1, 2026-10-08, 2d
     Practice worksheet and evidence             :g2, 2026-10-27, 7d
     Practice PDR                                :g3, 2026-11-02, 5d
-    Evidence pack and reflective report         :g4, 2026-11-16, 11d
+    Evidence pack and reflective report         :g4, 2026-11-09, 12d
+    Evidence ready                              :milestone, 2026-11-20, 0d
+    Final PDR meeting (Week 8)                  :g5, 2026-11-23, 5d
     Submit to Moodle                            :milestone, 2026-11-27, 0d
-    Final PDR meeting                           :g5, 2026-11-30, 5d
 ```
 
 ## Done so far (Studio 5, 22 Jul to 10 Sep)
@@ -95,6 +96,7 @@ raises priority).
 | Date | Change | Why |
 |---|---|---|
 | 8 Oct | Plan created | Studio 6 Week 1 |
+| 9 Oct | Final PDR confirmed for Week 8. Evidence deadline moved to Fri 20 Nov, peer feedback to W7 | Facilitator confirmed the dates |
 | 9 Oct | Added feedback, mentoring and conflict logs, PDR worksheets | Criteria ask for stakeholder feedback integrated into planning, and peer-recognised mentoring |
 
 ## Stakeholder and mentor feedback log (1.2)
