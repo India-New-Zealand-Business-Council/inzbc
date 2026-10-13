@@ -4,6 +4,8 @@ Role: intelligence, sources, data, FTA. Writes data into the system through the 
 Ordered backlog; take the top **Next up** item unless client priorities say otherwise, and note
 why if you skip one. Move finished items to **Done**.
 
+Studio 6 plan, logs and evidence index: [roshan-studio6-plan.md](roshan-studio6-plan.md).
+
 ## Lanes (my paths)
 ```
 /apps/fta/**
