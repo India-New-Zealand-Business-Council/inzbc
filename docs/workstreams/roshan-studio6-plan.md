@@ -96,7 +96,7 @@ Every Friday: issues closed that week, days from in-progress to closed.
 | People involved | Bhanu, Paras, Roshan |
 | Date raised | 2026-10-13, rota proposed on #320 |
 | Steps I took | 13 Oct: proposed a 48 hour review rota on #320, rotating Bhanu, Paras, Roshan, reviewer named at Monday standup. Asked both to agree on the issue |
-| Outcome | PR time-to-first-review before and after the rota |
+| Outcome | PR time-to-first-review before and after the rota. Before: #381 (Paras) opened 9 Oct, first review 13 Oct, 4 days. #14 waited 22 days for its first review (14 Aug to 5 Sep) |
 | Evidence | Standup note, issue comment, review rota, merged PR dates |
 | What I would do differently | |
 
