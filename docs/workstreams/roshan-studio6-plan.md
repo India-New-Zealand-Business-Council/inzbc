@@ -35,13 +35,18 @@ copy of the personal plan and Gantt. Every log below is kept here so git dates e
 | #55 SIP-184 production run | Blocked on INZBC | Needs a fresh SIP-191 authority. Tracked as a dependency |
 | #193, #194 | Not planned | Only if the client raises priority |
 | #63 embeddings | Proposed | Held by Bhanu. Ask first. Fallback: hybrid retrieval inside apps/fta |
-| #344 Brief Builder source table | Proposed | Unassigned, in the sources lane |
-| #320 PR review backlog | Proposed | Becomes the conflict record below |
+| #344 Brief Builder source table | Assigned 13 Oct | #368 fixed the blank table. Remaining: what writes outcomes in a real run (tied to #55) |
+| #320 PR review backlog | Assigned 13 Oct | Rota proposed. Becomes the conflict record below |
 | #384 FTA eval set and baseline | In review | Closes with #382 |
 | #385 ADR-0008 delivery process | In review | Closes with #382, after the team scores it |
 | #386 FTA synonym gap | In review | Closes with #383 |
 | #387 Literature review | In progress | Draft in #382, final by 30 Oct |
 | #388 Cross-run source health store | Next up | Split from #208 so #208 can close with news-agent #14 |
+| #389 Product outranked by a cross-sector entry | Next up | Q19 and Q26 on the eval |
+| #390 Held-out eval questions | Next up | Needs 10 questions from Bhanu or Paras |
+| #391 Eval regression gate in CI | Next up | |
+| #392 Depth levels through /api/fta/query | Next up | services/api is Bhanu's lane, asked on the issue |
+| #393 Compare four retrieval variants | Next up | W7 before vs after. Refs #63 |
 
 ## FTA retrieval eval (2.2)
 
