@@ -24,21 +24,35 @@ The shared API + auth for anything that reads/writes data. Roshan's FTA service 
 ## Next up — 8-week plan, Studio 6 (from 10 Oct 2026)
 
 Rewritten from scratch against the real repo state, not the previous draft of this file: v1.0.0
-shipped 9 Sep 2026 with a real Postgres database, a real API, and the SIP UI reading real runs and
-candidates instead of fixtures. Several items below that used to be blocked are now unblocked, and
-one whole item (the Wix site build) is **obsolete** — the public site moved to a different stack
-entirely while this file was last updated. Read `## Stale items to retire` before trusting anything
-that still sounds like late July.
+shipped 10 Sep 2026 (`CHANGELOG.md` — v0.1.0 landed 9 Sep, v1.0.0 and the same-day v1.1.0 fixes on
+10 Sep) with a real Postgres database, a real API, and the SIP UI reading real runs and candidates
+instead of fixtures. Several items below that used to be blocked are now unblocked, and one whole
+item (the Wix site build) is **obsolete** — the public site moved to a different stack entirely
+while this file was last updated. Read `## Stale items to retire` before trusting anything that
+still sounds like late July.
 
 Ordered by what actually blocks the next thing, not by week number — but a rough shape for an
-8-week block, assuming this is close to full-time:
+8-week block. **Correction from the part-time reality, not full-time** — ADR-0008 (#382) is built
+on three part-time engineers sharing one client, and this list is bigger than that budget. A
+must-do line, so it's clear what drops first if the block runs short rather than discovering that
+in week 7:
+
+**Must-do:** the bookkeeping + verification on #292 below, #61's first real slice, the 320px
+reflow Playwright case (moved up, see Weeks 2–4), the `inzview` gap list itself.
+**If time allows, roughly in this order:** the rest of the Playwright suite, the WCAG audit sweep,
+#58's design system, #198/#199/#200.
+**Cut first if the block is short:** #69 (tooling/Storybook) — already flagged below as a
+nice-to-have, not a blocker for anything else on this list.
 
 **Weeks 1–2 — close the gap between what's built and what's tracked, then finish SIP's own UI**
-- [ ] **Bookkeeping first, costs an hour, not a sprint.** #292 (QA review interface, REQ-U-01) is
-      still open but `QaReviewScreen.tsx` already calls the real `POST /api/reports/{id}/qa`
-      endpoint (`reportsStore.submitQaResult`) — the same wiring pass that closed #293 and #336.
-      Confirm with Bhanu whether #292's acceptance criteria are actually met and close it, or find
-      the real remaining gap before planning more work against a stale issue.
+- [ ] **Bookkeeping first, costs an hour, not a sprint — but verify all of it, not just the one
+      piece already checked.** #292 (QA review interface, REQ-U-01) is still open.
+      `QaReviewScreen.tsx` does call the real `POST /api/reports/{id}/qa` endpoint
+      (`reportsStore.submitQaResult`) on both Pass and Fail — Roshan confirmed this against the
+      code during review of this plan. Two more acceptance criteria still need confirming before
+      closing it, with a test or a screenshot, not just asserted: **the reviewer is recorded and
+      cannot be the run's own analyst**, and **a Critical failure blocks progression to the CEO
+      decision**. Don't close #292 until all three are confirmed, not just the one already checked.
 - [ ] **#61 Executive dashboard UI, for real this time.** What exists today (`apps/dashboard/ui`)
       is `SipOverview.tsx` plus the branding pass — a first SIP-only slice, by the dashboard
       module's own description. `docs/modules/dashboards.md` lists executive view (control state,
@@ -66,6 +80,11 @@ Ordered by what actually blocks the next thing, not by week number — but a rou
       Both predate the Studio→Vibe move and describe rebuilding "on the Wix duplicate." Check with
       the team whether they should be closed as superseded or rewritten against the real stack
       before treating them as live backlog.
+- [ ] **Moved up from Weeks 4–6: the 320px reflow Playwright case (#100, WCAG 2.2 §1.4.10).**
+      The team's uv/pytest/Playwright pairing session is planned for week 3 (from 19 Oct) — landing
+      this specific test around the same time means it's in CI sooner and the rest of the
+      Playwright suite (below) goes faster once the pattern exists. The CSS fix landed in #91 and
+      was verified once by hand; until this test exists, that behaviour still isn't guarded by CI.
 
 **Weeks 4–6 — Comms Assistant and FTA, the two still genuinely unfinished AI-facing surfaces**
 - [ ] **Comms Assistant review UI.** #60 is closed in GitHub, but check what it actually shipped
@@ -77,11 +96,10 @@ Ordered by what actually blocks the next thing, not by week number — but a rou
       confidence, escalation) has been done since #85–#91. What's still open is the actual
       integration into the live public site — REQ-U-04's real ask — now that the site has a real
       home (`inzview`) to embed it into.
-- [ ] **#100/#129/#127/#128 — Playwright E2E,** including the 320px reflow case (WCAG 2.2 §1.4.10)
-      that's been flagged as a real gap since the FTA slice shipped: the CSS fix landed in #91,
-      verified once by hand, never guarded by CI since. Client-side state-survives-a-refresh and
-      illegal-action-rejected cases (#127/#129) matter more now there's a real backend to test
-      against, not fixtures.
+- [ ] **#129/#127/#128 — the rest of the Playwright E2E suite,** once #100's 320px case (above)
+      has landed and set the pattern. Client-side state-survives-a-refresh and
+      illegal-action-rejected cases matter more now there's a real backend to test against, not
+      fixtures.
 
 **Weeks 6–8 — design system, member portal depth, and whatever the gap list surfaced**
 - [ ] **#58 Design system from `docs/design-direction.md`.** Token-driven component library on the
