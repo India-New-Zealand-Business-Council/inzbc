@@ -31,12 +31,17 @@ copy of the personal plan and Gantt. Every log below is kept here so git dates e
 
 | Issue | Status | Note |
 |---|---|---|
-| #208 collection engine | Assigned | #13 merged 5 Sep. #14: Bhanu's three review points fixed and review re-requested 13 Oct |
+| #208 collection engine | In review | #13 merged 5 Sep. #14 fixed 13 Oct and set to close #208. Persistence decision moved to #388 |
 | #55 SIP-184 production run | Blocked on INZBC | Needs a fresh SIP-191 authority. Tracked as a dependency |
 | #193, #194 | Not planned | Only if the client raises priority |
 | #63 embeddings | Proposed | Held by Bhanu. Ask first. Fallback: hybrid retrieval inside apps/fta |
 | #344 Brief Builder source table | Proposed | Unassigned, in the sources lane |
 | #320 PR review backlog | Proposed | Becomes the conflict record below |
+| #384 FTA eval set and baseline | In review | Closes with #382 |
+| #385 ADR-0008 delivery process | In review | Closes with #382, after the team scores it |
+| #386 FTA synonym gap | In review | Closes with #383 |
+| #387 Literature review | In progress | Draft in #382, final by 30 Oct |
+| #388 Cross-run source health store | Next up | Split from #208 so #208 can close with news-agent #14 |
 
 ## FTA retrieval eval (2.2)
 
