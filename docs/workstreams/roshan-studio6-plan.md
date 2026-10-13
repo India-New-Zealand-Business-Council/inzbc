@@ -31,7 +31,7 @@ copy of the personal plan and Gantt. Every log below is kept here so git dates e
 
 | Issue | Status | Note |
 |---|---|---|
-| #208 collection engine | Assigned | Merge #13 and #14 in daily-india-nz-news-agent in W2 |
+| #208 collection engine | Assigned | #13 merged 5 Sep. #14: Bhanu's three review points fixed and review re-requested 13 Oct |
 | #55 SIP-184 production run | Blocked on INZBC | Needs a fresh SIP-191 authority. Tracked as a dependency |
 | #193, #194 | Not planned | Only if the client raises priority |
 | #63 embeddings | Proposed | Held by Bhanu. Ask first. Fallback: hybrid retrieval inside apps/fta |
