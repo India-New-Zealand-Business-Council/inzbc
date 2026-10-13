@@ -64,6 +64,7 @@ Every Friday: issues closed that week, days from in-progress to closed.
 
 | Week | Closed | Avg cycle time (days) | Blocked items | Note |
 |---|---|---|---|---|
+| W2 | 0 | n/a | 4 team-wide (#39, #55, #97, #291). Mine: #55 | No issue closed yet. 3 PRs opened (#382, #383, news-agent #14 fixes), all waiting on review. Board and WIP limit not live until ADR-0008 merges, so W2 is the starting point, not a measured week |
 | W3 | | | | |
 | W4 | | | | |
 | W5 | | | | |
@@ -104,6 +105,30 @@ Every Friday: issues closed that week, days from in-progress to closed.
 
 One entry every Friday: what I planned and what happened, what helped or got in the way, feedback
 received and what I will change.
+
+### Week 2, 12 to 16 Oct (draft 13 Oct, finish Fri 16 Oct)
+
+**Planned vs what happened.** Planned: decision matrix and ADR-0008 draft, review rota for #320,
+get #13 and #14 merged, start the literature search. Done so far: ADR-0008 drafted and my column
+scored (Kanban 86, Scrum 48, Waterfall 48), rota proposed on #320, literature review drafted with
+11 sources. #13 was already merged. #14 had been waiting on three review points since 5 Sep, now
+fixed and back with Bhanu. Not planned for this week but done: the FTA eval baseline (moved from
+W4) and the synonym map (#383), which lifted synonym hit@1 from 0.200 to 1.000.
+
+**What helped.** Measuring before changing anything. The baseline showed exactly where the
+Explainer fails (synonyms), so the literature review had a real problem to answer and the
+synonym map had a number to beat.
+
+**What got in the way.** Review, again. #14 waited 22 days for its first review and #381 waited
+4. Everything I opened this week is also waiting. The rota on #320 is the fix I am testing.
+
+**Feedback received.** [Fill in Friday: anything from Bhanu, Paras, INZBC or the facilitator this
+week, then copy it into the feedback log with what you changed.]
+
+**How I felt about it.** [Your own words.]
+
+**What I will change next week.** [Your own words. For example: commit standup notes the same
+day instead of at the end of the week, or ask for reviewers by name when opening a PR.]
 
 ## Evidence index
 
