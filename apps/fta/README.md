@@ -36,3 +36,11 @@ scheduled fetch-and-diff job (an infrastructure decision, not made yet) or a per
 the source. It also takes `review_after_days` with no default — the review cadence is a business
 decision `docs/modules/fta-centre.md` still lists as an open dependency (the legal/technical
 review process), not something to assume here.
+
+## Retrieval eval
+`eval/questions.csv` holds 42 questions with the entries a correct answer should lead with, in
+four types: exact wording, multi-term, synonyms the corpus does not use, and questions that must
+return no match. `uv run python -m apps.fta.eval.run_eval` scores `answer_query()` on hit@1,
+hit@3, MRR and no-match accuracy, overall and by type. `--write NAME` saves the report to
+`eval/results/`. The committed `baseline.json` is the keyword ranker before any embedding or
+synonym change, so a later change can be compared against it.
