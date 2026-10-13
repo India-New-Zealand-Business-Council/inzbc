@@ -38,13 +38,18 @@ decision `docs/modules/fta-centre.md` still lists as an open dependency (the leg
 review process), not something to assume here.
 
 ## Retrieval eval
-`eval/questions.csv` holds 46 questions with the entries a correct answer should lead with, in
-four types: exact wording, multi-term, synonyms the corpus does not use, and questions that must
-return no match. `uv run python -m apps.fta.eval.run_eval` scores `answer_query()` on hit@1,
+`eval/questions.csv` holds 52 questions with the entries a correct answer should lead with, in
+five types: exact wording, multi-term, synonyms the corpus does not use, a product named with a
+framing word ("salmon exports"), and questions that must return no match. `uv run python -m apps.fta.eval.run_eval` scores `answer_query()` on hit@1,
 hit@3, MRR and no-match accuracy, overall and by type. `--write NAME` saves the report to
 `eval/results/`. The committed `baseline.json` is the keyword ranker before any embedding or
-synonym change, so a later change can be compared against it. `synonyms.json` is the same set
+synonym change, scored on the first 46 questions. `synonyms.json` is that set
 scored after the synonym map in `explainer.py`. `current.json` is the score of the ranker as committed:
 `test_eval.py` fails if any per-type metric drops below it, and also if one rises without it being
 regenerated, so every ranking change shows its score change in the diff.
 It also checks the full report for drift, including each question's returned entries and rank.
+
+`uv run python -m apps.fta.eval.variants` scores candidate rankers on the same questions, side by
+side: the live keyword ranker, BM25, and BM25 with the synonym map. None of them is wired into
+`answer_query()`. `--write` saves `eval/results/variants.json`. This is the comparison #393 and #63
+build on.

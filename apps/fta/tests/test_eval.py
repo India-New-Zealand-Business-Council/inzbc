@@ -29,7 +29,13 @@ def test_question_set_only_names_confirmed_corpus_entries() -> None:
 
 def test_question_set_covers_every_query_type_and_has_unique_ids() -> None:
     questions = load_questions()
-    assert {q.type for q in questions} == {"exact", "multi_term", "synonym", "no_match"}
+    assert {q.type for q in questions} == {
+        "exact",
+        "multi_term",
+        "synonym",
+        "no_match",
+        "product_framing",
+    }
     assert len({q.qid for q in questions}) == len(questions)
     assert all(not q.answerable for q in questions if q.type == "no_match")
 

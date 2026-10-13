@@ -67,6 +67,21 @@ Eval set: `apps/fta/eval/questions.csv`, 46 questions in four types (four no-mat
 Every metric is now at 1.000 on this set, so it can no longer tell a better ranker from a worse
 one. The held-out questions (#390) are what #63 has to be measured on.
 
+**Ranker comparison, 14 Oct (#393 groundwork).** BM25 scored the same as the live ranker on the
+46 questions, but failed obvious cases like "dairy exports" and "salmon exports". The set had no
+question pairing a product with a framing word, so six were added (now 52). On those:
+
+| Variant | Product + framing hit@1 | Overall hit@1 | No-match |
+|---|---|---|---|
+| Keyword (live) | 1.000 | 1.000 | 1.000 |
+| BM25 | 0.333 | 0.714 | 1.000 |
+| BM25 + synonyms | 0.333 | 0.905 | 1.000 |
+
+What it shows: plain BM25 lets a framing word that appears in only one topic ("exports") outweigh
+the product, because rare terms get high IDF. The live ranker handles it only because of the
+framing-term rule from #389 and Bhanu's fix in #394. Any embedding or hybrid change under #63 has
+to beat that row, not the original baseline.
+
 The synonym score is optimistic. The map was written with the ten synonym questions in view, so
 it is partly fitted to them. A fair number needs ten new synonym questions written by someone who
 has not seen the map. Asked Bhanu and Paras for these.
@@ -157,6 +172,7 @@ Friday journal, so the week never has to be rebuilt from memory.
 | Date | Done today (PRs, issues, reviews) | Blocked or waiting on | Tomorrow |
 |---|---|---|---|
 | Tue 13 Oct | Opened #382, #383, #394. Fixed news-agent #14 review. Rota on #320. Reviewed and approved #381. Created #384 to #393. Created the Studio 6 milestone (17 items). Added #382 to #394 to the INZBC SIP Platform board and set Status, so board write access now works | Reviews from Bhanu and Paras. Bhanu's OK on #63, #64, #38, #392 | Client meeting. Chase reviews and ADR-0008 scores |
+| Wed 14 Oct | Added BM25 and BM25 plus synonyms to the FTA eval (#393 groundwork). Found and closed an eval gap: six product plus framing word questions, where BM25 drops to 0.333 | Bhanu: ADR-0008 scores, news-agent #14 re-review, answers on #392 and #63, #64, #38. Paras: merge #381 | Review #397. Annotated bibliography |
 
 ## Weekly journal (1.2)
 
