@@ -81,10 +81,10 @@ Individual scores, filled in before the comparison:
 
 | Criterion | Roshan S / K / W | Bhanu S / K / W | Paras S / K / W |
 |---|---|---|---|
-| Risk | 2 / 5 / 1 | | |
-| Feasibility | 2 / 4 / 3 | | |
-| Scalability | 4 / 4 / 2 | | |
-| Fit with client gating | 2 / 4 / 4 | | |
+| Risk | 2 / 5 / 1 | | 2 / 5 / 1 |
+| Feasibility | 2 / 4 / 3 | | 2 / 5 / 2 |
+| Scalability | 4 / 4 / 2 | | 4 / 4 / 2 |
+| Fit with client gating | 2 / 4 / 4 | | 2 / 5 / 3 |
 
 Roshan's reasoning, scored 13 Oct before seeing anyone else's:
 - **Risk.** Kanban 5: a blocked item is relabelled and the next one pulled, which is exactly what
@@ -101,10 +101,43 @@ Roshan's reasoning, scored 13 Oct before seeing anyone else's:
 
 Roshan's weighted totals (score x weight / 5): Scrum 48, Kanban 86, Waterfall 48.
 
+Paras's reasoning, scored 14 Oct against the matrix and context above, before reading Roshan's
+reasoning text (the totals were visible from the merged plan's own review thread, the prose was
+not):
+- **Risk.** Agrees with Roshan's placement, independently — the two issues this directly bites on
+  are mine: #198 and #199 share the one client blocker (Member Jungle, #192), confirmed while
+  rewriting my own worklog for this block. Kanban relabels one and moves to the next without
+  either stalling the other. Scrum 2, Waterfall 1.
+- **Feasibility — scored one point higher on Kanban than Roshan's.** My own work this block is a
+  lot of small, independently-mergeable UI PRs across several apps, not one big sequential build —
+  that is close to the Kanban shape already, not just a label change. Scrum 2: same ceremony-cost
+  objection as Roshan. Waterfall 2, not 3: a UI backlog this size (15 open issues) doesn't have the
+  clean upfront sequencing Waterfall rewards, so I score it lower than Roshan did.
+- **Scalability.** Same as Roshan — Scrum and Kanban both hold if the team or load changes,
+  Waterfall doesn't.
+- **Fit with client gating — scored differently from Roshan, and the gap is worth recording.**
+  From the UI side, client gating reads as "wait on a business decision" (#192's cost question),
+  not "wait on a SOP phase gate" the way SIP-184/SIP-191 reads from Roshan's side. Kanban 5: a
+  blocked UI issue can sit labelled while everything else on my list keeps moving. Waterfall 3, not
+  4: its phase-gate framing fits the SIP side's SOP sign-off better than it fits a client cost
+  decision blocking two unrelated-looking issues at once. Scrum 2: unchanged reasoning.
+
+Paras's weighted totals (score x weight / 5): Scrum 48, Kanban 96, Waterfall 38.
+
 Sensitivity check on Roshan's scores: move 10 points from risk to scalability, and 10 from
 feasibility to fit with client gating (weights 20 / 20 / 30 / 30). Totals become Scrum 52,
 Kanban 84, Waterfall 52. Kanban still wins, by 32 points instead of 38, so the decision does not
-hang on how heavily risk is weighted. Repeat this on the averaged scores once all three are in.
+hang on how heavily risk is weighted.
+
+Same reweighting applied to Paras's scores: Scrum 52, Kanban 94, Waterfall 42. Kanban's margin
+over the next closest (Scrum) narrows from 48 to 42 — the same direction Roshan's check found
+(38 to 32) — so in both independent scorings the decision does not hang on how heavily risk is
+weighted, even though the exact numbers differ scorer to scorer.
+
+Two independent scorers in and Kanban leads by a wide, stable margin in both (86 and 96, next
+closest 48 in both) — Bhanu's column is still open. Repeat the full averaged-scores comparison
+once all three are in, per the process above; this is not yet the final number, only two of
+three.
 
 ## Decision
 
