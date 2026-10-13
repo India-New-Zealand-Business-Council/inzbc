@@ -15,6 +15,12 @@ current blockers, and a definition of done.
 4. Build it to the quality standard below.
 5. Open a PR with the evidence block, and move the item to **Done**.
 
+## Studio 6 (5 Oct to 4 Dec 2026)
+How the team works this block is set by
+[ADR-0008](../decisions/ADR-0008-delivery-process.md) (proposed until the team has scored it).
+Personal Studio 6 plans sit next to the worklogs, for example
+[roshan-studio6-plan.md](roshan-studio6-plan.md).
+
 ## Quality standard (every change)
 1. **Understand** — read the task and the code it touches; trace the real flow.
 2. **Research** — confirm library/API specifics from docs; do not guess versions or props.
@@ -49,7 +55,7 @@ current blockers, and a definition of done.
 ```
 /apps/site        site (Velo) + content specs     (Paras)
 /apps/sip         SIP control app                 (Bhanu core, Paras UI)
-/apps/fta         FTA Explainer service + corpus  (Roshan)
+/apps/fta         FTA Explainer service, corpus + retrieval eval  (Roshan)
 /apps/comms       Communications Assistant        (Roshan/Paras)
 /services/api     shared API, auth, audit         (Bhanu)
 /database         schema + migrations             (Bhanu)

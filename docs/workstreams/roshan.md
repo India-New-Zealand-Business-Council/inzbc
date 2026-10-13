@@ -4,8 +4,6 @@ Role: intelligence, sources, data, FTA. Writes data into the system through the 
 Ordered backlog; take the top **Next up** item unless client priorities say otherwise, and note
 why if you skip one. Move finished items to **Done**.
 
-Studio 6 plan, logs and evidence index: [roshan-studio6-plan.md](roshan-studio6-plan.md).
-
 ## Lanes (my paths)
 ```
 /apps/fta/**
@@ -33,111 +31,60 @@ those paths gets picked up without asking him first.
 
 - #117, #118, #122: closed (PRs #163, #154, and #118's own PR).
 - #120 (PR #237) and #121 (PR #242): **merged 5 Aug.**
-- #130: **PR #248 auto-closed** when `feat/roshan/run-endpoints` was deleted on #237's merge — its
-  base branch vanished, not a rejection. Rebuilt clean against current `main` (same commit,
-  cherry-picked, re-verified) as **PR #255, CI green, awaiting review.**
+- #130: PR #248 auto-closed when `feat/roshan/run-endpoints` was deleted on #237's merge (its
+  base branch vanished, not a rejection). Rebuilt against `main` as PR #255, **merged.**
 
 **#237's CI anomaly (4+ pushes, zero workflow runs, confirmed via the Actions API not just a stale
 `gh pr checks`) never got a root cause** — Bhanu approved and merged it anyway, on the strength of
 the local Postgres verification (114 passed) in the PR body. Worth a standup mention in case the
 same branch-level fault hits someone else's PR later; not otherwise unresolved.
 
-## In review (opened, awaiting merge)
-- [ ] Explainer public/member/internal depth levels (#187, PR #327, **refs #187, not closes** —
-  `answer_query_at_depth()` has no runtime caller yet, wiring it into `/api/fta/query` is
-  `services/api`, tracked as a follow-up): `PublicAnswer`/`MemberAnswer`/`InternalAnswer`
-  alongside the existing `answer_query()`/`ExplainerAnswer` (untouched, for
-  `services/api/main.py` backward compat). **23 Aug, Bhanu's review round — two real audience
-  boundary bugs, both fixed:** `PublicAnswer` had wrongly dropped `citation`/`verified_at`,
-  treating them as evidence to hold back; `docs/modules/fta-centre.md` requires every material
-  answer, public or not, to carry both, so they're restored — the actual public-tier exclusion
-  is `id`/`source_tier`/`notes` only. The member tier reused `ExplainerAnswer` unchanged, which
-  carries reviewer/drafting `notes` some corpus entries have; added `MemberAnswer`, a distinct
-  type (not a re-export) so `notes` is structurally absent there too. Evidence count corrected:
-  **14 new tests** (21→35 in `test_explainer.py`, 37→51 total `apps/fta`), not the 18 first
-  reported. Mutation-tested both fixes: re-added `notes` to `MemberAnswer` and the
-  citation/verified_at strip to `PublicAnswer` in turn, confirmed each exclusion test caught it,
-  reverted. Replied inline to both of Bhanu's findings, re-requested review. **CI blocked as of
-  24 Aug** — every job failing in 2-4s on "recent account payments have failed or your spending
-  limit needs to be increased" (org GitHub Actions billing, not a code issue) — flagged, not
-  something I can fix; will re-verify CI once billing is resolved.
+## Studio 6 (5 Oct to 4 Dec 2026)
+Plan, timeline, logs and evidence index: [roshan-studio6-plan.md](roshan-studio6-plan.md).
+Delivery process: [ADR-0008](../decisions/ADR-0008-delivery-process.md) (proposed, decision due
+19 Oct). Under it: one `stage:in-progress` item at a time, a named reviewer within 48 hours (#320).
 
-- [ ] Run authorisation write path + full SIP-184 walk (#55, PRs #359 + the walk branch).
-  **#359:** `#227` built `run_authorisations`, `#120` built the transition endpoints that *read*
-  it, and neither built the endpoint that *writes* a row — so a real client holding every role
-  still had no way to get a run past `Draft`, because `apply_transition` had no `approval_ref` it
-  would accept. Added `POST`/`GET /api/runs/{run_id}/authorisations` (SIP Owner only). CI green,
-  1159 tests. **The walk:** `apps/sip/collector/walk_full_run.py` takes one run the whole length
-  of the state machine — `Draft → Run Authorised → … → Distributed → Closed` — with every human
-  gate crossed over HTTP by a distinct role account (Analyst creates and drafts; SIP Owner
-  authorises and rules; Reviewer QA-passes and approves; Secretariat authorises distribution),
-  then reads `decision_records` and `audit_log` back as evidence. Hybrid by necessity: no HTTP
-  endpoint exists for the *mechanical* advances (`Run Authorised → … → QA In Progress`,
-  `Awaiting CEO Decision → Approved → Distributed`), which are not human gates, so those go
-  straight through `RunRepository.apply_transition` — the same call the unbuilt endpoints would
-  make. `sip-full-walk.yml` runs it end to end against a real Postgres + `services/api` and
-  uploads the evidence JSON; a DATABASE_URL-gated test drives the same path through a `TestClient`
-  with no server. Not a SIP-184 production run — SIP-191's window is still expired,
-  `production_enabled` stays false.
+## In review (opened, awaiting merge)
+Merge order matters: #383 is stacked on #382, and #394 on #383.
+- [ ] **#382** FTA retrieval eval set and baseline, ADR-0008, Studio 6 plan, literature review
+  draft, Week 2 standup note. Closes #384 and #385. Baseline: hit@1 0.722, synonym hit@1 0.200,
+  no-match accuracy 1.000.
+- [ ] **#383** FTA synonym map. Closes #386. Synonym hit@1 0.200 to 1.000, no exact or no-match
+  result lost, four trap questions added ("log in", "baby clothing", "travel insurance", "beef").
+- [ ] **#394** Eval gate in CI plus named products ranked above cross-sector entries. Closes #389
+  and #391. Every metric 1.000 on the current set, so #390's held-out questions are the next
+  measure.
+- [ ] **daily-india-nz-news-agent#14** Source freshness, recovery, fail-closed gate (#208 days
+  2 to 4). Bhanu's three review points from 5 Sep fixed 13 Oct (partial query-set coverage,
+  per-run scope, historical entries), 125 tests, review re-requested. Closes #208. The cross-run
+  store decision is split out as #388.
 
 ## Next up
-- SHARED-OK: SIP-050 relevance/signal/confidence scoring moved to Bhanu's worklog — it runs
-  through the model gateway he owns. `assessment.py` stays the validation/carry layer here.
-- Comms Assistant service side and #55's dry-run unblock are both **done** — see Done below
-  (PR #317, PR #264). The #31 CI ruff pin is also closed: Bhanu's PR #325 brought
-  `apps/sip/core`, `scripts/board.py` and `services/api` clean under 0.16.0 and bumped the pin,
-  the one thing outside my lane that #31 was waiting on.
-- [ ] End-to-end pipeline run against the SIP-184 SOP (#55, issue stays open). The code path is
-  now walked the whole way — see PR #359 + the full-walk branch under *In review*: a run goes
-  `Draft → Distributed → Closed` locally with every gate crossed by its own role account and the
-  `decision_records`/`audit_log` read back. What still cannot happen is a *production* run:
-  SIP-191's authority window (27–31 Jul) has expired, so no real run without a fresh controlled
-  decision, and a live `agent.py` fetch in CI needs a new PAT secret (an infra/admin decision).
-  Both are INZBC's call, not code.
-- [ ] Collection-engine reliability (#208, via `daily-india-nz-news-agent`'s own PR flow). All
-  four days built: Day 1 — test harness (`daily-india-nz-news-agent#13`, 49 characterization
-  tests; a real `ModuleNotFoundError` under plain `pytest` found and fixed via
-  `tests/conftest.py`). Days 2-4 (`#14`, stacked on `#13`'s branch) — source freshness
-  classification (`ok`/`no_recent`/`empty`/`error`, RSS vs. GDELT need opposite empty-result
-  rules since GDELT applies its time window server-side); timeout+retry+entry-shape recovery on
-  `fetch_rss_news` (had **no timeout at all** before this); a regression test locking
-  `SIP_AUTOMATED_DISTRIBUTION_ENABLED`'s default-off. 12 commits, 121 tests, every real defect
-  mutation-tested. Both PRs `MERGEABLE`, CI green, **awaiting review** — nothing left to build
-  until they land. Left open by design: cross-run freshness-counter persistence, written up with
-  real tradeoffs in `docs/source-freshness.md` for the team to decide.
-- [ ] FTA content depth and coverage (#186, #187). #187 (public/member/internal depth split) —
-  see In review above, PR #327, addressing Bhanu's 23 Aug findings. #186 (cover the ten
-  client-named sectors — wool, wine, seafood, primary industries, tourism, education, defence
-  and security, investment, immigration, sports) is content-sourcing work, not a code change:
-  the corpus today only has verified facts for four goods categories (Agriculture, Cross-sector,
-  Dairy, Infrastructure — the "goods first" scope #219 settled). Adding a sector means sourcing
-  and verifying real MFAT/treaty facts for it first, per BR2 — nothing gets written about a
-  sector until it has a source. Not started; next once a sector's facts are actually sourced.
-- Not committed scope (#193 Comms newsletter/magazine workflow, #194 sector opportunity briefs):
-  both issues explicitly say "add only if the client raises its priority" — not picked up
-  unless that happens.
-- [ ] Architecture diagrams, **highest priority** (#331, #332, assigned 20 Aug). #331: two
-  sequence diagrams (FTA query flow — the `confirmed` filter and no-match escalation branch,
-  making the "no model call" property explicit; Comms draft-to-approve — the self-approval
-  refusal as a normal outcome, not an error case). #332: a defence-in-depth diagram of the model
-  data boundary — source refusal at the gateway, `minimise()` field allowlisting, policy-driven
-  redaction, the gateway's own fail-closed behaviour, operator procedure as the outermost layer.
-  Both fully scoped with acceptance criteria in their issues; pure documentation, no code risk.
-  Not started.
-- [ ] FTA corpus/collector provenance and measured evidence (#337, assigned 21 Aug). Client
-  feedback was the work "looks like an AI API wrapper with no real backend" — this is proving
-  otherwise: a committed corpus-coverage report (facts per sector, Tier 1 confirmed vs. stale)
-  and a reproducible, measured collector run showing dedupe/malformed-item isolation/mandatory-
-  source gate actually working, with real counts, not descriptions. Not started.
-- [ ] Realistic seed dataset (#338, assigned 22 Aug). Replace the 4-candidate demo seed with a
-  realistic one sourced from the real SIP-185 register, spanning multiple lifecycle states and
-  verification outcomes (including Unverified/Rejected), with duplicates dedupe actually
-  catches — idempotent, replacing the demo seed rather than sitting beside it. Not started.
-
-See Blocked / decisions needed for what's still open before any of this runs live (secrets,
-INZBC sector/disclaimer sign-off).
+- [ ] **#390** Held-out FTA eval questions. Needs 10 questions from Bhanu or Paras written without
+  seeing the synonym map.
+- [ ] **#387** Literature review, final by 30 Oct: 12 or more sources checked against originals,
+  annotated in APA 7.
+- [ ] **#392** Serve the FTA depth levels through `/api/fta/query`. `answer_query_at_depth()`
+  (#187, PR #327) still has no runtime caller. `services/api` is Bhanu's lane, so asked first.
+- [ ] **#393** Compare keyword, synonym, BM25 and hybrid retrieval on the eval, Week 7. Refs #63.
+- [ ] **#388** Decide where the collector's cross-run source health state lives. A team call:
+  commit back to `main`, `actions/cache`, or Postgres through the SIP API.
+- [ ] **#344** Brief Builder source table. #368 fixed the blank table by reading recorded
+  outcomes. What remains is what writes those outcomes during a real run, which ties to #55.
+- [ ] **#55** End-to-end SIP-184 production run. Code path walked end to end (PR #359). Blocked on
+  INZBC: SIP-191's authority window has expired, and a live fetch in CI needs a new PAT secret.
+- Asked Bhanu on 13 Oct (#320) whether I can take #63, #64 and #38, all retrieval or eval work.
+  Not picked up until he agrees.
+- Not committed scope: #193 and #194, only if the client raises their priority.
 
 ## Done
+- [x] Explainer public/member/internal depth levels (#187, PR #327, merged). Runtime wiring is
+  #392.
+- [x] Run authorisation endpoint and a full Draft to Distributed walk (PR #359, merged, refs #55).
+- [x] FTA/Comms service flow and model data boundary diagrams (#331, #332, PR #346).
+- [x] FTA corpus provenance and collector pipeline evidence (#337, PR #347).
+- [x] Realistic seed dataset (#338, PR #350).
+- [x] Investment, Education and Tourism sourced into the FTA corpus (#186, PR #354).
 **Merged since (19 Aug 2026) — kept below for the narrative history, checked off as verified
 against `main` rather than deleted; #55 the issue stays open (blocked on INZBC's run-authority
 decision, not on this code) even though PR #264 that unblocked it is merged.**
@@ -467,12 +414,16 @@ come back.
   all of that. Today a tariff-figure fix or new entry means a code PR, not something INZBC staff
   can update themselves. Not touching this lane's code — raising for a standup decision on whether
   it moves to DB-backed storage and when.
-- FTA sectors in scope + disclaimer wording (INZBC to confirm).
+- ~~FTA sectors in scope + disclaimer wording~~ Settled: disclaimer approved 24 Jul 2026
+  (`apps/fta/README.md`), sectors in scope settled 9 Aug (#219).
 - Collection-engine secrets in the org repo (needs the values) — blocks running the collector
   end-to-end even though the mapping is written. (Bhanu owns org-repo secrets setup + rotation —
   on his worklog.)
 
-## Studio 5 PDR — what I need for a pass (competency-based, all 6 objectives required)
+## Studio 5 PDR tracker (archived)
+
+Kept as the Studio 5 record. Studio 6 objectives and evidence are tracked in
+[roshan-studio6-plan.md](roshan-studio6-plan.md).
 
 Per `IA728001 Studio 5 Performance and Development Review` (final PDR meeting, Week 9). Not
 project scope — my own pass-tracking. Update as evidence accumulates; bring this + screenshots to
@@ -499,4 +450,4 @@ day (blocked review, a meeting running long) without dropping under the pass thr
 A run opens, sources are recorded with outcomes, candidates captured and verified, and written to
 the DB through the API. FTA answers cite Tier-1 sources with effective dates. No control-plane writes.
 
-Base: main @ <short-sha> — record when you start a task; rebase if behind.
+Base: main @ 3c8899a (10 Sep 2026), recorded 13 Oct — rebase if behind.
