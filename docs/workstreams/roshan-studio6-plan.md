@@ -91,7 +91,7 @@ Every Friday: issues closed that week, days from in-progress to closed.
 
 | Date | From | Feedback received | What I changed because of it | Evidence link | Obj |
 |---|---|---|---|---|---|
-| | | | | | |
+| 2026-10-13 | Bhanu | Pushed a fix to #394: a product reached through a synonym ("salmon exports") could still rank below the overall exports entry, because synonyms score at half weight. Also made the eval gate compare every question's results, not only the totals | Kept the fix. Any future ranking change gets tested with framing words ("exports", "tariffs") plus a synonym product, not only a directly named one | #394, commit ab762da | 2.2 3.2 |
 
 ## Mentoring log (3.2)
 
