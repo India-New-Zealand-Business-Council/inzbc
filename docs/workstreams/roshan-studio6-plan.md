@@ -111,6 +111,33 @@ Every Friday: issues closed that week, days from in-progress to closed.
 | Evidence | Standup note, issue comment, review rota, merged PR dates |
 | What I would do differently | |
 
+## PDR evidence checklist
+
+| Done | Week | Evidence | Obj |
+|---|---|---|---|
+| [ ] | W1 | Final PDR week confirmed, practice slot booked | PDR |
+| [ ] | W1 | Kickoff notes with owners agreed | 3.1 |
+| [ ] | W1 | Facilitator feedback on this plan logged | 1.2 |
+| [x] | W1 | Board Status write access fixed (13 Oct, Status set on 13 items) | 3.1 |
+| [x] | W1 | Studio 6 GitHub milestone created (13 Oct, 17 items) | 3.1 |
+| [x] | W2 | Decision matrix and ADR-0008 draft (#382) | 1.1 |
+| [ ] | W2 | #320 conflict record: issue, action, outcome | 3.2 |
+| [ ] | W3 | ADR-0008 merged, WIP limits live on the board | 1.2 |
+| [ ] | W3 | Retro 1 notes | 1.2 |
+| [ ] | W4 | Annotated bibliography, 8 or more APA 7 sources | 2.1 |
+| [x] | W4 | Baseline eval score committed (moved to W2, #382) | 2.2 |
+| [ ] | W4 | Practice PDR worksheet | PDR |
+| [ ] | W5 | Practice PDR feedback written down | PDR |
+| [ ] | W6 | Feedback log: What I changed column filled | 1.2 |
+| [ ] | W6 | Plan change log entry after practice PDR | 3.1 |
+| [ ] | W7 | Before vs after table for #63 | 2.2 |
+| [ ] | W7 | Retro 3 and process effectiveness review | 1.2 |
+| [ ] | W7 | Peer feedback from Bhanu and Paras | 3.2 |
+| [ ] | W7 | Reflective report, evidence index and final worksheet ready by Fri 20 Nov | PDR |
+| [ ] | W8 | Final PDR attended, Moodle upload done, feedback logged | PDR |
+| [ ] | Every week | Standup note, journal entry, mentoring log line | 3.1 3.2 1.2 |
+| [ ] | Every fortnight | INZBC check-in feedback logged | 1.2 |
+
 ## Daily log
 
 One line per working day, written before the 17:00 standup. It feeds the standup note and the
@@ -118,7 +145,7 @@ Friday journal, so the week never has to be rebuilt from memory.
 
 | Date | Done today (PRs, issues, reviews) | Blocked or waiting on | Tomorrow |
 |---|---|---|---|
-| Tue 13 Oct | Opened #382, #383, #394. Fixed news-agent #14 review. Rota on #320. Reviewed #381. Created #384 to #393 | Reviews from Bhanu and Paras. Bhanu's OK on #63, #64, #38, #392 | Client meeting. Chase reviews and ADR-0008 scores |
+| Tue 13 Oct | Opened #382, #383, #394. Fixed news-agent #14 review. Rota on #320. Reviewed and approved #381. Created #384 to #393. Created the Studio 6 milestone (17 items). Added #382 to #394 to the INZBC SIP Platform board and set Status, so board write access now works | Reviews from Bhanu and Paras. Bhanu's OK on #63, #64, #38, #392 | Client meeting. Chase reviews and ADR-0008 scores |
 
 ## Weekly journal (1.2)
 
