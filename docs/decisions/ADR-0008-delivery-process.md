@@ -81,13 +81,30 @@ Individual scores, filled in before the comparison:
 
 | Criterion | Roshan S / K / W | Bhanu S / K / W | Paras S / K / W |
 |---|---|---|---|
-| Risk | | | |
-| Feasibility | | | |
-| Scalability | | | |
-| Fit with client gating | | | |
+| Risk | 2 / 5 / 1 | | |
+| Feasibility | 2 / 4 / 3 | | |
+| Scalability | 4 / 4 / 2 | | |
+| Fit with client gating | 2 / 4 / 4 | | |
 
-Sensitivity check: move 10 points from risk to scalability, and 10 from feasibility to fit with
-client gating, then re-total. Record here whether the winner changes.
+Roshan's reasoning, scored 13 Oct before seeing anyone else's:
+- **Risk.** Kanban 5: a blocked item is relabelled and the next one pulled, which is exactly what
+  #55 and #97 need. Scrum 2: a blocked client decision breaks the sprint commitment. Waterfall 1:
+  one blocked phase stops everything behind it.
+- **Feasibility.** Kanban 4: the stage labels already exist, so it is a rule change. Scrum 2:
+  planning, review and retro take hours a part-time week cannot spare. Waterfall 3: little
+  ceremony, but the plan would need rewriting every time INZBC answers a question.
+- **Scalability.** Scrum and Kanban 4: both work for a bigger team or a new member. Waterfall 2:
+  scope changes mean replanning the whole block.
+- **Fit with client gating.** Waterfall wins a point back here. Its phase gates match INZBC's
+  SOP-driven sign-off (SIP-184, SIP-191), so it scores 4 alongside Kanban. Scrum 2: client gates
+  do not line up with sprint boundaries.
+
+Roshan's weighted totals (score x weight / 5): Scrum 48, Kanban 86, Waterfall 48.
+
+Sensitivity check on Roshan's scores: move 10 points from risk to scalability, and 10 from
+feasibility to fit with client gating (weights 20 / 20 / 30 / 30). Totals become Scrum 52,
+Kanban 84, Waterfall 52. Kanban still wins, by 32 points instead of 38, so the decision does not
+hang on how heavily risk is weighted. Repeat this on the averaged scores once all three are in.
 
 ## Decision
 
