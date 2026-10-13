@@ -5,6 +5,15 @@
 - Branch names: `feat/…`, `fix/…`, `chore/…` in short kebab-case.
 - PRs are reviewed and merged by the tech lead (Bhanu). Everyone else opens PRs.
 - Keep PRs small and focused: one concern each.
+- **Rebase, never merge `main` into a branch.** To catch up, run `git fetch origin main` and then
+  `git rebase origin/main`, then `git push --force-with-lease`. A "Merge main into …" commit is not
+  allowed, and neither is GitHub's "Update branch" button in its merge mode. Force-push only a
+  branch you own.
+- **Stacked PRs:** once the lower PR lands, rebase the upper branch onto `main` with
+  `git rebase --onto origin/main <lower-branch>` and retarget the PR to `main`. Do not merge
+  `main` or the lower branch into it.
+- **`main` stays linear.** Land PRs with "Rebase and merge", never "Create a merge commit". Use
+  "Squash and merge" only when a branch's own commits are not worth keeping.
 
 ## The project board
 - **Never call `updateProjectV2Field` directly.** It replaces a single-select field's whole option
