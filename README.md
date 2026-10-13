@@ -16,7 +16,7 @@ and delegations, executive/board dashboards, and the security/audit/backup/hando
 political systems. No data is shared between organisations without a documented lawful purpose.
 
 ## Status
-**Current release: [v1.0.0](../../releases/tag/v1.0.0)** — one application, four modules, on one
+**Current release: [v1.1.0](../../releases/tag/v1.1.0)** — one application, four modules, on one
 governed backend. See [CHANGELOG.md](./CHANGELOG.md).
 
 - **Phase 0 — SIP controlled launch, 27–31 July 2026:** ran manually on the Intelligence Database
@@ -110,6 +110,6 @@ Full index, organised by what you're trying to do: [`docs/README.md`](./docs/REA
 - Architecture decisions (ADRs): `docs/decisions/`
 - Discovery, IA, risks: `docs/discovery.md`
 - Site page specs: `docs/page-specs.md`
-- FTA source corpus: `docs/fta-source-corpus.md`
+- FTA source corpus: `docs/fta-source-corpus.md` · FTA retrieval eval: `apps/fta/eval/`
 - SIP spec + config: `docs/sip/` · SIP build plan: `docs/sip/build-plan.md`
-- Team workflow + worklogs: `docs/workstreams/`
+- Team workflow + worklogs: `docs/workstreams/` · Delivery process: `docs/decisions/ADR-0008-delivery-process.md`

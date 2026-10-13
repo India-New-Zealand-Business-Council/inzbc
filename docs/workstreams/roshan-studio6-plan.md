@@ -31,12 +31,22 @@ copy of the personal plan and Gantt. Every log below is kept here so git dates e
 
 | Issue | Status | Note |
 |---|---|---|
-| #208 collection engine | Assigned | #13 merged 5 Sep. #14: Bhanu's three review points fixed and review re-requested 13 Oct |
+| #208 collection engine | In review | #13 merged 5 Sep. #14 fixed 13 Oct and set to close #208. Persistence decision moved to #388 |
 | #55 SIP-184 production run | Blocked on INZBC | Needs a fresh SIP-191 authority. Tracked as a dependency |
 | #193, #194 | Not planned | Only if the client raises priority |
 | #63 embeddings | Proposed | Held by Bhanu. Ask first. Fallback: hybrid retrieval inside apps/fta |
-| #344 Brief Builder source table | Proposed | Unassigned, in the sources lane |
-| #320 PR review backlog | Proposed | Becomes the conflict record below |
+| #344 Brief Builder source table | Assigned 13 Oct | #368 fixed the blank table. Remaining: what writes outcomes in a real run (tied to #55) |
+| #320 PR review backlog | Assigned 13 Oct | Rota proposed. Becomes the conflict record below |
+| #384 FTA eval set and baseline | In review | Closes with #382 |
+| #385 ADR-0008 delivery process | In review | Closes with #382, after the team scores it |
+| #386 FTA synonym gap | In review | Closes with #383 |
+| #387 Literature review | In progress | Draft in #382, final by 30 Oct |
+| #388 Cross-run source health store | Next up | Split from #208 so #208 can close with news-agent #14 |
+| #389 Product outranked by a cross-sector entry | Next up | Q19 and Q26 on the eval |
+| #390 Held-out eval questions | Next up | Needs 10 questions from Bhanu or Paras |
+| #391 Eval regression gate in CI | Next up | |
+| #392 Depth levels through /api/fta/query | Next up | services/api is Bhanu's lane, asked on the issue |
+| #393 Compare four retrieval variants | Next up | W7 before vs after. Refs #63 |
 
 ## FTA retrieval eval (2.2)
 
@@ -70,6 +80,7 @@ Every Friday: issues closed that week, days from in-progress to closed.
 
 | Week | Closed | Avg cycle time (days) | Blocked items | Note |
 |---|---|---|---|---|
+| W2 | 0 | n/a | 4 team-wide (#39, #55, #97, #291). Mine: #55 | No issue closed yet. 3 PRs opened (#382, #383, news-agent #14 fixes), all waiting on review. Board and WIP limit not live until ADR-0008 merges, so W2 is the starting point, not a measured week |
 | W3 | | | | |
 | W4 | | | | |
 | W5 | | | | |
@@ -87,7 +98,7 @@ Every Friday: issues closed that week, days from in-progress to closed.
 
 | Date | From | Feedback received | What I changed because of it | Evidence link | Obj |
 |---|---|---|---|---|---|
-| | | | | | |
+| 2026-10-13 | Bhanu | Pushed a fix to #394: a product reached through a synonym ("salmon exports") could still rank below the overall exports entry, because synonyms score at half weight. Also made the eval gate compare every question's results, not only the totals | Kept the fix. Any future ranking change gets tested with framing words ("exports", "tariffs") plus a synonym product, not only a directly named one | #394, commit ab762da | 2.2 3.2 |
 
 ## Mentoring log (3.2)
 
@@ -103,14 +114,74 @@ Every Friday: issues closed that week, days from in-progress to closed.
 | People involved | Bhanu, Paras, Roshan |
 | Date raised | 2026-10-13, rota proposed on #320 |
 | Steps I took | 13 Oct: proposed a 48 hour review rota on #320, rotating Bhanu, Paras, Roshan, reviewer named at Monday standup. Asked both to agree on the issue |
-| Outcome | PR time-to-first-review before and after the rota |
+| Outcome | PR time-to-first-review before and after the rota. Before: #381 (Paras) opened 9 Oct, first review 13 Oct, 4 days. #14 waited 22 days for its first review (14 Aug to 5 Sep) |
 | Evidence | Standup note, issue comment, review rota, merged PR dates |
 | What I would do differently | |
+
+## PDR evidence checklist
+
+| Done | Week | Evidence | Obj |
+|---|---|---|---|
+| [ ] | W1 | Final PDR week confirmed, practice slot booked | PDR |
+| [ ] | W1 | Kickoff notes with owners agreed | 3.1 |
+| [ ] | W1 | Facilitator feedback on this plan logged | 1.2 |
+| [x] | W1 | Board Status write access fixed (13 Oct, Status set on 13 items) | 3.1 |
+| [x] | W1 | Studio 6 GitHub milestone created (13 Oct, 17 items) | 3.1 |
+| [x] | W2 | Decision matrix and ADR-0008 draft (#382) | 1.1 |
+| [ ] | W2 | #320 conflict record: issue, action, outcome | 3.2 |
+| [ ] | W3 | ADR-0008 merged, WIP limits live on the board | 1.2 |
+| [ ] | W3 | Retro 1 notes | 1.2 |
+| [ ] | W4 | Annotated bibliography, 8 or more APA 7 sources | 2.1 |
+| [x] | W4 | Baseline eval score committed (moved to W2, #382) | 2.2 |
+| [ ] | W4 | Practice PDR worksheet | PDR |
+| [ ] | W5 | Practice PDR feedback written down | PDR |
+| [ ] | W6 | Feedback log: What I changed column filled | 1.2 |
+| [ ] | W6 | Plan change log entry after practice PDR | 3.1 |
+| [ ] | W7 | Before vs after table for #63 | 2.2 |
+| [ ] | W7 | Retro 3 and process effectiveness review | 1.2 |
+| [ ] | W7 | Peer feedback from Bhanu and Paras | 3.2 |
+| [ ] | W7 | Reflective report, evidence index and final worksheet ready by Fri 20 Nov | PDR |
+| [ ] | W8 | Final PDR attended, Moodle upload done, feedback logged | PDR |
+| [ ] | Every week | Standup note, journal entry, mentoring log line | 3.1 3.2 1.2 |
+| [ ] | Every fortnight | INZBC check-in feedback logged | 1.2 |
+
+## Daily log
+
+One line per working day, written before the 17:00 standup. It feeds the standup note and the
+Friday journal, so the week never has to be rebuilt from memory.
+
+| Date | Done today (PRs, issues, reviews) | Blocked or waiting on | Tomorrow |
+|---|---|---|---|
+| Tue 13 Oct | Opened #382, #383, #394. Fixed news-agent #14 review. Rota on #320. Reviewed and approved #381. Created #384 to #393. Created the Studio 6 milestone (17 items). Added #382 to #394 to the INZBC SIP Platform board and set Status, so board write access now works | Reviews from Bhanu and Paras. Bhanu's OK on #63, #64, #38, #392 | Client meeting. Chase reviews and ADR-0008 scores |
 
 ## Weekly journal (1.2)
 
 One entry every Friday: what I planned and what happened, what helped or got in the way, feedback
 received and what I will change.
+
+### Week 2, 12 to 16 Oct (draft 13 Oct, finish Fri 16 Oct)
+
+**Planned vs what happened.** Planned: decision matrix and ADR-0008 draft, review rota for #320,
+get #13 and #14 merged, start the literature search. Done so far: ADR-0008 drafted and my column
+scored (Kanban 86, Scrum 48, Waterfall 48), rota proposed on #320, literature review drafted with
+11 sources. #13 was already merged. #14 had been waiting on three review points since 5 Sep, now
+fixed and back with Bhanu. Not planned for this week but done: the FTA eval baseline (moved from
+W4) and the synonym map (#383), which lifted synonym hit@1 from 0.200 to 1.000.
+
+**What helped.** Measuring before changing anything. The baseline showed exactly where the
+Explainer fails (synonyms), so the literature review had a real problem to answer and the
+synonym map had a number to beat.
+
+**What got in the way.** Review, again. #14 waited 22 days for its first review and #381 waited
+4. Everything I opened this week is also waiting. The rota on #320 is the fix I am testing.
+
+**Feedback received.** [Fill in Friday: anything from Bhanu, Paras, INZBC or the facilitator this
+week, then copy it into the feedback log with what you changed.]
+
+**How I felt about it.** [Your own words.]
+
+**What I will change next week.** [Your own words. For example: commit standup notes the same
+day instead of at the end of the week, or ask for reviewers by name when opening a PR.]
 
 ## Evidence index
 
