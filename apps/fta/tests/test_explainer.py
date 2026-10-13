@@ -407,3 +407,20 @@ def test_a_direct_match_outranks_a_synonym_match() -> None:
 def test_ambiguous_words_left_out_of_the_map_still_route_to_inzbc() -> None:
     for query in ("log in to the member portal", "baby clothing", "travel insurance", "beef"):
         assert answer_query(query) == [], query
+
+
+# --- Framing terms (#389) ------------------------------------------------------------------------
+
+
+def test_a_named_product_outranks_the_overall_exports_entry() -> None:
+    assert answer_query("honey exports")[0].id == "FTA-011"
+    assert answer_query("tariff on wool exports to India")[0].id == "FTA-005"
+
+
+def test_an_overall_tariff_question_still_leads_with_the_overall_entry() -> None:
+    assert answer_query("India tariffs on NZ exports")[0].id == "FTA-002"
+    assert answer_query("NZ tariffs on Indian imports")[0].id == "FTA-001"
+
+
+def test_framing_terms_are_words_the_corpus_uses() -> None:
+    assert explainer._FRAMING_TERMS <= _confirmed_vocabulary()

@@ -81,3 +81,30 @@ def test_main_prints_summary_and_writes_report(tmp_path, monkeypatch, capsys) ->
     assert main(["--write", "trial"]) == 0
     assert (tmp_path / "trial.json").exists()
     assert "overall" in capsys.readouterr().out
+
+
+def test_live_scores_match_the_committed_current_result() -> None:
+    # results/current.json is the score of the ranker as committed. A change that moves any
+    # per-type metric has to regenerate it in the same PR, so the reviewer sees the score move in
+    # the diff instead of finding out later.
+    import json
+
+    from apps.fta.eval.run_eval import RESULTS_DIR
+
+    committed = json.loads((RESULTS_DIR / "current.json").read_text(encoding="utf-8"))
+    live = evaluate(load_questions())
+    regenerate = "uv run python -m apps.fta.eval.run_eval --write current"
+
+    for type_name, committed_metrics in committed["by_type"].items():
+        live_metrics = live["by_type"][type_name]
+        for metric, committed_value in committed_metrics.items():
+            live_value = live_metrics[metric]
+            if committed_value is None or live_value is None:
+                assert live_value == committed_value, (type_name, metric)
+                continue
+            assert live_value >= committed_value, (
+                f"{type_name} {metric} dropped from {committed_value} to {live_value}"
+            )
+            assert live_value == committed_value, (
+                f"{type_name} {metric} improved to {live_value}. Record it: {regenerate}"
+            )

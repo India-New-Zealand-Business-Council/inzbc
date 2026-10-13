@@ -44,4 +44,6 @@ return no match. `uv run python -m apps.fta.eval.run_eval` scores `answer_query(
 hit@3, MRR and no-match accuracy, overall and by type. `--write NAME` saves the report to
 `eval/results/`. The committed `baseline.json` is the keyword ranker before any embedding or
 synonym change, so a later change can be compared against it. `synonyms.json` is the same set
-scored after the synonym map in `explainer.py`.
+scored after the synonym map in `explainer.py`. `current.json` is the score of the ranker as committed:
+`test_eval.py` fails if any per-type metric drops below it, and also if one rises without it being
+regenerated, so every ranking change shows its score change in the diff.

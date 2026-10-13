@@ -62,6 +62,14 @@ def _keywords(text: str) -> set[str]:
 _TOPIC_WEIGHT = 2.0
 _SECTOR_WEIGHT = 1.0
 
+# Words that say what kind of question it is (a tariff, an export) rather than which product it is
+# about. Two cross-sector entries carry them in their topics ("NZ tariffs on Indian imports",
+# "India tariffs on NZ exports (overall)"), so at full topic weight "honey exports" ranked the
+# overall exports entry above Manuka honey (#389). In a topic they score at sector weight instead:
+# still a match, so "India tariffs on NZ exports" still leads with the overall entry, but never
+# above the product the member actually named.
+_FRAMING_TERMS = frozenset({"tariffs", "exports", "imports", "trade"})
+
 
 def _document_frequencies() -> dict[str, int]:
     """How many confirmed entries' topic+sector keywords contain each term.
@@ -96,7 +104,8 @@ def _entry_keyword_weights(entry: TariffOutcome) -> dict[str, float]:
     """
     weights: dict[str, float] = {}
     for keyword in _keywords(entry.topic):
-        weights[keyword] = weights.get(keyword, 0.0) + _TOPIC_WEIGHT * _idf(keyword)
+        position_weight = _SECTOR_WEIGHT if keyword in _FRAMING_TERMS else _TOPIC_WEIGHT
+        weights[keyword] = weights.get(keyword, 0.0) + position_weight * _idf(keyword)
     for keyword in _keywords(entry.sector):
         weights[keyword] = weights.get(keyword, 0.0) + _SECTOR_WEIGHT * _idf(keyword)
     return weights
