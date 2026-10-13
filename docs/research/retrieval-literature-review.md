@@ -106,8 +106,8 @@ is what a committed eval set and a before vs after score provide.
 | Approach | How it works | Strength | Weakness | Fit for the 23 FTA entries |
 |---|---|---|---|---|
 | Keyword TF-IDF (today) | Shared terms weighted by rarity | Transparent, no dependencies, exact wording 1.000 | No match without a shared word. Synonyms 0.200 | Good floor. Keep it |
-| BM25 | TF-IDF with saturation and length normalisation | Strong zero-shot baseline (BEIR) | Same vocabulary gap | Little gain. Entries are short, so length normalisation barely matters |
-| BM25 plus synonym list | Expand the query from a curated term map | Explainable, no model call, cheap to test | The list has to be maintained by hand, and misses terms nobody listed | Strong. A small corpus makes a curated list realistic |
+| BM25 | TF-IDF with saturation and length normalisation | Strong zero-shot baseline (BEIR) | Same vocabulary gap. A rare framing word can outweigh the product | Measured worse (#398): 0.333 hit@1 on product plus framing questions, where "exports" outweighs "dairy" |
+| Keyword plus synonym list | Expand the query from a curated term map (Carpineto & Romano, 2012) | Explainable, no model call, cheap to test | The list has to be maintained by hand, and misses terms nobody listed. Expansion can drift onto the wrong topic | Built (#383). Synonym hit@1 0.200 to 1.000, no-match unchanged |
 | Dense embeddings | Rank by vector similarity | Matches meaning, so it handles synonyms | Zero-shot reliability (BEIR). Needs a model, which may cross the model data boundary in ADR-0006 | Possible, but must not lose an exact or no-match result |
 | Hybrid (RRF) | Fuse lexical and dense rankings | Keeps exact matches and adds semantic recall | Two systems to run. A similarity cut-off is needed or no-match questions start returning answers | Best candidate if embeddings are approved under #63 |
 
@@ -119,22 +119,29 @@ questions.
 
 ## 4. What this means for the project
 
-1. **Measure first.** Done: 42 questions, baseline committed (#382).
-2. **Cheapest change first:** a curated synonym map inside `apps/fta`, with no model call. It is
-   expected to fix most of the ten synonym questions. Re-run the eval.
-3. **Then embeddings under #63**, if Bhanu agrees and the model data boundary allows it. The
+1. **Measure first.** Done (#382). The set has since grown to 52 questions.
+2. **Cheapest change first:** a curated synonym map inside `apps/fta`, with no model call. Done
+   (#383): synonym hit@1 went from 0.200 to 1.000. The map left out "log", "baby" and "travel"
+   because expansion on ambiguous words drifts onto the wrong topic, which is the main risk query
+   expansion research warns about (Carpineto & Romano, 2012).
+3. **BM25 measured, not assumed (#398).** BEIR's finding that BM25 is a strong baseline did not
+   hold for this corpus. With one short topic per entry, a framing word that appears in only one
+   topic ("exports") gets a high IDF and outranks the product, so BM25 scored 0.333 on product
+   plus framing questions against 1.000 for the live ranker. A general benchmark result did not
+   transfer to a 23-entry corpus, which is why every candidate is scored on our own questions.
+4. **Then embeddings under #63**, if Bhanu agrees and the model data boundary allows it. The
    design would be hybrid with RRF, plus a similarity threshold so no-match questions stay
    unanswered.
-4. **Report all variants in one table** (keyword, keyword plus synonyms, embeddings, hybrid), by
+5. **Report all variants in one table** (keyword, keyword plus synonyms, embeddings, hybrid), by
    question type, in W7.
-5. **What does not apply:** training a DPR model (no labelled pairs, and 23 entries do not
+6. **What does not apply:** training a DPR model (no labelled pairs, and 23 entries do not
    justify it), and RAG generation for FTA answers (the Explainer must quote the corpus, not
    paraphrase it).
 
 ## 5. Annotated bibliography
 
 Each entry needs about 150 words in four parts: reference, summary, evaluation, application to
-INZBC. The summaries above are first notes. Expand each into a full annotation by 30 Oct.
+INZBC. Expand each first-pass note below into a full annotation by 30 Oct.
 
 | # | Source | Type | Checked against original | Annotation done |
 |---|---|---|---|---|
@@ -149,14 +156,87 @@ INZBC. The summaries above are first notes. Expand each into a full annotation b
 | 9 | Es et al. (2023) | Preprint | | |
 | 10 | Moreau & Missier (2013) | Standard | | |
 | 11 | NIST (2023) | Framework | | |
+| 12 | Carpineto & Romano (2012) | Peer-reviewed survey | | |
 
-Target is 12 or more. One more peer-reviewed source on query expansion or synonym handling would
-support step 2 of section 4.
+### First-pass notes
+
+Started 14 Oct to speed up the annotations. Each note gives the claim, a first evaluation and the
+link to INZBC. Every one still has to be checked against the original and rewritten in my own
+words before it counts as an annotation.
+
+**1. Robertson & Zaragoza (2009).** Sets out the probabilistic relevance framework behind BM25 and
+explains its two corrections to plain TF-IDF: term frequency saturates (k1), and longer documents
+are normalised (b). *Evaluate:* a foundational monograph by the method's authors, widely used as
+the standard baseline. It says nothing about vocabulary mismatch. *Apply:* implemented in #398.
+With three to eight tokens per entry, length normalisation has almost nothing to work on, and IDF
+on a rare framing word hurt product questions.
+
+**2. Manning, Raghavan & Schütze (2008).** The standard textbook on TF-IDF weighting, the vector
+space model and how to evaluate ranked retrieval. *Evaluate:* a textbook, not new research, but
+the accepted reference for the basics. *Apply:* the live ranker's IDF weighting and the eval's
+ranked metrics come from these ideas.
+
+**3. Karpukhin et al. (2020).** Dense Passage Retrieval trains two BERT encoders on question and
+passage pairs and beats BM25 on top-20 retrieval accuracy on several open-domain QA sets.
+*Evaluate:* strong results, but in-domain and with large labelled training data. *Apply:* INZBC
+has no labelled pairs and 23 entries, so training a retriever is out. Only a pre-trained model
+used zero-shot is realistic.
+
+**4. Thakur et al. (2021).** BEIR tests retrievers zero-shot across 18 datasets. BM25 is a robust
+baseline, and many dense models do worse outside the domain they were trained on. *Evaluate:* a
+broad benchmark, so its conclusions are general. #398 found one case where they do not hold for a
+tiny corpus. *Apply:* a warning for #63. An embedding model has to beat the live ranker on our
+questions, not on BEIR.
+
+**5. Cormack, Clarke & Büttcher (2009).** Reciprocal Rank Fusion combines several rankings using
+only each item's rank, and beat the individual methods and Condorcet fusion in their TREC tests.
+*Evaluate:* a short paper, but simple and widely reused. *Apply:* the obvious way to combine the
+live ranker with an embedding ranker under #393, because it needs no score calibration.
+
+**6. Bruch, Gai & Ingber (2023).** Compares fusion functions for hybrid retrieval and finds that a
+convex combination of normalised scores can beat RRF, which is sensitive to its own parameter.
+*Evaluate:* careful and recent, but the gain needs some tuning data. *Apply:* with 52 questions,
+tuning weights risks fitting the eval set, so RRF is the safer first try.
+
+**7. Lewis et al. (2020).** Retrieval-augmented generation joins a dense retriever to a generator,
+so answers are written from retrieved passages, and reports more factual output than a generator
+alone. *Evaluate:* the paper that named RAG, widely cited. *Apply:* the retrieval half applies
+directly. The generation half does not apply to FTA answers, which quote the corpus.
+
+**8. Gao et al. (2023).** Surveys RAG since Lewis et al. and groups systems into naive, advanced
+and modular RAG. Retrieval quality is the main lever on answer quality. *Evaluate:* a preprint
+survey, useful for structure, not as evidence for any single claim. *Apply:* supports measuring
+retrieval first and separately.
+
+**9. Es et al. (2023).** RAGAS scores a RAG pipeline without reference answers: faithfulness,
+answer relevance and context relevance, each judged by a language model. *Evaluate:* a preprint,
+and the scores depend on the judging model. *Apply:* relevant to #64 (judging brief quality), not
+to FTA answers, where a hand-labelled question set is cheaper and more trustworthy.
+
+**10. Moreau & Missier (2013).** PROV-DM models provenance as entities, the activities that used
+or produced them, and the agents responsible. *Evaluate:* a W3C standard, so authoritative but
+abstract. *Apply:* each corpus entry's citation, tier and verified date is provenance already.
+PROV gives it standard names.
+
+**11. NIST (2023).** The AI Risk Management Framework organises AI risk work into Govern, Map,
+Measure and Manage, and lists "valid and reliable" among the marks of trustworthy AI.
+*Evaluate:* a government framework, not research, but widely adopted. *Apply:* the committed
+eval and the CI gate (#394) are the Measure function in practice.
+
+**12. Carpineto & Romano (2012).** Surveys automatic query expansion: thesaurus-based,
+corpus-based, query-log and relevance-feedback methods. Expansion usually improves recall but can
+hurt precision when it drifts onto the wrong topic. *Evaluate:* a broad, peer-reviewed survey,
+older but still the standard reference. *Apply:* the synonym map is manual thesaurus expansion.
+Topic drift is why "log", "baby" and "travel" were left out, and why expanded terms score at half
+weight.
 
 ## References
 
 Bruch, S., Gai, S., & Ingber, A. (2023). An analysis of fusion functions for hybrid retrieval.
 *ACM Transactions on Information Systems, 42*(1), 1-35. https://doi.org/10.1145/3596512
+
+Carpineto, C., & Romano, G. (2012). A survey of automatic query expansion in information
+retrieval. *ACM Computing Surveys, 44*(1), 1-50. https://doi.org/10.1145/2071389.2071390
 
 Cormack, G. V., Clarke, C. L. A., & Büttcher, S. (2009). Reciprocal rank fusion outperforms
 Condorcet and individual rank learning methods. In *Proceedings of the 32nd International ACM
