@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from apps.fta.corpus import CORPUS
 from apps.fta.eval.run_eval import (
     Question,
@@ -108,3 +110,13 @@ def test_live_scores_match_the_committed_current_result() -> None:
             assert live_value == committed_value, (
                 f"{type_name} {metric} improved to {live_value}. Record it: {regenerate}"
             )
+
+    assert live == committed, f"Eval report changed. Record it: {regenerate}"
+
+
+def test_eval_gate_rejects_stale_question_results(monkeypatch) -> None:
+    live = evaluate(load_questions())
+    live["per_question"][0]["returned_top3"].append("FTA-002")
+    monkeypatch.setattr(__name__ + ".evaluate", lambda _: live)
+    with pytest.raises(AssertionError, match="Record it"):
+        test_live_scores_match_the_committed_current_result()

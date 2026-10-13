@@ -417,6 +417,17 @@ def test_a_named_product_outranks_the_overall_exports_entry() -> None:
     assert answer_query("tariff on wool exports to India")[0].id == "FTA-005"
 
 
+def test_a_synonym_product_outranks_framing_only_matches() -> None:
+    for query, expected in (
+        ("salmon exports", "FTA-008"),
+        ("tariffs on lamb exports", "FTA-006"),
+        ("timber trade exports", "FTA-004"),
+    ):
+        answers = answer_query(query)
+        assert answers[0].id == expected, query
+        assert "FTA-002" in {answer.id for answer in answers}
+
+
 def test_an_overall_tariff_question_still_leads_with_the_overall_entry() -> None:
     assert answer_query("India tariffs on NZ exports")[0].id == "FTA-002"
     assert answer_query("NZ tariffs on Indian imports")[0].id == "FTA-001"

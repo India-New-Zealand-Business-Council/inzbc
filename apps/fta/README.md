@@ -47,3 +47,4 @@ synonym change, so a later change can be compared against it. `synonyms.json` is
 scored after the synonym map in `explainer.py`. `current.json` is the score of the ranker as committed:
 `test_eval.py` fails if any per-type metric drops below it, and also if one rises without it being
 regenerated, so every ranking change shows its score change in the diff.
+It also checks the full report for drift, including each question's returned entries and rank.
