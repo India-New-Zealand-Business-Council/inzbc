@@ -38,9 +38,10 @@ decision `docs/modules/fta-centre.md` still lists as an open dependency (the leg
 review process), not something to assume here.
 
 ## Retrieval eval
-`eval/questions.csv` holds 42 questions with the entries a correct answer should lead with, in
+`eval/questions.csv` holds 46 questions with the entries a correct answer should lead with, in
 four types: exact wording, multi-term, synonyms the corpus does not use, and questions that must
 return no match. `uv run python -m apps.fta.eval.run_eval` scores `answer_query()` on hit@1,
 hit@3, MRR and no-match accuracy, overall and by type. `--write NAME` saves the report to
 `eval/results/`. The committed `baseline.json` is the keyword ranker before any embedding or
-synonym change, so a later change can be compared against it.
+synonym change, so a later change can be compared against it. `synonyms.json` is the same set
+scored after the synonym map in `explainer.py`.

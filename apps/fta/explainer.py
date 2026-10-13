@@ -1,7 +1,8 @@
 """FTA Opportunity Explainer: sector/product query -> sourced answer.
 
-Ranks matches against apps/fta/corpus.py by shared keyword relevance (#54) - no model call, no
-guessing beyond what's in the corpus, no vector/embedding service. Per docs/modules/fta-centre.md's
+Ranks matches against apps/fta/corpus.py by shared keyword relevance (#54), with a curated
+synonym map bridging member wording to corpus wording - no model call, no guessing beyond what's
+in the corpus, no vector/embedding service. Per docs/modules/fta-centre.md's
 definition of done, "unsupported-answer behaviour" (no corpus match) must route to INZBC, never
 invent an answer - `answer_query` returning `[]` is that signal, and `no_match()` builds the Action
 Required state a caller renders instead of treating the empty list as an error.
@@ -101,9 +102,84 @@ def _entry_keyword_weights(entry: TariffOutcome) -> dict[str, float]:
     return weights
 
 
+# Words a member is likely to use for something the corpus names differently, mapped to the
+# corpus's own word. Measured by apps/fta/eval: before this map, 8 of 10 synonym questions
+# ("lamb", "timber and logs", "international students") returned nothing and routed to INZBC
+# even though the corpus covers them.
+#
+# Three rules keep this a vocabulary bridge and not a source of answers:
+# - Every target is a word some confirmed entry's topic or sector already contains, and no source
+#   word is one, so a synonym can only lead to an entry the keyword ranker could already reach
+#   with the corpus's own wording. test_explainer.py enforces both.
+# - Expanded terms score at `_SYNONYM_WEIGHT` of a direct match, so an entry the member named
+#   directly outranks one reached through a synonym.
+# - Nothing generic. "kiwi" is left out because it means New Zealanders as often as the fruit,
+#   "fruit" because it would pull in five entries for a question about any one of them, and "log",
+#   "baby" and "travel" because "log in", "baby clothing" and "travel insurance" would each return
+#   an FTA answer to a question the corpus does not cover. The eval's no-match set holds those.
+# Plural and singular forms of product nouns are listed explicitly rather than stemmed, because
+# stemming "tariff" to match "tariffs" would make every tariff question rank the two cross-sector
+# entries first.
+_SYNONYMS: dict[str, tuple[str, ...]] = {
+    # Sheepmeat (FTA-006)
+    "lamb": ("sheepmeat",),
+    "mutton": ("sheepmeat",),
+    "hogget": ("sheepmeat",),
+    # Forestry (FTA-004)
+    "timber": ("forestry",),
+    "logs": ("forestry",),
+    "wood": ("forestry",),
+    "lumber": ("forestry",),
+    "sawn": ("forestry",),
+    # Fish and seafood (FTA-008)
+    "salmon": ("seafood",),
+    "mussels": ("seafood",),
+    "mussel": ("seafood",),
+    "shellfish": ("seafood",),
+    "crayfish": ("seafood",),
+    "lobster": ("seafood",),
+    "hoki": ("seafood",),
+    # Wine (FTA-010)
+    "wines": ("wine",),
+    "sauvignon": ("wine",),
+    "blanc": ("wine",),
+    "pinot": ("wine",),
+    "chardonnay": ("wine",),
+    # Fruit, singular forms (FTA-012, FTA-019, FTA-020)
+    "cherry": ("cherries",),
+    "avocado": ("avocados",),
+    "apple": ("apples",),
+    "blueberry": ("blueberries",),
+    "persimmon": ("persimmons",),
+    # Student mobility and Post Study Work Visas (FTA-022)
+    "students": ("student",),
+    "visa": ("visas",),
+    "university": ("education",),
+    "universities": ("education",),
+    # Tourism cooperation (FTA-023)
+    "tourists": ("tourism",),
+    "tourist": ("tourism",),
+    "visitors": ("tourism",),
+    # Investment promotion (FTA-021)
+    "investing": ("investment",),
+    "invest": ("investment",),
+    "investors": ("investment",),
+    "fdi": ("investment",),
+}
+_SYNONYM_WEIGHT = 0.5
+
+
+def _expanded_keywords(query_keywords: set[str]) -> set[str]:
+    """Corpus words reached only through `_SYNONYMS`, not ones the query already used."""
+    expanded = {target for word in query_keywords for target in _SYNONYMS.get(word, ())}
+    return expanded - query_keywords
+
+
 def _relevance_score(query_keywords: set[str], entry: TariffOutcome) -> float:
     weights = _entry_keyword_weights(entry)
-    return sum(weights.get(keyword, 0.0) for keyword in query_keywords)
+    direct = sum(weights.get(keyword, 0.0) for keyword in query_keywords)
+    via_synonym = sum(weights.get(keyword, 0.0) for keyword in _expanded_keywords(query_keywords))
+    return direct + _SYNONYM_WEIGHT * via_synonym
 
 
 @dataclass(frozen=True)

@@ -359,3 +359,51 @@ def test_structured_tariff_fields_reach_every_depth() -> None:
         assert getattr(public, field) == getattr(member_legacy, field)
         assert getattr(member, field) == getattr(member_legacy, field)
         assert getattr(internal, field) == getattr(member_legacy, field)
+
+
+# --- Synonym map ---------------------------------------------------------------------------------
+
+
+def _confirmed_vocabulary() -> set[str]:
+    from apps.fta.corpus import CORPUS
+
+    vocabulary: set[str] = set()
+    for entry in CORPUS:
+        if entry.confirmed:
+            vocabulary |= explainer._keywords(entry.topic) | explainer._keywords(entry.sector)
+    return vocabulary
+
+
+def test_every_synonym_target_is_a_word_the_corpus_already_uses() -> None:
+    # A target outside the corpus vocabulary would match nothing, or worse, start matching an
+    # entry once someone adds that word, without anyone deciding the synonym should lead there.
+    vocabulary = _confirmed_vocabulary()
+    for word, targets in explainer._SYNONYMS.items():
+        assert set(targets) <= vocabulary, word
+
+
+def test_no_synonym_source_is_already_a_corpus_word() -> None:
+    # A source word the corpus uses already matches directly, so mapping it would double count it.
+    vocabulary = _confirmed_vocabulary()
+    assert not set(explainer._SYNONYMS) & vocabulary
+
+
+def test_synonym_sources_are_not_stopwords() -> None:
+    assert not set(explainer._SYNONYMS) & explainer._STOPWORDS
+
+
+def test_answer_query_reaches_an_entry_through_a_synonym() -> None:
+    assert [a.id for a in answer_query("lamb")] == ["FTA-006"]
+    assert [a.id for a in answer_query("timber and logs")] == ["FTA-004"]
+    assert answer_query("international students")[0].id == "FTA-022"
+
+
+def test_a_direct_match_outranks_a_synonym_match() -> None:
+    # "wine" is named directly; "seafood" is reached only through "salmon". Both entries come
+    # back, and the one the member named comes first.
+    assert [a.id for a in answer_query("wine and salmon")] == ["FTA-010", "FTA-008"]
+
+
+def test_ambiguous_words_left_out_of_the_map_still_route_to_inzbc() -> None:
+    for query in ("log in to the member portal", "baby clothing", "travel insurance", "beef"):
+        assert answer_query(query) == [], query

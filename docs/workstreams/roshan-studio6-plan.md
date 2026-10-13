@@ -50,16 +50,22 @@ copy of the personal plan and Gantt. Every log below is kept here so git dates e
 
 ## FTA retrieval eval (2.2)
 
-Eval set: `apps/fta/eval/questions.csv`, 42 questions in four types. Harness:
+Eval set: `apps/fta/eval/questions.csv`, 46 questions in four types (four no-match traps added
+13 Oct with the synonym map). Harness:
 `uv run python -m apps.fta.eval.run_eval --write <name>`. Baseline saved to
 `apps/fta/eval/results/baseline.json`.
 
-| Metric | Baseline | After #63 | Change |
+| Metric | Baseline | Synonym map | After #63 |
 |---|---|---|---|
-| hit@1 | 0.722 | | |
-| hit@3 | 0.778 | | |
-| MRR | 0.750 | | |
-| No-match accuracy | 1.000 | | |
+| hit@1 | 0.722 | 0.944 | |
+| hit@3 | 0.778 | 1.000 | |
+| MRR | 0.750 | 0.972 | |
+| Synonym hit@1 | 0.200 | 1.000 | |
+| No-match accuracy | 1.000 | 1.000 | |
+
+The synonym score is optimistic. The map was written with the ten synonym questions in view, so
+it is partly fitted to them. A fair number needs ten new synonym questions written by someone who
+has not seen the map. Asked Bhanu and Paras for these.
 
 By type at baseline: exact 18/18 at rank 1, multi-term MRR 0.875, synonym hit@1 0.200 (2 of 10).
 The keyword ranker has no way to match "lamb", "timber" or "international students" to the
@@ -86,6 +92,7 @@ Every Friday: issues closed that week, days from in-progress to closed.
 | Date | Change | Why |
 |---|---|---|
 | 2026-10-13 | FTA eval set and baseline moved from W4 to W2 | Gives the literature review a measured problem to aim at, and frees W4 for the bibliography |
+| 2026-10-13 | Synonym map started in W2, ahead of #63 | Literature review found the cheapest fix with no model call should be tried first. It also gives a middle row for the before vs after table |
 
 ## Stakeholder and mentor feedback log (1.2)
 
