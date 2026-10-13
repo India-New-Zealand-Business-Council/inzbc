@@ -55,13 +55,17 @@ Eval set: `apps/fta/eval/questions.csv`, 46 questions in four types (four no-mat
 `uv run python -m apps.fta.eval.run_eval --write <name>`. Baseline saved to
 `apps/fta/eval/results/baseline.json`.
 
-| Metric | Baseline | Synonym map | After #63 |
-|---|---|---|---|
-| hit@1 | 0.722 | 0.944 | |
-| hit@3 | 0.778 | 1.000 | |
-| MRR | 0.750 | 0.972 | |
-| Synonym hit@1 | 0.200 | 1.000 | |
-| No-match accuracy | 1.000 | 1.000 | |
+| Metric | Baseline | Synonym map | Framing terms (#389) | After #63 |
+|---|---|---|---|---|
+| hit@1 | 0.722 | 0.944 | 1.000 | |
+| hit@3 | 0.778 | 1.000 | 1.000 | |
+| MRR | 0.750 | 0.972 | 1.000 | |
+| Multi-term hit@1 | 0.750 | 0.750 | 1.000 | |
+| Synonym hit@1 | 0.200 | 1.000 | 1.000 | |
+| No-match accuracy | 1.000 | 1.000 | 1.000 | |
+
+Every metric is now at 1.000 on this set, so it can no longer tell a better ranker from a worse
+one. The held-out questions (#390) are what #63 has to be measured on.
 
 The synonym score is optimistic. The map was written with the ten synonym questions in view, so
 it is partly fitted to them. A fair number needs ten new synonym questions written by someone who

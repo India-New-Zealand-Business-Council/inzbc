@@ -62,6 +62,15 @@ def _keywords(text: str) -> set[str]:
 _TOPIC_WEIGHT = 2.0
 _SECTOR_WEIGHT = 1.0
 
+# Words that say what kind of question it is (a tariff, an export) rather than which product it is
+# about. Two cross-sector entries carry them in their topics ("NZ tariffs on Indian imports",
+# "India tariffs on NZ exports (overall)"), so at full topic weight "honey exports" ranked the
+# overall exports entry above Manuka honey (#389). In a topic they score at sector weight instead:
+# still a match, so "India tariffs on NZ exports" still leads with the overall entry.
+# `answer_query` puts matches on non-framing terms first, including synonyms, so accumulated
+# framing weight cannot outrank the product the member named.
+_FRAMING_TERMS = frozenset({"tariffs", "exports", "imports", "trade"})
+
 
 def _document_frequencies() -> dict[str, int]:
     """How many confirmed entries' topic+sector keywords contain each term.
@@ -96,7 +105,8 @@ def _entry_keyword_weights(entry: TariffOutcome) -> dict[str, float]:
     """
     weights: dict[str, float] = {}
     for keyword in _keywords(entry.topic):
-        weights[keyword] = weights.get(keyword, 0.0) + _TOPIC_WEIGHT * _idf(keyword)
+        position_weight = _SECTOR_WEIGHT if keyword in _FRAMING_TERMS else _TOPIC_WEIGHT
+        weights[keyword] = weights.get(keyword, 0.0) + position_weight * _idf(keyword)
     for keyword in _keywords(entry.sector):
         weights[keyword] = weights.get(keyword, 0.0) + _SECTOR_WEIGHT * _idf(keyword)
     return weights
@@ -322,9 +332,8 @@ def answer_query(query: str) -> list[ExplainerAnswer]:
     unconfirmed entry gets the same `[]` as no match at all, not a caveated figure.
 
     Returns `[]` when nothing confirmed matches, including when `query` is empty or only
-    stopwords - the caller routes that to INZBC rather than guessing. Ranking only orders and
-    never widens the match set: an entry with zero shared keywords still scores 0 and is
-    excluded, exactly as before.
+    stopwords - the caller routes that to INZBC rather than guessing. Keywords include the
+    curated synonym expansions; entries with no direct or expanded match are excluded.
     """
     query_keywords = _keywords(query)
     if not query_keywords:
@@ -334,9 +343,14 @@ def answer_query(query: str) -> list[ExplainerAnswer]:
         (entry, _relevance_score(query_keywords, entry)) for entry in CORPUS if entry.confirmed
     ]
     matched = [(entry, score) for entry, score in scored if score > 0]
+    subject_terms = (query_keywords | _expanded_keywords(query_keywords)) - _FRAMING_TERMS
     # entry.id as the tiebreaker: deterministic, stable ordering for entries that score equally
     # (e.g. two entries sharing the same single sector keyword and nothing else).
-    matched.sort(key=lambda pair: (-pair[1], pair[0].id))
+    matched.sort(key=lambda pair: (
+        not bool(subject_terms & _entry_keyword_weights(pair[0]).keys()),
+        -pair[1],
+        pair[0].id,
+    ))
     return [_to_answer(entry) for entry, _score in matched]
 
 
