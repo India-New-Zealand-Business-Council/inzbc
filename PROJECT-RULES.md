@@ -62,7 +62,8 @@ See [docs/workstreams/README.md](./docs/workstreams/README.md). Work is backlog-
 engineer keeps a worklog at `docs/workstreams/<name>.md` and normally takes the top open item.
 Client priorities move and this is not a queue to defend: taking a lower item is fine, just say why
 in the worklog so the order stays meaningful.
-1. Fetch `main`; rebase if the worklog's base commit is behind.
+1. Fetch `main`; rebase if the worklog's base commit is behind. Always rebase, never merge `main`
+   into a branch (see [CONTRIBUTING.md](./CONTRIBUTING.md)).
 2. Branch `feat/<name>/<slug>` off fresh `main`.
 3. Quality standard: understand the task and code it touches; research library/API specifics
    (no guessing); **reuse before writing** (search for an existing helper; do not reinvent);

@@ -77,6 +77,14 @@ Run `uv run pnpm run codegen` and commit the result; CI fails if regenerating ch
 - **`production_enabled` is `false` everywhere**, and nothing AI-drafted publishes without a named
   human reviewer. See [PROJECT-RULES.md](./PROJECT-RULES.md).
 
+## Keeping branches current
+
+Rebase, never merge. Bring a branch up to date with `git rebase origin/main`, not
+`git merge main`. For a stacked PR whose lower PR has landed, use
+`git rebase --onto origin/main <lower-branch>`. Then push with `--force-with-lease`. Land PRs with
+"Rebase and merge" so `main` stays linear, and never create a merge commit. See
+[CONTRIBUTING.md](./CONTRIBUTING.md).
+
 ## Editing the project board
 
 Never call `updateProjectV2Field` directly. It replaces a single-select field's whole option set and
