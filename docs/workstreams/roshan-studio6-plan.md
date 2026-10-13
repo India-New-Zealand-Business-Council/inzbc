@@ -111,9 +111,9 @@ received and what I will change.
 |---|---|---|---|
 | 1.1 | ADR-0008 | [ADR-0008](../decisions/ADR-0008-delivery-process.md) | |
 | 1.2 | Retro notes, cycle time table | this file | |
-| 2.1 | Literature review | | |
+| 2.1 | Literature review | [retrieval-literature-review.md](../research/retrieval-literature-review.md) | 2026-10-13 (draft) |
 | 2.2 | Eval set, baseline, PR | `apps/fta/eval/` | 2026-10-13 |
-| 3.1 | Plan, Gantt, standups | this file | 2026-10-13 |
+| 3.1 | Plan, Gantt, standups | this file, [W2 standups](../meetings/standups/2026-10-12-week.md) | 2026-10-13 |
 | 3.2 | Mentoring log, conflict record, peer feedback | this file | |
 
 ## Reading list for 2.1 (verify each before citing)
