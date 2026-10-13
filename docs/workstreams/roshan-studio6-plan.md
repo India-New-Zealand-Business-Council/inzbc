@@ -111,6 +111,15 @@ Every Friday: issues closed that week, days from in-progress to closed.
 | Evidence | Standup note, issue comment, review rota, merged PR dates |
 | What I would do differently | |
 
+## Daily log
+
+One line per working day, written before the 17:00 standup. It feeds the standup note and the
+Friday journal, so the week never has to be rebuilt from memory.
+
+| Date | Done today (PRs, issues, reviews) | Blocked or waiting on | Tomorrow |
+|---|---|---|---|
+| Tue 13 Oct | Opened #382, #383, #394. Fixed news-agent #14 review. Rota on #320. Reviewed #381. Created #384 to #393 | Reviews from Bhanu and Paras. Bhanu's OK on #63, #64, #38, #392 | Client meeting. Chase reviews and ADR-0008 scores |
+
 ## Weekly journal (1.2)
 
 One entry every Friday: what I planned and what happened, what helped or got in the way, feedback
