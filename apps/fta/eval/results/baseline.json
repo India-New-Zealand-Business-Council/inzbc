@@ -1,8 +1,8 @@
 {
-  "question_count": 42,
+  "question_count": 46,
   "overall": {
     "answerable": 36,
-    "unanswerable": 6,
+    "unanswerable": 10,
     "hit_at_1": 0.7222,
     "hit_at_3": 0.7778,
     "mrr": 0.75,
@@ -27,7 +27,7 @@
     },
     "no_match": {
       "answerable": 0,
-      "unanswerable": 6,
+      "unanswerable": 10,
       "hit_at_1": null,
       "hit_at_3": null,
       "mrr": null,
@@ -509,6 +509,38 @@
     {
       "qid": "Q42",
       "query": "tariff line count",
+      "type": "no_match",
+      "expected": [],
+      "returned_top3": [],
+      "rank": null
+    },
+    {
+      "qid": "Q43",
+      "query": "beef",
+      "type": "no_match",
+      "expected": [],
+      "returned_top3": [],
+      "rank": null
+    },
+    {
+      "qid": "Q44",
+      "query": "travel insurance",
+      "type": "no_match",
+      "expected": [],
+      "returned_top3": [],
+      "rank": null
+    },
+    {
+      "qid": "Q45",
+      "query": "log in to the member portal",
+      "type": "no_match",
+      "expected": [],
+      "returned_top3": [],
+      "rank": null
+    },
+    {
+      "qid": "Q46",
+      "query": "baby clothing",
       "type": "no_match",
       "expected": [],
       "returned_top3": [],
