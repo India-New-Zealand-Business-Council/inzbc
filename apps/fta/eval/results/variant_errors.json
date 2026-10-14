@@ -306,5 +306,6 @@
         ]
       }
     }
-  ]
+  ],
+  "bm25_synonyms_framing": []
 }

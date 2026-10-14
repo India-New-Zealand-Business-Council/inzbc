@@ -31,6 +31,28 @@ def test_synonym_expansion_reuses_the_live_map_at_the_live_weight() -> None:
     assert "sheepmeat" not in _query_weights("lamb", synonyms=False)
 
 
+def test_plain_bm25_still_leads_salmon_exports_with_the_overall_entry() -> None:
+    assert BM25().rank(_query_weights("salmon exports", synonyms=False))[0] == "FTA-002"
+
+
+def test_framing_guard_leads_with_the_product_not_the_overall_exports_entry() -> None:
+    # Salmon, lamb and timber are not corpus terms. They reach an entry only through the synonym
+    # map, so the guard is measured on bm25_synonyms rather than on plain BM25.
+    guarded = variants()["bm25_synonyms_framing"]
+    assert guarded("salmon exports")[0] == "FTA-008"
+    assert guarded("tariffs on lamb exports")[0] == "FTA-006"
+    assert guarded("timber trade exports")[0] == "FTA-004"
+    assert guarded("dairy exports")[0] in {"FTA-013", "FTA-014", "FTA-015", "FTA-016"}
+    assert variants()["bm25_synonyms"]("salmon exports")[0] == "FTA-002"
+
+
+def test_framing_variant_returns_nothing_for_the_named_no_match_questions() -> None:
+    guarded = variants()["bm25_synonyms_framing"]
+    assert guarded("travel insurance") == []
+    assert guarded("log in to the member portal") == []
+    assert guarded("baby clothing") == []
+
+
 def test_the_keyword_variant_is_the_live_explainer() -> None:
     from apps.fta.explainer import answer_query
 
@@ -50,10 +72,17 @@ def test_main_writes_the_comparison(tmp_path, monkeypatch, capsys) -> None:
     monkeypatch.setattr(variants_module, "RESULTS_DIR", tmp_path)
     assert main(["--write"]) == 0
     written = json.loads((tmp_path / "variants.json").read_text(encoding="utf-8"))
-    assert set(written) == {"keyword", "bm25", "bm25_synonyms"}
+    assert set(written) == {
+        "keyword",
+        "bm25",
+        "bm25_synonyms",
+        "bm25_synonyms_framing",
+    }
     errors = json.loads((tmp_path / "variant_errors.json").read_text(encoding="utf-8"))
     assert set(errors) == set(written)
-    assert "bm25_synonyms" in capsys.readouterr().out
+    printed = capsys.readouterr().out
+    for name in written:
+        assert name in printed
 
 
 def test_every_variant_says_whether_it_expands_synonyms() -> None:
