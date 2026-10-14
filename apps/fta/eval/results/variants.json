@@ -2759,5 +2759,664 @@
         "rank": 1
       }
     ]
+  },
+  "bm25_synonyms_framing": {
+    "question_count": 52,
+    "overall": {
+      "answerable": 42,
+      "unanswerable": 10,
+      "hit_at_1": 1.0,
+      "hit_at_3": 1.0,
+      "mrr": 1.0,
+      "no_match_accuracy": 1.0
+    },
+    "by_type": {
+      "exact": {
+        "answerable": 18,
+        "unanswerable": 0,
+        "hit_at_1": 1.0,
+        "hit_at_3": 1.0,
+        "mrr": 1.0,
+        "no_match_accuracy": null
+      },
+      "multi_term": {
+        "answerable": 8,
+        "unanswerable": 0,
+        "hit_at_1": 1.0,
+        "hit_at_3": 1.0,
+        "mrr": 1.0,
+        "no_match_accuracy": null
+      },
+      "no_match": {
+        "answerable": 0,
+        "unanswerable": 10,
+        "hit_at_1": null,
+        "hit_at_3": null,
+        "mrr": null,
+        "no_match_accuracy": 1.0
+      },
+      "product_framing": {
+        "answerable": 6,
+        "unanswerable": 0,
+        "hit_at_1": 1.0,
+        "hit_at_3": 1.0,
+        "mrr": 1.0,
+        "no_match_accuracy": null
+      },
+      "synonym": {
+        "answerable": 10,
+        "unanswerable": 0,
+        "hit_at_1": 1.0,
+        "hit_at_3": 1.0,
+        "mrr": 1.0,
+        "no_match_accuracy": null
+      }
+    },
+    "per_question": [
+      {
+        "qid": "Q01",
+        "query": "wool",
+        "type": "exact",
+        "expected": [
+          "FTA-005"
+        ],
+        "returned_top3": [
+          "FTA-005"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q02",
+        "query": "sheepmeat",
+        "type": "exact",
+        "expected": [
+          "FTA-006"
+        ],
+        "returned_top3": [
+          "FTA-006"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q03",
+        "query": "kiwifruit",
+        "type": "exact",
+        "expected": [
+          "FTA-009"
+        ],
+        "returned_top3": [
+          "FTA-009"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q04",
+        "query": "wine",
+        "type": "exact",
+        "expected": [
+          "FTA-010"
+        ],
+        "returned_top3": [
+          "FTA-010"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q05",
+        "query": "manuka honey",
+        "type": "exact",
+        "expected": [
+          "FTA-011"
+        ],
+        "returned_top3": [
+          "FTA-011"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q06",
+        "query": "coal",
+        "type": "exact",
+        "expected": [
+          "FTA-007"
+        ],
+        "returned_top3": [
+          "FTA-007"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q07",
+        "query": "forestry",
+        "type": "exact",
+        "expected": [
+          "FTA-004"
+        ],
+        "returned_top3": [
+          "FTA-004"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q08",
+        "query": "apples",
+        "type": "exact",
+        "expected": [
+          "FTA-019"
+        ],
+        "returned_top3": [
+          "FTA-019"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q09",
+        "query": "cherries",
+        "type": "exact",
+        "expected": [
+          "FTA-012"
+        ],
+        "returned_top3": [
+          "FTA-012"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q10",
+        "query": "avocados",
+        "type": "exact",
+        "expected": [
+          "FTA-012"
+        ],
+        "returned_top3": [
+          "FTA-012"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q11",
+        "query": "blueberries",
+        "type": "exact",
+        "expected": [
+          "FTA-020"
+        ],
+        "returned_top3": [
+          "FTA-020"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q12",
+        "query": "persimmons",
+        "type": "exact",
+        "expected": [
+          "FTA-020"
+        ],
+        "returned_top3": [
+          "FTA-020"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q13",
+        "query": "fish and seafood",
+        "type": "exact",
+        "expected": [
+          "FTA-008"
+        ],
+        "returned_top3": [
+          "FTA-008"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q14",
+        "query": "tourism cooperation",
+        "type": "exact",
+        "expected": [
+          "FTA-023"
+        ],
+        "returned_top3": [
+          "FTA-023"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q15",
+        "query": "two-way trade value",
+        "type": "exact",
+        "expected": [
+          "FTA-017"
+        ],
+        "returned_top3": [
+          "FTA-017"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q16",
+        "query": "dairy peptones",
+        "type": "exact",
+        "expected": [
+          "FTA-015"
+        ],
+        "returned_top3": [
+          "FTA-015",
+          "FTA-016",
+          "FTA-013"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q17",
+        "query": "albumins",
+        "type": "exact",
+        "expected": [
+          "FTA-016"
+        ],
+        "returned_top3": [
+          "FTA-016"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q18",
+        "query": "infant formula",
+        "type": "exact",
+        "expected": [
+          "FTA-014"
+        ],
+        "returned_top3": [
+          "FTA-014"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q19",
+        "query": "tariff on wool exports to India",
+        "type": "multi_term",
+        "expected": [
+          "FTA-005"
+        ],
+        "returned_top3": [
+          "FTA-005",
+          "FTA-002"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q20",
+        "query": "India tariffs on NZ cheese and butter",
+        "type": "multi_term",
+        "expected": [
+          "FTA-013"
+        ],
+        "returned_top3": [
+          "FTA-013",
+          "FTA-001",
+          "FTA-002"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q21",
+        "query": "what tariffs does New Zealand charge on Indian imports",
+        "type": "multi_term",
+        "expected": [
+          "FTA-001"
+        ],
+        "returned_top3": [
+          "FTA-001",
+          "FTA-002"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q22",
+        "query": "cheese and butter",
+        "type": "multi_term",
+        "expected": [
+          "FTA-013"
+        ],
+        "returned_top3": [
+          "FTA-013"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q23",
+        "query": "student visas",
+        "type": "multi_term",
+        "expected": [
+          "FTA-022"
+        ],
+        "returned_top3": [
+          "FTA-022"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q24",
+        "query": "post study work visa",
+        "type": "multi_term",
+        "expected": [
+          "FTA-022"
+        ],
+        "returned_top3": [
+          "FTA-022"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q25",
+        "query": "GDP modelling of the agreement",
+        "type": "multi_term",
+        "expected": [
+          "FTA-018"
+        ],
+        "returned_top3": [
+          "FTA-018"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q26",
+        "query": "honey exports",
+        "type": "multi_term",
+        "expected": [
+          "FTA-011"
+        ],
+        "returned_top3": [
+          "FTA-011",
+          "FTA-002"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q27",
+        "query": "milk powder",
+        "type": "synonym",
+        "expected": [
+          "FTA-013"
+        ],
+        "returned_top3": [
+          "FTA-013"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q28",
+        "query": "lamb",
+        "type": "synonym",
+        "expected": [
+          "FTA-006"
+        ],
+        "returned_top3": [
+          "FTA-006"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q29",
+        "query": "mutton",
+        "type": "synonym",
+        "expected": [
+          "FTA-006"
+        ],
+        "returned_top3": [
+          "FTA-006"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q30",
+        "query": "timber and logs",
+        "type": "synonym",
+        "expected": [
+          "FTA-004"
+        ],
+        "returned_top3": [
+          "FTA-004"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q31",
+        "query": "baby formula",
+        "type": "synonym",
+        "expected": [
+          "FTA-014"
+        ],
+        "returned_top3": [
+          "FTA-014"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q32",
+        "query": "international students",
+        "type": "synonym",
+        "expected": [
+          "FTA-022"
+        ],
+        "returned_top3": [
+          "FTA-022"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q33",
+        "query": "holiday visitors",
+        "type": "synonym",
+        "expected": [
+          "FTA-023"
+        ],
+        "returned_top3": [
+          "FTA-023"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q34",
+        "query": "sauvignon blanc",
+        "type": "synonym",
+        "expected": [
+          "FTA-010"
+        ],
+        "returned_top3": [
+          "FTA-010"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q35",
+        "query": "investing in Indian companies",
+        "type": "synonym",
+        "expected": [
+          "FTA-021"
+        ],
+        "returned_top3": [
+          "FTA-021"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q36",
+        "query": "salmon and mussels",
+        "type": "synonym",
+        "expected": [
+          "FTA-008"
+        ],
+        "returned_top3": [
+          "FTA-008"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q37",
+        "query": "software services",
+        "type": "no_match",
+        "expected": [],
+        "returned_top3": [],
+        "rank": null
+      },
+      {
+        "qid": "Q38",
+        "query": "pharmaceuticals",
+        "type": "no_match",
+        "expected": [],
+        "returned_top3": [],
+        "rank": null
+      },
+      {
+        "qid": "Q39",
+        "query": "steel",
+        "type": "no_match",
+        "expected": [],
+        "returned_top3": [],
+        "rank": null
+      },
+      {
+        "qid": "Q40",
+        "query": "rice",
+        "type": "no_match",
+        "expected": [],
+        "returned_top3": [],
+        "rank": null
+      },
+      {
+        "qid": "Q41",
+        "query": "motor vehicles",
+        "type": "no_match",
+        "expected": [],
+        "returned_top3": [],
+        "rank": null
+      },
+      {
+        "qid": "Q42",
+        "query": "tariff line count",
+        "type": "no_match",
+        "expected": [],
+        "returned_top3": [],
+        "rank": null
+      },
+      {
+        "qid": "Q43",
+        "query": "beef",
+        "type": "no_match",
+        "expected": [],
+        "returned_top3": [],
+        "rank": null
+      },
+      {
+        "qid": "Q44",
+        "query": "travel insurance",
+        "type": "no_match",
+        "expected": [],
+        "returned_top3": [],
+        "rank": null
+      },
+      {
+        "qid": "Q45",
+        "query": "log in to the member portal",
+        "type": "no_match",
+        "expected": [],
+        "returned_top3": [],
+        "rank": null
+      },
+      {
+        "qid": "Q46",
+        "query": "baby clothing",
+        "type": "no_match",
+        "expected": [],
+        "returned_top3": [],
+        "rank": null
+      },
+      {
+        "qid": "Q47",
+        "query": "salmon exports",
+        "type": "product_framing",
+        "expected": [
+          "FTA-008"
+        ],
+        "returned_top3": [
+          "FTA-008",
+          "FTA-002"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q48",
+        "query": "tariffs on lamb exports",
+        "type": "product_framing",
+        "expected": [
+          "FTA-006"
+        ],
+        "returned_top3": [
+          "FTA-006",
+          "FTA-002",
+          "FTA-001"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q49",
+        "query": "timber trade exports",
+        "type": "product_framing",
+        "expected": [
+          "FTA-004"
+        ],
+        "returned_top3": [
+          "FTA-004",
+          "FTA-002",
+          "FTA-017"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q50",
+        "query": "dairy exports",
+        "type": "product_framing",
+        "expected": [
+          "FTA-013",
+          "FTA-014",
+          "FTA-015",
+          "FTA-016"
+        ],
+        "returned_top3": [
+          "FTA-015",
+          "FTA-016",
+          "FTA-013"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q51",
+        "query": "wine exports to India",
+        "type": "product_framing",
+        "expected": [
+          "FTA-010"
+        ],
+        "returned_top3": [
+          "FTA-010",
+          "FTA-002"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "Q52",
+        "query": "tariffs on kiwifruit",
+        "type": "product_framing",
+        "expected": [
+          "FTA-009"
+        ],
+        "returned_top3": [
+          "FTA-009",
+          "FTA-001",
+          "FTA-002"
+        ],
+        "rank": 1
+      }
+    ]
   }
 }
