@@ -41,7 +41,7 @@ copy of the personal plan and Gantt. Every log below is kept here so git dates e
 | #385 ADR-0008 delivery process | In review | Closes with #382, after the team scores it |
 | #386 FTA synonym gap | In review | Closes with #383 |
 | #387 Literature review | In progress | Draft in #382, final by 30 Oct |
-| #388 Cross-run source health store | Next up | Split from #208 so #208 can close with news-agent #14 |
+| #388 Cross-run source health store | Next up | Recommendation in ADR-0009 (14 Oct). Not a decision. Stays open until the team picks |
 | #389 Product outranked by a cross-sector entry | Next up | Q19 and Q26 on the eval |
 | #390 Held-out eval questions | Next up | Needs 10 questions from Bhanu or Paras |
 | #391 Eval regression gate in CI | Next up | |

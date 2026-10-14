@@ -67,8 +67,10 @@ Merge order matters: #383 is stacked on #382, and #394 on #383.
 - [ ] **#392** Serve the FTA depth levels through `/api/fta/query`. `answer_query_at_depth()`
   (#187, PR #327) still has no runtime caller. `services/api` is Bhanu's lane, so asked first.
 - [ ] **#393** Compare keyword, synonym, BM25 and hybrid retrieval on the eval, Week 7. Refs #63.
-- [ ] **#388** Decide where the collector's cross-run source health state lives. A team call:
-  commit back to `main`, `actions/cache`, or Postgres through the SIP API.
+- [ ] **#388** Decide where the collector's cross-run source health state lives. Recommendation
+  in [ADR-0009](../decisions/ADR-0009-source-health-store.md) (14 Oct): not `actions/cache`, no
+  push to `main` unless the team accepts that permission, Postgres through the SIP API once #55
+  can run. The team has not picked. Per-run health stays as news-agent #14 left it.
 - [ ] **#344** Brief Builder source table. #368 fixed the blank table by reading recorded
   outcomes. What remains is what writes those outcomes during a real run, which ties to #55.
 - [ ] **#55** End-to-end SIP-184 production run. Code path walked end to end (PR #359). Blocked on
