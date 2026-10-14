@@ -1,10 +1,13 @@
 # Literature review: retrieval for governed AI
 
-**Author:** Roshan Aryal. **Status:** Draft, started 13 Oct 2026. Annotated bibliography due W4
-(26 to 30 Oct). Studio 6 objective 2.1, applied in 2.2 through `apps/fta/eval/`.
+**Author:** Roshan Aryal. **Status:** Draft, started 13 Oct 2026. Bibliographic record of all
+12 sources checked 14 Oct 2026 (section 6). Annotated bibliography due W4 (26 to 30 Oct).
+Studio 6 objective 2.1, applied in 2.2 through `apps/fta/eval/`.
 
-Every reference below must be checked against the original before it is cited in the final
-version. Mark each one as checked in the bibliography table.
+A checked row means the citation was compared with the publisher, Crossref, DataCite, arXiv,
+proceedings, or standards page named in section 6. It does not mean the 150-word annotation is
+written. Two claims in the 14 Oct notes were not in the text that was opened. They are marked
+in the notes and are not cited as findings.
 
 ## 1. Introduction: why retrieval matters for INZBC
 
@@ -36,10 +39,12 @@ covers sheepmeat and student visas. This review asks three questions:
 ### 2.1 Lexical retrieval: TF-IDF and BM25
 
 Lexical methods score a document by the query terms it shares, weighted by how rare each term
-is. BM25 (Robertson & Zaragoza, 2009) adds two corrections to plain TF-IDF: term frequency
-saturates, so the tenth repeat of a word adds little, and long documents are normalised so they
-do not win on length alone. Manning et al. (2008) cover the TF-IDF and vector-space model the
-current Explainer is built on.
+is. BM25 (Robertson & Zaragoza, 2009) is the standard lexical baseline. The usual account of it
+adds two corrections to plain TF-IDF: term frequency saturates, so the tenth repeat of a word
+adds little, and long documents are normalised so they do not win on length alone. That account
+was not re-read in the 2009 article on 14 Oct (section 6). Manning et al. (2008) cover the
+TF-IDF and vector-space model the current Explainer is built on. The book site confirms the
+citation and that chapter 6 is term weighting. The chapter text was not re-read.
 
 The strength is that lexical retrieval is transparent and cheap, and a score can be explained
 term by term. The weakness is the vocabulary mismatch problem: no shared word means no match.
@@ -70,10 +75,11 @@ For INZBC the attraction is that exact-wording questions keep their lexical matc
 ### 2.4 Retrieval-augmented generation (RAG)
 
 Lewis et al. (2020) joined a dense retriever to a sequence-to-sequence generator, so the model
-writes its answer conditioned on retrieved passages rather than only on what it memorised. They
-reported more specific and more factual output than a generator alone on knowledge-intensive
-tasks. Gao et al. (2023) survey the field since then and group systems into naive, advanced and
-modular RAG. Retrieval quality is the main lever on answer quality.
+writes its answer conditioned on retrieved passages rather than only on what it memorised. On
+language generation tasks they report more specific, diverse and factual output than a
+parametric-only sequence-to-sequence baseline. Gao et al. (2023) survey the field since then and
+group systems into naive, advanced and modular RAG. Advanced RAG is the group in which they
+place the work on retrieval quality, through pre-retrieval and post-retrieval steps.
 
 The Explainer is deliberately not RAG in the generation sense. It returns the corpus entry
 itself, with no model writing prose. The retrieval half of this research applies directly. The
@@ -106,8 +112,8 @@ is what a committed eval set and a before vs after score provide.
 | Approach | How it works | Strength | Weakness | Fit for the 23 FTA entries |
 |---|---|---|---|---|
 | Keyword TF-IDF (today) | Shared terms weighted by rarity | Transparent, no dependencies, exact wording 1.000 | No match without a shared word. Synonyms 0.200 | Good floor. Keep it |
-| BM25 | TF-IDF with saturation and length normalisation | Strong zero-shot baseline (BEIR) | Same vocabulary gap. A rare framing word can outweigh the product | Measured worse (#398): 0.333 hit@1 on product plus framing questions, where "exports" outweighs "dairy" |
-| Keyword plus synonym list | Expand the query from a curated term map (Carpineto & Romano, 2012) | Explainable, no model call, cheap to test | The list has to be maintained by hand, and misses terms nobody listed. Expansion can drift onto the wrong topic | Built (#383). Synonym hit@1 0.200 to 1.000, no-match unchanged |
+| BM25 | TF-IDF with saturation and length normalisation. That account of the 2009 article was not re-read on 14 Oct (section 6) | Robust zero-shot baseline (BEIR abstract) | Same vocabulary gap. A rare framing word can outweigh the product | Measured worse (#398): 0.333 hit@1 on product plus framing questions, where "exports" outweighs "dairy" |
+| Keyword plus synonym list | Expand the query with terms of a similar meaning (Carpineto & Romano, 2012) | Explainable, no model call, cheap to test | The list has to be maintained by hand, and misses terms nobody listed. On this corpus an ambiguous added term can point at another topic. That limit is from #383, not from the survey abstract | Built (#383). Synonym hit@1 0.200 to 1.000, no-match unchanged |
 | Dense embeddings | Rank by vector similarity | Matches meaning, so it handles synonyms | Zero-shot reliability (BEIR). Needs a model, which may cross the model data boundary in ADR-0006 | Possible, but must not lose an exact or no-match result |
 | Hybrid (RRF) | Fuse lexical and dense rankings | Keeps exact matches and adds semantic recall | Two systems to run. A similarity cut-off is needed or no-match questions start returning answers | Best candidate if embeddings are approved under #63 |
 
@@ -122,8 +128,9 @@ questions.
 1. **Measure first.** Done (#382). The set has since grown to 52 questions.
 2. **Cheapest change first:** a curated synonym map inside `apps/fta`, with no model call. Done
    (#383): synonym hit@1 went from 0.200 to 1.000. The map left out "log", "baby" and "travel"
-   because expansion on ambiguous words drifts onto the wrong topic, which is the main risk query
-   expansion research warns about (Carpineto & Romano, 2012).
+   because those words point at more than one topic. That was a project choice. Carpineto and
+   Romano (2012) are the survey behind the method. Their abstract does not state this drift
+   warning, so it is not cited as theirs (section 6).
 3. **BM25 measured, not assumed (#398).** BEIR's finding that BM25 is a strong baseline did not
    hold for this corpus. With one short topic per entry, a framing word that appears in only one
    topic ("exports") gets a high IDF and outranks the product, so BM25 scored 0.333 on product
@@ -145,31 +152,31 @@ INZBC. Expand each first-pass note below into a full annotation by 30 Oct.
 
 | # | Source | Type | Checked against original | Annotation done |
 |---|---|---|---|---|
-| 1 | Robertson & Zaragoza (2009) | Peer-reviewed | | |
-| 2 | Manning, Raghavan & Schütze (2008) | Textbook | | |
-| 3 | Karpukhin et al. (2020) | Peer-reviewed | | |
-| 4 | Thakur et al. (2021) | Peer-reviewed | | |
-| 5 | Cormack, Clarke & Büttcher (2009) | Peer-reviewed | | |
-| 6 | Bruch, Gai & Ingber (2023) | Peer-reviewed | | |
-| 7 | Lewis et al. (2020) | Peer-reviewed | | |
-| 8 | Gao et al. (2023) | Preprint survey | | |
-| 9 | Es et al. (2023) | Preprint | | |
-| 10 | Moreau & Missier (2013) | Standard | | |
-| 11 | NIST (2023) | Framework | | |
-| 12 | Carpineto & Romano (2012) | Peer-reviewed survey | | |
+| 1 | Robertson & Zaragoza (2009) | Peer-reviewed | 14 Oct 2026, citation | |
+| 2 | Manning, Raghavan & Schütze (2008) | Textbook | 14 Oct 2026, citation | |
+| 3 | Karpukhin et al. (2020) | Peer-reviewed | 14 Oct 2026, citation and abstract | |
+| 4 | Thakur et al. (2021) | Peer-reviewed | 14 Oct 2026, citation and abstract | |
+| 5 | Cormack, Clarke & Büttcher (2009) | Peer-reviewed | 14 Oct 2026, citation | |
+| 6 | Bruch, Gai & Ingber (2023) | Peer-reviewed | 14 Oct 2026, citation and abstract | |
+| 7 | Lewis et al. (2020) | Peer-reviewed | 14 Oct 2026, citation and abstract | |
+| 8 | Gao et al. (2023) | Preprint survey | 14 Oct 2026, citation and section headings | |
+| 9 | Es et al. (2023) | Preprint | 14 Oct 2026, citation and terms | |
+| 10 | Moreau & Missier (2013) | Standard | 14 Oct 2026, recommendation text | |
+| 11 | NIST (2023) | Framework | 14 Oct 2026, PDF | |
+| 12 | Carpineto & Romano (2012) | Peer-reviewed survey | 14 Oct 2026, citation and abstract | |
 
 ### First-pass notes
 
 Started 14 Oct to speed up the annotations. Each note gives the claim, a first evaluation and the
-link to INZBC. Every one still has to be checked against the original and rewritten in my own
-words before it counts as an annotation.
+link to INZBC. The citation check is in section 6. These notes still have to be rewritten as
+full annotations before 30 Oct. They are not that yet.
 
-**1. Robertson & Zaragoza (2009).** Sets out the probabilistic relevance framework behind BM25 and
-explains its two corrections to plain TF-IDF: term frequency saturates (k1), and longer documents
-are normalised (b). *Evaluate:* a foundational monograph by the method's authors, widely used as
-the standard baseline. It says nothing about vocabulary mismatch. *Apply:* implemented in #398.
+**1. Robertson & Zaragoza (2009).** The monograph on the probabilistic relevance framework and
+BM25, by the method's authors. *Evaluate:* the standard reference for BM25. Citation checked
+against the publisher's suggested citation. The article body was not re-read on 14 Oct, so the
+k1 and b description is not marked as checked (section 6). *Apply:* implemented in #398.
 With three to eight tokens per entry, length normalisation has almost nothing to work on, and IDF
-on a rare framing word hurt product questions.
+on a rare framing word hurt product questions. That result is from #398, not from this monograph.
 
 **2. Manning, Raghavan & Schütze (2008).** The standard textbook on TF-IDF weighting, the vector
 space model and how to evaluate ranked retrieval. *Evaluate:* a textbook, not new research, but
@@ -199,14 +206,17 @@ convex combination of normalised scores can beat RRF, which is sensitive to its 
 tuning weights risks fitting the eval set, so RRF is the safer first try.
 
 **7. Lewis et al. (2020).** Retrieval-augmented generation joins a dense retriever to a generator,
-so answers are written from retrieved passages, and reports more factual output than a generator
-alone. *Evaluate:* the paper that named RAG, widely cited. *Apply:* the retrieval half applies
-directly. The generation half does not apply to FTA answers, which quote the corpus.
+so answers are written from retrieved passages. On generation tasks the paper reports more
+specific, diverse and factual language than a parametric-only baseline. *Evaluate:* the paper
+that named RAG. Checked against the NeurIPS 2020 abstract page. *Apply:* the retrieval half
+applies directly. The generation half does not apply to FTA answers, which quote the corpus.
 
 **8. Gao et al. (2023).** Surveys RAG since Lewis et al. and groups systems into naive, advanced
-and modular RAG. Retrieval quality is the main lever on answer quality. *Evaluate:* a preprint
-survey, useful for structure, not as evidence for any single claim. *Apply:* supports measuring
-retrieval first and separately.
+and modular RAG. Advanced RAG is where the survey puts pre-retrieval and post-retrieval work.
+*Evaluate:* a preprint survey, useful for structure, not as evidence for any single experiment.
+An earlier note said retrieval quality is the main lever on answer quality. That sentence is
+not in the survey text that was opened, so it is dropped. *Apply:* the grouping is a map of the
+field. The decision to measure retrieval first comes from the FTA baseline, not from this paper.
 
 **9. Es et al. (2023).** RAGAS scores a RAG pipeline without reference answers: faithfulness,
 answer relevance and context relevance, each judged by a language model. *Evaluate:* a preprint,
@@ -223,12 +233,15 @@ Measure and Manage, and lists "valid and reliable" among the marks of trustworth
 *Evaluate:* a government framework, not research, but widely adopted. *Apply:* the committed
 eval and the CI gate (#394) are the Measure function in practice.
 
-**12. Carpineto & Romano (2012).** Surveys automatic query expansion: thesaurus-based,
-corpus-based, query-log and relevance-feedback methods. Expansion usually improves recall but can
-hurt precision when it drifts onto the wrong topic. *Evaluate:* a broad, peer-reviewed survey,
-older but still the standard reference. *Apply:* the synonym map is manual thesaurus expansion.
-Topic drift is why "log", "baby" and "travel" were left out, and why expanded terms score at half
-weight.
+**12. Carpineto & Romano (2012).** Surveys automatic query expansion. The abstract says a short
+keyword query is a poor model of the need, and that expansion adds features with a similar
+meaning. *Evaluate:* a broad, peer-reviewed survey, and the standard reference for this method.
+The abstract does not list thesaurus, corpus, query-log and relevance-feedback methods, and it
+does not say expansion hurts precision when it drifts. Those two sentences were in the 14 Oct
+note and are withdrawn until the paper body is read. *Apply:* the synonym map is manual
+expansion, which is in scope for this survey. Leaving out "log", "baby" and "travel", and scoring
+expanded terms at half weight, was a project choice on #383. It is not a result quoted from this
+paper.
 
 ## References
 
@@ -243,7 +256,7 @@ Condorcet and individual rank learning methods. In *Proceedings of the 32nd Inte
 SIGIR Conference on Research and Development in Information Retrieval* (pp. 758-759).
 https://doi.org/10.1145/1571941.1572114
 
-Es, S., James, J., Espinosa-Anke, L., & Schockaert, S. (2023). *RAGAS: Automated evaluation of
+Es, S., James, J., Espinosa-Anke, L., & Schockaert, S. (2023). *Ragas: Automated evaluation of
 retrieval augmented generation* (arXiv:2309.15217). arXiv. https://doi.org/10.48550/arXiv.2309.15217
 
 Gao, Y., Xiong, Y., Gao, X., Jia, K., Pan, J., Bi, Y., Dai, Y., Sun, J., Wang, M., & Wang, H.
@@ -257,11 +270,11 @@ https://doi.org/10.18653/v1/2020.emnlp-main.550
 
 Lewis, P., Perez, E., Piktus, A., Petroni, F., Karpukhin, V., Goyal, N., Küttler, H., Lewis, M.,
 Yih, W., Rocktäschel, T., Riedel, S., & Kiela, D. (2020). Retrieval-augmented generation for
-knowledge-intensive NLP tasks. In *Advances in Neural Information Processing Systems 33*
-(pp. 9459-9474).
+knowledge-intensive NLP tasks. In *Advances in Neural Information Processing Systems 33*.
+https://proceedings.neurips.cc/paper/2020/hash/6b493230205f780e1bc26945df7481e5-Abstract.html
 
 Manning, C. D., Raghavan, P., & Schütze, H. (2008). *Introduction to information retrieval*.
-Cambridge University Press.
+Cambridge University Press. https://nlp.stanford.edu/IR-book/
 
 Moreau, L., & Missier, P. (Eds.). (2013). *PROV-DM: The PROV data model* (W3C Recommendation).
 World Wide Web Consortium. https://www.w3.org/TR/prov-dm/
@@ -276,3 +289,25 @@ https://doi.org/10.1561/1500000019
 Thakur, N., Reimers, N., Rücklé, A., Srivastava, A., & Gurevych, I. (2021). BEIR: A
 heterogeneous benchmark for zero-shot evaluation of information retrieval models. In
 *Proceedings of the Neural Information Processing Systems Track on Datasets and Benchmarks*.
+https://arxiv.org/abs/2104.08663
+
+## 6. Check against the originals, 14 Oct 2026
+
+Each row was compared with a page or API record opened that day. "Citation" means title,
+authors, year, and venue or DOI. Where an abstract or the document text was opened, the claim
+in the note was compared with that text.
+
+| # | Record opened | What matched | What did not |
+|---|---|---|---|
+| 1 | Publisher suggested citation and DOI `10.1561/1500000019` (now publishers, INR-019). Crossref for the same DOI. | Title, authors, year 2009, DOI. Publisher citation is *Foundations and Trends in Information Retrieval*, 3(4), 333-389. | Crossref and the Emerald reissue list the same DOI as volume 4, issues 1-2, pages 1-174. The reference keeps the publisher's own suggested citation. The k1 and b description in section 2.1 was not re-read in the article body. |
+| 2 | Authors' site, https://nlp.stanford.edu/IR-book/ | Manning, Raghavan and Schütze, *Introduction to Information Retrieval*, Cambridge University Press, 2008. ISBN 0521865719. Chapter 6 is term weighting and the vector space model. Chapter 8 is evaluation. | The chapter text was not re-read. |
+| 3 | Crossref `10.18653/v1/2020.emnlp-main.550`. ar5iv HTML of arXiv:2004.04906. | EMNLP 2020, pages 6769-6781, authors as cited. Abstract: the dense retriever outperforms Lucene-BM25 by 9 to 19 percentage points absolute on top-20 passage retrieval accuracy. | |
+| 4 | arXiv:2104.08663 PDF and abstract. NeurIPS 2021 Datasets and Benchmarks abstract. | 18 datasets. Abstract: BM25 is a robust baseline, and dense models often underperform other approaches zero-shot. PDF title spelling is "Heterogeneous". | The arXiv landing title spells it "Heterogenous". The reference follows the PDF. |
+| 5 | Crossref `10.1145/1571941.1572114`. | SIGIR 2009, pages 758-759. Authors Cormack, Clarke and Büttcher. The title states the comparison with Condorcet fusion. | The paper body was not re-read. Crossref had no abstract. |
+| 6 | Crossref `10.1145/3596512`, including the abstract. | *ACM Transactions on Information Systems*, 42(1), 1-35, 2023. Authors Bruch, Gai and Ingber. Abstract: a convex combination outperforms RRF in in-domain and out-of-domain settings, and RRF is sensitive to its parameters. | |
+| 7 | NeurIPS 2020 proceedings abstract and the 16-page proceedings PDF. | Authors, title, NeurIPS 2020. Abstract: on generation tasks, RAG produces more specific, diverse and factual language than a parametric-only baseline. | An earlier draft gave pages 9459-9474. Neither the abstract page nor the proceedings PDF prints that span, so the pages were removed. |
+| 8 | arXiv:2312.10997 HTML, DataCite DOI `10.48550/arXiv.2312.10997`. | Authors and title match. Headings: Naive RAG, Advanced RAG, Modular RAG. Advanced RAG describes pre-retrieval and post-retrieval steps aimed at retrieval quality. | "Retrieval quality is the main lever on answer quality" was not in the text that was opened. It is removed from section 2.4 and note 8. |
+| 9 | DataCite DOI `10.48550/arXiv.2309.15217`. arXiv HTML. | Authors Es, James, Espinosa-Anke and Schockaert. The paper's title is "Ragas", not "RAGAS". The HTML uses faithfulness, answer relevance and context relevance. | The reference title now follows the paper. |
+| 10 | https://www.w3.org/TR/prov-dm/ | W3C Recommendation, 30 April 2013. Editors Luc Moreau and Paolo Missier. The text defines entities, activities and agents, and uses `wasDerivedFrom` and `wasAttributedTo`. | |
+| 11 | PDF at https://doi.org/10.6028/NIST.AI.100-1 | NIST AI 100-1, January 2023. The core functions are Govern, Map, Measure and Manage. "Valid and reliable" and "accountable and transparent" are named characteristics. | Crossref lists Elham Tabassi as author. The PDF cover names NIST. The reference keeps the institutional author, which is what the cover shows. |
+| 12 | Crossref `10.1145/2071389.2071390`, including the abstract. | *ACM Computing Surveys*, 44(1), 1-50, 2012. Authors Carpineto and Romano. The abstract is a survey of automatic query expansion. | The abstract does not give the four method groups, and it does not say expansion hurts precision by drifting. Those claims are withdrawn in note 12 and in section 4 until the article body is read. |
