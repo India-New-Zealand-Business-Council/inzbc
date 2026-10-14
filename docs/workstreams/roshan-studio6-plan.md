@@ -172,7 +172,7 @@ Friday journal, so the week never has to be rebuilt from memory.
 | Date | Done today (PRs, issues, reviews) | Blocked or waiting on | Tomorrow |
 |---|---|---|---|
 | Tue 13 Oct | Opened #382, #383, #394. Fixed news-agent #14 review. Rota on #320. Reviewed and approved #381. Created #384 to #393. Created the Studio 6 milestone (17 items). Added #382 to #394 to the INZBC SIP Platform board and set Status, so board write access now works | Reviews from Bhanu and Paras. Bhanu's OK on #63, #64, #38, #392 | Client meeting. Chase reviews and ADR-0008 scores |
-| Wed 14 Oct | Added BM25 and BM25 plus synonyms to the FTA eval (#393 groundwork). Found and closed an eval gap: six product plus framing word questions, where BM25 drops to 0.333 | Bhanu: ADR-0008 scores, news-agent #14 re-review, answers on #392 and #63, #64, #38. Paras: merge #381 | Review #397. Annotated bibliography |
+| Wed 14 Oct | Opened #398 (BM25 and BM25 plus synonyms scored against the live ranker, six product plus framing word questions added, BM25 drops to 0.333 on them) and #399 (12th source, first-pass notes for all 12 sources). Reviewed Paras's ADR-0008 scores on #397, arithmetic checked. Reopened #385 until the decision is written | Bhanu: reviews on #398 and #399, news-agent #14 re-review, ADR-0008 column, answers on #392 and #63, #64, #38. Paras: merge #381, refs fix on #397, #390 questions. No replies on GitHub yet | Check the 12 sources against the originals. Confirm the final PDR week and book the practice slot. Write today's standup answers into the standup note |
 
 ## Weekly journal (1.2)
 
