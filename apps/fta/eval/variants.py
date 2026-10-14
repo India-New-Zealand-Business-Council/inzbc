@@ -6,13 +6,16 @@ holds those candidates. None of them is wired into `answer_query()`; they exist 
 
 Every variant searches the same text the live ranker does (each confirmed entry's topic and
 sector), uses the same tokeniser and stopwords, and returns only entries scoring above zero, so a
-question with no shared term still comes back empty and routes to INZBC. The differences are only
-in how a match is scored:
+question with no shared term still comes back empty and routes to INZBC.
 
 - `keyword`: the live `answer_query()`, as committed.
 - `bm25`: Okapi BM25 (Robertson & Zaragoza, 2009) over topic plus sector, no synonym map.
 - `bm25_synonyms`: BM25 with the query expanded through the live synonym map, expanded terms at
   the same half weight the live ranker gives them.
+- `bm25_synonyms_framing`: the same scores as `bm25_synonyms`, ordered with the live ranker's
+  framing-term guard (#402). A hit on a term outside `_FRAMING_TERMS` sorts ahead of a score
+  built only from framing terms. `k1` and `b` stay at `BM25_K1` and `BM25_B`. The 2009 account
+  of those constants was not re-read for this measurement.
 
 `error_analysis()` lists every question a variant gets wrong and why: which query terms the
 wrongly ranked entry matched, or that the expected entry shares no query term at all.
@@ -82,17 +85,26 @@ class BM25:
         denominator = frequency + self.k1 * (1 - self.b + self.b * length_ratio)
         return self.idf[term] * frequency * (self.k1 + 1) / denominator
 
-    def rank(self, weighted_terms: dict[str, float]) -> list[str]:
-        scored = []
+    def rank(
+        self, weighted_terms: dict[str, float], *, framing_guard: bool = False
+    ) -> list[str]:
+        # Subject terms follow answer_query: every weighted query term except the framing set.
+        # The guard only reorders. A zero score is still dropped, so a question that shares no
+        # term stays empty. With the guard off, every row shares the first sort key.
+        subject_terms = set(weighted_terms) - explainer._FRAMING_TERMS
+        scored: list[tuple[bool, float, str]] = []
         for index, entry in enumerate(self.entries):
             score = sum(
                 weight * self._term_score(term, index)
                 for term, weight in weighted_terms.items()
             )
             if score > 0:
-                scored.append((score, entry.id))
-        scored.sort(key=lambda pair: (-pair[0], pair[1]))
-        return [entry_id for _score, entry_id in scored]
+                framing_only = framing_guard and not bool(
+                    subject_terms & self.term_counts[index].keys()
+                )
+                scored.append((framing_only, score, entry.id))
+        scored.sort(key=lambda pair: (pair[0], -pair[1], pair[2]))
+        return [entry_id for _framing_only, _score, entry_id in scored]
 
 
 def _query_weights(query: str, *, synonyms: bool) -> dict[str, float]:
@@ -106,7 +118,12 @@ def _query_weights(query: str, *, synonyms: bool) -> dict[str, float]:
 
 # Whether each variant expands the query through the synonym map. The error analysis uses this to
 # say which query terms an entry matched under that variant.
-_USES_SYNONYMS = {"keyword": True, "bm25": False, "bm25_synonyms": True}
+_USES_SYNONYMS = {
+    "keyword": True,
+    "bm25": False,
+    "bm25_synonyms": True,
+    "bm25_synonyms_framing": True,
+}
 
 
 def variants() -> dict[str, Callable[[str], list[str]]]:
@@ -117,6 +134,9 @@ def variants() -> dict[str, Callable[[str], list[str]]]:
         ],
         "bm25": lambda query: bm25.rank(_query_weights(query, synonyms=False)),
         "bm25_synonyms": lambda query: bm25.rank(_query_weights(query, synonyms=True)),
+        "bm25_synonyms_framing": lambda query: bm25.rank(
+            _query_weights(query, synonyms=True), framing_guard=True
+        ),
     }
 
 
@@ -212,13 +232,17 @@ def _fmt(value: float | None) -> str:
 
 
 def _summary(reports: dict[str, dict[str, object]]) -> str:
-    lines = [f"{'variant':<14} {'type':<16} {'hit@1':>6} {'MRR':>6} {'no-match':>9}"]
+    # Wide enough for `bm25_synonyms_framing`.
+    name_width = 22
+    lines = [
+        f"{'variant':<{name_width}} {'type':<16} {'hit@1':>6} {'MRR':>6} {'no-match':>9}"
+    ]
     for name, report in reports.items():
         groups = {"overall": report["overall"], **report["by_type"]}  # type: ignore[dict-item]
         for type_name, m in groups.items():
             lines.append(
-                f"{name:<14} {type_name:<16} {_fmt(m['hit_at_1']):>6} {_fmt(m['mrr']):>6} "
-                f"{_fmt(m['no_match_accuracy']):>9}"
+                f"{name:<{name_width}} {type_name:<16} {_fmt(m['hit_at_1']):>6} "
+                f"{_fmt(m['mrr']):>6} {_fmt(m['no_match_accuracy']):>9}"
             )
     return "\n".join(lines)
 

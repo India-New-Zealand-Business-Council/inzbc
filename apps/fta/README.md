@@ -50,9 +50,10 @@ regenerated, so every ranking change shows its score change in the diff.
 It also checks the full report for drift, including each question's returned entries and rank.
 
 `uv run python -m apps.fta.eval.variants` scores candidate rankers on the same questions, side by
-side: the live keyword ranker, BM25, and BM25 with the synonym map. None of them is wired into
+side: the live keyword ranker, BM25, BM25 with the synonym map, and that same score with the live
+ranker's framing-term guard (`bm25_synonyms_framing`, #402). None of them is wired into
 `answer_query()`. `--write` saves `eval/results/variants.json`. This is the comparison #393 and #63
-build on.
+build on. It does not choose the ranker.
 
 The same command lists every question each variant gets wrong and why, and `--write` saves that
 to `eval/results/variant_errors.json`. Each row gives a reason (`no_result`, `outranked`,
