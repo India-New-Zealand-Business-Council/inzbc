@@ -12,6 +12,35 @@ This app is instrumented by **Reticle** — an in-app verification layer exposed
 - **If a tool result carries `update_available`, say so.** Reticle checked npm and a newer version exists. Tell the human the version numbers and offer to run `npx @reticlehq/server update` — between tasks, never mid-verification, because it restarts the daemon and drops the session. Finish what you are doing first.
 <!-- reticle:end -->
 
+## Repository comment authorization
+
+The tech lead reviews submitted code weekly before Monday's report submission, controlling
+review order and timing. Do not pressure for merges or repeatedly request review. Validate your
+own work and provide evidence. Pending review or merge does not stop the agent: continue
+independent approved assignments in your lane. Record an actual dependency against the specific
+task and PR in the existing worklog; do not label all work blocked. If no independent approved
+work remains, request direction through the agreed team channel. Follow root CONTRIBUTING.md's
+weekly review policy; review does not guarantee approval or merging that week.
+
+Focus on your own approved assignments. Unless acting for the tech lead, do not review another
+person's PR, including checking it out, rebasing it locally, rerunning its tests or preparing
+feedback, without an explicit tech-lead assignment for that specific review. This covers
+local-only activity and feedback labelled "not an approval". A GitHub review request alone is
+insufficient. Reading shared code and testing integration needed for your own approved work
+remain allowed; follow existing reporting rules for incidental reproducible defects.
+
+Read the root [AGENTS.md](../../../AGENTS.md), [CLAUDE.md](../../../CLAUDE.md) and
+[CONTRIBUTING.md](../../../CONTRIBUTING.md) before work. Their mandatory comment stop rule
+applies here: contributors other than the tech lead, and assistants acting for them, must not
+publish peer feedback, reviews or repository comments without explicit prior tech-lead
+authorization for the specific comment or review. Continue your own approved work and request
+authorization through the agreed team channel.
+
+Only the PR owner rebases, resolves conflicts on, updates or force-pushes their PR branch.
+The sole exception is the tech lead taking over when the owner is blocked and the PR needs
+to be merged, using `--force-with-lease` and completing required checks before merging.
+Other contributors and their assistants must stop before modifying someone else's PR branch.
+
 ## INZBC policy on the block above
 
 Written by us, outside the managed markers, so `reticle init` cannot revert it.

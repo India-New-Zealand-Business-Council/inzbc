@@ -45,7 +45,28 @@ Repo-specific rules. General workflow is in [CONTRIBUTING.md](./CONTRIBUTING.md)
 
 ## Git
 
+- The tech lead reviews submitted code weekly before Monday's report submission and controls
+  review order and timing. Review is not guaranteed approval or merge. Contributors must not
+  pressure for merges or repeatedly request review, and remain responsible for validating their
+  code, including AI-assisted code. While PRs await review, contributors and assistants continue
+  independent approved assignments in their own lanes. Only a task with a concrete dependency
+  on an unmerged PR is blocked; record the task, PR and dependency in the existing worklog.
+  If no independent approved work remains, request direction through the agreed team channel.
+  See [CONTRIBUTING.md](./CONTRIBUTING.md) for the canonical weekly review policy.
+- Contributors other than the tech lead, and their assistants, must focus on their own approved
+  assignments. Unassigned peer review is prohibited, including checking out, locally rebasing,
+  rerunning tests for or preparing feedback on another person's PR. Obtain an explicit tech-lead
+  assignment for the specific review before starting, even for local-only activity or feedback
+  labelled "not an approval". A GitHub review request alone is insufficient. Reading shared code
+  and testing integration needed for your own approved work remain allowed; report incidental
+  reproducible defects under the existing rules. See [CONTRIBUTING.md](./CONTRIBUTING.md).
 - Branch, open a PR into `main`. No direct pushes to `main`; only the tech lead merges.
+- Only the tech lead may publish repository comments and PR reviews by default. Other
+  contributors and their assistants must stop before posting peer feedback, reviews or comments
+  on PRs, issues, commits and discussions, including their own work, unless the tech lead has
+  explicitly authorized that specific comment or review beforehand. Request authorization
+  through the agreed team channel. See [CONTRIBUTING.md](./CONTRIBUTING.md) for the mandatory
+  stop rule and its platform-enforcement limits.
 - Only the tech lead authorizes scope, assignments, team-process changes, recurring obligations
   and review arrangements. Obtain authorization before creating related issues or board items;
   follow the canonical role definition and process rules in [CONTRIBUTING.md](./CONTRIBUTING.md).
@@ -67,6 +88,10 @@ Client priorities move and this is not a queue to defend: taking a lower item is
 in the worklog so the order stays meaningful.
 1. Fetch `main`; rebase if the worklog's base commit is behind. Always rebase, never merge `main`
    into a branch (see [CONTRIBUTING.md](./CONTRIBUTING.md)).
+   Only the PR owner may rebase, resolve conflicts on, update or force-push their PR branch.
+   Other contributors and their assistants must stop before modifying someone else's PR branch.
+   The sole exception is the tech lead taking over when the owner is blocked and the PR needs
+   to be merged; use `--force-with-lease` and complete required checks before merging.
 2. Branch `feat/<name>/<slug>` off fresh `main`.
 3. Quality standard: understand the task and code it touches; research library/API specifics
    (no guessing); **reuse before writing** (search for an existing helper; do not reinvent);
