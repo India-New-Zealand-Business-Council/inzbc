@@ -41,43 +41,41 @@ same branch-level fault hits someone else's PR later; not otherwise unresolved.
 
 ## Studio 6 (5 Oct to 4 Dec 2026)
 Plan, timeline, logs and evidence index: [roshan-studio6-plan.md](roshan-studio6-plan.md).
-Delivery process: [ADR-0008](../decisions/ADR-0008-delivery-process.md) (proposed, decision due
-19 Oct). Under it: one `stage:in-progress` item at a time, a named reviewer within 48 hours (#320).
+Delivery process: the team's existing workflow. [ADR-0008](../decisions/ADR-0008-delivery-process.md)
+is kept as analysis and was not adopted (tech lead, 15 Oct). Review and merging stay with the tech
+lead. Process ideas go to the tech lead in conversation first.
 
 ## In review (opened, awaiting merge)
-Merge order matters: #383 is stacked on #382, and #394 on #383.
-- [ ] **#382** FTA retrieval eval set and baseline, ADR-0008, Studio 6 plan, literature review
-  draft, Week 2 standup note. Closes #384 and #385. Baseline: hit@1 0.722, synonym hit@1 0.200,
-  no-match accuracy 1.000.
-- [ ] **#383** FTA synonym map. Closes #386. Synonym hit@1 0.200 to 1.000, no exact or no-match
-  result lost, four trap questions added ("log in", "baby clothing", "travel insurance", "beef").
-- [ ] **#394** Eval gate in CI plus named products ranked above cross-sector entries. Closes #389
-  and #391. Every metric 1.000 on the current set, so #390's held-out questions are the next
-  measure.
+- [ ] **#400** Literature review sources checked against originals, with corrections, plus the
+  14 and 15 Oct daily log rows.
+- [ ] **#403** BM25 framing guard variant for the #393 comparison. Analysis only, not a
+  production ranker.
 - [ ] **daily-india-nz-news-agent#14** Source freshness, recovery, fail-closed gate (#208 days
-  2 to 4). Bhanu's three review points from 5 Sep fixed 13 Oct (partial query-set coverage,
-  per-run scope, historical entries), 125 tests, review re-requested. Closes #208. The cross-run
-  store decision is split out as #388.
+  2 to 4). Bhanu's three review points from 5 Sep fixed 13 Oct, waiting on his re-review.
 
 ## Next up
-- [ ] **#390** Held-out FTA eval questions. Needs 10 questions from Bhanu or Paras written without
-  seeing the synonym map.
-- [ ] **#387** Literature review, final by 30 Oct: 12 or more sources checked against originals,
-  annotated in APA 7.
-- [ ] **#392** Serve the FTA depth levels through `/api/fta/query`. `answer_query_at_depth()`
-  (#187, PR #327) still has no runtime caller. `services/api` is Bhanu's lane, so asked first.
-- [ ] **#393** Compare keyword, synonym, BM25 and hybrid retrieval on the eval, Week 7. Refs #63.
-- [ ] **#388** Decide where the collector's cross-run source health state lives. A team call:
-  commit back to `main`, `actions/cache`, or Postgres through the SIP API.
-- [ ] **#344** Brief Builder source table. #368 fixed the blank table by reading recorded
-  outcomes. What remains is what writes those outcomes during a real run, which ties to #55.
-- [ ] **#55** End-to-end SIP-184 production run. Code path walked end to end (PR #359). Blocked on
-  INZBC: SIP-191's authority window has expired, and a live fetch in CI needs a new PAT secret.
-- Asked Bhanu on 13 Oct (#320) whether I can take #63, #64 and #38, all retrieval or eval work.
-  Not picked up until he agrees.
+- [ ] **#387** Literature review annotations in my own words, APA 7, by 30 Oct.
+- [ ] **#390** Held-out FTA eval questions. Paras's #416 adds them (held-out synonym hit@1 0.800
+  with the map, 0.500 without). Peer feedback if he asks, approval stays with the tech lead.
+- [ ] **#406** Check eval answers, not only the top-ranked entry. Needs a named human checker.
+- [ ] **#392** Serve the FTA depth levels through `/api/fta/query`. Open, real gap. No API or
+  schema change without tech lead sign-off.
+- [ ] **#393** Compare retrieval variants on the eval, Week 7. A result alone does not authorize
+  a new production ranker.
+- [ ] **#344** Brief Builder source table. What remains is what writes source outcomes during a
+  real run, which ties to #55.
+- [ ] **#55** End-to-end SIP-184 production run. Blocked on INZBC: SIP-191's authority window
+  has expired, and a live fetch in CI needs a new PAT secret. #388's durable counters are
+  deferred here.
+- #63, #64 and #38 stay with Bhanu (no transfer, 15 Oct).
 - Not committed scope: #193 and #194, only if the client raises their priority.
 
 ## Done
+- [x] **#382** FTA eval set and baseline (#384). ADR-0008 kept as analysis, not adopted (#385).
+- [x] **#383** FTA synonym map (#386). Synonym hit@1 0.200 to 1.000.
+- [x] **#394** Eval gate in CI and named products ranked first (#389, #391).
+- [x] **#398** BM25 variants and six product framing questions (#393, first part).
+- [x] **#399** Literature review first-pass notes (#387, first part).
 - [x] Explainer public/member/internal depth levels (#187, PR #327, merged). Runtime wiring is
   #392.
 - [x] Run authorisation endpoint and a full Draft to Distributed walk (PR #359, merged, refs #55).

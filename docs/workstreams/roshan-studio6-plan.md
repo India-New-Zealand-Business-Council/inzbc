@@ -19,11 +19,11 @@ copy of the personal plan and Gantt. Every log below is kept here so git dates e
 |---|---|---|
 | W1, 5 Oct | Kick off and plan | Confirm PDR slots. Kickoff and triage. Commit this plan. Ask Bhanu about #63, ask INZBC about #55. Board Status access |
 | W2, 12 Oct | Choose the process | Decision matrix and ADR-0008 draft. 48 hour review rota for #320. Collector PRs #13 and #14 (#208). Start literature search |
-| W3, 19 Oct | Run it and read | ADR-0008 merged 19 Oct, WIP limit live. Literature review. First pair session with Paras. Start #344. Retro 1 on 23 Oct |
+| W3, 19 Oct | Run it and read | Literature review annotations. Review #416 if Paras wants feedback. #344. (ADR-0008 not adopted, 16 Oct. Pairing arranged by conversation, not tracked as an issue) |
 | W4, 26 Oct | Baseline and prep | Facilitate standup 27 Oct. FTA eval set and baseline. Annotated bibliography. Practice worksheet |
-| W5, 2 Nov | Practice PDR | Practice PDR. Log feedback same day. Start #63. Retro 2 on 6 Nov |
-| W6, 9 Nov | Act on feedback | Revise plan, log the change. Build #63 against the FTA corpus. Start evidence pack |
-| W7, 16 Nov | Measure the change | Facilitate standup 16 Nov. Re-run eval, before vs after. Retro 3. Team session on retrieval eval. Peer feedback by 18 Nov. Evidence ready 20 Nov |
+| W5, 2 Nov | Practice PDR | Practice PDR. Log feedback same day. Team sprint review on the existing cadence |
+| W6, 9 Nov | Act on feedback | Revise plan, log the change. #393 comparison on approved work. Start evidence pack |
+| W7, 16 Nov | Measure the change | Re-run eval, before vs after. Peer feedback by 18 Nov, asked in conversation. Evidence ready 20 Nov |
 | W8, 23 Nov | Final PDR | Rehearse. Final PDR. Moodle upload. Log comments |
 | W9, 30 Nov | Handover | Hand over open items. Close or reassign issues |
 
@@ -31,22 +31,25 @@ copy of the personal plan and Gantt. Every log below is kept here so git dates e
 
 | Issue | Status | Note |
 |---|---|---|
-| #208 collection engine | In review | #13 merged 5 Sep. #14 fixed 13 Oct and set to close #208. Persistence decision moved to #388 |
+| #208 collection engine | In review | #13 merged 5 Sep. News-agent #14 fixed 13 Oct, waiting on the tech lead's re-review |
 | #55 SIP-184 production run | Blocked on INZBC | Needs a fresh SIP-191 authority. Tracked as a dependency |
 | #193, #194 | Not planned | Only if the client raises priority |
-| #63 embeddings | Proposed | Held by Bhanu. Ask first. Fallback: hybrid retrieval inside apps/fta |
+| #63 embeddings | Bhanu's | No transfer (tech lead, 15 Oct). Comparison work stays in apps/fta under #393 |
 | #344 Brief Builder source table | Assigned 13 Oct | #368 fixed the blank table. Remaining: what writes outcomes in a real run (tied to #55) |
-| #320 PR review backlog | Assigned 13 Oct | Rota proposed. Becomes the conflict record below |
-| #384 FTA eval set and baseline | In review | Closes with #382 |
-| #385 ADR-0008 delivery process | In review | Closes with #382, after the team scores it |
-| #386 FTA synonym gap | In review | Closes with #383 |
-| #387 Literature review | In progress | Draft in #382, final by 30 Oct |
-| #388 Cross-run source health store | Next up | Split from #208 so #208 can close with news-agent #14 |
-| #389 Product outranked by a cross-sector entry | Next up | Q19 and Q26 on the eval |
-| #390 Held-out eval questions | Next up | Needs 10 questions from Bhanu or Paras |
-| #391 Eval regression gate in CI | Next up | |
-| #392 Depth levels through /api/fta/query | Next up | services/api is Bhanu's lane, asked on the issue |
-| #393 Compare four retrieval variants | Next up | W7 before vs after. Refs #63 |
+| #320 PR review backlog | Closed, not planned (15 Oct) | No rota. Review and merging stay with the tech lead |
+| #384 FTA eval set and baseline | Done | #382 |
+| #385 ADR-0008 delivery process | Closed, not adopted (15 Oct) | Kept as analysis |
+| #386 FTA synonym gap | Done | #383 |
+| #387 Literature review | In progress | Sources checked in #400. Annotations due 30 Oct |
+| #388 Cross-run source health store | Done | Per-run reporting only. Durable counters deferred to #55 (tech lead, 16 Oct) |
+| #389 Product outranked by a cross-sector entry | Done | #394 |
+| #390 Held-out eval questions | In review | Paras's #416: held-out synonym hit@1 0.800 with the map, 0.500 without |
+| #391 Eval regression gate in CI | Done | #394 |
+| #392 Depth levels through /api/fta/query | Open | Real gap. No unauthenticated depth parameter or API/schema change without tech lead sign-off |
+| #393 Compare four retrieval variants | In progress | #398 merged, #403 open. A comparison result alone does not authorize a new production ranker |
+| #404 Steel exports (framing-only match) | Done | Tech lead chose a general answer with a missing-coverage warning (#423). INZBC agreed |
+| #405, #407 to #415 process issues | Closed, not planned (15 Oct) | Tech lead answers in [engineering-answers-2026-10-16.md](../engineering-answers-2026-10-16.md) |
+| #406 Check eval answers, not only rank | Open | Valid. Needs a named human checker, none invented |
 
 ## FTA retrieval eval (2.2)
 
@@ -112,6 +115,8 @@ Every Friday: issues closed that week, days from in-progress to closed.
 |---|---|---|
 | 2026-10-13 | FTA eval set and baseline moved from W4 to W2 | Gives the literature review a measured problem to aim at, and frees W4 for the bibliography |
 | 2026-10-13 | Synonym map started in W2, ahead of #63 | Literature review found the cheapest fix with no model call should be tried first. It also gives a middle row for the before vs after table |
+| 2026-10-16 | ADR-0008 not adopted. No review rota, daily GitHub check-ins, retro issues or workload reassignment | Tech lead's answers of 15 to 16 Oct (engineering-answers-2026-10-16.md). Process ideas now go to the tech lead in conversation before any issue is opened |
+| 2026-10-16 | #63, #64 and #38 stay with Bhanu. W5 to W7 retrieval work stays inside apps/fta (#393, #402) | No transfer approved |
 
 ## Stakeholder and mentor feedback log (1.2)
 
@@ -133,9 +138,9 @@ Every Friday: issues closed that week, days from in-progress to closed.
 | People involved | Bhanu, Paras, Roshan |
 | Date raised | 2026-10-13, rota proposed on #320 |
 | Steps I took | 13 Oct: proposed a 48 hour review rota on #320, rotating Bhanu, Paras, Roshan, reviewer named at Monday standup. Asked both to agree on the issue |
-| Outcome | PR time-to-first-review before and after the rota. Before: #381 (Paras) opened 9 Oct, first review 13 Oct, 4 days. #14 waited 22 days for its first review (14 Aug to 5 Sep) |
-| Evidence | Standup note, issue comment, review rota, merged PR dates |
-| What I would do differently | |
+| Outcome | The tech lead closed #320 on 15 Oct as not planned: no rota is adopted, and review and merging stay with the tech lead. Context before the proposal: #381 waited 4 days for its first review, news-agent #14 waited 22 days (14 Aug to 5 Sep). PRs opened 13 and 14 Oct were reviewed the same day, but the rota was never adopted, so that is not evidence the rota worked |
+| Evidence | #320 thread, the tech lead's answers in engineering-answers-2026-10-16.md, merged PR dates |
+| What I would do differently | [My own words. Prompt: I proposed a process change and opened several tracking issues before agreeing them with the tech lead in conversation. What will I do next time I want to change how the team works?] |
 
 ## PDR evidence checklist
 
@@ -148,8 +153,8 @@ Every Friday: issues closed that week, days from in-progress to closed.
 | [x] | W1 | Studio 6 GitHub milestone created (13 Oct, 17 items) | 3.1 |
 | [x] | W2 | Decision matrix and ADR-0008 draft (#382) | 1.1 |
 | [ ] | W2 | #320 conflict record: issue, action, outcome | 3.2 |
-| [ ] | W3 | ADR-0008 merged, WIP limits live on the board | 1.2 |
-| [ ] | W3 | Retro 1 notes | 1.2 |
+| [x] | W3 | ADR-0008 outcome recorded: not adopted by the tech lead, 15 Oct, kept as analysis | 1.1 |
+| [ ] | W3 | Notes from the team's existing sprint review and retrospective | 1.2 |
 | [ ] | W4 | Annotated bibliography, 8 or more APA 7 sources | 2.1 |
 | [x] | W4 | Baseline eval score committed (moved to W2, #382) | 2.2 |
 | [ ] | W4 | Practice PDR worksheet | PDR |
@@ -157,7 +162,7 @@ Every Friday: issues closed that week, days from in-progress to closed.
 | [ ] | W6 | Feedback log: What I changed column filled | 1.2 |
 | [ ] | W6 | Plan change log entry after practice PDR | 3.1 |
 | [ ] | W7 | Before vs after table for #63 | 2.2 |
-| [ ] | W7 | Retro 3 and process effectiveness review | 1.2 |
+| [ ] | W7 | Honest review of what worked in my own process this block, from the journal and cycle time | 1.2 |
 | [ ] | W7 | Peer feedback from Bhanu and Paras | 3.2 |
 | [ ] | W7 | Reflective report, evidence index and final worksheet ready by Fri 20 Nov | PDR |
 | [ ] | W8 | Final PDR attended, Moodle upload done, feedback logged | PDR |
@@ -208,7 +213,7 @@ day instead of at the end of the week, or ask for reviewers by name when opening
 
 | Obj | Artefact | Link or file | Date |
 |---|---|---|---|
-| 1.1 | ADR-0008 | [ADR-0008](../decisions/ADR-0008-delivery-process.md) | |
+| 1.1 | ADR-0008 comparison (not adopted) and the tech lead's answers | [ADR-0008](../decisions/ADR-0008-delivery-process.md), [engineering answers](../engineering-answers-2026-10-16.md) | 2026-10-16 |
 | 1.2 | Retro notes, cycle time table | this file | |
 | 2.1 | Literature review | [retrieval-literature-review.md](../research/retrieval-literature-review.md) | 2026-10-13 (draft) |
 | 2.2 | Eval set, baseline, PR | `apps/fta/eval/` | 2026-10-13 |
