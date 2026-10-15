@@ -1180,6 +1180,8 @@ export interface components {
             confidence_meaning: string;
             /** Notes */
             notes?: string | null;
+            /** Coverage Warning */
+            coverage_warning?: string | null;
             /** Direction */
             direction?: string | null;
             /** Current Tariff */

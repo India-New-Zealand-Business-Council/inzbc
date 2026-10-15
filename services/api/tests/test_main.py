@@ -9,6 +9,15 @@ from services.api.main import ActionRequiredOut, FtaQueryResponse, app
 client = TestClient(app)
 
 
+def test_uncovered_product_warning_survives_the_http_response() -> None:
+    response = client.get("/api/fta/query", params={"q": "steel exports"})
+    assert response.status_code == 200
+    answer = response.json()["answers"][0]
+    assert answer["id"] == "FTA-002"
+    assert "no product-specific match" in answer["coverage_warning"]
+    assert "Contact INZBC" in answer["coverage_warning"]
+
+
 def test_matched_query_returns_answers_and_no_escalation() -> None:
     body = client.get("/api/fta/query", params={"q": "wool"}).json()
     assert body["status"] == "matched"

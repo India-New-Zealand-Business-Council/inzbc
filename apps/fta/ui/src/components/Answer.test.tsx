@@ -4,6 +4,13 @@ import { Answer } from './Answer'
 import { woolAnswer } from './fixtures'
 
 describe('Answer', () => {
+  it('shows the product coverage warning alongside the general sourced answer', () => {
+    render(<Answer answer={{ ...woolAnswer, coverage_warning: 'General FTA information only. Contact INZBC for product-specific guidance.' }} />)
+    expect(screen.getByRole('note')).toHaveTextContent('General FTA information only')
+    expect(screen.getByRole('note')).toHaveTextContent('Contact INZBC')
+    expect(screen.getByText(/MFAT National Interest Analysis/)).toBeInTheDocument()
+  })
+
   it('renders the evidence fields the Information Standard requires', () => {
     render(<Answer answer={woolAnswer} />)
     expect(screen.getByRole('heading', { name: 'Wool' })).toBeInTheDocument()

@@ -3504,6 +3504,17 @@
             ],
             "title": "Notes"
           },
+          "coverage_warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coverage Warning"
+          },
           "direction": {
             "anyOf": [
               {
