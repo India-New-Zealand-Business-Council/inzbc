@@ -5,9 +5,11 @@ Issue #38 is covered by `apps/sip/core/tests/test_scoring_regression.py` and the
 
 ```sh
 uv run python -m pytest apps/sip/core/tests/test_scoring_regression.py -q
+uv run python scripts/eval_scoring.py
 ```
 
-The existing CI Python job includes these tests through `pytest apps services`.
+The CI Python job runs the batch command explicitly and includes the tests through
+`pytest apps services`. The command returns a nonzero exit status for prompt or contract drift.
 No API key, database, provider request or real article/member data is needed.
 
 The fixtures contain synthetic article fields and manually authored model-output strings.
