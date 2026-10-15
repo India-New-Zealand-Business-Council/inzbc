@@ -45,8 +45,8 @@ These are the flagship AI engineering builds; each is tracked as a GitHub issue 
 Base: main @ `19bb552`. The current owner request is to finish independently deliverable
 existing issues and distinguish client decisions from engineering work.
 
-- #36: provider selection, usage/cost metadata and audit persistence implemented; validation in progress.
-- #38: 20 synthetic scoring replay fixtures and 26 regression tests implemented, including prompt
+- #36: provider selection, usage/cost metadata and audit persistence merged in PR #420; all CI passed.
+- #38: 20 synthetic scoring replay fixtures and 28 regression tests merged, including prompt
   drift and the verification gate. No live semantic scoring result is claimed.
 - #135: existing 10 September demo recording verified and screenshots extracted; evidence indexed
   in [demo-evidence.md](../demo-evidence.md). Historical evidence, not production acceptance.
@@ -63,13 +63,17 @@ existing issues and distinguish client decisions from engineering work.
 
 ## Client-dependent or approval-gated
 
-- #303 and #65: staff-prose boundary/risk decision; streaming cannot be represented as closing it.
+- #303: verbal residual-risk acceptance reported; required written acceptance not yet supplied.
+- #65: streaming remains engineering work; it cannot be represented as closing the prose risk.
 - #39: real candidate calibration requires the live backend, captured candidates and configuration.
-- #40: technical review delivered; Executive Sponsor sign-off remains outstanding.
-- #46 and #201: membership identity/system-of-record decisions remain prerequisites.
-- #99: Render deployment needs an INZBC-owned account; no payment method or production deployment
-  is authorized by the engineering backlog cleanup.
-- #97, #133, #134, #189 and #192: client ownership, acceptance, launch and product decisions.
+- #40: technical review approval reported by phone; its written residual-risk condition remains.
+- #46 and #201: internal builds not planned; Member Jungle stays authoritative with a link-out.
+- #99: INZBC-owned account reported ready and testing/deployment preparation approved. No Render
+  service exists yet. Controlled production launch is not authorized.
+- #97 and #192: ownership/OAuth registration and platform choice settled. See the
+  [16 October decision update](../meetings/client/2026-10-16-decision-update.md).
+- #133/#134: session and written acceptance reported complete; source location still needed.
+- #189: production launch approval remains outstanding.
 - #291: handover recipient and recorded sponsor session remain client dependencies.
 
 Previously stale next-up entries have been reconciled: redaction (#37), auth/audit (#42),
@@ -96,8 +100,8 @@ or client sign-off exist. Migrations use `scripts/migrate.py`, not the abandoned
 - SIP app private domain. (Hosting itself is settled — [ADR-0004](../decisions/0004-platform-graduation.md)
   picks Fly.io for the API and Cloudflare Pages for the public UI on provider-issued HTTPS; a custom
   domain is still owed by INZBC and is not on the critical path.)
-- INZBC to register the GitHub OAuth app at organisation level, and to name the post-capstone owner
-  of the deployed services (ADR-0004). Unnamed at capstone end means the resources are torn down.
+- Ownership and organisation OAuth registration are settled as recorded above. Deployment and
+  credential handover still require verification; no credentials belong in the repository.
 
 ## Definition of done
 Contracts published and versioned; auth/audit/state/CI green; disabled-control flags enforced

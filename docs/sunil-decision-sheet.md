@@ -2,6 +2,12 @@
 
 Prepared 6 August 2026 for Sunil Kaushal, Executive Sponsor.
 
+> **Update recorded 16 October 2026:** post-placement ownership is settled as INZBC / Sunil;
+> INZBC-owned OAuth applications are registered. Retain Member Jungle with a website link-out
+> and defer Zoho. The older open-status text below is historical. See the
+> [current decision update](meetings/client/2026-10-16-decision-update.md) for evidence limits
+> and the separate deployment, written risk-acceptance and production-launch gates.
+
 > ## Status, 13 August 2026: eight of the nine are settled
 >
 > **Only item 2 is still open, and only part of it: who owns the platform after the placement

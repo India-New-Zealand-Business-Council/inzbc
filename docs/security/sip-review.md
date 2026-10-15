@@ -122,6 +122,12 @@ already recorded.
 
 ## 6. Open items, with owners
 
+**Status update recorded 16 October 2026:** the tech lead reports Sunil approved this review
+and the Comms residual risk by phone; the call date is not recalled and no original record was
+supplied. This is a relayed approval, not a written residual-risk acceptance. The written
+acceptance condition below remains outstanding. See the
+[decision update](../meetings/client/2026-10-16-decision-update.md). Production is not authorized.
+
 | Item | Owner | Note |
 |---|---|---|
 | Sign-off on this review before staff use | Executive Sponsor | The remaining acceptance criterion. Everything else here is delivered |

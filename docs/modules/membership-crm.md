@@ -1,6 +1,11 @@
 # Module — Membership / CRM
 
-Owner: Bhanu + INZBC · Status: planned (decision-gated) · System of record: **Member Jungle (provisional)**.
+Owner: INZBC · Status: **retain existing platform; internal build not planned** · System of record: **Member Jungle**.
+
+Decision confirmed by the tech lead on 16 October 2026: retain Member Jungle with a website
+link-out, defer Zoho, and close internal build tickets #46/#201 as not planned. See the
+[decision update](../meetings/client/2026-10-16-decision-update.md). The design below is historical
+contingency scope, not an instruction to build or migrate a member register.
 
 ## Purpose
 The member and organisation register and its business rules. This is the highest-risk module: it
