@@ -33,7 +33,7 @@ Personal Studio 6 plans sit next to the worklogs, for example
 8. **PR** — open it with the evidence block. No AI attribution in commits or PRs.
 
 ## Lanes (how three work at once without colliding)
-- Each engineer owns folders (see the per-engineer worklogs and `.github/CODEOWNERS`). Do not edit
+- Each engineer owns folders (see the per-engineer worklogs). Do not edit
   another engineer's lane without a `SHARED-OK:` note and their agreement.
 - Shared contracts live in `/services/api`, `/database`, `/schemas` and are owned by Bhanu.
   Others build against them; contract changes go through Bhanu.

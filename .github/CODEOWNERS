@@ -1,30 +1,18 @@
-# Code owners for INZBC. Enforced once branch protection has
-# "Require review from Code Owners" enabled (needs repo admin + a paid plan).
-# Until then this file is documentation only.
+# Code owners for INZBC. Enforced by the main branch ruleset's
+# "Require review from Code Owners" rule.
 
-# Default: the tech lead reviews everything.
+# Contributor PRs need the tech lead's approval. GitHub forbids self-approval;
+# the tech lead's own PRs use the named owner-only PR bypass when needed.
 *                       @bhanuGupta1
 
-# Per-developer lanes (see docs/workstreams). The tech lead still reviews all PRs into main.
-/services/               @bhanuGupta1
-/database/               @bhanuGupta1
-/schemas/                @bhanuGupta1
-/deployment/             @bhanuGupta1
-/apps/sip/core/          @bhanuGupta1
-/apps/fta/               @roshanaryal1 @bhanuGupta1
-/apps/comms/             @roshanaryal1 @bhanuGupta1
-/apps/sip/pipeline/      @roshanaryal1 @bhanuGupta1
-/apps/sip/collector/     @roshanaryal1 @bhanuGupta1
-/apps/site/              @Paras-22 @bhanuGupta1
-/apps/sip/ui/            @Paras-22 @bhanuGupta1
-/apps/comms/ui/          @Paras-22 @bhanuGupta1
-/apps/fta/ui/            @Paras-22 @bhanuGupta1
-
-# Sensitive paths: always the tech lead, no exceptions.
+# Sensitive paths, listed so the ownership survives if a lane is ever added above.
 /.github/               @bhanuGupta1
 /CODEOWNERS             @bhanuGupta1
 /.github/CODEOWNERS     @bhanuGupta1
-/PROJECT-RULES.md              @bhanuGupta1
+/AGENTS.md              @bhanuGupta1
+/CLAUDE.md              @bhanuGupta1
+/PROJECT-RULES.md       @bhanuGupta1
 /CONTRIBUTING.md        @bhanuGupta1
 /.gitignore             @bhanuGupta1
+/docs/decisions/        @bhanuGupta1
 /docs/sip/              @bhanuGupta1

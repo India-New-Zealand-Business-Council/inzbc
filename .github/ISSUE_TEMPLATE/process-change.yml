@@ -1,0 +1,32 @@
+name: Process change proposal
+description: Request a change to review ownership, reporting, cadence or team workflow.
+title: "[Proposal] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is a proposal. It does not change team rules or create mandatory work.
+        Adoption requires Bhanu's explicit approval, with client approval where applicable.
+        Do not include credentials, private client instructions or personal data.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and evidence
+      description: Link the current rule and dated evidence of the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change and cost
+      description: Explain who is affected, the time required, and alternatives.
+    validations:
+      required: true
+  - type: textarea
+    id: decision
+    attributes:
+      label: Approval record
+      description: Write "Pending tech-lead decision" until an explicit approval is linked.
+      value: Pending tech-lead decision. No change is authorized by opening this issue.
+    validations:
+      required: true
