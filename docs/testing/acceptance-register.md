@@ -1,5 +1,12 @@
 # Acceptance register (#210)
 
+**Status reported 16 October 2026:** the tech lead reports an acceptance session was held and
+written sign-off received (#133/#134). The date, accepted scope and source record location have
+not yet been supplied, so the individual results below have not been inferred. The separate
+handover walkthrough (#291) has **not** been completed. See the
+[decision update](../meetings/client/2026-10-16-decision-update.md) and
+[handover pack](../handover-pack.md).
+
 One row per acceptance criterion in `docs/testing/master-test-plan.md`, tracked as it moves from
 "criterion exists" to "exercised" to "signed". Empty until INZBC actually runs UAT — this is the
 register the sessions get logged against, not a record of anything that has happened yet.
