@@ -27,6 +27,12 @@ does not multiply. Each completed invocation records provider, configured model,
 attempt count, success/failure, token counts and cost basis. Missing or invalid usage is unknown,
 not zero. Successful metadata does not include unknown billing from failed attempts.
 
+`stream()` (#65) applies the same source refusal and redaction before returning, then yields
+text deltas. It is never retried, because text may already have reached a reader. Closing it
+closes the provider stream, and one usage record is written however it ends: success only after
+a completed response with text. A stream abandoned mid-way usually has no token counts, so its
+cost is unknown.
+
 [OpenAI usage](https://developers.openai.com/api/docs/guides/token-counting) reports input and
 output counts. A provider-reported USD total is retained where available; otherwise both
 configured rates and both counts are required for a clearly labeled token-cost estimate.

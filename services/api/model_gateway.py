@@ -36,7 +36,7 @@ from __future__ import annotations
 
 import os
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
 
@@ -189,6 +189,53 @@ class ModelGateway:
             input_tokens=usage.input_tokens, output_tokens=usage.output_tokens,
             cost_usd=usage.cost_usd, cost_basis=usage.cost_basis,
         )
+
+    def stream(self, prompt: str, *, source: PromptSource) -> Generator[str, None, None]:
+        """Same controls as `complete()`, yielding text deltas as the provider produces them (#65).
+
+        Refusal, redaction and the key check run here, eagerly, before the generator exists, so a
+        caller sees those failures before it has started a response. The provider call itself
+        starts on the first `next()`.
+
+        No retry: once text has been handed to a reader, repeating the call would duplicate it and
+        bill twice. Closing the generator (a reader that went away) closes the upstream stream, and
+        usage is recorded once however the stream ends, as a failure unless it completed.
+        """
+        check_source(source)
+        redaction = redact(prompt)
+        client = self._ensure_client()
+        return self._stream(client, redaction.text)
+
+    def _stream(self, client: object, text: str) -> Generator[str, None, None]:
+        started = time.monotonic()
+        request = {"model": self.model, "input": text, "store": False, "stream": True}
+        if self.provider == "perplexity":
+            request["extra_body"] = {"tools": []}
+        try:
+            events = client.responses.create(**request)
+        except Exception as error:
+            self._record_usage(started, 1, False)
+            raise GatewayCallError("model stream failed to start") from error
+        completed = None
+        emitted = False
+        try:
+            for event in events:
+                kind = getattr(event, "type", None)
+                if kind == "response.output_text.delta":
+                    emitted = emitted or bool(event.delta)
+                    yield event.delta
+                elif kind == "response.completed":
+                    completed = event.response
+                elif kind in {"error", "response.failed", "response.incomplete"}:
+                    raise GatewayCallError(f"provider stream ended with {kind}")
+            if completed is None or not emitted:
+                raise GatewayCallError("provider stream ended without usable text")
+        finally:
+            close = getattr(events, "close", None)
+            if close is not None:
+                close()
+            succeeded = completed is not None and emitted
+            self._record_usage(started, 1, succeeded, completed)
 
     def _record_usage(
         self, started: float, attempts: int, succeeded: bool, response: object | None = None
