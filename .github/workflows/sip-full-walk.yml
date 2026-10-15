@@ -11,9 +11,13 @@ name: SIP full walk (#55)
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   full-walk:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     services:
       postgres:
         image: postgres:16.2
@@ -74,3 +78,4 @@ jobs:
         with:
           name: sip-full-walk-evidence
           path: full_walk_evidence.json
+          if-no-files-found: error

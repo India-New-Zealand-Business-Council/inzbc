@@ -12,9 +12,13 @@ name: SIP dry run (#55)
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   dry-run:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     services:
       postgres:
         image: postgres:16.2
@@ -96,7 +100,6 @@ jobs:
         # here rather than re-derivable later.
         run: |
           output="$(uv run python -m scripts.dev_session --github-login "$DRY_RUN_CI_GITHUB_LOGIN")"
-          echo "$output"
           cookie="$(echo "$output" | sed -n 's/^cookie:  *inzbc_session=//p')"
           csrf="$(echo "$output" | sed -n 's/^csrf:  *//p')"
           if [ -z "$cookie" ] || [ -z "$csrf" ]; then
@@ -121,3 +124,4 @@ jobs:
         with:
           name: sip-dry-run-evidence
           path: dry_run_evidence.json
+          if-no-files-found: error
