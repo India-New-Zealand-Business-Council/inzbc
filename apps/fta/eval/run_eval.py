@@ -31,6 +31,11 @@ from apps.fta.explainer import answer_query
 
 _HERE = Path(__file__).resolve().parent
 QUESTIONS_CSV = _HERE / "questions.csv"
+# A second, separate question set (#390): synonym questions written by someone who has not seen
+# `explainer._SYNONYMS`, so the synonym score on `questions.csv` isn't graded against questions the
+# map was tuned to pass. Kept in its own file rather than appended to QUESTIONS_CSV for exactly
+# that reason - mixing them back in would let a future map edit get tuned against it too.
+HELD_OUT_CSV = _HERE / "held_out_questions.csv"
 RESULTS_DIR = _HERE / "results"
 
 
@@ -160,6 +165,17 @@ def main(argv: list[str] | None = None) -> int:
         out = RESULTS_DIR / f"{args.write}.json"
         out.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
         print(f"\nwrote {out}")
+    # Reported separately, never folded into the main total - see HELD_OUT_CSV's own comment on
+    # why mixing it in would let a later map edit get tuned against the very set meant to catch
+    # exactly that.
+    if HELD_OUT_CSV.exists():
+        held_out_report = evaluate(load_questions(HELD_OUT_CSV))
+        print("\nHeld-out (blind) synonym set, #390:")
+        print(_summary(held_out_report))
+        if args.write:
+            out = RESULTS_DIR / f"{args.write}-held-out.json"
+            out.write_text(json.dumps(held_out_report, indent=2) + "\n", encoding="utf-8")
+            print(f"\nwrote {out}")
     return 0
 
 
