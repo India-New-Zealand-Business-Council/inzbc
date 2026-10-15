@@ -82,3 +82,29 @@ def test_untrusted_fields_are_not_reinterpreted_as_format_strings(field: str) ->
     for other, value in candidate.items():
         if other != field:
             assert value in prompt
+
+
+def test_batch_command_covers_every_recorded_case_and_fails_on_prompt_drift(tmp_path) -> None:
+    from scripts.eval_scoring import evaluate, main
+
+    report = evaluate()
+    assert report["cases"] == 20 and report["accepted"] == 4 and report["refused"] == 16
+    assert report["failures"] == []
+    assert main() == 0
+    corpus = dict(GOLDEN, prompt_sha256="changed")
+    path = tmp_path / "corpus.json"
+    path.write_text(json.dumps(corpus), encoding="utf-8")
+    assert evaluate(path)["failures"] == [
+        {"id": "prompt-baseline", "error": "rendered prompt changed"}
+    ]
+
+
+def test_batch_detects_changed_contract_expectations(tmp_path) -> None:
+    from scripts.eval_scoring import evaluate
+
+    corpus = json.loads(FIXTURES.read_text(encoding="utf-8"))
+    corpus["cases"][0]["recommendation"]["nz_relevance"] = 4
+    corpus["cases"][1]["output"] = "not JSON"
+    path = tmp_path / "corpus.json"
+    path.write_text(json.dumps(corpus), encoding="utf-8")
+    assert len(evaluate(path)["failures"]) == 2

@@ -148,6 +148,8 @@ jobs:
       - name: Lint (ruff)
         # `uv run` so every step uses the locked environment, not whatever pip left on PATH.
         run: uv run ruff check apps services scripts
+      - name: SIP-050 offline contract regression
+        run: uv run python scripts/eval_scoring.py
       - name: Test (pytest + coverage)
         # Coverage gate at 90% (baseline is ~97%); term-missing shows the gaps on the PR log.
         run: >
