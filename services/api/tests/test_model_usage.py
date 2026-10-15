@@ -17,7 +17,7 @@ from services.api.model_gateway import (
     _token_count,
 )
 from services.api.model_usage import ModelUsage, record_usage
-from services.api.prompt_boundary import PromptSource
+from services.api.prompt_boundary import ProhibitedInputError, PromptSource
 
 
 @pytest.fixture(autouse=True)
@@ -209,3 +209,90 @@ def test_configured_database_sink_uses_existing_transactional_audit(monkeypatch)
     assert writes[0][0] is connection
     assert writes[0][1]["action"] == "model.call"
     assert json.loads(writes[0][1]["new_value"])["input_tokens"] == 2
+
+
+class EventStream:
+    """A provider stream: iterable events plus the `close()` the SDK's Stream exposes."""
+
+    def __init__(self, events):
+        self.events = events
+        self.closed = False
+
+    def __iter__(self):
+        yield from self.events
+
+    def close(self):
+        self.closed = True
+
+
+def delta(text):
+    return SimpleNamespace(type="response.output_text.delta", delta=text)
+
+
+def completed(**usage):
+    return SimpleNamespace(type="response.completed", response=response(**usage))
+
+
+def test_stream_yields_redacted_call_deltas_and_records_usage_once():
+    stream = EventStream([delta("Kia "), delta("ora"), completed(input_tokens=7, output_tokens=2)])
+    client = Client([stream])
+    records = []
+    deltas = ModelGateway(client, model="test-model", usage_sink=records.append).stream(
+        "mail synthetic@example.test", source=PromptSource.PUBLIC_SOURCE
+    )
+    assert list(deltas) == ["Kia ", "ora"]
+    assert client.calls == [{
+        "model": "test-model", "input": "mail [email]", "store": False, "stream": True,
+    }]
+    assert stream.closed
+    assert len(records) == 1 and records[0].succeeded and records[0].output_tokens == 2
+
+
+def test_stream_refuses_before_any_provider_call():
+    client = Client([])
+    with pytest.raises(ProhibitedInputError):
+        ModelGateway(client, usage_sink=lambda _: None).stream(
+            "synthetic", source=PromptSource.MEMBER_RECORD
+        )
+    assert client.calls == []
+
+
+def test_abandoned_stream_closes_upstream_and_records_failure():
+    stream = EventStream([delta("one"), delta("two"), completed()])
+    records = []
+    deltas = ModelGateway(Client([stream]), usage_sink=records.append).stream(
+        "synthetic", source=PromptSource.PUBLIC_SOURCE
+    )
+    assert next(deltas) == "one"
+    deltas.close()
+    assert stream.closed
+    assert len(records) == 1 and not records[0].succeeded
+
+
+@pytest.mark.parametrize("ending", [
+    [SimpleNamespace(type="response.failed", response=response())],
+    [SimpleNamespace(type="error", message="private detail")],
+    [],
+])
+def test_stream_without_completion_is_a_failure(ending):
+    stream = EventStream([delta("partial"), *ending])
+    records = []
+    deltas = ModelGateway(Client([stream]), usage_sink=records.append).stream(
+        "synthetic", source=PromptSource.PUBLIC_SOURCE
+    )
+    with pytest.raises(GatewayCallError):
+        list(deltas)
+    assert stream.closed
+    assert len(records) == 1 and not records[0].succeeded
+
+
+def test_stream_is_not_retried_when_it_fails_to_start():
+    client = Client([RuntimeError("private detail")])
+    records = []
+    deltas = ModelGateway(client, usage_sink=records.append).stream(
+        "synthetic", source=PromptSource.PUBLIC_SOURCE
+    )
+    with pytest.raises(GatewayCallError):
+        next(deltas)
+    assert len(client.calls) == 1
+    assert len(records) == 1 and not records[0].succeeded
