@@ -10,6 +10,10 @@ defects with evidence. Additional work or obligations require prior tech-lead au
 
 - Before creating any issue or board item, search existing issues for the same work. Do not
   create duplicate, stale-backlog or speculative administrative issues.
+- Clarification questions, permission requests and meeting invitations belong in the existing
+  work discussion or agreed team channel. Do not create a standalone question-only issue or
+  board item unless the tech lead explicitly authorizes it as tracked work. Record related
+  answers together; do not turn each answer into another issue.
 - New issues or board items for daily reporting, attendance tracking, review rotations,
   retrospectives, recurring board duties, workload reassignment or other team-process changes
   require explicit prior authorization from the tech lead (defined in CONTRIBUTING.md). Include its link.
