@@ -49,12 +49,22 @@ Repo-specific rules. General workflow is in [CONTRIBUTING.md](./CONTRIBUTING.md)
 - Imperative commit subjects under ~60 chars. No AI attribution in commits, PRs, or code comments
   — matching [CONTRIBUTING.md](./CONTRIBUTING.md). The rule is about **authorship of delivered
   work**: a human is accountable for every change, so nothing credits a tool as its author.
-  It is not a ban on AI tooling. `PROJECT-RULES.md` and `AGENTS.md` are deliberately tracked,
+  Who may use AI tooling is set under [AI tools](#ai-tools). `PROJECT-RULES.md` and `AGENTS.md` are deliberately tracked,
   because the rules and the setup they describe belong to the project. Per-machine assistant
   configuration under `.claude/` is gitignored — not to hide it, but because paths, hooks and skill
   definitions differ between contributors and a shared copy fights them. The distinction is
   project rules versus one person's local setup, not disclosed versus concealed.
 - Run a secret scan before pushing. Never commit `.env*` or credentials.
+
+## AI tools
+
+- From 16 October 2026, on INZBC's written instruction, only the technical lead uses AI coding or
+  writing assistants (Claude, Codex, Copilot, Grok, ChatGPT and similar) on INZBC repositories,
+  issues, PRs and the project board. Everyone else writes their own code, docs and reviews. Work
+  merged before that date is not affected.
+- Nobody, the technical lead included, puts real member, client or credential data into an AI tool.
+- The instruction contains private client information, so the technical lead holds it rather than
+  publishing it. Questions about the rule go to Bhanu.
 
 ## Development workflow
 
