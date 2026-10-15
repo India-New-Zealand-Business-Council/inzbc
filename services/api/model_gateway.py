@@ -5,11 +5,10 @@ never reaching a browser; this module is where that happens. SIP scoring, the Co
 and the FTA layer call through here rather than constructing their own clients, so provider,
 model, timeout and retry policy are decided once.
 
-Provider today is OpenAI with `gpt-4.1-mini` - the same account and model the
-daily-india-nz-news-agent has been running the daily brief on (see that repo's agent.py), so
-the platform builds on keys that already exist rather than waiting on new access. The provider
-is configuration, not architecture: swapping models/providers means changing env values, not
-call sites.
+The default remains OpenAI with `gpt-4.1-mini`. Perplexity is an explicitly selected second
+provider through the same Responses interface; it requires its own key and an explicit model.
+Usage metadata is logged without content and persisted when a database is configured.
+See docs/model-gateway.md for configuration and the limits of cost estimates and audit storage.
 
 Two controls sit here, in this order.
 
@@ -27,6 +26,8 @@ Configuration (environment):
 - OPENAI_API_KEY          - required for live calls; absent -> GatewayNotConfiguredError.
 - SIP_MODEL_NAME          - optional, defaults to gpt-4.1-mini.
 - REDACTION_POLICY_PATH   - required; absent -> RedactionNotConfiguredError. See redaction.py.
+- SIP_MODEL_PROVIDER      - openai (default) or perplexity; never an automatic fallback.
+- PERPLEXITY_API_KEY      - required only when selecting perplexity.
 
 No key, endpoint or model name is ever hardcoded beyond that default.
 """
@@ -35,8 +36,11 @@ from __future__ import annotations
 
 import os
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
+from decimal import Decimal, InvalidOperation
 
+from services.api.model_usage import ModelUsage, record_usage
 from services.api.prompt_boundary import PromptSource, check_source
 from services.api.redaction import redact
 
@@ -57,6 +61,10 @@ class GatewayCallError(RuntimeError):
     """
 
 
+class GatewayAuditError(GatewayCallError):
+    """Usage could not be recorded; never retry an already-completed provider call."""
+
+
 @dataclass(frozen=True)
 class GatewayResult:
     """A completed call: the text plus enough metadata for the audit trail."""
@@ -68,6 +76,11 @@ class GatewayResult:
     # quotes what it redacted has not redacted it. Empty means the policy ran and matched nothing,
     # which is different from redaction not having run, because an unredacted call cannot happen.
     redaction_counts: dict[str, int] = field(default_factory=dict)
+    provider: str = "openai"
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    cost_usd: str | None = None
+    cost_basis: str = "unknown"
 
 
 class ModelGateway:
@@ -79,22 +92,38 @@ class ModelGateway:
     environment on first use.
     """
 
-    def __init__(self, client: object | None = None, model: str | None = None) -> None:
+    def __init__(
+        self,
+        client: object | None = None,
+        model: str | None = None,
+        *,
+        provider: str | None = None,
+        usage_sink: Callable[[ModelUsage], None] | None = None,
+    ) -> None:
         self._client = client
-        self.model = model or os.getenv("SIP_MODEL_NAME", DEFAULT_MODEL)
+        self.provider = provider or os.getenv("SIP_MODEL_PROVIDER", "openai")
+        if self.provider not in {"openai", "perplexity"}:
+            raise GatewayNotConfiguredError("SIP_MODEL_PROVIDER must be openai or perplexity")
+        configured_model = model or os.getenv("SIP_MODEL_NAME")
+        if self.provider == "perplexity" and not configured_model:
+            raise GatewayNotConfiguredError("Perplexity requires an explicit SIP_MODEL_NAME")
+        self.model = configured_model or DEFAULT_MODEL
+        self._usage_sink = usage_sink or record_usage
 
     def _ensure_client(self) -> object:
         if self._client is None:
-            api_key = os.getenv("OPENAI_API_KEY")
+            key_name = "OPENAI_API_KEY" if self.provider == "openai" else "PERPLEXITY_API_KEY"
+            api_key = os.getenv(key_name)
             if not api_key:
                 raise GatewayNotConfiguredError(
-                    "OPENAI_API_KEY is not set - the gateway will not fabricate a response. "
-                    "Copy the key the daily-india-nz-news-agent already uses into this "
-                    "repo's secrets (see docs/sip/README.md)."
+                    f"{key_name} is not set - the gateway will not fabricate a response."
                 )
             from openai import OpenAI  # imported lazily so tests never need the package
 
-            self._client = OpenAI(api_key=api_key)
+            options = {"api_key": api_key, "timeout": 30.0, "max_retries": 0}
+            if self.provider == "perplexity":
+                options["base_url"] = "https://api.perplexity.ai/v1"
+            self._client = OpenAI(**options)
         return self._client
 
     def complete(self, prompt: str, *, source: PromptSource) -> GatewayResult:
@@ -131,13 +160,14 @@ class ModelGateway:
         last_error: Exception | None = None
         for attempt in range(_RETRYABLE_ATTEMPTS):
             try:
-                response = client.responses.create(model=self.model, input=redaction.text)
-                return GatewayResult(
-                    text=response.output_text,
-                    model=self.model,
-                    duration_seconds=time.monotonic() - started,
-                    redaction_counts=dict(redaction.counts),
-                )
+                request = {"model": self.model, "input": redaction.text, "store": False}
+                if self.provider == "perplexity":
+                    request["extra_body"] = {"tools": []}
+                response = client.responses.create(**request)
+                text = response.output_text
+                if not isinstance(text, str) or not text.strip():
+                    raise GatewayCallError("provider returned no usable text")
+                break
             except GatewayNotConfiguredError:
                 raise
             # Deliberately broad, rather than a narrower except: provider and network error
@@ -147,4 +177,58 @@ class ModelGateway:
                 last_error = error
                 if attempt + 1 < _RETRYABLE_ATTEMPTS:
                     time.sleep(_RETRY_DELAY_SECONDS)
-        raise GatewayCallError(f"model call failed after {_RETRYABLE_ATTEMPTS} attempts") from last_error
+        else:
+            self._record_usage(started, _RETRYABLE_ATTEMPTS, False)
+            raise GatewayCallError(
+                f"model call failed after {_RETRYABLE_ATTEMPTS} attempts"
+            ) from last_error
+        usage = self._record_usage(started, attempt + 1, True, response)
+        return GatewayResult(
+            text=text, model=self.model, duration_seconds=usage.duration_seconds,
+            redaction_counts=dict(redaction.counts), provider=self.provider,
+            input_tokens=usage.input_tokens, output_tokens=usage.output_tokens,
+            cost_usd=usage.cost_usd, cost_basis=usage.cost_basis,
+        )
+
+    def _record_usage(
+        self, started: float, attempts: int, succeeded: bool, response: object | None = None
+    ) -> ModelUsage:
+        raw = getattr(response, "usage", None)
+        input_tokens = _token_count(getattr(raw, "input_tokens", None))
+        output_tokens = _token_count(getattr(raw, "output_tokens", None))
+        cost, basis = _cost(raw, input_tokens, output_tokens)
+        usage = ModelUsage(
+            provider=self.provider, model=self.model, duration_seconds=time.monotonic() - started,
+            attempts=attempts, succeeded=succeeded, input_tokens=input_tokens,
+            output_tokens=output_tokens, cost_usd=cost, cost_basis=basis,
+        )
+        try:
+            self._usage_sink(usage)
+        except Exception as error:
+            raise GatewayAuditError("model usage audit failed; provider call not retried") from error
+        return usage
+
+
+def _token_count(value: object) -> int | None:
+    return value if type(value) is int and value >= 0 else None
+
+
+def _cost(raw: object, inputs: int | None, outputs: int | None) -> tuple[str | None, str]:
+    reported = getattr(raw, "cost", None)
+    if isinstance(reported, dict) and reported.get("currency") == "USD":
+        try:
+            value = Decimal(str(reported["total_cost"]))
+            if value.is_finite() and value >= 0:
+                return str(value), "provider_reported"
+        except (KeyError, InvalidOperation, ValueError):
+            pass
+    if inputs is not None and outputs is not None:
+        try:
+            input_rate = Decimal(os.environ["SIP_MODEL_INPUT_USD_PER_MILLION"])
+            output_rate = Decimal(os.environ["SIP_MODEL_OUTPUT_USD_PER_MILLION"])
+            if all(rate.is_finite() and rate >= 0 for rate in (input_rate, output_rate)):
+                cost = (inputs * input_rate + outputs * output_rate) / Decimal(1_000_000)
+                return str(cost), "configured_token_estimate"
+        except (KeyError, InvalidOperation, ValueError):
+            pass
+    return None, "unknown"

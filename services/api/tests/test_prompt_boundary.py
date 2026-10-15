@@ -254,7 +254,8 @@ class _RecordingClient:
             self._outer = outer
 
         # `input` shadows the builtin deliberately: it is the provider SDK's keyword.
-        def create(self, model: str, input: str):
+        def create(self, model: str, input: str, *, store: bool):
+            assert store is False
             self._outer.seen.append(input)
             return type("R", (), {"output_text": "ok"})()
 
