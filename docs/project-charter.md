@@ -287,7 +287,9 @@ gate.
   provided the reason is written down.
 - Every change reaches `main` through a reviewed pull request naming the issue it delivers. No
   direct pushes. `CODEOWNERS` names the technical lead as the only code owner, and the `main`
-  ruleset requires code-owner review, so every merge needs the technical lead's approval.
+  ruleset requires code-owner review, so contributor PRs need the technical lead's approval.
+  GitHub forbids self-approval; the technical lead's own PRs can use the named owner-only PR
+  bypass. Even that bypass requires a PR. Other contributors retain their existing access.
 - Reviews correct the content in dispute rather than annotating it. A specification carrying a note
   that says it is wrong is still wrong for the next person who reads it.
 - Linting, type checking, tests, coverage, secret scanning, static analysis, link checking and

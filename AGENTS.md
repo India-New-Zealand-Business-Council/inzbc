@@ -1,3 +1,10 @@
+# AI tooling authorization
+
+Read the AI tools policy in [PROJECT-RULES.md](./PROJECT-RULES.md) before contributor work.
+AI coding, writing and review assistance requires explicit repository-owner authorization,
+including for the technical lead. Without it, stop and ask the owner to authorize the work.
+Local authorizations do not waive data protection, academic assessment or human review rules.
+
 # Running this repo
 
 Read this before running tests or lint. Getting the interpreter wrong produces failures that look

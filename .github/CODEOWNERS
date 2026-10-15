@@ -1,7 +1,8 @@
 # Code owners for INZBC. Enforced by the main branch ruleset's
 # "Require review from Code Owners" rule.
 
-# The tech lead is the only code owner, so every PR into main needs the tech lead's approval.
+# Contributor PRs need the tech lead's approval. GitHub forbids self-approval;
+# the tech lead's own PRs use the named owner-only PR bypass when needed.
 *                       @bhanuGupta1
 
 # Sensitive paths, listed so the ownership survives if a lane is ever added above.
