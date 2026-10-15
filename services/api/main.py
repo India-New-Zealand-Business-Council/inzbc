@@ -90,6 +90,7 @@ class AnswerOut(BaseModel):
     confidence: str
     confidence_meaning: str
     notes: str | None = None
+    coverage_warning: str | None = None
     # The structured tariff fields (#185). They reached `ExplainerAnswer` in #273 but stopped
     # there, so every HTTP caller still got `treatment` prose and had to re-parse it, which is the
     # thing #185 exists to stop. `extra="forbid"` meant they could not arrive by accident.
@@ -166,6 +167,7 @@ def _answer_out(answer: ExplainerAnswer) -> AnswerOut:
         confidence=answer.confidence.value,
         confidence_meaning=answer.confidence_meaning,
         notes=answer.notes,
+        coverage_warning=answer.coverage_warning,
         # `.value` on the enum, so the wire carries "NZ exports to India" rather than a Python
         # member name. The direction is not decoration: "NZ removes all tariffs on Indian imports"
         # and "India phases out its tariff on NZ wool" are both true and are not the same fact.

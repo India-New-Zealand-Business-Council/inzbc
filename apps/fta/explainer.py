@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import math
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 from enum import Enum
 
@@ -70,6 +70,20 @@ _SECTOR_WEIGHT = 1.0
 # `answer_query` puts matches on non-framing terms first, including synonyms, so accumulated
 # framing weight cannot outrank the product the member named.
 _FRAMING_TERMS = frozenset({"tariffs", "exports", "imports", "trade"})
+
+# Generic question wording is not a product name. Other unmatched terms trigger a conservative
+# coverage warning when all retrieved evidence matches framing alone (#404). This is a lexical
+# coverage check, not entity recognition or a claim to resolve mixed-product questions.
+_GENERAL_QUERY_TERMS = frozenset({
+    "what", "which", "how", "are", "is", "do", "does", "can", "i", "we", "my", "our",
+    "about", "please", "tell", "me", "explain", "overall", "general", "overview", "fta",
+    "agreement", "under", "between", "from", "into", "will", "be", "affect", "affects",
+})
+PRODUCT_COVERAGE_WARNING = (
+    "General FTA information only: the corpus has no product-specific match for this query. "
+    "Do not treat this as a tariff finding for the product you named. "
+    "Contact INZBC for product-specific guidance."
+)
 
 
 def _document_frequencies() -> dict[str, int]:
@@ -208,6 +222,7 @@ class ExplainerAnswer:
     confidence: Confidence
     confidence_meaning: str
     notes: str | None = None
+    coverage_warning: str | None = None
     # Structured tariff fields (#185): a member asking "what's the current tariff on wool" needs
     # a queryable value, not `treatment` re-parsed. Passed through from TariffOutcome exactly as
     # sourced - None means "not yet sourced for this entry", never "zero" or "unchanged". See
@@ -351,7 +366,14 @@ def answer_query(query: str) -> list[ExplainerAnswer]:
         -pair[1],
         pair[0].id,
     ))
-    return [_to_answer(entry) for entry, _score in matched]
+    framing_only = matched and not any(
+        subject_terms & _entry_keyword_weights(entry).keys() for entry, _score in matched
+    )
+    warn = framing_only and bool(subject_terms - _GENERAL_QUERY_TERMS)
+    return [
+        replace(_to_answer(entry), coverage_warning=PRODUCT_COVERAGE_WARNING if warn else None)
+        for entry, _score in matched
+    ]
 
 
 class Depth(str, Enum):
@@ -409,6 +431,7 @@ class PublicAnswer:
     staged_reductions: str | None = None
     final_tariff: str | None = None
     implementation_period_years: int | None = None
+    coverage_warning: str | None = None
 
 
 @dataclass(frozen=True)
@@ -444,6 +467,7 @@ class MemberAnswer:
     staged_reductions: str | None = None
     final_tariff: str | None = None
     implementation_period_years: int | None = None
+    coverage_warning: str | None = None
 
 
 @dataclass(frozen=True)
@@ -473,10 +497,12 @@ class InternalAnswer:
     staged_reductions: str | None = None
     final_tariff: str | None = None
     implementation_period_years: int | None = None
+    coverage_warning: str | None = None
 
 
 def _to_public_answer(answer: ExplainerAnswer) -> PublicAnswer:
     return PublicAnswer(
+        coverage_warning=answer.coverage_warning,
         topic=answer.topic,
         sector=answer.sector,
         treatment=answer.treatment,
@@ -499,6 +525,7 @@ def _to_public_answer(answer: ExplainerAnswer) -> PublicAnswer:
 
 def _to_member_answer(answer: ExplainerAnswer) -> MemberAnswer:
     return MemberAnswer(
+        coverage_warning=answer.coverage_warning,
         id=answer.id,
         topic=answer.topic,
         sector=answer.sector,
@@ -523,6 +550,7 @@ def _to_member_answer(answer: ExplainerAnswer) -> MemberAnswer:
 
 def _to_internal_answer(entry: TariffOutcome, answer: ExplainerAnswer) -> InternalAnswer:
     return InternalAnswer(
+        coverage_warning=answer.coverage_warning,
         id=entry.id,
         topic=answer.topic,
         sector=answer.sector,

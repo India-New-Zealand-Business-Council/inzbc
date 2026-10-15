@@ -1,7 +1,7 @@
 {
-  "question_count": 52,
+  "question_count": 55,
   "overall": {
-    "answerable": 42,
+    "answerable": 45,
     "unanswerable": 10,
     "hit_at_1": 1.0,
     "hit_at_3": 1.0,
@@ -34,7 +34,7 @@
       "no_match_accuracy": 1.0
     },
     "product_framing": {
-      "answerable": 6,
+      "answerable": 9,
       "unanswerable": 0,
       "hit_at_1": 1.0,
       "hit_at_3": 1.0,
@@ -651,6 +651,42 @@
       "returned_top3": [
         "FTA-009",
         "FTA-001",
+        "FTA-002"
+      ],
+      "rank": 1
+    },
+    {
+      "qid": "Q53",
+      "query": "steel exports",
+      "type": "product_framing",
+      "expected": [
+        "FTA-002"
+      ],
+      "returned_top3": [
+        "FTA-002"
+      ],
+      "rank": 1
+    },
+    {
+      "qid": "Q54",
+      "query": "pharmaceutical exports",
+      "type": "product_framing",
+      "expected": [
+        "FTA-002"
+      ],
+      "returned_top3": [
+        "FTA-002"
+      ],
+      "rank": 1
+    },
+    {
+      "qid": "Q55",
+      "query": "software exports",
+      "type": "product_framing",
+      "expected": [
+        "FTA-002"
+      ],
+      "returned_top3": [
         "FTA-002"
       ],
       "rank": 1

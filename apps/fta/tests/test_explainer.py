@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import fields
 from datetime import date
 
+import pytest
+
 from apps.fta import explainer
 from apps.fta.corpus import TariffOutcome, TradeDirection
 from apps.fta.explainer import (
@@ -435,3 +437,21 @@ def test_an_overall_tariff_question_still_leads_with_the_overall_entry() -> None
 
 def test_framing_terms_are_words_the_corpus_uses() -> None:
     assert explainer._FRAMING_TERMS <= _confirmed_vocabulary()
+
+
+@pytest.mark.parametrize("query", ["steel exports", "pharmaceutical exports", "software exports"])
+def test_uncovered_product_keeps_general_answer_with_warning(query) -> None:
+    answers = answer_query(query)
+    assert answers[0].id == "FTA-002"
+    assert all(a.coverage_warning == explainer.PRODUCT_COVERAGE_WARNING for a in answers)
+    assert "Contact INZBC" in answers[0].coverage_warning
+    for depth in Depth:
+        assert all(a.coverage_warning for a in answer_query_at_depth(query, depth))
+
+
+@pytest.mark.parametrize("query", [
+    "India tariffs on NZ exports", "what are the overall tariffs", "honey exports",
+    "tariffs on lamb exports", "timber trade exports", "wool",
+])
+def test_general_and_covered_queries_do_not_get_false_missing_product_warning(query) -> None:
+    assert all(a.coverage_warning is None for a in answer_query(query))

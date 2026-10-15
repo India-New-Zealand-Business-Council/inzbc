@@ -26,6 +26,11 @@ export function Answer({ answer }: { answer: AnswerModel }) {
         {answer.topic}
       </h3>
       <p className="text-sm text-slate-600">{answer.sector}</p>
+      {answer.coverage_warning ? (
+        <p role="note" className="mt-2 rounded border border-inzbc-tangerine p-3 text-sm font-semibold text-inzbc-navy">
+          {answer.coverage_warning}
+        </p>
+      ) : null}
       <p className="mt-1 text-slate-800">{answer.treatment}</p>
       {answer.notes ? <p className="mt-1 text-sm text-slate-600">{answer.notes}</p> : null}
       <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm [&_dd]:text-slate-700 [&_dt]:font-semibold [&_dt]:text-inzbc-navy">
