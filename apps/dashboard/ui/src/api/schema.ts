@@ -394,6 +394,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/comms/draft/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Draft Stream
+         * @description `POST /draft` as Server-Sent Events (#65): `delta` events carry text as it arrives, then one
+         *     `done` event with the persisted row's `id`/`status`, or one `error` event if the provider stream
+         *     fails part-way.
+         *
+         *     The first delta is fetched before the response starts, so a refused, unconfigured or failed
+         *     call gets the same 422/503/502 as `/draft` rather than a 200 with an error inside it. The draft
+         *     is persisted only once the stream completes, as an ordinary `Draft` awaiting a named reviewer;
+         *     a stream the reader abandons stops the provider call and stores nothing.
+         */
+        post: operations["draft_stream_api_comms_draft_stream_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/comms/drafts/{draft_id}/approve": {
         parameters: {
             query?: never;
@@ -3080,6 +3107,53 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DraftOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    draft_stream_api_comms_draft_stream_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": unknown;
                 };
             };
             /** @description No session, or the session has expired or been idle too long. */

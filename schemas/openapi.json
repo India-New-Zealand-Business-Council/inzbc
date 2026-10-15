@@ -1276,6 +1276,56 @@
         ]
       }
     },
+    "/api/comms/draft/stream": {
+      "post": {
+        "tags": [
+          "Comms Assistant"
+        ],
+        "summary": "Draft Stream",
+        "description": "`POST /draft` as Server-Sent Events (#65): `delta` events carry text as it arrives, then one\n`done` event with the persisted row's `id`/`status`, or one `error` event if the provider stream\nfails part-way.\n\nThe first delta is fetched before the response starts, so a refused, unconfigured or failed\ncall gets the same 422/503/502 as `/draft` rather than a 200 with an error inside it. The draft\nis persisted only once the stream completes, as an ordinary `Draft` awaiting a named reviewer;\na stream the reader abandons stops the provider call and stores nothing.",
+        "operationId": "draft_stream_api_comms_draft_stream_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/event-stream": {}
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ]
+      }
+    },
     "/api/comms/drafts/{draft_id}/approve": {
       "post": {
         "tags": [
