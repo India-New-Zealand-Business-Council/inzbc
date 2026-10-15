@@ -40,33 +40,42 @@ These are the flagship AI engineering builds; each is tracked as a GitHub issue 
 - [ ] [ai] Streaming Comms Assistant API (SSE): server-side token streaming through the gateway
       with redaction ahead of the call and the named-reviewer gate before any publish. (#65)
 
+## Current delivery — 16 October 2026
+
+Base: main @ `19bb552`. The current owner request is to finish independently deliverable
+existing issues and distinguish client decisions from engineering work.
+
+- #36: provider selection, usage/cost metadata and audit persistence implemented; validation in progress.
+- #38: 20 synthetic scoring replay fixtures and 26 regression tests implemented, including prompt
+  drift and the verification gate. No live semantic scoring result is claimed.
+- #135: existing 10 September demo recording verified and screenshots extracted; evidence indexed
+  in [demo-evidence.md](../demo-evidence.md). Historical evidence, not production acceptance.
+
 ## Next up
-- [ ] [platform] Model gateway v0.2: token/cost logging + audit-log persistence on top of the
-      shipped v0.1 (see Done); wire Perplexity as a second provider behind the same interface.
-- [ ] [security] Redaction layer ahead of every external model call (member/Board/confidential
-      data stripped) — SIP non-negotiable, currently unowned.
-- [ ] [ai] SIP-050 scoring v0.2: run the shipped v0.1 engine (see Done) against real captured
-      candidates once repo secrets land; calibrate the prompt against SIP-050's pilot-run
-      expectations; add batch scoring to the ingest flow. (SHARED-OK: from Roshan's backlog.)
-- [ ] [ai] Eval harness for SIP-050: golden article set + regression checks so prompt changes
-      are measured before they ship; include prompt-injection cases (article text is untrusted
-      model input); wire into CI.
-- [ ] [security] SIP adversarial security review before any staff use (threat model, authz
-      matrix, audit coverage) — required by docs/sip/README.md, currently unowned.
-- [ ] [security] Secrets management: org-repo secrets for the collection engine + rotation
-      policy (clears Roshan's end-to-end run blocker).
-- [ ] [security] Auth + role model (roles from launch-config) + audit-log middleware.
-- [ ] [platform] Turn the state-machine + schema drafts into Alembic migrations. Unblocked:
-      ADR-0002 is Accepted and ADR-0004 graduated it to option B, so a database is now in scope.
-      Alembic owns initialisation — do not execute `schema.sql` against the database directly, or
-      the schema ends up with two executable sources of truth.
-- [ ] [platform] Webhook contract for Wix to internal, plus the internal receiver service for
-      site forms. (SHARED-OK: receiver side from Paras; he keeps the form UI + notifications.)
-- [ ] [security] Member portal access control: member roles + Members Area gating on the
-      auth/RBAC model. (SHARED-OK: from Paras; he keeps the portal shell/UI.)
-- [ ] [platform] Dashboards data layer: read endpoints for the executive dashboard (Paras
-      builds the UI against them).
-- [ ] [platform] Backup + run-monitoring design (confirm each scheduled run started, finished, produced output).
+
+- #62: tool-use loop over the existing fail-closed run engine. The transition engine and replay
+  already exist; they do not by themselves complete the agent loop.
+- #63: shared embeddings/pgvector retrieval capability. No replacement for the production FTA
+  ranker is authorized merely by adding this capability.
+- #64: advisory quality evaluation and golden-set regression; never an approval gate replacement.
+- #45: confirm the approved forms contract, then the internal receiver; shared implementation only,
+  not live Wix writes or publication.
+
+## Client-dependent or approval-gated
+
+- #303 and #65: staff-prose boundary/risk decision; streaming cannot be represented as closing it.
+- #39: real candidate calibration requires the live backend, captured candidates and configuration.
+- #40: technical review delivered; Executive Sponsor sign-off remains outstanding.
+- #46 and #201: membership identity/system-of-record decisions remain prerequisites.
+- #99: Render deployment needs an INZBC-owned account; no payment method or production deployment
+  is authorized by the engineering backlog cleanup.
+- #97, #133, #134, #189 and #192: client ownership, acceptance, launch and product decisions.
+- #291: handover recipient and recorded sponsor session remain client dependencies.
+
+Previously stale next-up entries have been reconciled: redaction (#37), auth/audit (#42),
+migrations (#44), dashboard endpoints (#47), backup/monitoring design (#48) and secrets-policy
+work (#115) are already closed. This does not imply live credentials, a tested production restore
+or client sign-off exist. Migrations use `scripts/migrate.py`, not the abandoned Alembic wording.
 
 ## Done
 - Model gateway v0.1 (`services/api/model_gateway.py`): single server-side model-call path,

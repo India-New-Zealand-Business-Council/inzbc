@@ -59,7 +59,8 @@ class _RecordingClient:
         self.seen: list[str] = []
         self.responses = self
 
-    def create(self, model: str, input: str):
+    def create(self, model: str, input: str, *, store: bool):
+        assert store is False
         self.seen.append(input)
         return type("Response", (), {"output_text": "ok"})()
 
