@@ -1,3 +1,31 @@
+# Issue and project-board authorization
+
+AI assistance is allowed under the existing project rules. It does not confer authority to
+create team obligations or change the review process.
+
+Only the tech lead may authorize scope, priorities, assignments, repository governance,
+team process, recurring reporting, additional ceremonies and review arrangements.
+Contributors execute approved assignments in the existing lanes and report reproducible
+defects with evidence. Additional work or obligations require prior tech-lead authorization.
+
+- Before creating any issue or board item, search existing issues for the same work. Do not
+  create duplicate, stale-backlog or speculative administrative issues.
+- New issues or board items for daily reporting, attendance tracking, review rotations,
+  retrospectives, recurring board duties, workload reassignment or other team-process changes
+  require explicit prior authorization from the tech lead (defined in CONTRIBUTING.md). Include its link.
+- Without that authorization, stop the issue/board action and request a decision in the existing
+  relevant discussion. Do not open another issue to manufacture the required authorization.
+- Do not reopen or recreate rejected process issues, including #320 and #405, without
+  the tech lead's explicit approval. Do not infer approval from a plan, milestone or standup note.
+- Only the tech lead approves contributor PRs and merges into `main`. Peer feedback does not
+  replace that approval. Do not introduce a review rota or change approval ownership.
+- Do not edit runtime `.env` files or credentials. A human configures them locally. Never
+  commit secrets or include personal/client data in issue bodies or tool prompts.
+
+These instructions apply to contributors and their assistants. Repository files cannot enforce
+tool behavior on other computers; GitHub rules enforce the merge restrictions. Read
+[CONTRIBUTING.md](./CONTRIBUTING.md) and [PROJECT-RULES.md](./PROJECT-RULES.md).
+
 # Running this repo
 
 Read this before running tests or lint. Getting the interpreter wrong produces failures that look

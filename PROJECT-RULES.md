@@ -45,7 +45,10 @@ Repo-specific rules. General workflow is in [CONTRIBUTING.md](./CONTRIBUTING.md)
 
 ## Git
 
-- Branch, open a PR into `main`. No direct pushes to `main`; only Bhanu merges.
+- Branch, open a PR into `main`. No direct pushes to `main`; only the tech lead merges.
+- Only the tech lead authorizes scope, assignments, team-process changes, recurring obligations
+  and review arrangements. Obtain authorization before creating related issues or board items;
+  follow the canonical role definition and process rules in [CONTRIBUTING.md](./CONTRIBUTING.md).
 - Imperative commit subjects under ~60 chars. No AI attribution in commits, PRs, or code comments
   — matching [CONTRIBUTING.md](./CONTRIBUTING.md). The rule is about **authorship of delivered
   work**: a human is accountable for every change, so nothing credits a tool as its author.
@@ -70,4 +73,4 @@ in the worklog so the order stays meaningful.
    smallest diff; root-cause bug-check; self-review (adversarial review if security-touching);
    lint/typecheck/test pass; PR with the evidence block.
 4. Stay in your lane; shared contracts (`/services/api`, `/database`, `/schemas`) change only via
-   Bhanu.
+   the tech lead.

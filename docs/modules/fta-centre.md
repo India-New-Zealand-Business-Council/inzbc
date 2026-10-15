@@ -1,7 +1,8 @@
 # Module — FTA Implementation Centre
 
 Owner: Roshan · Status: building — corpus + Explainer + UI embed live, disclaimer approved, sector
-scope settled (#219); public/member/internal depth levels not yet split (#187) · Public overview +
+scope settled (#219); public/member/internal library depth levels implemented (#187), with
+authenticated API exposure still pending (#392) · Public overview +
 member depth + the Explainer.
 
 ## Purpose
