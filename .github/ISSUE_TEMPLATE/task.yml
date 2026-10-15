@@ -3,7 +3,11 @@ description: Propose a code, documentation or content deliverable.
 body:
   - type: markdown
     attributes:
-      value: Do not include credentials, private client instructions or personal data.
+      value: >-
+        Use this form for an agreed deliverable. Clarification questions, permission requests
+        and meeting invitations belong in the existing work discussion or agreed team channel;
+        a standalone question-only ticket requires explicit tech-lead authorization.
+        Do not include credentials, private client instructions or personal data.
   - type: textarea
     id: outcome
     attributes:
