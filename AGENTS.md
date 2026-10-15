@@ -11,18 +11,46 @@ defects with evidence. Additional work or obligations require prior tech-lead au
 - Before creating any issue or board item, search existing issues for the same work. Do not
   create duplicate, stale-backlog or speculative administrative issues.
 - Clarification questions, permission requests and meeting invitations belong in the existing
-  work discussion or agreed team channel. Do not create a standalone question-only issue or
+  work discussion (subject to the comment stop rule below) or agreed team channel. Do not create
+  a standalone question-only issue or
   board item unless the tech lead explicitly authorizes it as tracked work. Record related
   answers together; do not turn each answer into another issue.
 - New issues or board items for daily reporting, attendance tracking, review rotations,
   retrospectives, recurring board duties, workload reassignment or other team-process changes
   require explicit prior authorization from the tech lead (defined in CONTRIBUTING.md). Include its link.
-- Without that authorization, stop the issue/board action and request a decision in the existing
-  relevant discussion. Do not open another issue to manufacture the required authorization.
+- Without that authorization, stop the issue/board action and request a decision through the
+  agreed team channel, or an explicitly authorized existing discussion. Do not open another issue
+  to manufacture the required authorization.
 - Do not reopen or recreate rejected process issues, including #320 and #405, without
   the tech lead's explicit approval. Do not infer approval from a plan, milestone or standup note.
-- Only the tech lead approves contributor PRs and merges into `main`. Peer feedback does not
-  replace that approval. Do not introduce a review rota or change approval ownership.
+- Only the tech lead approves contributor PRs and merges into `main`.
+- **Weekly review; continue approved work:** the tech lead reviews submitted code each week
+  before Monday's report submission and controls review order and timing. Review does not
+  guarantee approval or merging that week. Do not pressure for merges, impose review deadlines
+  or repeatedly request review. Authors must validate their code, including AI-assisted code,
+  and supply reproducible evidence; green CI alone is insufficient.
+  An open PR is "awaiting tech-lead review", not a blanket blocker. Contributors and assistants
+  must continue independent, already approved work in their own lane rather than stop because
+  review or merge is pending. For a real dependency, record the exact task, PR and dependency
+  in the existing worklog; mark only the affected task blocked and continue other approved work.
+  If no independent approved work remains, report that fact and request direction through the
+  agreed team channel. Do not invent scope or open escalation issues to obtain a faster merge.
+  Follow CONTRIBUTING.md's weekly review policy and existing urgent incident procedures.
+- **Mandatory stop before unassigned peer review:** contributors other than the tech lead,
+  and assistants acting for them, must focus on their own approved assignments. Do not audit,
+  check out, locally rebase, rerun tests for, or prepare a review of another person's PR unless
+  the tech lead explicitly assigns that specific review first. This covers local-only activity
+  and "peer feedback, not an approval". A GitHub review request or mention alone is not an
+  assignment. Reading shared code and testing integration needed for your own approved work
+  remain allowed; incidental reproducible defects follow the existing reporting rules.
+- **Mandatory stop before commenting:** contributors other than the tech lead, and assistants
+  acting for them, must not publish peer feedback, PR reviews (including approvals or requests
+  for changes), inline comments, or PR/issue/commit/discussion comments, including on their own
+  work, without explicit prior tech-lead authorization for that specific comment or review.
+  An assignment, review request, mention or GitHub permission is not authorization. Continue
+  your own approved work and request authorization through the existing agreed team channel; do not
+  open a replacement issue to bypass the stop. See CONTRIBUTING.md for the canonical rule.
+  Do not introduce a review rota or change approval ownership.
 - Do not edit runtime `.env` files or credentials. A human configures them locally. Never
   commit secrets or include personal/client data in issue bodies or tool prompts.
 
@@ -110,6 +138,13 @@ Run `uv run pnpm run codegen` and commit the result; CI fails if regenerating ch
   human reviewer. See [PROJECT-RULES.md](./PROJECT-RULES.md).
 
 ## Keeping branches current
+
+Only the PR owner may rebase, resolve conflicts on, update or force-push their PR branch.
+Contributors and their assistants must stop before doing this to someone else's branch.
+The sole exception is the tech lead taking over when the PR owner is blocked and the PR needs
+to be merged; use `--force-with-lease` and complete required checks before merging.
+See [CONTRIBUTING.md](./CONTRIBUTING.md). This also applies to stacked PRs and GitHub's
+branch-update controls.
 
 Rebase, never merge. Bring a branch up to date with `git rebase origin/main`, not
 `git merge main`. For a stacked PR whose lower PR has landed, use

@@ -15,6 +15,21 @@ current blockers, and a definition of done.
 4. Build it to the quality standard below.
 5. Open a PR with the evidence block, and move the item to **Done**.
 
+## While a PR awaits review
+
+The tech lead reviews submitted code each week before Monday's report submission and controls
+review order and timing. Review does not guarantee approval or merging that week. Authors remain
+responsible for validating their code, including AI-assisted code, and supplying reproducible
+evidence. Do not pressure for merges, impose review deadlines or repeatedly request review.
+
+Contributors and their assistants must continue independent, already approved work in their own
+lanes while PRs await review or merge. An open PR is "awaiting tech-lead review"; it does not make
+all work blocked. For a genuine dependency, record the affected task, unmerged PR and concrete
+dependency in the existing worklog, and continue other approved work. If none remains, report
+that fact and request direction through the agreed team channel. Do not invent scope or perform
+unassigned peer reviews. Follow [CONTRIBUTING.md](../../CONTRIBUTING.md) for the canonical policy
+and existing urgent security/incident procedures.
+
 ## Studio 6 (5 Oct to 4 Dec 2026)
 How the team works this block is set by
 [ADR-0008](../decisions/ADR-0008-delivery-process.md) (proposed until the team has scored it).
