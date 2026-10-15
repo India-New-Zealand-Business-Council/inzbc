@@ -1,0 +1,44 @@
+name: Advisory brief quality regression
+
+# A live provider run is explicit, bounded and synthetic-only. Ordinary PR CI validates the
+# rubric/corpus and all refusal/regression tests without giving PR code a model credential.
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: OpenAI model to compare against the fixed quality labels
+        required: true
+        default: gpt-4.1-mini
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  quality-eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      SIP_MODEL_PROVIDER: openai
+      SIP_MODEL_NAME: ${{ inputs.model }}
+      REDACTION_POLICY_PATH: config/redaction-policy.json
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Install locked dependencies
+        run: |
+          python -m pip install "uv==0.8.17"
+          uv sync --locked --extra dev
+      - name: Evaluate synthetic golden cases
+        # Missing key, malformed output, or any failed golden bound is a failure, never a skip.
+        run: uv run python scripts/eval_quality.py --live --report quality-eval-report.json
+      - name: Retain scores and regression failures
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: advisory-quality-eval
+          path: quality-eval-report.json
+          if-no-files-found: error
