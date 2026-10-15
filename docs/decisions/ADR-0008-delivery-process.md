@@ -1,9 +1,16 @@
 # ADR-0008: Delivery process for Studio 6
 
-**Status:** Proposed. Draft for team scoring. Merge target 19 Oct 2026.
+**Status:** Not adopted. Comparison retained as analysis; existing workflow continues.
 **Date:** 2026-10-13
-**Deciders:** Roshan Aryal, Bhanu Gupta, Paras
-**Decision owner:** Roshan (Studio 6 planning)
+**Decision owner and approver:** Technical lead (defined in CONTRIBUTING.md)
+**Contributors to the comparison:** Roshan Aryal, Paras, Bhanu Gupta
+
+**Governance clarification, 16 October 2026:** This is a proposed method comparison, not
+authorization to change team roles, review ownership or recurring reporting obligations.
+The tech lead rejected the review-rota and daily-check-in proposals (#320 and #405),
+and did not authorize a new process rollout.
+Existing contribution and meeting rules remain in effect. No score has been entered on
+Bhanu's behalf. New process issues need his prior explicit authorization.
 
 ## Context
 
@@ -11,8 +18,9 @@ Studio 6 runs from 5 Oct to 4 Dec 2026. Three part-time engineers share one clie
 On 13 Oct the repository has 41 open issues: 20 on Bhanu, 15 on Paras, 4 on Roshan and 2
 unassigned. Six of them are labelled `stage:blocked`, and several wait on a decision only the
 client can make: the SIP-184 production run needs a fresh SIP-191 authority (#55), post-capstone
-ownership and OAuth registration (#97), and signed client sign-off (#134). Review is the other
-bottleneck: six mergeable PRs across both repos had no reviewer (#320).
+ownership and OAuth registration (#97), and signed client sign-off (#134). Review was also raised
+as a historical bottleneck in #320. That snapshot listed seven PRs; by 16 October, six had
+merged and news-agent #14 remained open. It is not a current count of unreviewed work.
 
 So work arrives unevenly, a lot of it stalls on someone outside the team, and the block has a
 fixed end date. The process has to keep work moving when one item is blocked, make review
@@ -141,24 +149,27 @@ three.
 
 ## Decision
 
-To be confirmed once the matrix is scored. Expected outcome from the analysis above: Kanban, with
-two borrowed Scrum practices (a fortnightly retrospective and a Studio 6 milestone with fixed
-dates). If the scored matrix disagrees, the matrix wins and this section is rewritten.
+On 16 October the technical lead declined adoption of a new delivery process for the current
+project. Existing contribution rules, assigned implementation lanes, client approval gates and
+the documented meeting cadence continue. The comparison and individual scores above are retained
+as analysis; they do not authorize a rollout, a review rota, new reporting duties or reassignment.
 
-Working rules if Kanban is chosen:
+The following were proposed working rules, not adopted policy:
 - **Board columns:** `stage:next-up`, `stage:in-progress`, `stage:blocked`, then closed.
 - **WIP limit:** one `stage:in-progress` item per person. A blocked item is relabelled
   `stage:blocked` and the next item is pulled.
-- **Review rota:** every PR gets a named reviewer within 48 hours of opening (proposed under #320).
-- **Cadence:** standup note every Monday in `docs/meetings/standups/`, retros on 23 Oct, 6 Nov
-  and 20 Nov.
+- **Review ownership:** contributor PRs require the tech lead's approval; only the tech lead merges into `main`.
+  The review rota proposed under #320 was not adopted. Peer feedback does not replace approval.
+- **Cadence:** the existing meeting cadence in `docs/meetings/README.md` continues. The specific
+  proposed retrospective dates and any additional reporting duties require tech-lead confirmation.
 - **Milestone:** every issue the team plans to touch this block sits on the "Studio 6" milestone.
 
 ## How we will know it works
 
 - Weekly cycle time (in-progress to closed) recorded every Friday in
   `docs/workstreams/roshan-studio6-plan.md`.
-- PR time-to-first-review before and after the rota, measured on #320's PRs.
+- PR time-to-first-review may be measured descriptively if approved; do not attribute changes
+  to a review rota that was not adopted.
 - Count of `stage:blocked` items and how long each stays blocked.
 - Each retro checks these numbers and changes one rule if the data says so.
 

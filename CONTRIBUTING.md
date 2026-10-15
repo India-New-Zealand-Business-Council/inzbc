@@ -1,12 +1,14 @@
 # Contributing
 
+Tech lead: Bhanu Gupta (`@bhanuGupta1`). This role is the approval authority referenced below.
+
 ## Branches and PRs
 - **No direct pushes to `main`.** Branch, then open a pull request.
 - Branch names: `feat/…`, `fix/…`, `chore/…` in short kebab-case.
-- PRs are reviewed and merged by the tech lead (Bhanu). Everyone else opens PRs.
-- Only `@bhanuGupta1` can satisfy required code-owner approval or merge into `main`.
+- PRs are reviewed and merged by the tech lead. Everyone else opens PRs.
+- Only the tech lead can satisfy required code-owner approval or merge into `main`.
   GitHub still permits collaborators to leave feedback; their approval does not replace the
-  tech lead's. Only the tech lead can dismiss reviews. His own PRs use the owner-only PR bypass
+  tech lead's. Only the tech lead can dismiss reviews. The tech lead's own PRs use the owner-only PR bypass
   when needed, because GitHub forbids self-approval.
 - Keep PRs small and focused: one concern each.
 - **Rebase, never merge `main` into a branch.** To catch up, run `git fetch origin main` and then
@@ -21,10 +23,21 @@
 
 ## Process decisions
 
+- Only the tech lead authorizes scope, priorities, assignments, repository governance, team
+  process, recurring reporting, additional ceremonies and review arrangements. Contributors
+  execute approved assignments in their existing lanes and report reproducible defects with
+  evidence. Additional work or obligations require prior explicit tech-lead authorization.
+  Existing client approval gates and the documented team meeting cadence remain in effect.
 - Changes to review ownership, review rotations, team reporting requirements or working cadence
   require the tech lead's explicit approval before adoption. Client-controlled decisions still
   require the client's approval under `PROJECT-RULES.md`.
-- Use the process-change issue form to propose a change. Opening an issue, assigning an action,
+- Obtain the tech lead's explicit authorization **before opening** a new issue or board item
+  for reporting duties, attendance tracking, review rotations, retrospectives, recurring board
+  maintenance, workload reassignment or other team-process changes. Link that authorization
+  in the process-change form. Use an existing relevant discussion to request a decision first.
+- Search for duplicates before opening any issue. Do not recreate rejected issues #320 or #405
+  or equivalent replacements without explicit tech-lead approval.
+- Opening an authorized proposal, assigning an action,
   or recording a proposal in standup notes does not make it agreed. Link the approving decision
   before describing a change as accepted or scheduling mandatory team work under it.
 - Label proposals and unconfirmed meeting statements clearly. Correct inaccurate activity

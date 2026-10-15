@@ -5,8 +5,10 @@ body:
   - type: markdown
     attributes:
       value: |
+        Obtain the tech lead's explicit authorization before opening this issue and link it below.
+        Do not recreate rejected #320/#405 or equivalent proposals without that approval.
         This is a proposal. It does not change team rules or create mandatory work.
-        Adoption requires Bhanu's explicit approval, with client approval where applicable.
+        Adoption requires the tech lead's explicit approval, with client approval where applicable.
         Do not include credentials, private client instructions or personal data.
   - type: textarea
     id: problem
@@ -25,8 +27,7 @@ body:
   - type: textarea
     id: decision
     attributes:
-      label: Approval record
-      description: Write "Pending tech-lead decision" until an explicit approval is linked.
-      value: Pending tech-lead decision. No change is authorized by opening this issue.
+      label: Prior tech-lead authorization
+      description: Link the tech lead's explicit authorization to open this proposal. Approval to open is not approval to adopt.
     validations:
       required: true
