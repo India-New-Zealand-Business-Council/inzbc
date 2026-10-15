@@ -14,8 +14,12 @@ in how a match is scored:
 - `bm25_synonyms`: BM25 with the query expanded through the live synonym map, expanded terms at
   the same half weight the live ranker gives them.
 
+`error_analysis()` lists every question a variant gets wrong and why: which query terms the
+wrongly ranked entry matched, or that the expected entry shares no query term at all.
+
     uv run python -m apps.fta.eval.variants              # print the comparison
-    uv run python -m apps.fta.eval.variants --write      # also save results/variants.json
+    uv run python -m apps.fta.eval.variants --write      # also save variants.json and
+                                                         # variant_errors.json
 """
 
 from __future__ import annotations
@@ -100,6 +104,11 @@ def _query_weights(query: str, *, synonyms: bool) -> dict[str, float]:
     return weights
 
 
+# Whether each variant expands the query through the synonym map. The error analysis uses this to
+# say which query terms an entry matched under that variant.
+_USES_SYNONYMS = {"keyword": True, "bm25": False, "bm25_synonyms": True}
+
+
 def variants() -> dict[str, Callable[[str], list[str]]]:
     bm25 = BM25()
     return {
@@ -116,6 +125,86 @@ def compare() -> dict[str, dict[str, object]]:
     return {
         name: evaluate(questions, retrieve) for name, retrieve in variants().items()
     }
+
+
+def _matched_terms(query: str, entry_id: str, *, synonyms: bool) -> list[str]:
+    """Query terms (after any synonym expansion) that appear in an entry's topic or sector."""
+    entry = next(entry for entry in CORPUS if entry.id == entry_id)
+    document = set(_document(entry))
+    return sorted(
+        term for term in _query_weights(query, synonyms=synonyms) if term in document
+    )
+
+
+def _reason(question: dict, synonyms: bool) -> dict[str, object]:
+    query = question["query"]
+    returned = question["returned_top3"]
+    expected = question["expected"]
+    if question["type"] == "no_match":
+        return {
+            "reason": "false_answer",
+            "top": returned[0],
+            "top_matched": _matched_terms(query, returned[0], synonyms=synonyms),
+        }
+    expected_matched = {
+        entry_id: _matched_terms(query, entry_id, synonyms=synonyms)
+        for entry_id in expected
+    }
+    if not returned:
+        return {"reason": "no_result", "expected_matched": expected_matched}
+    return {
+        # "outranked": an expected entry is in the top three, just not first. "missed": none is.
+        "reason": "outranked" if question["rank"] is not None else "missed",
+        "top": returned[0],
+        "top_matched": _matched_terms(query, returned[0], synonyms=synonyms),
+        "expected_matched": expected_matched,
+    }
+
+
+def error_analysis(
+    reports: dict[str, dict[str, object]],
+) -> dict[str, list[dict[str, object]]]:
+    """Every question each variant gets wrong, with the terms behind the wrong ranking.
+
+    Wrong means an answerable question whose first result is not an expected entry, or a
+    no-match question that returned anything.
+    """
+    errors: dict[str, list[dict[str, object]]] = {}
+    for name, report in reports.items():
+        synonyms = _USES_SYNONYMS[name]
+        rows = []
+        for question in report["per_question"]:  # type: ignore[attr-defined]
+            if question["type"] == "no_match":
+                wrong = bool(question["returned_top3"])
+            else:
+                wrong = question["rank"] != 1
+            if wrong:
+                rows.append(
+                    {
+                        "qid": question["qid"],
+                        "query": question["query"],
+                        "type": question["type"],
+                        "expected": question["expected"],
+                        "returned_top3": question["returned_top3"],
+                        **_reason(question, synonyms),
+                    }
+                )
+        errors[name] = rows
+    return errors
+
+
+def _errors_summary(errors: dict[str, list[dict[str, object]]]) -> str:
+    lines = []
+    for name, rows in errors.items():
+        lines.append(f"{name}: {len(rows)} wrong")
+        for row in rows:
+            detail = (
+                f"top {row['top']} on {row['top_matched']}"
+                if "top" in row
+                else "nothing"
+            )
+            lines.append(f"  {row['qid']} {row['query']!r} {row['reason']}: {detail}")
+    return "\n".join(lines)
 
 
 def _fmt(value: float | None) -> str:
@@ -141,12 +230,18 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     reports = compare()
+    errors = error_analysis(reports)
     print(_summary(reports))
+    print("\n" + _errors_summary(errors))
     if args.write:
         RESULTS_DIR.mkdir(exist_ok=True)
-        out = RESULTS_DIR / "variants.json"
-        out.write_text(json.dumps(reports, indent=2) + "\n", encoding="utf-8")
-        print(f"\nwrote {out}")
+        for filename, data in (
+            ("variants.json", reports),
+            ("variant_errors.json", errors),
+        ):
+            out = RESULTS_DIR / filename
+            out.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+            print(f"\nwrote {out}")
     return 0
 
 
