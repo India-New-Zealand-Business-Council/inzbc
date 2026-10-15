@@ -1,0 +1,26 @@
+name: Bug report
+description: Report reproducible incorrect behavior.
+body:
+  - type: markdown
+    attributes:
+      value: Use synthetic examples. Do not include credentials or personal data.
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual and expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps
+      description: Include the commit, supported runtime and commands used.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and impact
+      description: Include redacted logs and links to affected work.
+    validations:
+      required: true

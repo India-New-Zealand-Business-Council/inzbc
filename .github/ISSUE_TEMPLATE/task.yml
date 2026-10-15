@@ -1,0 +1,27 @@
+name: Delivery task
+description: Propose a code, documentation or content deliverable.
+body:
+  - type: markdown
+    attributes:
+      value: Do not include credentials, private client instructions or personal data.
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome and scope
+      description: Describe the deliverable and link the relevant backlog item or decision.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: State observable completion criteria and required approvals.
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies and ownership
+      description: Identify affected lanes and any decisions still pending.
+    validations:
+      required: true
