@@ -1,0 +1,310 @@
+{
+  "keyword": [],
+  "bm25": [
+    {
+      "qid": "Q28",
+      "query": "lamb",
+      "type": "synonym",
+      "expected": [
+        "FTA-006"
+      ],
+      "returned_top3": [],
+      "reason": "no_result",
+      "expected_matched": {
+        "FTA-006": []
+      }
+    },
+    {
+      "qid": "Q29",
+      "query": "mutton",
+      "type": "synonym",
+      "expected": [
+        "FTA-006"
+      ],
+      "returned_top3": [],
+      "reason": "no_result",
+      "expected_matched": {
+        "FTA-006": []
+      }
+    },
+    {
+      "qid": "Q30",
+      "query": "timber and logs",
+      "type": "synonym",
+      "expected": [
+        "FTA-004"
+      ],
+      "returned_top3": [],
+      "reason": "no_result",
+      "expected_matched": {
+        "FTA-004": []
+      }
+    },
+    {
+      "qid": "Q32",
+      "query": "international students",
+      "type": "synonym",
+      "expected": [
+        "FTA-022"
+      ],
+      "returned_top3": [],
+      "reason": "no_result",
+      "expected_matched": {
+        "FTA-022": []
+      }
+    },
+    {
+      "qid": "Q33",
+      "query": "holiday visitors",
+      "type": "synonym",
+      "expected": [
+        "FTA-023"
+      ],
+      "returned_top3": [],
+      "reason": "no_result",
+      "expected_matched": {
+        "FTA-023": []
+      }
+    },
+    {
+      "qid": "Q34",
+      "query": "sauvignon blanc",
+      "type": "synonym",
+      "expected": [
+        "FTA-010"
+      ],
+      "returned_top3": [],
+      "reason": "no_result",
+      "expected_matched": {
+        "FTA-010": []
+      }
+    },
+    {
+      "qid": "Q35",
+      "query": "investing in Indian companies",
+      "type": "synonym",
+      "expected": [
+        "FTA-021"
+      ],
+      "returned_top3": [],
+      "reason": "no_result",
+      "expected_matched": {
+        "FTA-021": []
+      }
+    },
+    {
+      "qid": "Q36",
+      "query": "salmon and mussels",
+      "type": "synonym",
+      "expected": [
+        "FTA-008"
+      ],
+      "returned_top3": [],
+      "reason": "no_result",
+      "expected_matched": {
+        "FTA-008": []
+      }
+    },
+    {
+      "qid": "Q47",
+      "query": "salmon exports",
+      "type": "product_framing",
+      "expected": [
+        "FTA-008"
+      ],
+      "returned_top3": [
+        "FTA-002"
+      ],
+      "reason": "missed",
+      "top": "FTA-002",
+      "top_matched": [
+        "exports"
+      ],
+      "expected_matched": {
+        "FTA-008": []
+      }
+    },
+    {
+      "qid": "Q48",
+      "query": "tariffs on lamb exports",
+      "type": "product_framing",
+      "expected": [
+        "FTA-006"
+      ],
+      "returned_top3": [
+        "FTA-002",
+        "FTA-001"
+      ],
+      "reason": "missed",
+      "top": "FTA-002",
+      "top_matched": [
+        "exports",
+        "tariffs"
+      ],
+      "expected_matched": {
+        "FTA-006": []
+      }
+    },
+    {
+      "qid": "Q49",
+      "query": "timber trade exports",
+      "type": "product_framing",
+      "expected": [
+        "FTA-004"
+      ],
+      "returned_top3": [
+        "FTA-002",
+        "FTA-017"
+      ],
+      "reason": "missed",
+      "top": "FTA-002",
+      "top_matched": [
+        "exports"
+      ],
+      "expected_matched": {
+        "FTA-004": []
+      }
+    },
+    {
+      "qid": "Q50",
+      "query": "dairy exports",
+      "type": "product_framing",
+      "expected": [
+        "FTA-013",
+        "FTA-014",
+        "FTA-015",
+        "FTA-016"
+      ],
+      "returned_top3": [
+        "FTA-002",
+        "FTA-015",
+        "FTA-016"
+      ],
+      "reason": "outranked",
+      "top": "FTA-002",
+      "top_matched": [
+        "exports"
+      ],
+      "expected_matched": {
+        "FTA-013": [
+          "dairy"
+        ],
+        "FTA-014": [
+          "dairy"
+        ],
+        "FTA-015": [
+          "dairy"
+        ],
+        "FTA-016": [
+          "dairy"
+        ]
+      }
+    }
+  ],
+  "bm25_synonyms": [
+    {
+      "qid": "Q47",
+      "query": "salmon exports",
+      "type": "product_framing",
+      "expected": [
+        "FTA-008"
+      ],
+      "returned_top3": [
+        "FTA-002",
+        "FTA-008"
+      ],
+      "reason": "outranked",
+      "top": "FTA-002",
+      "top_matched": [
+        "exports"
+      ],
+      "expected_matched": {
+        "FTA-008": [
+          "seafood"
+        ]
+      }
+    },
+    {
+      "qid": "Q48",
+      "query": "tariffs on lamb exports",
+      "type": "product_framing",
+      "expected": [
+        "FTA-006"
+      ],
+      "returned_top3": [
+        "FTA-002",
+        "FTA-001",
+        "FTA-006"
+      ],
+      "reason": "outranked",
+      "top": "FTA-002",
+      "top_matched": [
+        "exports",
+        "tariffs"
+      ],
+      "expected_matched": {
+        "FTA-006": [
+          "sheepmeat"
+        ]
+      }
+    },
+    {
+      "qid": "Q49",
+      "query": "timber trade exports",
+      "type": "product_framing",
+      "expected": [
+        "FTA-004"
+      ],
+      "returned_top3": [
+        "FTA-002",
+        "FTA-017",
+        "FTA-004"
+      ],
+      "reason": "outranked",
+      "top": "FTA-002",
+      "top_matched": [
+        "exports"
+      ],
+      "expected_matched": {
+        "FTA-004": [
+          "forestry"
+        ]
+      }
+    },
+    {
+      "qid": "Q50",
+      "query": "dairy exports",
+      "type": "product_framing",
+      "expected": [
+        "FTA-013",
+        "FTA-014",
+        "FTA-015",
+        "FTA-016"
+      ],
+      "returned_top3": [
+        "FTA-002",
+        "FTA-015",
+        "FTA-016"
+      ],
+      "reason": "outranked",
+      "top": "FTA-002",
+      "top_matched": [
+        "exports"
+      ],
+      "expected_matched": {
+        "FTA-013": [
+          "dairy"
+        ],
+        "FTA-014": [
+          "dairy"
+        ],
+        "FTA-015": [
+          "dairy"
+        ],
+        "FTA-016": [
+          "dairy"
+        ]
+      }
+    }
+  ]
+}

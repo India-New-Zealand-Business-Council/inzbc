@@ -3,7 +3,15 @@ from __future__ import annotations
 import json
 
 from apps.fta.eval import variants as variants_module
-from apps.fta.eval.variants import BM25, _query_weights, compare, main, variants
+from apps.fta.eval.variants import (
+    _USES_SYNONYMS,
+    BM25,
+    _query_weights,
+    compare,
+    error_analysis,
+    main,
+    variants,
+)
 
 
 def test_bm25_scores_only_entries_sharing_a_term() -> None:
@@ -43,4 +51,55 @@ def test_main_writes_the_comparison(tmp_path, monkeypatch, capsys) -> None:
     assert main(["--write"]) == 0
     written = json.loads((tmp_path / "variants.json").read_text(encoding="utf-8"))
     assert set(written) == {"keyword", "bm25", "bm25_synonyms"}
+    errors = json.loads((tmp_path / "variant_errors.json").read_text(encoding="utf-8"))
+    assert set(errors) == set(written)
     assert "bm25_synonyms" in capsys.readouterr().out
+
+
+def test_every_variant_says_whether_it_expands_synonyms() -> None:
+    # The error analysis reports matched terms under each variant's own expansion, so a new
+    # variant has to declare it rather than fall back to a guess.
+    assert set(_USES_SYNONYMS) == set(variants())
+
+
+def _errors_by_qid(name: str) -> dict[str, dict]:
+    return {row["qid"]: row for row in error_analysis(compare())[name]}
+
+
+def test_error_analysis_lists_nothing_for_the_live_ranker() -> None:
+    assert _errors_by_qid("keyword") == {}
+
+
+def test_error_analysis_names_a_vocabulary_gap() -> None:
+    # Plain BM25 has no synonym map, so "lamb" shares no term with the sheepmeat entry.
+    row = _errors_by_qid("bm25")["Q28"]
+    assert row["reason"] == "no_result"
+    assert row["expected_matched"] == {"FTA-006": []}
+
+
+def test_error_analysis_names_the_framing_term_behind_a_wrong_first_result() -> None:
+    row = _errors_by_qid("bm25_synonyms")["Q47"]
+    assert row["reason"] == "outranked"
+    assert row["top"] == "FTA-002"
+    assert row["top_matched"] == ["exports"]
+    # "salmon" reaches the seafood entry only through the synonym map.
+    assert row["expected_matched"] == {"FTA-008": ["seafood"]}
+
+
+def test_error_analysis_flags_a_no_match_question_that_returned_an_answer() -> None:
+    report = {
+        "per_question": [
+            {
+                "qid": "X1",
+                "query": "wool exports",
+                "type": "no_match",
+                "expected": [],
+                "returned_top3": ["FTA-005"],
+                "rank": None,
+            }
+        ]
+    }
+    [row] = error_analysis({"bm25": report})["bm25"]
+    assert row["reason"] == "false_answer"
+    assert row["top"] == "FTA-005"
+    assert "wool" in row["top_matched"]

@@ -53,3 +53,8 @@ It also checks the full report for drift, including each question's returned ent
 side: the live keyword ranker, BM25, and BM25 with the synonym map. None of them is wired into
 `answer_query()`. `--write` saves `eval/results/variants.json`. This is the comparison #393 and #63
 build on.
+
+The same command lists every question each variant gets wrong and why, and `--write` saves that
+to `eval/results/variant_errors.json`. Each row gives a reason (`no_result`, `outranked`,
+`missed` or `false_answer`), the entry ranked first, and the query terms that entry and the
+expected entries matched.
