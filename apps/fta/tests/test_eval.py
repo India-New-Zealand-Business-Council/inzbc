@@ -4,6 +4,7 @@ import pytest
 
 from apps.fta.corpus import CORPUS
 from apps.fta.eval.run_eval import (
+    HELD_OUT_CSV,
     Question,
     evaluate,
     first_relevant_rank,
@@ -38,6 +39,21 @@ def test_question_set_covers_every_query_type_and_has_unique_ids() -> None:
     }
     assert len({q.qid for q in questions}) == len(questions)
     assert all(not q.answerable for q in questions if q.type == "no_match")
+
+
+def test_held_out_set_is_blind_synonym_coverage_distinct_from_the_main_set() -> None:
+    # #390: written without looking at explainer._SYNONYMS, so questions.csv's 1.000 synonym
+    # score isn't graded against the same set the map was tuned to pass. Checked the same way
+    # the main set is checked (only confirmed ids, no qid collisions) plus the one rule specific
+    # to this file: every row is type "synonym", since that's the whole point of it existing.
+    confirmed = {entry.id for entry in CORPUS if entry.confirmed}
+    held_out = load_questions(HELD_OUT_CSV)
+    main_qids = {q.qid for q in load_questions()}
+    assert len(held_out) >= 10
+    for question in held_out:
+        assert question.expected_ids <= confirmed, question.qid
+        assert question.type == "synonym", question.qid
+    assert {q.qid for q in held_out}.isdisjoint(main_qids)
 
 
 def test_first_relevant_rank_is_one_based_and_none_when_absent() -> None:

@@ -1,0 +1,11 @@
+qid,query,expected_ids,type,checked_by
+H01,logs,FTA-004,synonym,Paras
+H02,crayfish,FTA-008,synonym,Paras
+H03,milk powder,FTA-013,synonym,Paras
+H04,baby formula,FTA-014,synonym,Paras
+H05,overseas students,FTA-022,synonym,Paras
+H06,graduate work rights,FTA-022,synonym,Paras
+H07,visitor numbers,FTA-023,synonym,Paras
+H08,bilateral trade,FTA-017,synonym,Paras
+H09,economic impact study,FTA-018,synonym,Paras
+H10,coal mining,FTA-007,synonym,Paras
