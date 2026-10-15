@@ -8,13 +8,20 @@ router wires both correctly and maps their failures to the right HTTP status.
 
 from __future__ import annotations
 
+import asyncio
+import json
 import uuid
 
 import pytest
 from fastapi.testclient import TestClient
+from starlette.requests import ClientDisconnect
 
 from services.api.auth import Principal, SelfApprovalError
-from services.api.comms import get_comms_draft_repository, get_model_gateway
+from services.api.comms import (
+    _ClosingStreamingResponse,
+    get_comms_draft_repository,
+    get_model_gateway,
+)
 from services.api.comms_persistence import CommsDraftRecord
 from services.api.main import app
 from services.api.model_gateway import (
@@ -35,6 +42,8 @@ class FakeGateway:
         # back. #303 turns on the prompt's contents, so "the brief we stored is the text we sent"
         # has to be checkable.
         self.last_prompt: str | None = None
+        self.mid_stream_error: Exception | None = None
+        self.stream_closed = False
 
     def complete(self, prompt: str, *, source: PromptSource) -> GatewayResult:
         self.last_source = source
@@ -43,6 +52,23 @@ class FakeGateway:
             error, self.next_error = self.next_error, None
             raise error
         return GatewayResult(text=self.next_text, model="fake-model", duration_seconds=0.0)
+
+    def stream(self, prompt: str, *, source: PromptSource):
+        self.last_source = source
+        self.last_prompt = prompt
+        if self.next_error is not None:
+            error, self.next_error = self.next_error, None
+            raise error
+        return self._deltas()
+
+    def _deltas(self):
+        try:
+            for chunk in self.next_text.split(" "):
+                yield chunk + " "
+            if self.mid_stream_error is not None:
+                raise self.mid_stream_error
+        finally:
+            self.stream_closed = True
 
 
 class FakeCommsDraftRepository:
@@ -423,3 +449,96 @@ def test_delete_rejects_an_unknown_field(client: TestClient) -> None:
         json={"reason": "superseded", "brief_summary": "leaked name"},
     )
     assert response.status_code == 422
+
+
+def _stream_events(response) -> list[tuple[str, dict]]:
+    events = []
+    for block in response.text.strip().split("\n\n"):
+        name, data = block.split("\n")
+        events.append((name.removeprefix("event: "), json.loads(data.removeprefix("data: "))))
+    return events
+
+
+def _post_stream(client: TestClient, **overrides) -> object:
+    body = {"content_type": "newsletter", "topic": "announce the new FTA explainer"}
+    body.update(overrides)
+    return client.post("/api/comms/draft/stream", json=body)
+
+
+def test_stream_sends_deltas_then_persists_one_reviewable_draft(
+    client: TestClient, fake_gateway: FakeGateway, fake_repo: FakeCommsDraftRepository
+) -> None:
+    fake_gateway.next_text = "Dear members, welcome"
+    response = _post_stream(client)
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/event-stream")
+    events = _stream_events(response)
+    assert [name for name, _ in events] == ["delta", "delta", "delta", "done"]
+    text = "".join(data["text"] for name, data in events if name == "delta")
+    assert text == "Dear members, welcome "
+    done = events[-1][1]
+    assert done["status"] == "Draft"
+    stored = fake_repo.get(done["id"])
+    assert stored.draft_text == text and stored.approved_by is None
+    assert fake_gateway.last_source is PromptSource.STAFF_AUTHORED
+    assert stored.brief in fake_gateway.last_prompt
+
+
+def test_stream_maps_start_failures_to_the_same_statuses_as_draft(
+    client: TestClient, fake_gateway: FakeGateway, fake_repo: FakeCommsDraftRepository
+) -> None:
+    assert _post_stream(client, topic="   ").status_code == 422
+    fake_gateway.next_error = GatewayNotConfiguredError("no key")
+    assert _post_stream(client).status_code == 503
+    fake_gateway.next_error = RedactionNotConfiguredError("no policy")
+    assert _post_stream(client).status_code == 503
+    fake_gateway.next_error = GatewayCallError("provider failed")
+    assert _post_stream(client).status_code == 502
+    assert fake_repo.list_all() == []
+
+
+def test_stream_failure_part_way_reports_an_error_and_stores_nothing(
+    client: TestClient, fake_gateway: FakeGateway, fake_repo: FakeCommsDraftRepository
+) -> None:
+    fake_gateway.mid_stream_error = GatewayCallError("provider stream ended with response.failed")
+    events = _stream_events(_post_stream(client))
+    assert events[-1] == ("error", {"detail": "provider stream ended with response.failed"})
+    assert "done" not in [name for name, _ in events]
+    assert fake_repo.list_all() == []
+    assert fake_gateway.stream_closed
+
+
+def test_a_disconnected_reader_closes_the_body_and_so_the_provider_stream() -> None:
+    """Starlette abandons the body generator on disconnect; without the explicit close its
+    `finally`, which closes the provider stream and records usage, waits for garbage collection.
+    """
+    closed = []
+
+    async def body():
+        try:
+            while True:
+                yield "event: delta\ndata: {}\n\n"
+        finally:
+            closed.append(True)
+
+    async def receive():
+        return {"type": "http.disconnect"}
+
+    async def send(message):
+        if message["type"] == "http.response.body":
+            raise OSError("client went away")
+
+    async def respond() -> list[bool]:
+        scope = {"type": "http", "asgi": {"spec_version": "2.4"}}
+        with pytest.raises(ClientDisconnect):
+            await _ClosingStreamingResponse(body())(scope, receive, send)
+        # Read inside the loop: asyncio.run finalises leftover generators on shutdown, which
+        # would make an unclosed body look closed.
+        return list(closed)
+
+    assert asyncio.run(respond()) == [True]
+
+
+def test_stream_enforces_the_same_brief_limits(client: TestClient) -> None:
+    assert _post_stream(client, topic="x" * 201).status_code == 422
+    assert _post_stream(client, extra="field").status_code == 422

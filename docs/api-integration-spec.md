@@ -24,7 +24,7 @@ on which frontend is asking:
 |---|---|---|---|
 | Public FTA Explainer (`GET /api/fta/query`) | None — unauthenticated | Same-origin; **no CORS configured** | **Live today** (`services/api/main.py`) |
 | Staff SIP control UI | GitHub OAuth + session | Same-origin (API serves the static UI) | Specified (`api-contract.md`), not yet backed by a live DB |
-| Staff Comms Assistant UI | GitHub OAuth + session | Same-origin | Architecture decided, endpoint not built (issue #65) |
+| Staff Comms Assistant UI | GitHub OAuth + session | Same-origin | `POST /api/comms/draft` and its SSE variant `/draft/stream` (#65) built; the UI calls `/draft` |
 
 The **member portal is not on this list.** It is expected to run behind a Wix gate and talk to Member
 Jungle, not to `services/api` — see `docs/modules/member-portal-spec.md`. Nothing in this doc
@@ -145,7 +145,7 @@ Assistant is designed to reuse it, not build a second model-call path (`model_ga
 docstring: "SIP scoring, the Comms Assistant and the FTA layer call through here rather than
 constructing their own clients").
 
-**What's specified but not built** (`docs/workstreams/bhanu.md` issue #65, "Streaming Comms
+**Streaming path** (`POST /api/comms/draft/stream`, issue #65, "Streaming Comms
 Assistant API (SSE)"):
 
 ```
@@ -156,7 +156,7 @@ Staff user (authenticated, same-origin)
      through minimise(), which keeps only allowlisted fields]
   → [REDACTION — masks formatted identifiers. It does NOT strip a name, job title or
      employer in prose, and no set of regexes will]
-  → ModelGateway.complete() (or a streaming equivalent)
+  → ModelGateway.stream() (same refusal and redaction as complete())
   → SSE token stream back to the UI as the draft generates
   → draft rendered in the UI — never sent, never published
   → named human reviewer edits/approves (docs/modules/comms-assistant.md "Definition of done")
@@ -231,8 +231,9 @@ use before that review passes, same gate as SIP.
    against contract fixtures until then, per `docs/workstreams/bhanu.md`.
 2. Redaction layer for the Comms Assistant: unowned. Needs an owner before any real request flow
    is built, not just before launch.
-3. SSE streaming Comms endpoint (#65): not built. `model_gateway.complete()` is synchronous,
-   single-response today — streaming is new work, not a small extension.
+3. SSE streaming Comms endpoint (#65): `POST /api/comms/draft/stream` through
+   `ModelGateway.stream()`. The Comms UI still calls the synchronous `/draft`; switching it over is
+   UI work.
 4. Comms Assistant send/publish handoff mechanism after human approval: not specified anywhere
    (email? Mailchimp? manual copy-paste by staff?) — `docs/ai-service-architecture.md`'s own Open
    Questions asks this exact thing (#4) and it's still open.

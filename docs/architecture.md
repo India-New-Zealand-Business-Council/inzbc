@@ -482,7 +482,7 @@ person capable of holding every role, so an attempted self-approval is an everyd
 the flow must handle gracefully, not an edge case.
 
 **What this diagram does not cover:** the redaction/prompt-boundary internals inside
-`ModelGateway.complete()` — see §9; the streaming SSE variant (#65, unbuilt); the review UI
+`ModelGateway.complete()` — see §9; the streaming SSE variant (#65, `POST /api/comms/draft/stream`, same gateway controls); the review UI
 (#60, Paras's lane) that would actually present this to a reviewer; and what happens after
 `status="approved"` — there is no send/publish step in this codebase, by design, so the flow
 ends at approval.

@@ -1,8 +1,8 @@
 """`/api/comms` (#53, and the persistence/approval gap #60 and #65 both depend on).
 
 `POST /draft` is the endpoint `apps/comms/ui/src/api/client.ts` already targets - `{content_type,
-brief}` in, `{draft}` out, synchronous (matching what `ModelGateway.complete()` offers today; the
-streaming SSE variant is separate, unbuilt work, issue #65). This router is the first
+brief}` in, `{draft}` out, synchronous (matching `ModelGateway.complete()`; the streaming SSE variant
+is `POST /draft/stream`, #65). This router is the first
 implementation of that contract, not a new one - see `apps/comms/ui/src/api/client.ts`'s own
 docstring, which was calling this URL and shape before it existed. `DraftOut` now also carries
 `id`/`status`: additive, not a breaking change - the UI's `isCommsDraftResult` guard checks only
@@ -23,9 +23,12 @@ found by the #132 privacy verification pass. A retention *period* is still an IN
 
 from __future__ import annotations
 
+import json
+from collections.abc import AsyncIterator
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -34,8 +37,16 @@ from pydantic import (
     StringConstraints,
     model_validator,
 )
+from starlette.concurrency import run_in_threadpool
 
-from apps.comms.draft import BlankBriefError, Brief, ContentType, Tone, generate_draft
+from apps.comms.draft import (
+    BlankBriefError,
+    Brief,
+    ContentType,
+    Tone,
+    generate_draft,
+    stream_draft,
+)
 from services.api.auth import (
     REVIEWER,
     SECRETARIAT,
@@ -238,6 +249,82 @@ def draft(
         body.content_type, brief.render(), result.text, authored_by=principal.user_id
     )
     return DraftOut(draft=result.text, id=record.id, status=record.status)
+
+
+def _sse(event: str, data: dict[str, str]) -> str:
+    return f"event: {event}\ndata: {json.dumps(data)}\n\n"
+
+
+class _ClosingStreamingResponse(StreamingResponse):
+    """Starlette stops iterating when the client disconnects but leaves the body generator open,
+    so its `finally` (which closes the provider stream) would wait for garbage collection.
+    """
+
+    async def __call__(self, scope, receive, send) -> None:
+        try:
+            await super().__call__(scope, receive, send)
+        finally:
+            await self.body_iterator.aclose()
+
+
+@router.post(
+    "/draft/stream",
+    response_class=StreamingResponse,
+    responses={200: {"content": {"text/event-stream": {}}}},
+)
+def draft_stream(
+    body: DraftIn,
+    principal: Principal = Depends(write_access(SECRETARIAT, SIP_OWNER)),
+    gateway: ModelGateway = Depends(get_model_gateway),
+    repo: CommsDraftRepository = Depends(get_comms_draft_repository),
+) -> StreamingResponse:
+    """`POST /draft` as Server-Sent Events (#65): `delta` events carry text as it arrives, then one
+    `done` event with the persisted row's `id`/`status`, or one `error` event if the provider stream
+    fails part-way.
+
+    The first delta is fetched before the response starts, so a refused, unconfigured or failed
+    call gets the same 422/503/502 as `/draft` rather than a 200 with an error inside it. The draft
+    is persisted only once the stream completes, as an ordinary `Draft` awaiting a named reviewer;
+    a stream the reader abandons stops the provider call and stores nothing.
+    """
+    brief = body.to_brief()
+    try:
+        deltas = stream_draft(gateway, body.content_type, brief)
+        first = next(deltas)
+    except BlankBriefError as error:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error)) from error
+    except (GatewayNotConfiguredError, RedactionNotConfiguredError) as error:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(error)) from error
+    except GatewayCallError as error:
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, detail=str(error)) from error
+
+    async def events() -> AsyncIterator[str]:
+        parts = [first]
+        try:
+            yield _sse("delta", {"text": first})
+            # Pulled one delta at a time, so a slow reader slows the upstream read too.
+            while (chunk := await run_in_threadpool(next, deltas, None)) is not None:
+                parts.append(chunk)
+                yield _sse("delta", {"text": chunk})
+        except GatewayCallError as error:
+            yield _sse("error", {"detail": str(error)})
+            return
+        finally:
+            # Synchronous on purpose: on disconnect this runs while the task is being cancelled,
+            # where awaiting the threadpool would itself be cancelled and leave upstream open.
+            deltas.close()
+        record = await run_in_threadpool(
+            repo.create,
+            body.content_type,
+            brief.render(),
+            "".join(parts),
+            authored_by=principal.user_id,
+        )
+        yield _sse("done", {"id": record.id, "status": record.status})
+
+    return _ClosingStreamingResponse(
+        events(), media_type="text/event-stream", headers={"Cache-Control": "no-cache"}
+    )
 
 
 @router.post("/drafts/{draft_id}/approve", response_model=CommsDraftOut)

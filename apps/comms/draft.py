@@ -25,6 +25,7 @@ gateway; it is deployment that waits" describes.
 
 from __future__ import annotations
 
+from collections.abc import Generator
 from dataclasses import dataclass
 from typing import Literal
 
@@ -151,3 +152,14 @@ def generate_draft(gateway: ModelGateway, content_type: ContentType, brief: Brie
     # match. That is procedure, not a boundary, and #303 stays open until it is either accepted in
     # writing or replaced by something structural.
     return gateway.complete(prompt, source=PromptSource.STAFF_AUTHORED)
+
+
+def stream_draft(
+    gateway: ModelGateway, content_type: ContentType, brief: Brief
+) -> Generator[str, None, None]:
+    """`generate_draft` as text deltas (#65). Same prompt, same declared source and the same
+    reasoning for it; the gateway's refusal and redaction run before this returns.
+    """
+    if brief.is_blank():
+        raise BlankBriefError("brief needs a topic or at least one key point")
+    return gateway.stream(build_prompt(content_type, brief), source=PromptSource.STAFF_AUTHORED)
