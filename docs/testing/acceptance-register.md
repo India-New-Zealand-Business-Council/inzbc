@@ -1,8 +1,9 @@
 # Acceptance register (#210)
 
 **Status reported 16 October 2026:** the tech lead reports an acceptance session was held and
-written sign-off received (#133/#134). The date, accepted scope and source record location have
-not yet been supplied, so the individual results below have not been inferred. The separate
+written sign-off received (#133/#134), describing the scope as "everything". No version-specific
+scope, date or source record location was supplied, so individual results below have not been
+inferred. This records the relayed sign-off, not a reconstructed UAT session. The separate
 handover walkthrough (#291) has **not** been completed. See the
 [decision update](../meetings/client/2026-10-16-decision-update.md) and
 [handover pack](../handover-pack.md).
