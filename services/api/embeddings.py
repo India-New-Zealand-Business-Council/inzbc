@@ -17,6 +17,7 @@ and content-free `ModelUsage` cost/audit logging (#36) before any vector is stor
 from __future__ import annotations
 
 import hashlib
+import json
 import math
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
@@ -24,6 +25,7 @@ from typing import Protocol
 
 import psycopg
 
+from services.api.audit import record_audit
 from services.api.model_gateway import ModelGateway
 from services.api.prompt_boundary import PromptSource
 
@@ -382,6 +384,22 @@ class PostgresEmbeddingStore:
                 record.dimensions,
                 list(record.embedding),
                 record.content_sha256,
+            ),
+        )
+        record_audit(
+            self._conn,
+            action="embedding.upsert",
+            record_type="semantic_embeddings",
+            record_id=f"{record.corpus}:{record.record_id}",
+            new_value=json.dumps(
+                {
+                    "corpus": record.corpus,
+                    "record_id": record.record_id,
+                    "embedding_model": record.embedding_model,
+                    "dimensions": record.dimensions,
+                    "content_sha256": record.content_sha256,
+                },
+                sort_keys=True,
             ),
         )
         return record
