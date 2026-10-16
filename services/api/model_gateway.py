@@ -34,9 +34,10 @@ No key, endpoint or model name is ever hardcoded beyond that default.
 
 from __future__ import annotations
 
+import math
 import os
 import time
-from collections.abc import Callable, Generator
+from collections.abc import Callable, Generator, Sequence
 from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
 
@@ -45,6 +46,7 @@ from services.api.prompt_boundary import PromptSource, check_source
 from services.api.redaction import redact
 
 DEFAULT_MODEL = "gpt-4.1-mini"
+DEFAULT_EMBEDDING_MODEL = "text-embedding-3-small"
 _RETRYABLE_ATTEMPTS = 2  # one retry on a transient failure, then surface the error
 _RETRY_DELAY_SECONDS = 2.0
 
@@ -83,11 +85,31 @@ class GatewayResult:
     cost_basis: str = "unknown"
 
 
+@dataclass(frozen=True)
+class EmbeddingResult:
+    """A completed embeddings call through the gateway (#63).
+
+    Carries the validated float vector alongside the content-free usage and redaction metadata
+    recorded in `ModelUsage`.
+    """
+
+    vector: tuple[float, ...]
+    model: str
+    dimensions: int
+    duration_seconds: float
+    redaction_counts: dict[str, int] = field(default_factory=dict)
+    provider: str = "openai"
+    input_tokens: int | None = None
+    cost_usd: str | None = None
+    cost_basis: str = "unknown"
+
+
 class ModelGateway:
     """Thin, injectable wrapper over the provider client.
 
     `client` is anything exposing the OpenAI Responses API shape used by the news agent
-    (`client.responses.create(model=..., input=...)` returning an object with `output_text`).
+    (`client.responses.create(model=..., input=...)` returning an object with `output_text`)
+    and, for embeddings (#63), `client.embeddings.create(model=..., input=..., encoding_format=...)`.
     Tests inject a fake; production omits it and the gateway builds a real client from the
     environment on first use.
     """
@@ -97,6 +119,7 @@ class ModelGateway:
         client: object | None = None,
         model: str | None = None,
         *,
+        embedding_model: str | None = None,
         provider: str | None = None,
         usage_sink: Callable[[ModelUsage], None] | None = None,
     ) -> None:
@@ -108,6 +131,11 @@ class ModelGateway:
         if self.provider == "perplexity" and not configured_model:
             raise GatewayNotConfiguredError("Perplexity requires an explicit SIP_MODEL_NAME")
         self.model = configured_model or DEFAULT_MODEL
+        self.embedding_model = (
+            embedding_model
+            or os.getenv("SIP_EMBEDDING_MODEL_NAME")
+            or DEFAULT_EMBEDDING_MODEL
+        )
         self._usage_sink = usage_sink or record_usage
 
     def _ensure_client(self) -> object:
@@ -237,6 +265,61 @@ class ModelGateway:
             succeeded = completed is not None and emitted
             self._record_usage(started, 1, succeeded, completed)
 
+    def embed(self, text: str, *, source: PromptSource) -> EmbeddingResult:
+        """Generate a vector embedding for `text` through the gateway (#63).
+
+        Enforces the exact same boundary-refusal -> redaction -> provider-pinning order as
+        `complete()`. Embeddings are pinned to `openai` (`text-embedding-3-small` by default, or
+        `SIP_EMBEDDING_MODEL_NAME`); when `SIP_MODEL_PROVIDER` is `perplexity`, the call fails
+        closed with `GatewayNotConfiguredError` rather than falling back to OpenAI.
+        """
+        check_source(source)
+        if not isinstance(text, str) or not text.strip():
+            raise ValueError("embedding input must be a non-blank string")
+        redaction = redact(text)
+        if self.provider != "openai":
+            raise GatewayNotConfiguredError(
+                "embeddings require SIP_MODEL_PROVIDER=openai; no automatic provider fallback"
+            )
+        client = self._ensure_client()
+        started = time.monotonic()
+        last_error: Exception | None = None
+        for attempt in range(_RETRYABLE_ATTEMPTS):
+            try:
+                embeddings_api = getattr(client, "embeddings", None)
+                if embeddings_api is None:
+                    raise GatewayCallError("provider client does not expose embeddings.create")
+                response = embeddings_api.create(
+                    model=self.embedding_model,
+                    input=redaction.text,
+                    encoding_format="float",
+                )
+                vector = _extract_embedding_vector(response)
+                break
+            except GatewayNotConfiguredError:
+                raise
+            except Exception as error:  # noqa: BLE001
+                last_error = error
+                if attempt + 1 < _RETRYABLE_ATTEMPTS:
+                    time.sleep(_RETRY_DELAY_SECONDS)
+        else:
+            self._record_embedding_usage(started, _RETRYABLE_ATTEMPTS, False)
+            raise GatewayCallError(
+                f"embedding call failed after {_RETRYABLE_ATTEMPTS} attempts"
+            ) from last_error
+        usage = self._record_embedding_usage(started, attempt + 1, True, response)
+        return EmbeddingResult(
+            vector=vector,
+            model=self.embedding_model,
+            dimensions=len(vector),
+            duration_seconds=usage.duration_seconds,
+            redaction_counts=dict(redaction.counts),
+            provider=self.provider,
+            input_tokens=usage.input_tokens,
+            cost_usd=usage.cost_usd,
+            cost_basis=usage.cost_basis,
+        )
+
     def _record_usage(
         self, started: float, attempts: int, succeeded: bool, response: object | None = None
     ) -> ModelUsage:
@@ -254,6 +337,48 @@ class ModelGateway:
         except Exception as error:
             raise GatewayAuditError("model usage audit failed; provider call not retried") from error
         return usage
+
+    def _record_embedding_usage(
+        self, started: float, attempts: int, succeeded: bool, response: object | None = None
+    ) -> ModelUsage:
+        raw = getattr(response, "usage", None)
+        raw_inputs = getattr(raw, "input_tokens", None)
+        if raw_inputs is None:
+            raw_inputs = getattr(raw, "prompt_tokens", None)
+        input_tokens = _token_count(raw_inputs)
+        output_tokens = 0 if input_tokens is not None else None
+        cost, basis = _embedding_cost(raw, input_tokens)
+        usage = ModelUsage(
+            provider=self.provider,
+            model=self.embedding_model,
+            duration_seconds=time.monotonic() - started,
+            attempts=attempts,
+            succeeded=succeeded,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            cost_usd=cost,
+            cost_basis=basis,
+        )
+        try:
+            self._usage_sink(usage)
+        except Exception as error:
+            raise GatewayAuditError("model usage audit failed; provider call not retried") from error
+        return usage
+
+
+def _extract_embedding_vector(response: object) -> tuple[float, ...]:
+    data = getattr(response, "data", None)
+    if not isinstance(data, Sequence) or isinstance(data, (str, bytes)) or len(data) == 0:
+        raise GatewayCallError("provider returned no usable embedding vector")
+    raw_vec = getattr(data[0], "embedding", None)
+    if not isinstance(raw_vec, Sequence) or isinstance(raw_vec, (str, bytes)) or len(raw_vec) == 0:
+        raise GatewayCallError("provider returned no usable embedding vector")
+    values: list[float] = []
+    for item in raw_vec:
+        if type(item) not in {int, float} or not math.isfinite(float(item)):
+            raise GatewayCallError("embedding vector contains a non-finite or non-numeric value")
+        values.append(float(item))
+    return tuple(values)
 
 
 def _token_count(value: object) -> int | None:
@@ -278,4 +403,28 @@ def _cost(raw: object, inputs: int | None, outputs: int | None) -> tuple[str | N
                 return str(cost), "configured_token_estimate"
         except (KeyError, InvalidOperation, ValueError):
             pass
+    return None, "unknown"
+
+
+def _embedding_cost(raw: object, inputs: int | None) -> tuple[str | None, str]:
+    reported = getattr(raw, "cost", None)
+    if isinstance(reported, dict) and reported.get("currency") == "USD":
+        try:
+            value = Decimal(str(reported["total_cost"]))
+            if value.is_finite() and value >= 0:
+                return str(value), "provider_reported"
+        except (KeyError, InvalidOperation, ValueError):
+            pass
+    if inputs is not None:
+        rate_str = os.getenv("SIP_EMBEDDING_INPUT_USD_PER_MILLION") or os.getenv(
+            "SIP_MODEL_INPUT_USD_PER_MILLION"
+        )
+        if rate_str is not None:
+            try:
+                input_rate = Decimal(rate_str)
+                if input_rate.is_finite() and input_rate >= 0:
+                    cost = (inputs * input_rate) / Decimal(1_000_000)
+                    return str(cost), "configured_token_estimate"
+            except (InvalidOperation, ValueError):
+                pass
     return None, "unknown"
