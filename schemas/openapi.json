@@ -3233,13 +3233,237 @@
         }
       }
     },
+    "/api/webhooks/wix/site-forms": {
+      "post": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Receive Wix Site Form",
+        "description": "Receives, verifies, and persists a Wix site-form submission (#45).",
+        "operationId": "receive_wix_site_form_api_webhooks_wix_site_forms_post",
+        "parameters": [
+          {
+            "name": "X-Wix-Webhook-Timestamp",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Wix-Webhook-Timestamp"
+            }
+          },
+          {
+            "name": "X-Wix-Webhook-Signature",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Wix-Webhook-Signature"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteFormWebhookAckOut"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Duplicate webhook event_id with identical payload (idempotent retry)."
+          },
+          "400": {
+            "description": "Query string parameters present on webhook URL, or malformed JSON."
+          },
+          "401": {
+            "description": "Missing, expired, or invalid Wix HMAC-SHA256 webhook signature."
+          },
+          "409": {
+            "description": "Duplicate event_id replayed with a different payload."
+          },
+          "503": {
+            "description": "WIX_WEBHOOK_SECRET is not configured on the server."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteFormWebhookIn"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/site-forms": {
+      "get": {
+        "tags": [
+          "Site Forms"
+        ],
+        "summary": "List Site Forms",
+        "description": "Lists received site-form submissions, newest first.",
+        "operationId": "list_site_forms_api_site_forms_get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "form_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/SiteFormType"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional filter by site-form category.",
+              "title": "Form Type"
+            },
+            "description": "Optional filter by site-form category."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SiteFormSubmissionOut"
+                  },
+                  "title": "Response List Site Forms Api Site Forms Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/site-forms/{submission_id}": {
+      "get": {
+        "tags": [
+          "Site Forms"
+        ],
+        "summary": "Get Site Form",
+        "description": "Returns a single persisted site-form submission by ID.",
+        "operationId": "get_site_form_api_site_forms__submission_id__get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "submission_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Submission Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteFormSubmissionOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/fta/query": {
       "get": {
         "tags": [
           "FTA Explainer"
         ],
         "summary": "Fta Query",
-        "description": "Answers an FTA question from the sourced corpus, or escalates.\n\nA query with no confirmed corpus match is **not** an error: it returns HTTP 200 with\n`status: \"no_match\"` and the Action Required escalation path. Returning 404 would push\ncallers toward an error branch that discards the guidance.",
+        "description": "Answers an FTA question from the sourced corpus at the requested `depth`, or escalates.\n\nA query with no confirmed corpus match is **not** an error: it returns HTTP 200 with\n`status: \"no_match\"` and the Action Required escalation path. Returning 404 would push\ncallers toward an error branch that discards the guidance.",
         "operationId": "fta_query_api_fta_query_get",
         "parameters": [
           {
@@ -3253,6 +3477,15 @@
               "title": "Q"
             },
             "description": "A sector or product question, e.g. 'dairy' or 'manuka honey'."
+          },
+          {
+            "name": "depth",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Depth",
+              "default": "public"
+            }
           }
         ],
         "responses": {
@@ -3265,6 +3498,12 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Authentication required for `member` or `internal` depth."
+          },
+          "403": {
+            "description": "Authenticated caller lacks the role required for the requested depth."
           },
           "422": {
             "description": "Validation Error",
@@ -3542,6 +3781,17 @@
           "confidence_meaning": {
             "type": "string",
             "title": "Confidence Meaning"
+          },
+          "source_tier": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Tier"
           },
           "notes": {
             "anyOf": [
@@ -4766,6 +5016,16 @@
         ],
         "title": "DeliveryOut"
       },
+      "Depth": {
+        "type": "string",
+        "enum": [
+          "public",
+          "member",
+          "internal"
+        ],
+        "title": "Depth",
+        "description": "The three audiences #187 asks for: a non-member public reader, a member relying on the\nanswer for a business decision, and an internal reviewer checking the evidence before\napproving distribution.\n\nThese are three audiences, not three rewritings of one answer (#187's own framing): the\nunderlying sourced fact never changes across levels, and this module has no authority to\ninvent separate public-facing prose for a treatment that only exists as one sourced string\nin `docs/fta-source-corpus.md`. What changes is how much of the evidence trail is exposed -\nPUBLIC still carries citation and verified date (`docs/modules/fta-centre.md` requires every\nmaterial answer to, public or not - \"a simpler explanation\" is not \"an uncited one\"), but\nwithholds `id`/`source_tier`/drafting `notes`; MEMBER adds nothing further sourced, only\ndrops the internal-only `notes` that PUBLIC also withholds; INTERNAL is the only tier that\ncarries the raw source tier and reviewer notes, the record a reviewer actually checks."
+      },
       "DistributionIn": {
         "properties": {
           "reason": {
@@ -5252,6 +5512,10 @@
           "query": {
             "type": "string",
             "title": "Query"
+          },
+          "depth": {
+            "$ref": "#/components/schemas/Depth",
+            "default": "public"
           },
           "answers": {
             "items": {
@@ -6047,6 +6311,155 @@
         ],
         "title": "SignalStrength"
       },
+      "SiteFormSubmissionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "event_id": {
+            "type": "string",
+            "title": "Event Id"
+          },
+          "form_type": {
+            "$ref": "#/components/schemas/SiteFormType"
+          },
+          "submitted_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Submitted At"
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Received At"
+          },
+          "page_slug": {
+            "type": "string",
+            "title": "Page Slug"
+          },
+          "contact_name": {
+            "type": "string",
+            "title": "Contact Name"
+          },
+          "contact_email": {
+            "type": "string",
+            "title": "Contact Email"
+          },
+          "organisation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organisation"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Metadata"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "event_id",
+          "form_type",
+          "submitted_at",
+          "received_at",
+          "page_slug",
+          "contact_name",
+          "contact_email",
+          "metadata"
+        ],
+        "title": "SiteFormSubmissionOut",
+        "description": "Staff read representation of a persisted site-form submission."
+      },
+      "SiteFormType": {
+        "type": "string",
+        "enum": [
+          "general_enquiry",
+          "membership_enquiry",
+          "event_registration",
+          "trade_enquiry",
+          "partnership_enquiry"
+        ],
+        "title": "SiteFormType"
+      },
+      "SiteFormWebhookAckOut": {
+        "properties": {
+          "submission_id": {
+            "type": "string",
+            "title": "Submission Id"
+          },
+          "event_id": {
+            "type": "string",
+            "title": "Event Id"
+          },
+          "form_type": {
+            "$ref": "#/components/schemas/SiteFormType"
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Received At"
+          },
+          "deduplicated": {
+            "type": "boolean",
+            "title": "Deduplicated"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "submission_id",
+          "event_id",
+          "form_type",
+          "received_at",
+          "deduplicated"
+        ],
+        "title": "SiteFormWebhookAckOut",
+        "description": "Receipt returned to the Wix webhook caller (no personal data echoed)."
+      },
       "SourceCheckOut": {
         "properties": {
           "id": {
@@ -6437,6 +6850,112 @@
           "next_review"
         ],
         "title": "WatchOut"
+      },
+      "SiteFormWebhookIn": {
+        "additionalProperties": false,
+        "description": "Validated Wix site-form webhook payload (`schemas/webhooks.md`).",
+        "properties": {
+          "event_id": {
+            "format": "uuid",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "form_type": {
+            "$ref": "#/components/schemas/SiteFormType"
+          },
+          "submitted_at": {
+            "format": "date-time",
+            "title": "Submitted At",
+            "type": "string"
+          },
+          "page_slug": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Page Slug",
+            "type": "string"
+          },
+          "contact_name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Contact Name",
+            "type": "string"
+          },
+          "contact_email": {
+            "maxLength": 320,
+            "minLength": 3,
+            "title": "Contact Email",
+            "type": "string"
+          },
+          "organisation": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Organisation"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Phone"
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subject"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Message"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Metadata",
+            "type": "object"
+          }
+        },
+        "required": [
+          "event_id",
+          "form_type",
+          "submitted_at",
+          "page_slug",
+          "contact_name",
+          "contact_email"
+        ],
+        "title": "SiteFormWebhookIn",
+        "type": "object"
       }
     },
     "securitySchemes": {

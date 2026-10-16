@@ -54,6 +54,12 @@ SESSION_PREFIX = "/api/session"
 # and by the allowlist in `establish_session`. Covered by `test_oauth.py`.
 OAUTH_PREFIX = "/api/auth"
 
+# Machine-to-machine webhook endpoints (#45). Webhooks are dispatched by Wix backend automation,
+# not a staff browser holding `inzbc_session`, and are authenticated by HMAC-SHA256 signature
+# (`X-Wix-Webhook-Signature` + `X-Wix-Webhook-Timestamp`) in `services/api/site_forms.py`.
+# Covered by `test_site_forms_api.py`.
+WEBHOOK_PREFIX = "/api/webhooks"
+
 
 @pytest.fixture(autouse=True)
 def _no_auth_override():
@@ -95,7 +101,7 @@ def business_routes() -> list[tuple[str, str]]:
     found = []
     for route in _walk(app.routes):
         if route.path.startswith(
-            (*PUBLIC_PREFIXES, SESSION_PREFIX, OAUTH_PREFIX)
+            (*PUBLIC_PREFIXES, SESSION_PREFIX, OAUTH_PREFIX, WEBHOOK_PREFIX)
         ):
             continue
         for method in sorted(route.methods - {"HEAD", "OPTIONS"}):
@@ -125,8 +131,10 @@ def test_no_business_route_answers_anonymously(method: str, path: str) -> None:
     422 would mean the request was rejected for its shape before authentication was considered,
     which is the wrong order: it tells an anonymous caller what the endpoint expects.
     """
-    concrete = path.replace("{run_id}", "00000000-0000-0000-0000-000000000001").replace(
-        "{candidate_id}", "00000000-0000-0000-0000-000000000002"
+    concrete = (
+        path.replace("{run_id}", "00000000-0000-0000-0000-000000000001")
+        .replace("{candidate_id}", "00000000-0000-0000-0000-000000000002")
+        .replace("{submission_id}", "00000000-0000-0000-0000-000000000003")
     )
     with TestClient(app) as client:
         response = client.request(method, concrete, json={})
@@ -392,6 +400,11 @@ EXPECTED_ROLES: dict[tuple[str, str], set[str]] = {
     ("DELETE", "/api/comms/drafts/{draft_id}"): {"Secretariat", "SIP Owner"},
     ("GET", "/api/comms/drafts/{draft_id}"): set(STAFF_READ),
     ("GET", "/api/comms/drafts"): set(STAFF_READ),
+    # Site-forms staff read surface (#45): received Wix form submissions are readable by staff
+    # roles (`STAFF_READ`); the write path is the HMAC-signed `/api/webhooks/wix/site-forms`
+    # webhook endpoint.
+    ("GET", "/api/site-forms"): set(STAFF_READ),
+    ("GET", "/api/site-forms/{submission_id}"): set(STAFF_READ),
 }
 
 

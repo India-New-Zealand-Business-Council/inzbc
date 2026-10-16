@@ -1072,6 +1072,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/webhooks/wix/site-forms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Receive Wix Site Form
+         * @description Receives, verifies, and persists a Wix site-form submission (#45).
+         */
+        post: operations["receive_wix_site_form_api_webhooks_wix_site_forms_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/site-forms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Site Forms
+         * @description Lists received site-form submissions, newest first.
+         */
+        get: operations["list_site_forms_api_site_forms_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/site-forms/{submission_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Site Form
+         * @description Returns a single persisted site-form submission by ID.
+         */
+        get: operations["get_site_form_api_site_forms__submission_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/fta/query": {
         parameters: {
             query?: never;
@@ -1081,7 +1141,7 @@ export interface paths {
         };
         /**
          * Fta Query
-         * @description Answers an FTA question from the sourced corpus, or escalates.
+         * @description Answers an FTA question from the sourced corpus at the requested `depth`, or escalates.
          *
          *     A query with no confirmed corpus match is **not** an error: it returns HTTP 200 with
          *     `status: "no_match"` and the Action Required escalation path. Returning 404 would push
@@ -1205,6 +1265,8 @@ export interface components {
             confidence: string;
             /** Confidence Meaning */
             confidence_meaning: string;
+            /** Source Tier */
+            source_tier?: number | null;
             /** Notes */
             notes?: string | null;
             /** Coverage Warning */
@@ -1560,6 +1622,24 @@ export interface components {
             /** Recorded At */
             recorded_at: string;
         };
+        /**
+         * Depth
+         * @description The three audiences #187 asks for: a non-member public reader, a member relying on the
+         *     answer for a business decision, and an internal reviewer checking the evidence before
+         *     approving distribution.
+         *
+         *     These are three audiences, not three rewritings of one answer (#187's own framing): the
+         *     underlying sourced fact never changes across levels, and this module has no authority to
+         *     invent separate public-facing prose for a treatment that only exists as one sourced string
+         *     in `docs/fta-source-corpus.md`. What changes is how much of the evidence trail is exposed -
+         *     PUBLIC still carries citation and verified date (`docs/modules/fta-centre.md` requires every
+         *     material answer to, public or not - "a simpler explanation" is not "an uncited one"), but
+         *     withholds `id`/`source_tier`/drafting `notes`; MEMBER adds nothing further sourced, only
+         *     drops the internal-only `notes` that PUBLIC also withholds; INTERNAL is the only tier that
+         *     carries the raw source tier and reviewer notes, the record a reviewer actually checks.
+         * @enum {string}
+         */
+        Depth: "public" | "member" | "internal";
         /** DistributionIn */
         DistributionIn: {
             /** Reason */
@@ -1735,6 +1815,8 @@ export interface components {
             status: "matched" | "no_match";
             /** Query */
             query: string;
+            /** @default public */
+            depth: components["schemas"]["Depth"];
             /** Answers */
             answers: components["schemas"]["AnswerOut"][];
             action_required?: components["schemas"]["ActionRequiredOut"] | null;
@@ -2008,6 +2090,68 @@ export interface components {
          * @enum {string}
          */
         SignalStrength: "Low" | "Medium" | "High" | "Critical";
+        /**
+         * SiteFormSubmissionOut
+         * @description Staff read representation of a persisted site-form submission.
+         */
+        SiteFormSubmissionOut: {
+            /** Id */
+            id: string;
+            /** Event Id */
+            event_id: string;
+            form_type: components["schemas"]["SiteFormType"];
+            /**
+             * Submitted At
+             * Format: date-time
+             */
+            submitted_at: string;
+            /**
+             * Received At
+             * Format: date-time
+             */
+            received_at: string;
+            /** Page Slug */
+            page_slug: string;
+            /** Contact Name */
+            contact_name: string;
+            /** Contact Email */
+            contact_email: string;
+            /** Organisation */
+            organisation?: string | null;
+            /** Phone */
+            phone?: string | null;
+            /** Subject */
+            subject?: string | null;
+            /** Message */
+            message?: string | null;
+            /** Metadata */
+            metadata: {
+                [key: string]: string;
+            };
+        };
+        /**
+         * SiteFormType
+         * @enum {string}
+         */
+        SiteFormType: "general_enquiry" | "membership_enquiry" | "event_registration" | "trade_enquiry" | "partnership_enquiry";
+        /**
+         * SiteFormWebhookAckOut
+         * @description Receipt returned to the Wix webhook caller (no personal data echoed).
+         */
+        SiteFormWebhookAckOut: {
+            /** Submission Id */
+            submission_id: string;
+            /** Event Id */
+            event_id: string;
+            form_type: components["schemas"]["SiteFormType"];
+            /**
+             * Received At
+             * Format: date-time
+             */
+            received_at: string;
+            /** Deduplicated */
+            deduplicated: boolean;
+        };
         /** SourceCheckOut */
         SourceCheckOut: {
             /** Id */
@@ -2132,6 +2276,53 @@ export interface components {
             status: string;
             /** Next Review */
             next_review: string | null;
+        };
+        /**
+         * SiteFormWebhookIn
+         * @description Validated Wix site-form webhook payload (`schemas/webhooks.md`).
+         */
+        SiteFormWebhookIn: {
+            /**
+             * Event Id
+             * Format: uuid
+             */
+            event_id: string;
+            form_type: components["schemas"]["SiteFormType"];
+            /**
+             * Submitted At
+             * Format: date-time
+             */
+            submitted_at: string;
+            /** Page Slug */
+            page_slug: string;
+            /** Contact Name */
+            contact_name: string;
+            /** Contact Email */
+            contact_email: string;
+            /**
+             * Organisation
+             * @default null
+             */
+            organisation: string | null;
+            /**
+             * Phone
+             * @default null
+             */
+            phone: string | null;
+            /**
+             * Subject
+             * @default null
+             */
+            subject: string | null;
+            /**
+             * Message
+             * @default null
+             */
+            message: string | null;
+            /** Metadata */
+            metadata?: {
+                [key: string]: string;
+            };
         };
     };
     responses: never;
@@ -4746,11 +4937,175 @@ export interface operations {
             };
         };
     };
+    receive_wix_site_form_api_webhooks_wix_site_forms_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Wix-Webhook-Timestamp"?: string | null;
+                "X-Wix-Webhook-Signature"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SiteFormWebhookIn"];
+            };
+        };
+        responses: {
+            /** @description Duplicate webhook event_id with identical payload (idempotent retry). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteFormWebhookAckOut"];
+                };
+            };
+            /** @description Query string parameters present on webhook URL, or malformed JSON. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing, expired, or invalid Wix HMAC-SHA256 webhook signature. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Duplicate event_id replayed with a different payload. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description WIX_WEBHOOK_SECRET is not configured on the server. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_site_forms_api_site_forms_get: {
+        parameters: {
+            query?: {
+                /** @description Optional filter by site-form category. */
+                form_type?: components["schemas"]["SiteFormType"] | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteFormSubmissionOut"][];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_site_form_api_site_forms__submission_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteFormSubmissionOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     fta_query_api_fta_query_get: {
         parameters: {
             query: {
                 /** @description A sector or product question, e.g. 'dairy' or 'manuka honey'. */
                 q: string;
+                depth?: components["schemas"]["Depth"];
             };
             header?: never;
             path?: never;
@@ -4766,6 +5121,20 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["FtaQueryResponse"];
                 };
+            };
+            /** @description Authentication required for `member` or `internal` depth. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated caller lacks the role required for the requested depth. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
