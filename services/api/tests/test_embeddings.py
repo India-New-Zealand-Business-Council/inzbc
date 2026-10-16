@@ -509,6 +509,16 @@ def test_postgres_store_sql_branches_for_pgvector_and_array_fallback() -> None:
             self._one = one
             self._all = all_rows or []
 
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_exc):
+            return False
+
+        def execute(self, sql: str, params: object = None):
+            executed.append((sql, params))
+            self._one = (1,)
+
         def fetchone(self):
             return self._one
 
@@ -530,6 +540,9 @@ def test_postgres_store_sql_branches_for_pgvector_and_array_fallback() -> None:
                 [0.98, 0.1, 0.05, 0.15],
                 "a" * 64,
             )
+
+        def cursor(self, **_kwargs):
+            return FakeCursor(one=(1,))
 
         def execute(self, sql: str, params: object = None):
             executed.append((sql, params))
