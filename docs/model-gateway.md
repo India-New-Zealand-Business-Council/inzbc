@@ -1,19 +1,22 @@
 # Model gateway configuration and usage records
 
-`services/api/model_gateway.py` is the single server-side completion interface. Existing callers
-continue to use `complete(prompt, source=...)`; source refusal and configured redaction run before
-provider access for both providers. No live credentials or runtime environment files are changed
+`services/api/model_gateway.py` is the single server-side completion and embeddings interface.
+Existing callers continue to use `complete(prompt, source=...)`, and semantic retrieval / dedupe
+callers (#63) use `embed(text, source=...)`; source refusal and configured redaction run before
+provider access for both methods. No live credentials or runtime environment files are changed
 by this implementation.
 
 | Configuration name | Behavior |
 |---|---|
-| `SIP_MODEL_PROVIDER` | `openai` by default; the only other accepted value is `perplexity` |
+| `SIP_MODEL_PROVIDER` | `openai` by default; the only other accepted value is `perplexity` (`embed()` requires `openai`) |
 | `SIP_MODEL_NAME` | Existing OpenAI default remains; required explicitly for Perplexity |
+| `SIP_EMBEDDING_MODEL_NAME` | Optional OpenAI embeddings model; defaults to `text-embedding-3-small` |
 | `OPENAI_API_KEY` | Used only for OpenAI |
 | `PERPLEXITY_API_KEY` | Used only for Perplexity; no fallback to the other provider/key |
 | `DATABASE_URL` | When configured, usage records persist through the existing append-only audit service |
 | `SIP_MODEL_INPUT_USD_PER_MILLION` | Optional operator-supplied input-token rate for an estimate |
 | `SIP_MODEL_OUTPUT_USD_PER_MILLION` | Optional operator-supplied output-token rate for an estimate |
+| `SIP_EMBEDDING_INPUT_USD_PER_MILLION` | Optional operator-supplied embedding input-token rate for an estimate |
 
 Perplexity uses the existing OpenAI SDK against the fixed `https://api.perplexity.ai/v1` base
 URL and the Responses interface, as documented in its
