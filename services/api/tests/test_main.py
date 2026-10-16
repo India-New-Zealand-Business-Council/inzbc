@@ -163,3 +163,81 @@ def test_an_entry_with_no_sourced_figure_returns_null_not_zero() -> None:
     # The qualitative claim is still sourced, so the answer is not empty.
     assert answer["treatment"]
     assert answer["citation"]
+
+
+def test_default_fta_query_serves_public_depth_and_withholds_internal_fields() -> None:
+    """#392: unauthenticated `/api/fta/query` defaults to `public` depth and withholds
+    `source_tier` and `notes`."""
+    body = client.get("/api/fta/query", params={"q": "dairy"}).json()
+    assert body["depth"] == "public"
+    for answer in body["answers"]:
+        assert answer["source_tier"] is None
+        assert answer["notes"] is None
+
+
+@pytest.mark.parametrize("depth", ["member", "internal"])
+def test_non_public_fta_depths_refuse_anonymous_callers(depth: str) -> None:
+    response = client.get("/api/fta/query", params={"q": "wool", "depth": depth})
+    assert response.status_code == 401
+
+
+def test_a_stale_session_cookie_does_not_block_the_public_answer() -> None:
+    stale = TestClient(app, cookies={"inzbc_session": "expired-or-unknown"})
+    response = stale.get("/api/fta/query", params={"q": "wool"})
+    assert response.status_code == 200
+    assert response.json()["depth"] == "public"
+
+
+def test_member_depth_serves_authenticated_member_and_withholds_internal_notes() -> None:
+    from services.api.auth import Principal
+    from services.api.main import resolve_fta_principal
+
+    app.dependency_overrides[resolve_fta_principal] = lambda: Principal(
+        user_id="00000000-0000-0000-0000-0000000000b1",
+        name="Board Viewer User",
+        roles=frozenset({"Board Viewer"}),
+        session_id="s-board",
+        csrf_token="c-board",
+    )
+    try:
+        response = client.get("/api/fta/query", params={"q": "dairy", "depth": "member"})
+        assert response.status_code == 200
+        body = response.json()
+        assert body["depth"] == "member"
+        for answer in body["answers"]:
+            assert answer["source_tier"] is None
+            assert answer["notes"] is None
+    finally:
+        app.dependency_overrides.pop(resolve_fta_principal, None)
+
+
+def test_internal_depth_refuses_underprivileged_role_and_serves_reviewer() -> None:
+    from services.api.auth import Principal
+    from services.api.main import resolve_fta_principal
+
+    app.dependency_overrides[resolve_fta_principal] = lambda: Principal(
+        user_id="00000000-0000-0000-0000-0000000000b2",
+        name="Secretariat User",
+        roles=frozenset({"Secretariat"}),
+        session_id="s-sec",
+        csrf_token="c-sec",
+    )
+    try:
+        denied = client.get("/api/fta/query", params={"q": "dairy", "depth": "internal"})
+        assert denied.status_code == 403
+
+        app.dependency_overrides[resolve_fta_principal] = lambda: Principal(
+            user_id="00000000-0000-0000-0000-0000000000b3",
+            name="Reviewer User",
+            roles=frozenset({"Reviewer"}),
+            session_id="s-rev",
+            csrf_token="c-rev",
+        )
+        allowed = client.get("/api/fta/query", params={"q": "dairy", "depth": "internal"})
+        assert allowed.status_code == 200
+        body = allowed.json()
+        assert body["depth"] == "internal"
+        assert all(a["source_tier"] in {1, 2} for a in body["answers"])
+        assert any(a["notes"] is not None for a in body["answers"])
+    finally:
+        app.dependency_overrides.pop(resolve_fta_principal, None)

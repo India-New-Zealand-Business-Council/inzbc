@@ -1,4 +1,4 @@
--- SIP database schema — v0.1 draft (Postgres)
+-- SIP database schema â€” v0.1 draft (Postgres)
 -- Grounded in the Intelligence Database v1.9 model and the SIP spec (docs/sip/).
 -- Contract for Roshan (pipeline) and Paras (UI) to build against. Not yet migrated;
 -- the internal-platform decision (AIOS foundation decision 2) may host this differently,
@@ -524,7 +524,7 @@ create table decision_records (
 -- exists and belongs to this stream. It does NOT prove the record is the newest, nor that the head
 -- moved forward: this constraint alone still permits moving a head backwards to an earlier
 -- revision, or pointing it at any historical record of the same stream. Ordering is the writing
--- command's job — it must compare-and-swap on the existing head, requiring
+-- command's job â€” it must compare-and-swap on the existing head, requiring
 -- new_revision = old_head_revision + 1 and supersedes_id = old_current_record_id, and abort the
 -- whole decision on a zero-row result.
 alter table decision_streams
@@ -825,3 +825,41 @@ begin
 end
 $$;
 
+-- ---------- Wix site-forms webhook submissions (#45) ----------
+-- Validated form submissions delivered from the public Wix Vibe site (`inzview`) to
+-- `POST /api/webhooks/wix/site-forms`. Append-only by trigger (`reject_evidence_change`) and
+-- deduplicated on `event_id` with a SHA-256 payload digest check so Wix webhook retries are
+-- idempotent.
+create type site_form_type as enum (
+  'general_enquiry',
+  'membership_enquiry',
+  'event_registration',
+  'trade_enquiry',
+  'partnership_enquiry'
+);
+
+create table site_form_submissions (
+  id              uuid primary key default gen_random_uuid(),
+  event_id        uuid not null unique,
+  form_type       site_form_type not null,
+  submitted_at    timestamptz not null,
+  received_at     timestamptz not null default now(),
+  page_slug       text not null check (btrim(page_slug) <> ''),
+  contact_name    text not null check (btrim(contact_name) <> ''),
+  contact_email   text not null check (btrim(contact_email) <> '' and position('@' in contact_email) > 1),
+  organisation    text,
+  phone           text,
+  subject         text,
+  message         text,
+  metadata        jsonb not null default '{}'::jsonb
+                    check (jsonb_typeof(metadata) = 'object'),
+  payload_sha256  text not null check (btrim(payload_sha256) <> '')
+);
+
+create index site_form_submissions_type_received_idx
+  on site_form_submissions (form_type, received_at desc);
+
+create trigger site_form_submissions_append_only before update or delete on site_form_submissions
+  for each row execute function reject_evidence_change();
+create trigger site_form_submissions_no_wipe before truncate on site_form_submissions
+  for each statement execute function reject_evidence_change();

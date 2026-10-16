@@ -183,6 +183,13 @@ rows and tables, so they are enforced by the command inside its transaction, not
 CHECK. `Continue With Correction` does not permit release; it requires a corrected report version,
 fresh approval and fresh authority.
 
+## Webhooks & site forms (#45 — contract in `schemas/webhooks.md`)
+```
+POST   /api/webhooks/wix/site-forms  receive HMAC-signed Wix form submission (no query params allowed)
+GET    /api/site-forms               list received submissions (STAFF_READ, optional form_type filter)
+GET    /api/site-forms/:id           read a single submission by id (STAFF_READ)
+```
+
 ## Cross-cutting
 ```
 GET    /api/audit                    append-only audit log (read)
