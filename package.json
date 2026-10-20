@@ -10,12 +10,13 @@
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test",
     "build": "pnpm -r --if-present build",
+    "test:e2e": "playwright test",
     "openapi": "python scripts/dump_openapi.py",
     "codegen": "pnpm run openapi && pnpm --filter @inzbc/fta-ui run codegen && pnpm --filter @inzbc/sip-ui run codegen && pnpm --filter @inzbc/dashboard-ui run codegen"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "openapi-typescript": "^7.13.0",
-    "playwright": "^1.63.0",
     "typescript": "^5.9.3"
   }
 }

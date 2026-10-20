@@ -48,7 +48,12 @@ export function FtaQuery({ baseUrl = '' }: { baseUrl?: string }) {
   return (
     <section className="mt-6">
       <form onSubmit={onSubmit} noValidate className="flex flex-wrap items-end gap-2">
-        <div className="min-w-72 flex-1">
+        {/* Pixel min-width, not min-w-72 (18rem): index.css sets the root font-size to 112.5%
+            (18px, not the browser default 16px), so 18rem rendered at 324px — wider than a
+            320px viewport outright, forcing horizontal scroll before the button even had a
+            chance to wrap below it (caught by the #100 Playwright 320px case). A fixed pixel
+            value is immune to the rem-scale surprise either way. */}
+        <div className="min-w-[220px] flex-1">
           <label htmlFor={inputId} className="mb-1 block text-sm font-semibold text-inzbc-navy">
             Ask about the NZ–India FTA
           </label>
