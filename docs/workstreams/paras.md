@@ -66,25 +66,10 @@ nice-to-have, not a blocker for anything else on this list.
       never having happened (`Chrome tools weren't enabled` at the time).
 
 **Weeks 2–4 — the website, on the stack it's actually on**
-- [ ] **Figure out what "fully developed" means for `inzview` and write it down.** 209 commits in
-      that repo are real, working pages — this is not a from-scratch build. What's missing is a
-      proper gap list: CMS-backed dynamic content (news, events, sector reports — see `## Stale
-      items to retire` for why the old "Wix CMS collections" plan doesn't apply here), forms that
-      actually deliver somewhere, SEO/share metadata coverage, and anything `ADR-0007` flagged as
-      structurally different about this site (no CI type-check, "merged" and "live" are separate
-      events). Start here, not with code — an accurate gap list is the actual Week 2 deliverable.
-- [ ] **Forms UI: confirmation + owner notification**, once the gap list above says which forms
-      still need it. SHARED-OK: the webhook-to-internal delivery (contract + receiver service)
-      stays on Bhanu's worklog; this is the form UI and the confirmation messaging only.
-- [ ] **#196/#197 site-rebuild issues — reconcile against `inzview`, don't execute as written.**
-      Both predate the Studio→Vibe move and describe rebuilding "on the Wix duplicate." Check with
-      the team whether they should be closed as superseded or rewritten against the real stack
-      before treating them as live backlog.
-- [ ] **Moved up from Weeks 4–6: the 320px reflow Playwright case (#100, WCAG 2.2 §1.4.10).**
-      The team's uv/pytest/Playwright pairing session is planned for week 3 (from 19 Oct) — landing
-      this specific test around the same time means it's in CI sooner and the rest of the
-      Playwright suite (below) goes faster once the pattern exists. The CSS fix landed in #91 and
-      was verified once by hand; until this test exists, that behaviour still isn't guarded by CI.
+- [ ] **Forms UI: confirmation + owner notification**, now that the gap list (Done, below) says
+      which forms still need it — both of `inzview`'s contact forms, currently mailto-only.
+      SHARED-OK: the webhook-to-internal delivery (contract + receiver service) stays on Bhanu's
+      worklog; this is the form UI and the confirmation messaging only.
 
 **Weeks 4–6 — Comms Assistant and FTA, the two still genuinely unfinished AI-facing surfaces**
 - [ ] **Comms Assistant review UI.** #60 is closed in GitHub, but check what it actually shipped
@@ -139,6 +124,37 @@ nice-to-have, not a blocker for anything else on this list.
   re-open them.
 
 ## Done
+- **#100 Playwright E2E suite for the FTA query flow, including the 320px reflow case** (21 Oct
+  2026). Runs against the real running service (no mock) — the same two queries the `docker` CI
+  job already curls at the HTTP level (`q=wool` matches, `q=zzzznotathing` doesn't), now asserted
+  through the actual rendered UI. Wired into the `docker` CI job (reuses its already-built,
+  already-healthy container rather than standing up a second server — the FTA path needs no
+  database, so there's nothing cheaper to start).
+
+  **Found a real bug the manual "one-off Chromium measurement" (this issue's own description of
+  the prior state) had missed:** `index.css` sets the root font-size to 112.5% (18px, not the
+  browser default 16px) — sitewide, intentional, present in all five apps. `FtaQuery.tsx`'s input
+  wrapper used Tailwind's `min-w-72` (`18rem`), which at this site's actual rem size computes to
+  324px — wider than a 320px viewport outright, before the Search button even got a chance to
+  wrap below it. The reflow test failed against the unmodified component (324px measured, by
+  instrumenting every element's bounding box rather than guessing which one), confirming this
+  was a real, previously unguarded regression, not a hypothetical one. Fixed with a pixel
+  min-width (`min-w-[220px]`), immune to the rem-scale surprise; typecheck, lint and all 38
+  existing unit tests still pass. Re-ran the reflow test against the fix: passes.
+- **#196/#197 site-rebuild issues closed as superseded** (21 Oct 2026). Both predated the Wix
+  Studio→Vibe move; `inzview` is the real, live, client-reviewed rebuild (hosted on `inzbc.org`
+  as of 20 Oct 2026), so "rebuild on the Wix duplicate" and "map content for that rebuild" no
+  longer describe live work. Closed with a comment explaining why rather than silently dropped.
+- **`inzview` gap list written down** (`HANDOVER.md`, 20–21 Oct 2026) — the actual Week 2
+  deliverable this file's own plan called for. Real findings, not a restatement of the old list:
+  `SITE_ORIGIN` in `seo.ts` was still pointing canonical/sitemap/og:image URLs at the Wix Vibe
+  preview host after the domain cutover had already happened (found and fixed same day, commit
+  `b5be70e`); both contact forms are mailto-only, honestly labelled as such but not a real
+  submission; news/events/sector content has no CMS, just hardcoded TypeScript per ADR-0007 — a
+  new-build decision for INZBC, not something this repo can close by itself. Also dropped three
+  stale items the list had been carrying since August (individual partner logos, a since-passed
+  date-correction note) now that the real state has moved past them.
+
 - **CEO Decision screen wired to the real decision endpoints** (PR #361, closes #293). Rescued
   from a stranded branch (#352/#353 were abandoned when Bhanu's reconciliation in #357 landed the
   real `/ruling`/`/approval`/`/distribution` endpoints instead) — rebased the one real UI commit

@@ -91,6 +91,20 @@ jobs:
           curl -fsS "http://127.0.0.1:8000/api/fta/query?q=zzzznotathing" | grep -q '"status":"no_match"'
           echo "--- the UI is served from the same origin"
           curl -fsS http://127.0.0.1:8000/ | grep -qi "<div id=\"root\""
+      # Runs against the container already started above, not a second server — the FTA path
+      # needs no database (see Dockerfile), so there's nothing cheaper this could start on its
+      # own, and it proves the same build everything above just curled, through a real browser.
+      - uses: pnpm/action-setup@v6.1.0
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+      - name: Install Playwright
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm exec playwright install --with-deps chromium
+      - name: End-to-end tests (#100)
+        run: pnpm run test:e2e
       - name: Container logs on failure
         if: failure()
         run: docker logs fta || true
