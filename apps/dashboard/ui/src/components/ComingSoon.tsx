@@ -1,10 +1,10 @@
 /**
- * Board measures by module (Membership/Trade-FTA/SIP/Sponsors) per docs/modules/dashboards.md.
- * SIP is the only module with a data source wired up here (SipOverview, #237/#242). The other
- * three depend on issue #47 (dashboards data layer, not started) and their own module's records
- * (modules 3/4) — nothing here is fabricated data, just a clear label for what's not built yet.
+ * Board / measures scorecards by module (docs/modules/dashboards.md's "Board / measures"
+ * section), distinct from the executive view above (#61/#47, now built). Each scorecard needs
+ * its own module's records (membership applications, FTA enquiries, sponsor benefits) — none of
+ * that exists yet, so nothing here is fabricated data, just a clear label for what's not built.
  */
-const PENDING_MODULES = ['Membership', 'Trade / FTA', 'Sponsors']
+const PENDING_MODULES = ['Membership', 'Trade / FTA', 'SIP scorecard', 'Sponsors / governance']
 
 export function ComingSoon() {
   return (
@@ -16,8 +16,8 @@ export function ComingSoon() {
         Coming soon
       </h2>
       <p className="mt-2 text-sm text-slate-700">
-        {PENDING_MODULES.join(', ')} are not shown here yet. They depend on the dashboards data
-        layer (issue #47), which has not been built.
+        Board scorecards for {PENDING_MODULES.join(', ')} are not shown here yet — each depends on
+        its own module's records, which don't exist yet.
       </p>
     </section>
   )

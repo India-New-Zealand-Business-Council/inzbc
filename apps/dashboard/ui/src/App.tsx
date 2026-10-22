@@ -1,7 +1,7 @@
 import { ComingSoon } from './components/ComingSoon'
+import { ExecutiveOverview } from './components/ExecutiveOverview'
 import { Footer } from './components/Footer'
 import { Header } from './components/Header'
-import { SipOverview } from './components/SipOverview'
 import './index.css'
 
 export function App() {
@@ -15,10 +15,11 @@ export function App() {
               Executive Dashboard
             </h1>
             <p className="mt-2 text-slate-700">
-              SIP-only first slice (docs/modules/dashboards.md), covering issues #61 and #47.
+              Control state, open actions and QA/distribution status (#61), reading the dashboards
+              data layer (#47).
             </p>
           </div>
-          <SipOverview />
+          <ExecutiveOverview />
           <ComingSoon />
         </div>
       </main>
