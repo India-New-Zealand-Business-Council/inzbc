@@ -40,13 +40,13 @@ copy of the personal plan and Gantt. Every log below is kept here so git dates e
 | #384 FTA eval set and baseline | Done | #382 |
 | #385 ADR-0008 delivery process | Closed, not adopted (15 Oct) | Kept as analysis |
 | #386 FTA synonym gap | Done | #383 |
-| #387 Literature review | In progress | Sources checked in #400. Annotations due 30 Oct |
+| #387 Literature review | In progress | Sources checked in #400 (merged 16 Oct). Annotations due 30 Oct |
 | #388 Cross-run source health store | Done | Per-run reporting only. Durable counters deferred to #55 (tech lead, 16 Oct) |
 | #389 Product outranked by a cross-sector entry | Done | #394 |
-| #390 Held-out eval questions | In review | Paras's #416: held-out synonym hit@1 0.800 with the map, 0.500 without |
+| #390 Held-out eval questions | Done | Paras's #416, merged 16 Oct: held-out synonym hit@1 0.800 with the map, 0.500 without |
 | #391 Eval regression gate in CI | Done | #394 |
-| #392 Depth levels through /api/fta/query | Open | Real gap. No unauthenticated depth parameter or API/schema change without tech lead sign-off |
-| #393 Compare four retrieval variants | In progress | #398 merged, #403 open. A comparison result alone does not authorize a new production ranker |
+| #392 Depth levels through /api/fta/query | In review, tech lead's | The tech lead opened #433 (Closes #392) on 16 Oct. Not mine to build |
+| #393 Compare four retrieval variants | In progress | #398, #403 and #428 merged (16 Oct). A comparison result alone does not authorize a new production ranker |
 | #404 Steel exports (framing-only match) | Done | Tech lead chose a general answer with a missing-coverage warning (#423). INZBC agreed |
 | #405, #407 to #415 process issues | Closed, not planned (15 Oct) | Tech lead answers in [engineering-answers-2026-10-16.md](../engineering-answers-2026-10-16.md) |
 | #406 Check eval answers, not only rank | Open | Valid. Needs a named human checker, none invented |
