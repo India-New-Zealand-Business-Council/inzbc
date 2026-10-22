@@ -1,5 +1,5 @@
 import type { components } from './schema'
-import { apiRequest, type RequestOptions } from './httpClient'
+import { apiRequest, isVerificationGateError, SipApiError, type RequestOptions } from './httpClient'
 
 export type CandidateOut = components['schemas']['CandidateOut']
 export type CaptureCandidateIn = components['schemas']['CaptureCandidateIn']
@@ -12,6 +12,22 @@ export type SignalStrength = components['schemas']['SignalStrength']
 export type SourceConfidence = components['schemas']['SourceConfidence']
 
 export { SipApiError, isVerificationGateError, isUuid } from './httpClient'
+
+/**
+ * Distinguishes a self-verification refusal (`SelfVerificationError`,
+ * `services/api/candidate_persistence.py`'s `_require_candidate_exception`, raised by `/verify`
+ * only) from the other 403 on this endpoint, the verification gate (`isVerificationGateError`,
+ * `UnverifiedHighSignalError`). Both share status 403 and `code: "http_error"` —
+ * `services/api/hardening.py` gives every HTTPException the same code — so the message is the
+ * only signal available. Every `SelfVerificationError` variant either says "may not also verify
+ * it" (no exception cited) or opens with "exception " (a cited one was rejected); the gate's
+ * message is always "<signal> signal requires a verified source", which contains neither. Keep
+ * both sides in sync if either message's wording changes.
+ */
+export function isSelfVerificationError(error: unknown): error is SipApiError {
+  if (!isVerificationGateError(error)) return false
+  return error.message.includes('may not also verify it') || error.message.includes('exception ')
+}
 
 export const VERIFICATION_STATES: VerificationState[] = [
   'Verified',
