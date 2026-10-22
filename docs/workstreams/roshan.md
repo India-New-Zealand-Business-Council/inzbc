@@ -46,20 +46,15 @@ is kept as analysis and was not adopted (tech lead, 15 Oct). Review and merging 
 lead. Process ideas go to the tech lead in conversation first.
 
 ## In review (opened, awaiting merge)
-- [ ] **#400** Literature review sources checked against originals, with corrections, plus the
-  14 and 15 Oct daily log rows.
-- [ ] **#403** BM25 framing guard variant for the #393 comparison. Analysis only, not a
-  production ranker.
 - [ ] **daily-india-nz-news-agent#14** Source freshness, recovery, fail-closed gate (#208 days
   2 to 4). Bhanu's three review points from 5 Sep fixed 13 Oct, waiting on his re-review.
 
 ## Next up
 - [ ] **#387** Literature review annotations in my own words, APA 7, by 30 Oct.
-- [ ] **#390** Held-out FTA eval questions. Paras's #416 adds them (held-out synonym hit@1 0.800
-  with the map, 0.500 without). Peer feedback if he asks, approval stays with the tech lead.
 - [ ] **#406** Check eval answers, not only the top-ranked entry. Needs a named human checker.
-- [ ] **#392** Serve the FTA depth levels through `/api/fta/query`. Open, real gap. No API or
-  schema change without tech lead sign-off.
+- [ ] **#392** Serve the FTA depth levels through `/api/fta/query`. The tech lead opened #433
+  for it on 16 Oct (`depth` query parameter, `member` and `internal` behind roles), awaiting
+  tech-lead review. Not mine to build or review unless the tech lead assigns it.
 - [ ] **#393** Compare retrieval variants on the eval, Week 7. A result alone does not authorize
   a new production ranker.
 - [ ] **#344** Brief Builder source table. What remains is what writes source outcomes during a
@@ -76,6 +71,11 @@ lead. Process ideas go to the tech lead in conversation first.
 - [x] **#394** Eval gate in CI and named products ranked first (#389, #391).
 - [x] **#398** BM25 variants and six product framing questions (#393, first part).
 - [x] **#399** Literature review first-pass notes (#387, first part).
+- [x] **#400** Literature review sources checked against the originals (#387, merged 16 Oct).
+- [x] **#403** BM25 with the framing-term guard, and **#428** each variant's wrong answers
+  (#393, analysis only, merged 16 Oct).
+- [x] **#390** Held-out FTA eval questions, added by Paras in #416 (merged 16 Oct). Held-out
+  synonym hit@1 0.800 with the map, 0.500 without.
 - [x] Explainer public/member/internal depth levels (#187, PR #327, merged). Runtime wiring is
   #392.
 - [x] Run authorisation endpoint and a full Draft to Distributed walk (PR #359, merged, refs #55).
