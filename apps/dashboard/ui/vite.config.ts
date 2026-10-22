@@ -7,10 +7,8 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     // Same-origin in deployment (ADR-0004); this proxy keeps the dev shape identical rather than
-    // hiding the boundary. `/api/runs` and `/api/candidates` are live behind this proxy (#237,
-    // #242) — see src/api/runsClient.ts and candidatesClient.ts. The dashboard read endpoints
-    // (`GET /api/dashboard`, issue #47) this module is really specified against are not built
-    // yet, which is why this is a SIP-only first slice, not the full Executive view.
+    // hiding the boundary. `GET /api/dashboard` (#47) is live behind this proxy — see
+    // src/api/dashboardClient.ts.
     proxy: {
       '/api': { target: 'http://127.0.0.1:8000', changeOrigin: true },
     },
