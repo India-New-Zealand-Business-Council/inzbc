@@ -148,6 +148,53 @@ describe('CandidateActionPanel', () => {
     })
   })
 
+  // #292 REQ-U-01: self-verification needs its own UI state, not the generic error toast
+  // UnverifiedHighSignalError gets above — both are a 403 on this same endpoint.
+  it('shows the self-verification refusal as a distinct state, not the generic error toast', async () => {
+    vi.spyOn(candidatesClient, 'verifyCandidate').mockRejectedValue(
+      new SipApiError(
+        "'user-1' captured this candidate and may not also verify it. Separation of duties is " +
+          'what the verification record evidences.',
+        { status: 403 },
+      ),
+    )
+    render(<CandidateActionPanel candidate={CANDIDATE} onUpdated={vi.fn()} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Verify' }))
+    await userEvent.type(screen.getByLabelText('Reason'), 'checked the source myself')
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm Verify' }))
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('may not also verify it')
+    expect(alert).toHaveTextContent('Enter the exception id above')
+    // The exception-id field stays on screen so the caller can cite one and resubmit, unlike the
+    // generic error path which just reports the message.
+    expect(screen.getByLabelText(/Exception id/)).toBeInTheDocument()
+  })
+
+  it('cites the exception id on retry after a self-verification refusal', async () => {
+    const spy = vi.spyOn(candidatesClient, 'verifyCandidate').mockResolvedValue({ ...CANDIDATE, verification: 'Verified' })
+    render(<CandidateActionPanel candidate={CANDIDATE} onUpdated={vi.fn()} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Verify' }))
+    await userEvent.type(screen.getByLabelText('Reason'), 'checked the source myself')
+    await userEvent.type(screen.getByLabelText(/Exception id/), '34f4237b-ecd0-470c-8b2e-424ab745eb62')
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm Verify' }))
+    expect(spy).toHaveBeenCalledWith('cand-1', {
+      verification: 'Verified',
+      sod_exception_id: '34f4237b-ecd0-470c-8b2e-424ab745eb62',
+      reason: 'checked the source myself',
+    })
+  })
+
+  it('requires the exception id to be a valid UUID before verify can submit', async () => {
+    const spy = vi.spyOn(candidatesClient, 'verifyCandidate')
+    render(<CandidateActionPanel candidate={CANDIDATE} onUpdated={vi.fn()} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Verify' }))
+    await userEvent.type(screen.getByLabelText(/Exception id/), 'not-a-uuid')
+    await userEvent.type(screen.getByLabelText('Reason'), 'checked the source myself')
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm Verify' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('must be a valid UUID')
+    expect(spy).not.toHaveBeenCalled()
+  })
+
   it('switching actions clears the previous action’s panel', async () => {
     render(<CandidateActionPanel candidate={CANDIDATE} onUpdated={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: 'Verify' }))

@@ -1,6 +1,7 @@
 import { useId, useState } from 'react'
 import { isUuid } from '../api/httpClient'
 import {
+  isSelfVerificationError,
   mergeCandidate,
   routeCandidate,
   scoreCandidate,
@@ -22,7 +23,14 @@ interface Props {
 
 type ActionKind = 'verify' | 'score' | 'route' | 'merge'
 
-type PanelState = { kind: 'idle' } | { kind: 'loading' } | { kind: 'error'; message: string }
+type PanelState =
+  | { kind: 'idle' }
+  | { kind: 'loading' }
+  | { kind: 'error'; message: string }
+  // Distinct from 'error': REQ-U-01 (#292) asks for "a real UI state and a path to record the
+  // exception, not a generic failure toast" for the self-verification 403. The exception-id field
+  // stays visible and in focus instead of being buried behind a red alert the caller has to parse.
+  | { kind: 'self-verification'; message: string }
 
 const ACTION_PANEL_LABEL: Record<ActionKind, string> = {
   verify: 'Verify',
@@ -57,6 +65,7 @@ export function CandidateActionPanel({ candidate, onUpdated }: Props) {
   const [openAction, setOpenAction] = useState<ActionKind | null>(null)
   const [reason, setReason] = useState('')
   const [verification, setVerification] = useState<VerificationState>('Verified')
+  const [sodExceptionId, setSodExceptionId] = useState('')
   const [nzRelevance, setNzRelevance] = useState('')
   const [indiaRelevance, setIndiaRelevance] = useState('')
   const [memberRelevance, setMemberRelevance] = useState('')
@@ -72,6 +81,7 @@ export function CandidateActionPanel({ candidate, onUpdated }: Props) {
     setOpenAction(openAction === action ? null : action)
     setReason('')
     setVerification('Verified')
+    setSodExceptionId('')
     setNzRelevance('')
     setIndiaRelevance('')
     setMemberRelevance('')
@@ -99,12 +109,22 @@ export function CandidateActionPanel({ candidate, onUpdated }: Props) {
       setPanelState({ kind: 'error', message: 'The duplicate-of candidate id must be a valid UUID.' })
       return
     }
+    // `candidate_sod_exceptions.id`, same shape as `duplicate_of` above: the server accepts any
+    // string and only fails at the database, as a bare 500. Caught here instead.
+    if (action === 'verify' && sodExceptionId.trim() && !isUuid(sodExceptionId.trim())) {
+      setPanelState({ kind: 'error', message: 'The exception id must be a valid UUID.' })
+      return
+    }
     setPanelState({ kind: 'loading' })
     try {
       let updated: CandidateOut
       const common = { reason: reason.trim() }
       if (action === 'verify') {
-        updated = await verifyCandidate(candidate.id, { verification, ...common })
+        updated = await verifyCandidate(candidate.id, {
+          verification,
+          sod_exception_id: sodExceptionId.trim() || undefined,
+          ...common,
+        })
       } else if (action === 'score') {
         updated = await scoreCandidate(candidate.id, {
           nz_relevance: clampScore(nzRelevance),
@@ -127,6 +147,10 @@ export function CandidateActionPanel({ candidate, onUpdated }: Props) {
       setPanelState({ kind: 'idle' })
       onUpdated(updated)
     } catch (error) {
+      if (action === 'verify' && isSelfVerificationError(error)) {
+        setPanelState({ kind: 'self-verification', message: error.message })
+        return
+      }
       setPanelState({
         kind: 'error',
         message: error instanceof SipApiError ? error.message : 'Something went wrong. Please try again.',
@@ -181,6 +205,26 @@ export function CandidateActionPanel({ candidate, onUpdated }: Props) {
                   Verified or Partially Verified will be refused (verification gate).
                 </p>
               ) : null}
+
+              <div className="mt-2">
+                <label htmlFor={`${formId}-sod-exception`} className="text-xs font-medium text-inzbc-navy">
+                  Exception id (only if you captured or assessed this candidate yourself)
+                </label>
+                <input
+                  id={`${formId}-sod-exception`}
+                  type="text"
+                  value={sodExceptionId}
+                  onChange={(event) => setSodExceptionId(event.target.value)}
+                  autoFocus={panelState.kind === 'self-verification'}
+                  aria-describedby={panelState.kind === 'self-verification' ? `${formId}-sod-message` : undefined}
+                  className="mt-1 w-full rounded-md border border-inzbc-navy/20 p-2 text-sm transition-colors hover:border-inzbc-navy/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
+                />
+                <p className="mt-1 text-xs text-slate-500">
+                  Leave blank unless verification is refused below — separation of duties requires
+                  a different person to have captured or assessed this candidate, and INZBC records
+                  the exception rather than disabling the control.
+                </p>
+              </div>
             </div>
           ) : null}
 
@@ -338,6 +382,12 @@ export function CandidateActionPanel({ candidate, onUpdated }: Props) {
           {panelState.kind === 'error' ? (
             <p role="alert" className="text-sm text-inzbc-crimson">
               {panelState.message}
+            </p>
+          ) : null}
+          {panelState.kind === 'self-verification' ? (
+            <p id={`${formId}-sod-message`} role="alert" className="rounded-md border border-inzbc-tangerine/40 bg-inzbc-tangerine/10 p-2 text-sm text-inzbc-navy">
+              {panelState.message} Enter the exception id above and submit again to cite it, or ask
+              whoever holds the exception-approval role to record one first.
             </p>
           ) : null}
         </form>
