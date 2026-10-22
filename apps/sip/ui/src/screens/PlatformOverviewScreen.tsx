@@ -1,4 +1,4 @@
-import { SipOverview } from '@dashboard/components/SipOverview'
+import { ExecutiveOverview } from '@dashboard/components/ExecutiveOverview'
 
 /** One control, its enforcement point, and where it is proven. */
 interface Control {
@@ -142,7 +142,7 @@ export function PlatformOverviewScreen() {
           Read from the API against the real database, not a fixture. An empty state here means
           there is no run yet, which is itself the honest answer.
         </p>
-        <SipOverview />
+        <ExecutiveOverview />
       </section>
     </div>
   )
