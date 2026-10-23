@@ -138,3 +138,74 @@ def test_the_acting_user_comes_from_the_session_not_the_request() -> None:
         )
     finally:
         app.dependency_overrides.pop(get_source_check_repository, None)
+
+
+def test_api_rejects_unknown_collection_method_without_writing() -> None:
+    client, repo = _client()
+    try:
+        response = client.post(
+            f"/api/runs/{RUN_ID}/source-checks",
+            json={
+                "source_id": SOURCE_ID,
+                "outcome": "Inaccessible",
+                "method": "Unapproved scraper",
+            },
+        )
+        assert response.status_code == 422
+        assert repo.list_for_run(RUN_ID) == []
+    finally:
+        app.dependency_overrides.pop(get_source_check_repository, None)
+
+
+def test_api_rejects_reordered_confirmed_fallback_and_missing_reason() -> None:
+    client, repo = _client()
+    try:
+        base = {
+            "source_id": SOURCE_ID,
+            "outcome": "Inaccessible",
+            "method": "Direct access",
+            "fallback_used": True,
+            "notes": (
+                "Analyst-confirmed evidence: internal://evidence/1\n"
+                "Fallback trail: RSS or approved feed; Direct access\n"
+                "Access failure: connection timed out"
+            ),
+            "access_error": "connection timed out",
+        }
+        assert client.post(f"/api/runs/{RUN_ID}/source-checks", json=base).status_code == 422
+        base.update(
+            method="RSS or approved feed",
+            notes=(
+                "Analyst-confirmed evidence: internal://evidence/1\n"
+                "Fallback trail: Direct access; RSS or approved feed"
+            ),
+            access_error=None,
+        )
+        assert client.post(f"/api/runs/{RUN_ID}/source-checks", json=base).status_code == 422
+        assert repo.list_for_run(RUN_ID) == []
+    finally:
+        app.dependency_overrides.pop(get_source_check_repository, None)
+
+
+def test_api_accepts_valid_confirmed_fallback_with_evidence() -> None:
+    client, repo = _client()
+    try:
+        response = client.post(
+            f"/api/runs/{RUN_ID}/source-checks",
+            json={
+                "source_id": SOURCE_ID,
+                "outcome": "Inaccessible",
+                "method": "RSS or approved feed",
+                "fallback_used": True,
+                "notes": (
+                    "Analyst-confirmed evidence: internal://evidence/1\n"
+                    "Fallback trail: Direct access; RSS or approved feed\n"
+                    "Access failure: connection timed out"
+                ),
+                "access_error": "connection timed out",
+            },
+        )
+        assert response.status_code == 201
+        assert repo.list_for_run(RUN_ID)[0].method == "RSS or approved feed"
+    finally:
+        app.dependency_overrides.pop(get_source_check_repository, None)
