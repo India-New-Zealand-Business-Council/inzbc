@@ -30,8 +30,49 @@ const SOURCE_CATEGORIES: { label: string; prefixes: string[] }[] = [
   { label: 'Media', prefixes: ['NZ-MED-', 'IND-MED-', 'GLB-MED-'] },
 ]
 
-function sourceSignature(outcome: string, fallback: string): string {
-  return JSON.stringify([outcome, fallback.trim()])
+const FALLBACK_SEQUENCE = [
+  'Direct access',
+  'Search within the source',
+  'Indexed site search',
+  'Recognised news / document index',
+  'RSS or approved feed',
+  'Controlled keyword search',
+  'Secondary discovery source',
+  'Primary-source verification before material use',
+] as const
+
+const EVIDENCE_PREFIX = 'Analyst-confirmed evidence: '
+const ACCESS_PREFIX = 'Access failure: '
+const TRAIL_PREFIX = 'Fallback trail: '
+
+function validatedTrail(value: string): string[] {
+  const steps = value.split(';').map((item) => item.trim()).filter(Boolean)
+  let previous = -1
+  for (const step of steps) {
+    const index = FALLBACK_SEQUENCE.findIndex((allowed) => allowed === step)
+    if (index <= previous || index < 0) {
+      throw new Error('Fallback steps must be approved SIP-185 methods in order, without repeats.')
+    }
+    previous = index
+  }
+  return steps
+}
+
+function confirmedEvidence(notes: string | null): { evidence: string; reason: string; trail: string } | null {
+  if (!notes?.startsWith(EVIDENCE_PREFIX)) return null
+  const lines = notes.split('\n')
+  const evidence = lines[0]?.slice(EVIDENCE_PREFIX.length).trim() ?? ''
+  const reasonLine = lines.find((line) => line.startsWith(ACCESS_PREFIX))
+  const trailLine = lines.find((line) => line.startsWith(TRAIL_PREFIX))
+  if (!evidence) return null
+  const reason = reasonLine?.slice(ACCESS_PREFIX.length).trim() ?? ''
+  const trail = trailLine?.slice(TRAIL_PREFIX.length).trim() ?? ''
+  try { validatedTrail(trail) } catch { return null }
+  return { evidence, reason, trail }
+}
+
+function sourceSignature(outcome: string, fallback: string, evidence: string, reason: string): string {
+  return JSON.stringify([outcome, fallback.trim(), evidence.trim(), reason.trim()])
 }
 
 function categoryForSource(sip185Code: string): string {
@@ -136,6 +177,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
   const [loadedRun, setLoadedRun] = useState<string | null>(null)
   const [persistedOutcomes, setPersistedOutcomes] = useState<Map<string, string>>(new Map())
   const [sourceEvidence, setSourceEvidence] = useState<Record<string, string>>({})
+  const [sourceFailureReason, setSourceFailureReason] = useState<Record<string, string>>({})
   const [sourceSave, setSourceSave] = useState<{ code: string; kind: 'saving' | 'error' | 'saved'; message?: string } | null>(null)
   const activeRun = useRef(report.runId)
   useEffect(() => { activeRun.current = report.runId }, [report.runId])
@@ -159,12 +201,24 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
         setLoadedRun(runId)
         setSourceSave(null)
         setSourceEvidence({})
+        setSourceFailureReason({})
         setSourceIdsByCode(new Map([...sources.values()].filter((source) => Boolean(source.sip185_code)).map((source) => [source.sip185_code as string, source.id])))
         const checkedCodes = new Map<string, string>()
+        const verifiedEvidence: Record<string, string> = {}
+        const verifiedReasons: Record<string, string> = {}
         for (const check of checks) {
           const code = sources.get(check.source_id)?.sip185_code
-          if (code) checkedCodes.set(code, sourceSignature(check.outcome, check.method ?? ''))
+          const confirmation = confirmedEvidence(check.notes)
+          if (!code || !confirmation) continue
+          const steps = validatedTrail(confirmation.trail)
+          const requiredReason = check.outcome === 'Inaccessible' || check.outcome === 'Excluded' || steps.some((step) => step !== 'Direct access')
+          if ((requiredReason && !confirmation.reason) || (check.method ?? '') !== (steps.at(-1) ?? '')) continue
+          checkedCodes.set(code, sourceSignature(check.outcome, confirmation.trail, confirmation.evidence, confirmation.reason))
+          verifiedEvidence[code] = confirmation.evidence
+          verifiedReasons[code] = confirmation.reason
         }
+        setSourceEvidence(verifiedEvidence)
+        setSourceFailureReason(verifiedReasons)
         setPersistedOutcomes(checkedCodes)
         if (live.length > 0) {
           setCandidates(live.map((candidate) => toDomainCandidate(candidate, sources)))
@@ -199,7 +253,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
             ...report,
             sourceCoverage: report.sourceCoverage.map((row) => {
               const check = bySource.get(row.sip185Code)
-              return check ? { ...row, outcome: check.outcome as typeof row.outcome, fallbackAttempt: check.method ?? '' } : row
+              return check ? { ...row, outcome: check.outcome as typeof row.outcome, fallbackAttempt: confirmedEvidence(check.notes)?.trail ?? check.method ?? '' } : row
             }),
           })
         }
@@ -263,7 +317,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
     [report.sourceCoverage],
   )
   const unsavedSourceCount = report.sourceCoverage.filter(
-    (row) => row.mandatory && (row.outcome === '' || loadedRun !== report.runId || persistedOutcomes.get(row.sip185Code) !== sourceSignature(row.outcome, row.fallbackAttempt)),
+    (row) => row.mandatory && (row.outcome === '' || loadedRun !== report.runId || persistedOutcomes.get(row.sip185Code) !== sourceSignature(row.outcome, row.fallbackAttempt, sourceEvidence[row.sip185Code] ?? '', sourceFailureReason[row.sip185Code] ?? '')),
   ).length
 
   function toggleCategory(label: string) {
@@ -338,18 +392,26 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
     }
     setSourceSave({ code: row.sip185Code, kind: 'saving' })
     try {
+      const steps = validatedTrail(row.fallbackAttempt)
+      const reason = sourceFailureReason[row.sip185Code]?.trim() ?? ''
+      const isFailure = row.outcome === 'Inaccessible' || row.outcome === 'Excluded' || steps.some((step) => step !== 'Direct access')
+      if (isFailure && !reason) throw new Error('Describe the access failure or fallback reason before saving.')
+      const method = steps.at(-1) ?? null
+      const notes = [EVIDENCE_PREFIX + evidence, TRAIL_PREFIX + steps.join('; '), ...(reason ? [ACCESS_PREFIX + reason] : [])].join('\n')
       const saved = await saveConfirmedSourceCheck(runId, {
         source_id: sourceId,
         outcome: row.outcome,
-        fallback_used: Boolean(row.fallbackAttempt.trim() && row.fallbackAttempt.trim() !== 'Direct access'),
-        method: row.fallbackAttempt.trim() || null,
-        notes: 'Analyst-confirmed evidence: ' + evidence,
+        fallback_used: steps.some((step) => step !== 'Direct access'),
+        method,
+        access_error: isFailure ? reason : null,
+        notes,
       })
       if (activeRun.current !== runId) return
-      if (saved.run_id !== runId || saved.source_id !== sourceId || saved.outcome !== row.outcome) {
+      if (saved.run_id !== runId || saved.source_id !== sourceId || saved.outcome !== row.outcome
+          || saved.method !== method || saved.notes !== notes) {
         throw new Error('The service returned a check for a different run, source or outcome.')
       }
-      setPersistedOutcomes((previous) => new Map(previous).set(row.sip185Code, sourceSignature(saved.outcome, saved.method ?? '')))
+      setPersistedOutcomes((previous) => new Map(previous).set(row.sip185Code, sourceSignature(saved.outcome, row.fallbackAttempt, evidence, reason)))
       setSourceSave({ code: row.sip185Code, kind: 'saved' })
     } catch (error) {
       if (activeRun.current !== runId) return
@@ -608,6 +670,19 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
                                 placeholder="Evidence URL or reference"
                                 className="w-full rounded-md border border-inzbc-navy/20 px-2 py-1 text-sm"
                               />
+                              <label className="sr-only" htmlFor={`reason-${row.sourceId}`}>
+                                Access/fallback reason for {row.sourceName}
+                              </label>
+                              <input
+                                id={`reason-${row.sourceId}`}
+                                type="text"
+                                value={sourceFailureReason[row.sip185Code] ?? ''}
+                                onChange={(event) => setSourceFailureReason((prev) => ({
+                                  ...prev, [row.sip185Code]: event.target.value,
+                                }))}
+                                placeholder="Access/fallback reason (required for failures)"
+                                className="mt-1 w-full rounded-md border border-inzbc-navy/20 px-2 py-1 text-sm"
+                              />
                               <button
                                 type="button"
                                 disabled={!isDraft || loadedRun !== report.runId || sourceSave?.kind === 'saving' || !sourceIdsByCode.has(row.sip185Code)}
@@ -617,7 +692,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
                                 {sourceSave?.code === row.sip185Code && sourceSave.kind === 'saving'
                                   ? 'Saving…' : 'Save confirmed outcome'}
                               </button>
-                              {loadedRun === report.runId && persistedOutcomes.get(row.sip185Code) === sourceSignature(row.outcome, row.fallbackAttempt) && row.outcome
+                              {loadedRun === report.runId && persistedOutcomes.get(row.sip185Code) === sourceSignature(row.outcome, row.fallbackAttempt, sourceEvidence[row.sip185Code] ?? '', sourceFailureReason[row.sip185Code] ?? '') && row.outcome
                                 ? <span className="ml-2 text-xs text-inzbc-forest">Saved for this run</span>
                                 : <span className="ml-2 text-xs text-slate-500">Not saved</span>}
                               {sourceSave?.code === row.sip185Code && sourceSave.kind === 'error'
