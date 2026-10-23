@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as dashboardClient from '../api/dashboardClient'
 import { DashboardApiError, type DashboardOut } from '../api/dashboardClient'
@@ -101,5 +102,32 @@ describe('ExecutiveOverview', () => {
     vi.spyOn(dashboardClient, 'getDashboard').mockRejectedValue(new DashboardApiError('database is down'))
     render(<ExecutiveOverview />)
     expect(await screen.findByRole('alert')).toHaveTextContent('database is down')
+  })
+
+  it('aborts the previous request on Refresh so a slower older response cannot overwrite a newer one', async () => {
+    let resolveFirst: (value: DashboardOut) => void = () => {}
+    const signals: AbortSignal[] = []
+    vi.spyOn(dashboardClient, 'getDashboard')
+      .mockImplementationOnce(({ signal } = {}) => {
+        signals.push(signal!)
+        return new Promise<DashboardOut>((resolve) => {
+          resolveFirst = resolve
+        })
+      })
+      .mockImplementationOnce(({ signal } = {}) => {
+        signals.push(signal!)
+        return Promise.resolve(dashboard({ run: { ...RUN, run_number: 'RUN-NEWER' } }))
+      })
+
+    render(<ExecutiveOverview />)
+    await userEvent.click(screen.getByRole('button', { name: 'Refresh' }))
+    expect(await screen.findByText('RUN-NEWER')).toBeInTheDocument()
+    expect(signals[0]?.aborted).toBe(true)
+
+    // The first request resolves late, after the refresh: it must not replace the newer data.
+    resolveFirst(dashboard({ run: { ...RUN, run_number: 'RUN-STALE' } }))
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(screen.getByText('RUN-NEWER')).toBeInTheDocument()
+    expect(screen.queryByText('RUN-STALE')).not.toBeInTheDocument()
   })
 })

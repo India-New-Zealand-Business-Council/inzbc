@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { DashboardApiError, type DashboardOut, getDashboard } from '../api/dashboardClient'
 import { stateBadgeClass } from '../lib/runState'
 
@@ -21,12 +21,20 @@ const GATE_LABELS: Record<keyof DashboardOut['gates'], string> = {
  */
 export function ExecutiveOverview() {
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
+  // One request in flight at a time: Refresh aborts the previous one, so a slower older response
+  // can never overwrite a newer one, and unmounting aborts whatever is still pending.
+  const inFlight = useRef<AbortController | null>(null)
 
-  const fetchDashboard = useCallback((signal?: AbortSignal) => {
-    getDashboard({ signal })
-      .then((dashboard) => setState({ kind: 'loaded', dashboard }))
+  const fetchDashboard = useCallback(() => {
+    inFlight.current?.abort()
+    const controller = new AbortController()
+    inFlight.current = controller
+    getDashboard({ signal: controller.signal })
+      .then((dashboard) => {
+        if (!controller.signal.aborted) setState({ kind: 'loaded', dashboard })
+      })
       .catch((error: unknown) => {
-        if (error instanceof DOMException && error.name === 'AbortError') return
+        if (controller.signal.aborted) return
         setState({
           kind: 'error',
           message: error instanceof DashboardApiError ? error.message : 'Something went wrong. Please try again.',
@@ -35,9 +43,8 @@ export function ExecutiveOverview() {
   }, [])
 
   useEffect(() => {
-    const controller = new AbortController()
-    fetchDashboard(controller.signal)
-    return () => controller.abort()
+    fetchDashboard()
+    return () => inFlight.current?.abort()
   }, [fetchDashboard])
 
   function reload() {
