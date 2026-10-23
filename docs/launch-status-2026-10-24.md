@@ -28,3 +28,5 @@ here when it is filed.
 - Link INZBC's written approval for #189 and the SIP-191 authorisation for #55, then close both
   issues against those records.
 - Record the first production run's run number and outcome here once it has happened.
+- Open decisions (assistant, FTA Explainer on the site, platform hosting, signing enforcement)
+  are in [decisions-needed.md](decisions-needed.md).

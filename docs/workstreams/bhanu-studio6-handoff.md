@@ -69,6 +69,11 @@ undefined if returned); do not assume agreement will be perfect. Update baseline
 the before/after judge row, the plan and the worksheet with the measured result. Do not overwrite
 recorded live evidence with a `--write` run that has no labels or lacks model configuration.
 
+## Open decisions
+
+Left for discussion in [decisions-needed.md](../decisions-needed.md): the platform assistant,
+the FTA Explainer on inzbc.org, platform hosting, signing enforcement and per-approver keys.
+
 ## Launch status
 
 Both client dependencies cleared on 24 Oct, per the tech lead ([launch status](../launch-status-2026-10-24.md)):
