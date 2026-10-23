@@ -48,6 +48,7 @@ def test_prepares_source_check_without_io() -> None:
         ({"outcome": "ok"}, "explicit SourceOutcome"),
         ({"outcome": None}, "explicit SourceOutcome"),
         ({"fallback_attempts": ("RSS or approved feed", "Direct access")}, "approved order"),
+        ({"fallback_attempts": ("Unapproved scraper",)}, "unknown SIP-185 fallback"),
     ],
 )
 def test_rejects_unverifiable_source_checks(changes: dict, message: str) -> None:
