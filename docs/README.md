@@ -67,7 +67,7 @@ Two conventions hold across this tree:
   [`client-questions.md`](client-questions.md) for the current list, which supersedes any count
   given here.
 - [`decisions-needed.md`](decisions-needed.md) — **open decisions left for discussion**: the
-  platform assistant, the FTA Explainer on inzbc.org, platform hosting and signing enforcement.
+  platform assistant, the FTA Explainer on inzbc.org, platform hosting, signing enforcement and the research follow-ups (planner prompt, independent attacks, blind QA reviewer).
 - [`launch-status-2026-10-24.md`](launch-status-2026-10-24.md) — **where launch stands now**: inzbc.org
   live on the inzview build, and #189 and #55 cleared as of 24 Oct 2026.
 - [`client-questions.md`](client-questions.md) — **the current list of what INZBC still owes**,
