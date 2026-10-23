@@ -199,3 +199,29 @@ def test_held_out_overlap_report_is_generated_and_identifies_existing_repeats(
     assert overlap == held_out_overlap(load_questions(), load_questions(HELD_OUT_CSV))
     assert {row["held_out_qid"] for row in overlap} == {"H03", "H04"}
     assert "WARNING: 2 held-out rows repeat development queries" in capsys.readouterr().out
+
+def test_nonoverlap_subset_excludes_duplicate_queries_and_keeps_historical_report(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    monkeypatch.setattr(variants_module, "RESULTS_DIR", tmp_path)
+    assert main(["--write"]) == 0
+    historical = json.loads(
+        (tmp_path / "variants-held-out.json").read_text(encoding="utf-8")
+    )
+    nonoverlap = json.loads(
+        (tmp_path / "variants-held-out-nonoverlap.json").read_text(encoding="utf-8")
+    )
+    subset_errors = json.loads(
+        (tmp_path / "variant_errors-held-out-nonoverlap.json").read_text(encoding="utf-8")
+    )
+    assert set(historical) == set(nonoverlap) == set(subset_errors)
+    for variant in historical:
+        assert historical[variant]["question_count"] == 10
+        assert nonoverlap[variant]["question_count"] == 8
+        assert {row["qid"] for row in nonoverlap[variant]["per_question"]}.isdisjoint(
+            {"H03", "H04"}
+        )
+        assert {row["qid"] for row in subset_errors[variant]}.isdisjoint(
+            {"H03", "H04"}
+        )
+    assert "Non-overlapping held-out subset" in capsys.readouterr().out
