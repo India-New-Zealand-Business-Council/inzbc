@@ -21,6 +21,8 @@ Two conventions hold across this tree:
 - [`research/agent-safety-literature-review.md`](research/agent-safety-literature-review.md) — safe agent coordination under human approval (Bhanu).
 - [`research/agent-safety-baseline.md`](research/agent-safety-baseline.md) — measured gate safety, replay and judge agreement for the SIP coordinator.
 - [`research/agent-safety-solution-domain.md`](research/agent-safety-solution-domain.md) — the techniques used in #62 to #65 and why.
+- [`decisions/ADR-0010-signed-human-decisions.md`](decisions/ADR-0010-signed-human-decisions.md) — why the W6 change uses server-held HMAC signatures (four options compared).
+- [`workstreams/bhanu-pdr-worksheet.md`](workstreams/bhanu-pdr-worksheet.md) and [`workstreams/bhanu-reflective-report.md`](workstreams/bhanu-reflective-report.md) — Bhanu's practice PDR worksheet and reflective report scaffold.
 
 ## I am new to the project
 1. [`project-charter.md`](project-charter.md) — scope, objectives, roles, phase gates and the four
