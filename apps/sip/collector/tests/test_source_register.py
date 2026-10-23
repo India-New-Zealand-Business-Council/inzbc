@@ -168,3 +168,40 @@ def test_record_source_outcome_combines_trail_and_extra_notes() -> None:
     assert check.notes == (
         "1. Direct access; 2. Indexed site search; Checked for NZ-relevant notifications only."
     )
+
+
+@pytest.mark.parametrize(
+    "attempts",
+    [
+        ["Direct access", "Direct access"],
+        ["RSS or approved feed", "Search within the source"],
+        ["Not a registered collection method"],
+        ["Direct access", "Unapproved scraper"],
+    ],
+)
+def test_record_source_outcome_rejects_invalid_fallback_trails(attempts: list[str]) -> None:
+    # A malformed trail must not be turned into credible SIP-185 evidence just because the
+    # outcome enum itself is valid. Skipped steps are legitimate, but repetition/reordering
+    # and unknown methods are not.
+    with pytest.raises(ValueError):
+        record_source_outcome(
+            RUN_ID,
+            PARLIAMENT_ID,
+            SourceOutcome.INACCESSIBLE,
+            LOOKUP,
+            fallback_attempts=attempts,
+        )
+
+
+def test_record_source_outcome_accepts_ordered_sparse_fallback_trail() -> None:
+    # Operators may skip unavailable methods, as long as the recorded attempt order is sound.
+    check = record_source_outcome(
+        RUN_ID,
+        PARLIAMENT_ID,
+        SourceOutcome.INACCESSIBLE,
+        LOOKUP,
+        fallback_attempts=["Search within the source", "RSS or approved feed"],
+    )
+    assert check.method == "RSS or approved feed"
+    assert check.fallback_used is True
+    assert check.notes == "1. Search within the source; 2. RSS or approved feed"
