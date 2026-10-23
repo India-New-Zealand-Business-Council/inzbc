@@ -26,7 +26,10 @@ guarantee it never skips a human approval step?
 - **The audit log could be forged until the W6 change.** Detection went from 0/200 to 200/200, and
   safety tampering from 2396/2596 to 3196/3196. ([baseline](../research/agent-safety-baseline.md),
   section 5)
-- **Judge vs human:** [fill in once measured, or say plainly that it was not, and why]
+- **Judge vs golden set:** 8/8 verdicts agree, Cohen's kappa 1.0, with 17/17 score bounds met
+  (#456; [baseline](../research/agent-safety-baseline.md), section 4).
+- **Judge vs independent human QA:** Not measured. No independent reviewer's blind labels are
+  recorded yet; the rubric author's golden labels and Codex review cannot substitute for them.
 
 **Answer to the research question (draft).** The controls prevented all 48 attacks in the suite,
   and the knockout runs show that the suite can expose missing controls. That supports the design
@@ -81,7 +84,9 @@ Facts:
 
 ## 6. Feedback I received and what I changed
 
-[From the feedback log, after the practice PDR: the feedback, what I changed, and the evidence.]
+Practice PDR feedback is not recorded as at 24 Oct. After the meeting I will enter the actual
+comment, my response and its evidence link in the plan's feedback log and worksheet section 6.
+This section will then describe what changed; it cannot be completed from assumed feedback.
 
 ## 7. Using AI in this work
 

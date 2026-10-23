@@ -145,7 +145,7 @@ opened in early August as the backlog.
 | Week | Closed | Avg days open (completed only) | Not planned | Blocked on INZBC | Note |
 |---|---|---|---|---|---|
 | W2, 12 Oct | 13 | 73.5 (11 completed) | 2 (#46, #201) | #55, #189 | #62 to #65 closed 16 Oct when the four AI builds merged |
-| W3, 19 Oct | 0 | n/a | 0 | #55, #189 | Work went out as PRs instead: #433 to #446 reviewed and merged, #447 and #448 merged, #449 and #450 open |
+| W3, 19 Oct | 0 | n/a | 0 | #55, #189 | Work went out as PRs instead: #433 to #446 reviewed and merged, #447 to #451 and #456 merged |
 | W4, 26 Oct | | | | | |
 | W5, 2 Nov | | | | | |
 | W6, 9 Nov | | | | | |
@@ -179,11 +179,11 @@ opened in early August as the backlog.
 | Date | Done today (PRs, issues, reviews) | Blocked or waiting on | Tomorrow |
 |---|---|---|---|
 | Fri 23 Oct | Reviewed and merged #433 to #446 and inzview #9 and #10. Fixed the review findings left on each, including a CI failure on #433. Closed inzview #8 | INZBC: #55, #189, sector graphics for the FTA Centre | Measure the agent baseline |
-| Sat 24 Oct | Recorded the #344 decision. Gate-safety, replay and tamper baselines measured. Literature review, solution domain and this plan written. Signed decisions and the sealed agent log built and re-measured. Coordinator agent runnable from the app as a rehearsal | Independent QA reviewer labels for judge vs human; INZBC: #55, #189 | Obtain blind labels, then re-run the live judge |
+| Sat 24 Oct | Recorded the #344 decision. Gate-safety, replay and tamper baselines measured. Literature review, solution domain and this plan written. Signed decisions and the sealed agent log built and re-measured. Coordinator agent runnable from the app as a rehearsal. Live judge vs golden set recorded in #456: 8/8, kappa 1.0, 17/17 score bounds | Independent QA reviewer labels for judge vs human; INZBC: #55, #189 | Obtain blind labels, then re-run the live judge |
 
 ## Weekly journal
 
-### Week 3, 19 to 23 Oct
+### Week 3, 19 to 23 Oct (updated 24 Oct)
 
 **Planned vs what happened (draft).** The plan placed baseline measurements and reading in W3.
 The committed work also brought the W6 signed-decision change forward to 24 Oct and recorded a
