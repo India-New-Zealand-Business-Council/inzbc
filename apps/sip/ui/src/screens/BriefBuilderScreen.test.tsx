@@ -479,7 +479,7 @@ describe('BriefBuilderScreen candidate source', () => {
 
     // One source resolved and applied; the other 111 stay blank, because "not checked" and
     // "checked and inaccessible" are the distinction the coverage gate exists to make.
-    expect(await screen.findByText(/1 \/ 112 sources recorded/)).toBeInTheDocument()
+    expect(await screen.findByText(/1 \/ 112 sources selected locally/)).toBeInTheDocument()
   })
 
   it('saves one analyst-confirmed outcome and evidence through the run-scoped API', async () => {
