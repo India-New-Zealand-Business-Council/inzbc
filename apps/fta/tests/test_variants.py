@@ -132,3 +132,45 @@ def test_error_analysis_flags_a_no_match_question_that_returned_an_answer() -> N
     assert row["reason"] == "false_answer"
     assert row["top"] == "FTA-005"
     assert "wool" in row["top_matched"]
+
+
+def test_held_out_comparison_is_scored_separately() -> None:
+    from apps.fta.eval.run_eval import HELD_OUT_CSV, load_questions
+
+    held_out = load_questions(HELD_OUT_CSV)
+    reports = compare(question_path=HELD_OUT_CSV)
+    assert len(held_out) >= 10
+    assert set(reports) == set(variants())
+    for name, report in reports.items():
+        assert report["question_count"] == len(held_out), name
+        assert {row["qid"] for row in report["per_question"]} == {
+            row.qid for row in held_out
+        }, name
+        assert set(report["by_type"]) == {"synonym"}, name
+
+
+def test_main_writes_held_out_variant_reports_without_mixing_sets(
+    tmp_path, monkeypatch
+) -> None:
+    from apps.fta.eval.run_eval import HELD_OUT_CSV, load_questions
+
+    monkeypatch.setattr(variants_module, "RESULTS_DIR", tmp_path)
+    assert main(["--write"]) == 0
+    main_report = json.loads((tmp_path / "variants.json").read_text(encoding="utf-8"))
+    blind_report = json.loads(
+        (tmp_path / "variants-held-out.json").read_text(encoding="utf-8")
+    )
+    blind_errors = json.loads(
+        (tmp_path / "variant_errors-held-out.json").read_text(encoding="utf-8")
+    )
+    assert set(main_report) == set(blind_report) == set(blind_errors)
+    for name in main_report:
+        assert main_report[name]["question_count"] == len(
+            variants_module.load_questions()
+        )
+        assert blind_report[name]["question_count"] == len(load_questions(HELD_OUT_CSV))
+        assert all(
+            row["qid"].startswith("H") for row in blind_report[name]["per_question"]
+        )
+        assert all(row["qid"].startswith("H") for row in blind_errors[name])
+
