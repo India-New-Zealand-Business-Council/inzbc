@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { saveConfirmedSourceCheck } from './sourceLibraryClient'
+import { clearSession, seedSession } from './session'
 
-afterEach(() => vi.unstubAllGlobals())
+afterEach(() => { clearSession(); vi.unstubAllGlobals() })
 
 const confirmed = {
   source_id: 'src-1',
@@ -12,6 +13,7 @@ const confirmed = {
 
 describe('saveConfirmedSourceCheck', () => {
   it('sends an authenticated CSRF-protected POST for the selected run', async () => {
+    seedSession({ userId: 'analyst', name: 'Analyst', roles: ['Analyst'], csrfToken: 'csrf-test' })
     const calls: Array<{ url: string; init: RequestInit }> = []
     vi.stubGlobal('fetch', vi.fn(async (url: string, init: RequestInit) => {
       calls.push({ url: String(url), init })
@@ -43,6 +45,7 @@ describe('saveConfirmedSourceCheck', () => {
   })
 
   it('preserves server authorization failures as a hard failure', async () => {
+    seedSession({ userId: 'reader', name: 'Reader', roles: ['Reader'], csrfToken: 'csrf-test' })
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {
       if (String(url).includes('/api/session')) {
         return new Response(JSON.stringify({ csrf_token: 't' }), { status: 200 })
