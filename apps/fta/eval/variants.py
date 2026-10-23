@@ -35,7 +35,13 @@ from collections.abc import Callable
 
 from apps.fta import explainer
 from apps.fta.corpus import CORPUS, TariffOutcome
-from apps.fta.eval.run_eval import HELD_OUT_CSV, RESULTS_DIR, Question, evaluate, load_questions
+from apps.fta.eval.run_eval import (
+    HELD_OUT_CSV,
+    RESULTS_DIR,
+    Question,
+    evaluate,
+    load_questions,
+)
 
 # The usual defaults. With one short topic and sector per entry, length normalisation (b) has
 # little to work on, which is itself a finding worth recording rather than tuning away.
