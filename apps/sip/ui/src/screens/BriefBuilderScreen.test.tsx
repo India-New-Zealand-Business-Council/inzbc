@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as reportsStore from '../api/reportsStore'
+import { clearSession, seedSession } from '../api/session'
 import { stubReportsFetch } from '../api/reportsStore.testSupport'
 import type { DailyBriefReport } from '../domain'
 import { newDraftReportFixture } from '../lib/fixtures'
@@ -11,6 +12,7 @@ import { BriefBuilderScreen } from './BriefBuilderScreen'
 beforeEach(() => stubReportsFetch())
 afterEach(() => {
   vi.restoreAllMocks()
+  clearSession()
   vi.unstubAllGlobals()
 })
 
@@ -478,6 +480,40 @@ describe('BriefBuilderScreen candidate source', () => {
     // One source resolved and applied; the other 111 stay blank, because "not checked" and
     // "checked and inaccessible" are the distinction the coverage gate exists to make.
     expect(await screen.findByText(/1 \/ 112 sources recorded/)).toBeInTheDocument()
+  })
+
+  it('saves one analyst-confirmed outcome and evidence through the run-scoped API', async () => {
+    seedSession({ userId: 'analyst-1', name: 'Analyst', roles: ['Analyst'], csrfToken: 'csrf-test' })
+    const originalFetch = fetch
+    const posts: Array<{ url: string; init: RequestInit }> = []
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.endsWith('/source-checks') && init?.method === 'POST') {
+        posts.push({ url, init })
+        const request = JSON.parse(String(init.body)) as { source_id: string; outcome: string; notes: string }
+        return new Response(JSON.stringify({
+          id: 'check-1', run_id: 'run-1', source_id: request.source_id,
+          outcome: request.outcome, method: null, fallback_used: false,
+          notes: request.notes, checked_at: '2026-10-23T00:00:00Z', access_error: null,
+        }), { status: 201 })
+      }
+      return originalFetch(input, init)
+    }))
+    render(<ControlledBriefBuilder initial={reportOnRun()} />)
+    await userEvent.click(screen.getByRole('button', { name: /nz official/i }))
+    await screen.findByText(/New Zealand Parliament/)
+    // The source lookup resolves NZ-OFF-001 to the API's src-1 foreign key.
+    await userEvent.selectOptions(screen.getAllByRole('combobox')[0]!, 'Included')
+    await userEvent.type(screen.getAllByPlaceholderText('Evidence URL or reference')[0]!, 'internal://evidence/1')
+    await userEvent.click(screen.getAllByRole('button', { name: /save confirmed outcome/i })[0]!)
+    expect(await screen.findByText('Saved for this run')).toBeInTheDocument()
+    expect(posts).toHaveLength(1)
+    expect(posts[0]?.url).toBe('/api/runs/run-1/source-checks')
+    expect(JSON.parse(String(posts[0]?.init.body))).toMatchObject({
+      source_id: 'src-1', outcome: 'Included',
+      notes: 'Analyst-confirmed evidence: internal://evidence/1',
+    })
+    expect(posts[0]?.init.headers).toMatchObject({ 'X-CSRF-Token': 'csrf-test' })
   })
 
   it('keeps the labelled fixture when the API cannot be reached', async () => {
