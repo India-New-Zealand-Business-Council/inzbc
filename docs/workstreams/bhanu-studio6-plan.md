@@ -202,5 +202,6 @@ opened in early August as the backlog.
 | 2.2 | AI builds #62 to #65, signed decisions #448, agent in the app #449 | merged PRs | 16 and 24 Oct |
 | 3.1 | This plan, timeline, change log, daily log, status report lines | this file | from 23 Oct |
 | 3.2 | Peer review log, conflict record | this file | 13 to 23 Oct |
+| PDR | Handoff: what is left and who does it | [bhanu-studio6-handoff.md](bhanu-studio6-handoff.md) | 24 Oct |
 | PDR | Practice worksheet | [bhanu-pdr-worksheet.md](bhanu-pdr-worksheet.md) | 24 Oct |
 | PDR | Reflective report | [bhanu-reflective-report.md](bhanu-reflective-report.md) | due 20 Nov |
