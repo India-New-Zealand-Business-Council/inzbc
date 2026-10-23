@@ -1,51 +1,37 @@
-# INZBC AIOS — Sunil handover readiness register
+# INZBC AIOS — proposed handover evidence register
 
-**Status:** Working checklist, not a completion certificate. **Target review:** 30 October 2026; **target handover:** 1 November 2026, subject to acceptance. **Recipients:** Sunil Kaushal (INZBC); Bhanu (technical review). This document does not confer production approval.
+**Status:** Working evidence index; not an approved scope baseline, delivery deadline, or production sign-off. The programme brief (`docs/inzbc-ai-operating-system.md`) is a research-reviewed draft, and `docs/project-charter.md` is proposed pending signatures. Use a signed client/technical-lead scope decision when available. No new handover or review date is imposed here.
 
-## Scope and acceptance principle
+This index supplements, and does not replace, `docs/handover-pack.md`, `docs/testing/acceptance-register.md`, `docs/raci.md`, and the applicable module acceptance criteria. Follow their recorded responsibilities and evidence.
 
-Use `docs/modules/README.md` and the approved programme brief as the scope baseline. The nine-module map includes modules marked `planned`, `spec`, `launch` and `build`; these labels are not interchangeable. A planned module is **not** a defect simply because it is not implemented. Do not start work gated by the four foundation decisions or other INZBC sign-off without documented authorization. Do not represent draft-only collection as automated publication.
+## Existing acceptance evidence
 
-A handover is ready only when the accepted delivery scope is identified, the evidence for that scope is linked, outstanding risks and owners are documented, and INZBC accepts it. Each item below starts **unverified** until evidence is attached.
+The technical lead has reported a client session and written sign-off (see `docs/testing/acceptance-register.md` and `docs/handover-pack.md`). This is **reported acceptance with incomplete traceability**, not absence of acceptance and not proof of version-specific production approval. Locate the original record and establish date, signed scope, delivered version and artifact location before treating it as final.
 
-## Engineering and quality gates
+## Open evidence and decision points
 
-| Gate | Evidence required | Owner / decision maker | Status |
-| --- | --- | --- | --- |
-| Agreed delivery scope | Approved scope baseline and exclusions against the nine-module map | INZBC / Sunil | Unverified |
-| FTA answer provenance | Corpus source review, citation/effective-date checks, no-match behavior | Roshan / reviewer | Unverified |
-| FTA evaluation independence | #406: ten blinded checks by Bhanu or Paras, disagreements reconciled | Bhanu or Paras | Pending external review |
-| FTA retrieval research | #387: annotated bibliography, source checks and approved design conclusion | Roshan / Bhanu | Unverified |
-| FTA role-sensitive API | #392: role authorization, public default, OpenAPI/client regeneration and tests | API owner / Bhanu | Awaiting ownership decision |
-| SIP source coverage | #344: approved design for automatic vs manual outcomes; tested implementation if in scope | SIP owners / INZBC | Design decision required |
-| SIP collection integration | #55: live collector-to-capture-to-assessment run, failures and run evidence | SIP technical owners | Blocked until backend/config ready |
-| Security and privacy | Adversarial test evidence, permissions review, secret handling, PIA and retention decisions where applicable | Security owners / INZBC | Unverified |
-| Deployment and operations | Environment inventory (no secrets), rollback, backup restore evidence, monitoring and incident contacts | Technical owners | Unverified |
-| Human control | Approval and distribution gates demonstrated to fail closed, audit trail verified | SIP owners / INZBC | Unverified |
-| Client acceptance | Walkthrough, known limitations, action owners, written acceptance or conditional acceptance | Sunil / INZBC | Not yet recorded |
+| Area | Evidence or decision to reconcile | Accountability |
+| --- | --- | --- |
+| Delivery scope | Signed client scope, exclusions and foundation decisions; do not treat all nine proposed modules as committed | Executive Sponsor for client scope; Technical Lead for engineering authorization, per `docs/raci.md` |
+| FTA independent evaluation (#406) | Reviewer remains **unassigned** pending tech-lead authorization; blinded, independent answer checks and reconciled metrics | Technical Lead to designate checker |
+| FTA retrieval research (#387) | Source verification, annotated bibliography and design conclusions | Intelligence & Data, with Technical Lead review |
+| FTA depth API (#392) | Explicit ownership decision, role checks, OpenAPI regeneration and regression evidence | Technical Lead to authorize API-lane work |
+| SIP source coverage (#344) | Decide whether source outcomes are generated automatically or remain manual; implement only approved design | Technical Lead to resolve cross-component design |
+| SIP live collection (#55) | **Fresh INZBC SIP-191 authorization and a PAT for live collection** are prerequisites, per `docs/workstreams/roshan.md`; `.github/workflows/sip-full-walk.yml` already exercises the backend | Technical Lead coordinates authorization; Intelligence & Data executes authorized run |
+| SIP safety | Fail-closed distribution, human review, audit and security test evidence | Technical Lead |
+| AI Communications Assistant | Redaction, restricted-input and human-review evidence against canonical handover O3 criteria | Technical Lead |
+| Public website | Cutover, redirects, accessibility and operational evidence against canonical handover O4 criteria | Product & UX / Technical Lead |
+| Deployment and operations | Environment ownership, monitoring, backup restore, incident response and rollback evidence, without exposing credentials | Technical Lead |
+| Client acceptance | Reconcile reported sign-off to scope/version/date and outstanding conditions | Executive Sponsor |
 
-## Module disposition for acceptance
-
-For **each** of the nine modules in `docs/modules/README.md`, record: (1) approved scope; (2) delivered version or `not in approved scope`; (3) demo/test evidence; (4) outstanding dependencies; (5) operating owner; and (6) client acceptance. Do not silently convert planned modules into committed deliverables.
-
-## Handover package contents
-
-1. Architecture and module map with live-vs-planned distinctions.
-2. Deployment locations and account ownership, excluding credentials and tokens.
-3. Operating runbooks: collection, review/approval, backup/restore, recovery and escalation.
-4. Security/privacy decisions and any unresolved risks.
-5. CI, automated-test and manual acceptance evidence with dates/commit SHAs.
-6. Open issues/PRs with priority, owner, dependency and target resolution.
-7. Demonstration script and training notes for INZBC staff.
-8. Acceptance record signed or explicitly confirmed by the authorized INZBC representative.
+For other modules in `docs/modules/README.md`, record `planned`, `spec`, `launch` or `build` as documented; do not convert unapproved modules into delivery obligations. Consult `docs/handover-pack.md` for the canonical handover and module acceptance checklist.
 
 ## Stop conditions
 
-Do not declare production readiness if a required security gate is failing, a required source cannot be verified, SIP distribution can bypass human approval, critical tests are missing, or the client has not accepted the delivered scope. Record blocked work explicitly rather than closing issues without evidence.
+Do not claim readiness if critical security tests fail, SIP distribution bypasses human approval, required sources cannot be verified, authorized live testing has not happened where required, or acceptance evidence cannot be tied to the relevant delivered version. Keep open blockers visible; do not close issues without evidence.
 
-## Reviewer sign-off (to be completed, not assumed)
+## Sign-off references (not approvals)
 
-- Engineering review (Bhanu): **pending**
-- Operational walkthrough (INZBC): **pending**
-- Client acceptance (Sunil / authorized delegate): **pending**
-- Acceptance date and evidence link: **pending**
+- Engineering review: **pending for this register**
+- Existing client session and written sign-off: **reported; underlying date, scope and version evidence to locate**
+- Production authorization: **not established by this register**
