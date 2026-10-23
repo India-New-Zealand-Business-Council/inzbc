@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from apps.sip.pipeline.models import SourceCheck, SourceOutcome
 
 from .source_lookup import SourceIdLookup
-from .source_register import ALL_SOURCES, record_source_outcome
+from .source_register import ALL_SOURCES, FALLBACK_SEQUENCE, record_source_outcome
 
 KNOWN_CODES = frozenset(entry.source_id for entry in ALL_SOURCES)
 
@@ -60,6 +60,15 @@ def prepare_confirmed_source_checks(
             raise ValueError("evidence reference is required")
         if type(observation.outcome) is not SourceOutcome:
             raise TypeError("outcome must be an explicit SourceOutcome; fetch health is not enough")
+        # Independently validate the evidence trail: PR #444 hardens record_source_outcome,
+        # but this adapter must remain safe until that separate PR is merged.
+        positions = {step: index for index, step in enumerate(FALLBACK_SEQUENCE)}
+        previous = -1
+        for step in observation.fallback_attempts:
+            index = positions.get(step)
+            if index is None or index <= previous:
+                raise ValueError("fallback attempts must follow the approved order")
+            previous = index
         seen.add(observation.sip185_code)
         checks.append(
             record_source_outcome(
