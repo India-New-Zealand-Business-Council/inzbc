@@ -5,12 +5,14 @@ from __future__ import annotations
 import json
 import time
 import uuid
+from contextlib import nullcontext
 
 import pytest
 from fastapi.testclient import TestClient
 
 from services.api.main import app
 from services.api.site_forms import (
+    MAX_WEBHOOK_BODY_BYTES,
     SIGNATURE_HEADER,
     TIMESTAMP_HEADER,
     InMemorySiteFormRepository,
@@ -21,6 +23,7 @@ from services.api.site_forms import (
     canonical_payload_sha256,
     compute_wix_webhook_signature,
     get_site_form_repository,
+    get_site_form_repository_opener,
     get_webhook_secret,
     verify_wix_webhook_signature,
 )
@@ -66,9 +69,11 @@ def _signed_headers(raw_body: bytes, *, secret: str = TEST_SECRET, ts: int | Non
 @pytest.fixture
 def site_form_repo() -> InMemorySiteFormRepository:
     repo = InMemorySiteFormRepository()
+    app.dependency_overrides[get_site_form_repository_opener] = lambda: lambda: nullcontext(repo)
     app.dependency_overrides[get_site_form_repository] = lambda: repo
     app.dependency_overrides[get_webhook_secret] = lambda: TEST_SECRET
     yield repo
+    app.dependency_overrides.pop(get_site_form_repository_opener, None)
     app.dependency_overrides.pop(get_site_form_repository, None)
     app.dependency_overrides.pop(get_webhook_secret, None)
 
@@ -296,3 +301,67 @@ def test_staff_read_endpoints_list_filter_and_fetch_submissions(
 
     missing = client.get(f"/api/site-forms/{uuid.uuid4()}")
     assert missing.status_code == 404
+
+
+def test_webhook_fails_closed_without_durable_storage(monkeypatch: pytest.MonkeyPatch) -> None:
+    """No `DATABASE_URL` means 503, never a 201 for a submission held only in process memory."""
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    app.dependency_overrides[get_webhook_secret] = lambda: TEST_SECRET
+    try:
+        client = TestClient(app)
+        raw = json.dumps(_sample_payload()).encode("utf-8")
+        response = client.post(
+            "/api/webhooks/wix/site-forms", content=raw, headers=_signed_headers(raw)
+        )
+        assert response.status_code == 503
+        assert "DATABASE_URL" in response.json()["error"]["message"]
+    finally:
+        app.dependency_overrides.pop(get_webhook_secret, None)
+
+
+def test_webhook_opens_the_store_only_after_the_signature_verifies(
+    site_form_repo: InMemorySiteFormRepository,
+) -> None:
+    opened: list[bool] = []
+
+    def opener():
+        opened.append(True)
+        return nullcontext(site_form_repo)
+
+    app.dependency_overrides[get_site_form_repository_opener] = lambda: opener
+    client = TestClient(app)
+    raw = json.dumps(_sample_payload()).encode("utf-8")
+
+    unsigned = client.post(
+        "/api/webhooks/wix/site-forms",
+        content=raw,
+        headers=_signed_headers(raw, secret="wrong-secret"),
+    )
+    assert unsigned.status_code == 401
+    assert opened == []
+
+    signed = client.post("/api/webhooks/wix/site-forms", content=raw, headers=_signed_headers(raw))
+    assert signed.status_code == 201
+    assert opened == [True]
+
+
+def test_webhook_rejects_oversized_body_with_413(
+    site_form_repo: InMemorySiteFormRepository,
+) -> None:
+    client = TestClient(app)
+    raw = json.dumps(_sample_payload(message="x" * (MAX_WEBHOOK_BODY_BYTES + 1))).encode("utf-8")
+    response = client.post(
+        "/api/webhooks/wix/site-forms", content=raw, headers=_signed_headers(raw)
+    )
+    assert response.status_code == 413
+    assert site_form_repo.list() == []
+
+    def chunks():
+        # No Content-Length: the cap must hold while streaming, not only on the declared size.
+        yield b"{" + b" " * MAX_WEBHOOK_BODY_BYTES
+        yield b"}"
+
+    headers = _signed_headers(b"")
+    headers.pop("Content-Length", None)
+    streamed = client.post("/api/webhooks/wix/site-forms", content=chunks(), headers=headers)
+    assert streamed.status_code == 413

@@ -42,6 +42,12 @@ expected_sig  = "sha256=" + hmac_sha256_hex(WIX_WEBHOOK_SECRET, signing_input)
 2. **`400 Bad Request`** if the request URL contains any query parameter.
 3. **`401 Unauthorized`** if `X-Wix-Webhook-Timestamp` or `X-Wix-Webhook-Signature` is missing,
    malformed, outside the `300`-second replay window, or fails `hmac.compare_digest`.
+4. **`413 Content Too Large`** if the body exceeds 64 KiB. The cap is enforced while the body is
+   read, before the signature check, so an unauthenticated caller cannot make the receiver buffer
+   an arbitrarily large body.
+5. **`503 Service Unavailable`** if `DATABASE_URL` is unset. A submission is acknowledged only
+   once it is durably stored; there is no in-memory fallback. The database connection is opened
+   only after the signature verifies.
 
 ## 3. Payload Schema
 
@@ -99,4 +105,4 @@ expected_sig  = "sha256=" + hmac_sha256_hex(WIX_WEBHOOK_SECRET, signing_input)
 - **Retry guidance for Wix dispatcher:** Retry on `502`/`503`/`504` or network timeout with
   exponential backoff (`1s`, `5s`, `30s`, `300s`, up to 5 attempts) reusing the original
   `event_id` and payload body with a fresh `X-Wix-Webhook-Timestamp` and `X-Wix-Webhook-Signature`.
-  Do not retry `400`, `401`, `409`, or `422`.
+  Do not retry `400`, `401`, `409`, `413`, or `422`.
