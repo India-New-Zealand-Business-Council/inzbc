@@ -196,7 +196,7 @@ class RecordSourceCheckIn(BaseModel):
     notes: str | None = None
 
     @model_validator(mode="after")
-    def validate_method_and_confirmed_evidence(self) -> "RecordSourceCheckIn":
+    def validate_method_and_confirmed_evidence(self) -> RecordSourceCheckIn:
         """Reject unapproved collection claims at the API boundary, not only in the UI.
 
         Older collector callers may omit notes/fallback trails; do not reinterpret those as
