@@ -524,7 +524,7 @@ describe('BriefBuilderScreen candidate source', () => {
     expect(posts[0]?.url).toBe('/api/runs/run-1/source-checks')
     expect(JSON.parse(String(posts[0]?.init.body))).toMatchObject({
       source_id: 'src-1', outcome: 'Included',
-      notes: 'Analyst-confirmed evidence: internal://evidence/1\\nFallback trail: ',
+      notes: 'Analyst-confirmed evidence: internal://evidence/1\nFallback trail: ',
     })
     expect(posts[0]?.init.headers).toMatchObject({ 'X-CSRF-Token': 'csrf-test' })
   })
