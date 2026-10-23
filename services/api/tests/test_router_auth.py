@@ -296,6 +296,9 @@ EXPECTED_ROLES: dict[tuple[str, str], set[str]] = {
     # this. Restricting it to the owner would let the person most likely to be audited decide
     # who sees the record.
     ("GET", "/api/runs/{run_id}/audit"): set(STAFF_READ),
+    ("POST", "/api/runs/{run_id}/agent-rehearsals"): {"Analyst", "SIP Owner"},
+    ("GET", "/api/runs/{run_id}/agent-rehearsals"): set(STAFF_READ),
+    ("GET", "/api/runs/{run_id}/agent-rehearsals/{rehearsal_id}"): set(STAFF_READ),
     # Launch and resumption authority itself (#55/#227) — the record `/start` and `/resume`
     # check `approval_ref` against. Owner only, matching the weight `decision_role_permissions`
     # (migration 0003) gives CEO Ruling: see run_authorisations.py's module docstring for why

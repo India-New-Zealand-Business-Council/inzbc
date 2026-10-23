@@ -261,6 +261,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/runs/{run_id}/agent-rehearsals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Rehearsals */
+        get: operations["list_rehearsals_api_runs__run_id__agent_rehearsals_get"];
+        put?: never;
+        /**
+         * Start Rehearsal
+         * @description Runs the agent over an in-memory copy of a launch-authorised run, and stores the trail.
+         */
+        post: operations["start_rehearsal_api_runs__run_id__agent_rehearsals_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/runs/{run_id}/agent-rehearsals/{rehearsal_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Rehearsal */
+        get: operations["read_rehearsal_api_runs__run_id__agent_rehearsals__rehearsal_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/candidates": {
         parameters: {
             query?: never;
@@ -1955,6 +1993,50 @@ export interface components {
             /** Notes */
             notes?: string | null;
         };
+        /** RehearsalIn */
+        RehearsalIn: {
+            /**
+             * Max Steps
+             * @default 32
+             */
+            max_steps: number;
+        };
+        /** RehearsalOut */
+        RehearsalOut: {
+            /** Id */
+            id: string;
+            /** Run Id */
+            run_id: string;
+            /** Started By */
+            started_by: string;
+            /** Started At */
+            started_at: string;
+            /** Outcome */
+            outcome: string;
+            /** Stop Reason */
+            stop_reason: string | null;
+            /** Final State */
+            final_state: string;
+            /** Steps */
+            steps: number;
+            /** Accepted */
+            accepted: number;
+            /** Refused */
+            refused: number;
+            /** Candidates */
+            candidates: number;
+            /** Brief Summary */
+            brief_summary: string | null;
+            /** Production Enabled */
+            production_enabled: boolean;
+            /** Chain Head */
+            chain_head: string;
+            /** Sealed */
+            sealed: boolean;
+            /** Tool Steps */
+            tool_steps: components["schemas"]["ToolStepOut"][];
+            verification: components["schemas"]["VerificationOut"];
+        };
         /** ReportOut */
         ReportOut: {
             report: components["schemas"]["ReportVersionOut"];
@@ -2203,6 +2285,25 @@ export interface components {
              */
             created_at: string;
         };
+        /** ToolStepOut */
+        ToolStepOut: {
+            /** Sequence */
+            sequence: number;
+            /** Tool */
+            tool: string;
+            /** Reason */
+            reason: string;
+            /** Outcome */
+            outcome: string;
+            /** Detail */
+            detail: string;
+            /** State Before */
+            state_before: string;
+            /** State After */
+            state_after: string;
+            /** At */
+            at: string;
+        };
         /**
          * TransitionIn
          * @description Body shared by all four lifecycle commands. `approval_ref` is optional at the schema level
@@ -2244,6 +2345,15 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** VerificationOut */
+        VerificationOut: {
+            /** Chain Intact */
+            chain_intact: boolean;
+            /** Seal */
+            seal: string;
+            /** Replay */
+            replay: string;
         };
         /**
          * VerificationState
@@ -2917,6 +3027,146 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RunAuthorisationOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_rehearsals_api_runs__run_id__agent_rehearsals_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RehearsalOut"][];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_rehearsal_api_runs__run_id__agent_rehearsals_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RehearsalIn"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RehearsalOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_rehearsal_api_runs__run_id__agent_rehearsals__rehearsal_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+                rehearsal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RehearsalOut"];
                 };
             };
             /** @description No session, or the session has expired or been idle too long. */
