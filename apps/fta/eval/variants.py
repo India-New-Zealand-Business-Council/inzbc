@@ -35,7 +35,7 @@ from collections.abc import Callable
 
 from apps.fta import explainer
 from apps.fta.corpus import CORPUS, TariffOutcome
-from apps.fta.eval.run_eval import RESULTS_DIR, evaluate, load_questions
+from apps.fta.eval.run_eval import HELD_OUT_CSV, RESULTS_DIR, evaluate, load_questions
 
 # The usual defaults. With one short topic and sector per entry, length normalisation (b) has
 # little to work on, which is itself a finding worth recording rather than tuning away.
@@ -140,8 +140,9 @@ def variants() -> dict[str, Callable[[str], list[str]]]:
     }
 
 
-def compare() -> dict[str, dict[str, object]]:
-    questions = load_questions()
+def compare(*, question_path=None) -> dict[str, dict[str, object]]:
+    """Compare all variants on exactly one question set, without combining held-out scores."""
+    questions = load_questions(question_path) if question_path is not None else load_questions()
     return {
         name: evaluate(questions, retrieve) for name, retrieve in variants().items()
     }
@@ -257,6 +258,16 @@ def main(argv: list[str] | None = None) -> int:
     errors = error_analysis(reports)
     print(_summary(reports))
     print("\n" + _errors_summary(errors))
+    # Keep blind questions outside the development-set totals and reports. This comparison is
+    # descriptive evidence only; it is not permission to tune the synonym map on held-out rows.
+    held_out_reports = None
+    held_out_errors = None
+    if HELD_OUT_CSV.exists():
+        held_out_reports = compare(question_path=HELD_OUT_CSV)
+        held_out_errors = error_analysis(held_out_reports)
+        print("\nHeld-out questions (#390), separately scored:")
+        print(_summary(held_out_reports))
+        print("\n" + _errors_summary(held_out_errors))
     if args.write:
         RESULTS_DIR.mkdir(exist_ok=True)
         for filename, data in (
@@ -266,6 +277,14 @@ def main(argv: list[str] | None = None) -> int:
             out = RESULTS_DIR / filename
             out.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
             print(f"\nwrote {out}")
+        if held_out_reports is not None and held_out_errors is not None:
+            for filename, data in (
+                ("variants-held-out.json", held_out_reports),
+                ("variant_errors-held-out.json", held_out_errors),
+            ):
+                out = RESULTS_DIR / filename
+                out.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+                print(f"\nwrote {out}")
     return 0
 
 
