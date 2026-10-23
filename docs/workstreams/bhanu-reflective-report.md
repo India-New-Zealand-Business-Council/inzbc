@@ -3,8 +3,8 @@
 **Due:** with the final evidence, Fri 20 Nov 2026.
 
 **How this scaffold works.** The factual parts are filled in from the committed evidence, with
-links. Every **[My own words]** part is reflection: it is assessed as mine, so I write it. Delete
-the prompts once answered.
+links. The reflection paragraphs are evidence-based drafts prepared at my request. I must personalise
+and confirm them before assessment; they are not a record of unreported experiences or feedback.
 
 ## 1. What I set out to do
 
@@ -28,16 +28,25 @@ guarantee it never skips a human approval step?
   section 5)
 - **Judge vs human:** [fill in once measured, or say plainly that it was not, and why]
 
-**Answer to the research question:** [My own words. Prompts: How strong is "guarantee" given the
-attacks were mine? What does the knockout table add? What would make me trust it more?]
+**Answer to the research question (draft).** The controls prevented all 48 attacks in the suite,
+  and the knockout runs show that the suite can expose missing controls. That supports the design
+  within the tested scenarios. It does not establish a general guarantee against every agent or
+  attack. I wrote the scenarios, used a scripted adversary and replayed synthetic runs, so the next
+  useful evidence would be independently designed attacks, persistence-layer checks and a larger
+  set of realistic cases. The golden-set judge result is a regression check, not independent QA.
 
 ## 3. A decision I made, and how I would judge it now
 
 Server-held HMAC signatures, not per-approver keys
 ([ADR-0010](../decisions/ADR-0010-signed-human-decisions.md)).
 
-[My own words. Prompts: Was speed the right reason? What would INZBC need for per-approver keys to
-be worth it?]
+**Draft reflection.** I chose a change I could implement and measure within this block without
+  introducing a client key-issuing process. HMAC closes the measured forgery gap for an attacker
+  who can alter a log but does not hold the server key. The trade-off is that it does not prove
+  individual authorship to a third party. I would reconsider per-approver signatures if INZBC
+  needs that stronger claim and can support identity verification, key recovery and revocation.
+  I would also treat historical verification during key rotation as part of the design rather
+  than leaving it until the first rotation.
 
 ## 4. How I planned and managed the work
 
@@ -48,8 +57,12 @@ Facts:
 - **Client blockers.** #55 and #189 were blocked on INZBC throughout, and are recorded in every
   status report.
 
-[My own words. Prompts: What did batching the four AI builds into one day cost or save? How did
-the client blockers change what I worked on?]
+**Draft reflection.** The issue-closure table records 13 closures in W2, but it does not measure
+  effort or show that batching saved time. W3 includes review, integration and research evidence
+  that an issue count misses. I would record active start dates and separate engineering output
+  from time spent waiting on decisions. Bringing the signed-decision change forward gave W6 and
+  W7 room for measurement. While #55 and #189 remain client-dependent, I can continue independent
+  research and verification without presenting that progress as production readiness.
 
 ## 5. Working with the team
 
@@ -59,8 +72,12 @@ Facts:
 - **Process proposals.** I answered the rota and check-in proposals in one record
   ([engineering-answers-2026-10-16.md](../engineering-answers-2026-10-16.md)).
 
-[My own words. Prompts: Was fixing other people's findings myself the right call for their
-learning? How did declining the rota land with Roshan? What would I do differently?]
+**Draft reflection.** The record shows that I fixed findings while reviewing and integrating the
+  work. It does not show whether doing so improved the other contributors' learning. I would
+  distinguish urgent integration fixes from changes the author can own, and explain the reasoning
+  behind a fix so the lesson is reusable. For process proposals, I would state the decision and
+  its rationale in one place earlier. I cannot infer Roshan's reaction from a closed issue; that
+  would need his actual feedback.
 
 ## 6. Feedback I received and what I changed
 
@@ -73,13 +90,18 @@ Facts:
 - **How I checked it.** Every number is reproducible from a committed command and pinned in CI.
   Every literature source was checked against its publisher record (review, section 10).
 
-[My own words. Prompts: Where did AI speed me up? Where did it get something wrong that I caught?
-What rule would I give a teammate using it?]
+**Draft reflection.** AI assistance produced code and document drafts, but the committed evidence
+  is what supports the conclusions. A useful check in this work is separating agreement with
+  labels written by the rubric author from agreement with an independent reviewer. Those are
+  different claims even if their numerical results later match. I would ask a teammate to verify
+  the source, reproduce the measurement and state its limits before accepting generated prose.
+  I have not measured time saved, so I would not give an efficiency percentage.
 
 ## 8. What I would do next
 
-[My own words. Candidates from the evidence:
-- per-approver signatures (ADR-0010)
-- a larger, systematic attack suite (baseline, threats to validity)
-- a live judge run with a blind reviewer
-- turning on `SIP_REQUIRE_SIGNED_DECISIONS` once legacy runs are closed]
+**Draft next steps.** I would first obtain blind labels from an independent human QA reviewer
+  and report both raw agreement and kappa, including any disagreement. I would then expand the
+  attack set beyond my own scenarios and verify the deployed signing configuration in staging.
+  Production enforcement depends on resolving legacy runs and retaining historical replay;
+  it does not substitute for INZBC's launch approval. Per-approver keys would remain a separate
+  decision, driven by whether INZBC needs externally verifiable individual authorship.

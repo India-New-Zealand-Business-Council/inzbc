@@ -4,8 +4,8 @@
 worksheet for week 8.
 
 **How this was made.** Prepared with AI assistance from the committed evidence. Every number links
-to a file that reproduces it. The sections marked **[My own words]** are reflection, and only I
-can write them.
+to a file that reproduces it. The reflection paragraphs below are evidence-based drafts for me to personalise and confirm
+before assessment. They do not record feedback or experiences that have not happened.
 
 **The course's own worksheet.** If it has a different layout, copy these answers into it rather
 than submitting this file.
@@ -28,10 +28,14 @@ skips a human approval step?
 
 ### 1.2 Reflecting on my own practice and on feedback
 
-- **Feedback received and what I changed:** [My own words, from the feedback log in the plan]
+- **Feedback received and what I changed:** Practice PDR feedback is not recorded yet. After the
+  meeting I will enter the actual comment, the change I made in response and its evidence link
+  in section 6 and the plan's feedback log. I cannot evaluate a response to feedback before that.
 - **What the cycle-time data says about how I worked:** 13 of my issues closed in week 2, mostly
-  in two days (15 and 16 Oct). In week 3 my work went out as PRs (#433 to #450) instead. [My own
-  words: what that pattern says about batching, and what I would change]
+  in two days (15 and 16 Oct). In week 3 my work went out as PRs (#433 to #450) instead. The closure count does not capture
+  review, integration or research work, and days open includes backlog waiting time. I would
+  separate delivery evidence from issue closure and record when active work starts. That would
+  make the measure more useful when deciding whether batching actually helped.
 
 ### 2.1 Literature
 
@@ -76,8 +80,10 @@ skips a human approval step?
   Roshan's #394, which he kept and turned into a test rule (his feedback log, 13 Oct).
 - **Conflict.** #320 (review rota) and #405 (daily check-ins). I decided against both and recorded
   the answers in one place, [engineering-answers-2026-10-16.md](../engineering-answers-2026-10-16.md),
-  rather than across several tickets. [My own words: how I handled it, and what I would do
-  differently]
+  rather than across several tickets. A single decision record made the outcome easier to trace.
+  I would make the distinction between a useful suggestion and an approved process change clear
+  earlier, and explain the reason alongside the decision. The records show which proposals were
+  accepted or declined; they do not establish how the others felt about the outcome.
 
 ## 3. What I will show in five minutes
 
@@ -103,7 +109,15 @@ skips a human approval step?
 
 ## 5. What I want feedback on at the practice PDR
 
-[My own words]
+Draft questions to confirm before the meeting:
+
+- Does my research question overstate what 48 hand-written attacks can establish? Should I use
+  “within the evaluated threat model” rather than a general guarantee?
+- Is the knockout experiment enough to show that each control contributes to safety, and how
+  should I explain the unsigned-versus-signed tamper totals without implying identical coverage?
+- What additional evidence would make the eight-case independent QA comparison useful, given
+  the small sample and the different information available to the model and the human?
+- Have I distinguished engineering completion from client launch approval clearly enough?
 
 ## 6. Feedback received at the practice PDR
 
