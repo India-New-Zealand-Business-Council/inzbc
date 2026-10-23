@@ -70,8 +70,9 @@ skips a human approval step?
   [bhanu-studio6-plan.md](bhanu-studio6-plan.md).
 - **Main change.** The W6 change was brought forward from 9 Nov to 24 Oct. That freed W6 and W7
   for the judge measurements.
-- **Client-owned blockers.** These are kept in every status report so the delay stays recorded as
-  INZBC's: #55 (SIP-191 authorisation and PAT) and #189 (launch approval).
+- **Client-owned blockers.** #55 (SIP-191 authorisation and PAT) and #189 (launch approval) were
+  kept in every status report as INZBC's until both cleared on 24 Oct
+  ([launch status](../launch-status-2026-10-24.md)).
 
 ### 3.2 Working with others
 

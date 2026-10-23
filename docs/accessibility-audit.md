@@ -170,3 +170,50 @@ Observed consistently across all seven page-groups, not isolated incidents:
    + a contrast checker, ideally an automated tool like axe plus manual passes) once the new
    site has actual rendered pages to test — this is what `REQ-U-03`'s "end-to-end WCAG 2.2
    AA audit" will need to cover that this baseline could not.
+
+---
+
+# Automated audit of the built platform and the live site, 24 October 2026
+
+**Run by:** Bhanu Gupta (tech lead), 24 Oct 2026, with axe-core 4.10 through Playwright, against
+the WCAG 2.0, 2.1 and 2.2 A and AA rule sets.
+
+**What this covers and what it does not.** axe checks what a machine can check: contrast,
+names, roles, structure, focusability. It finds roughly a third of real WCAG failures. It does
+not replace the keyboard-only and screen-reader pass `REQ-U-03` still needs.
+
+## Platform apps (this repository)
+
+Every screen of the platform shell, the standalone FTA Explainer, Comms Assistant, Executive
+Dashboard and Member Portal.
+
+| Surface | Result | Fixed |
+|---|---|---|
+| Platform overview | 1 failure: the code-reference text on each control card had too little contrast (`text-inzbc-ink/55` on mist) | Raised to `/75` |
+| The other nine platform screens | Clean | |
+| FTA Explainer, before and after a query | Clean | |
+| Comms Assistant, Executive Dashboard, Member Portal (standalone) | Clean | |
+
+The platform screens and the FTA Explainer are now scanned on every PR by
+`e2e/platform.spec.ts` and `e2e/fta-a11y.spec.ts`, so a regression fails CI.
+
+## Live site (inzbc.org, the inzview build)
+
+Read-only scan of each public route, after scrolling so the reveal animations had finished
+(scanning mid-fade reports text as low-contrast that is not).
+
+| Page | Failure | Fixed in inzview #12 |
+|---|---|---|
+| Home | Gallery counter at 4.11:1; photo strip not keyboard-focusable | Counter colour raised; strip given `tabIndex` and a label |
+| India Market Opportunities | `dt`/`dd` pairs wrapped in two `div`s, invalid inside a `dl` | Reveal wrapper is the group |
+| Our sponsors | Small uppercase labels at 3.54:1 | 60% text raised to 75% here and wherever the same style is used |
+| FTA Explainer page | Review note at 4.43:1 | Raised to 80% |
+| Join, Membership form, About, Events, Trade Shows, FTA, News | Clean | |
+
+The inzview fixes are merged but reach inzbc.org only when someone publishes in Vibe.
+
+## Still to do for REQ-U-03
+
+- A keyboard-only pass of every page and screen.
+- A screen-reader pass (NVDA or VoiceOver) of the main tasks.
+- Re-scan inzbc.org after the next Vibe publish.

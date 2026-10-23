@@ -38,7 +38,7 @@ This is a navigation matrix for delivered controls, not a claim that client UAT 
 
 | Item | Accountable owner | Consequence until complete |
 |---|---|---|
-| #189 production launch | Executive Sponsor | Testing/preparation only; production and distribution remain disabled |
+| #189 production launch | Executive Sponsor | Cleared per the tech lead, 24 Oct ([launch status](launch-status-2026-10-24.md)); link INZBC's written approval, then close. Distribution still needs a recorded authority per brief |
 | #303 written residual-risk acceptance | Executive Sponsor; tech lead records | Phone approval is reported, but the written condition remains unsatisfied |
 | #133 live acceptance evidence | Tech lead / INZBC | Session and signed acceptance reported received for "everything"; original date, version-specific scope and record location still needed before marking detailed UAT criteria passed. #134 records receipt only |
 | #45 forms routing/store/retention/notice | INZBC; tech lead finalizes contract | No internal receiver or additional personal-data store is authorized yet |

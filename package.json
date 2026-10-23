@@ -15,6 +15,7 @@
     "codegen": "pnpm run openapi && pnpm --filter @inzbc/fta-ui run codegen && pnpm --filter @inzbc/sip-ui run codegen && pnpm --filter @inzbc/dashboard-ui run codegen"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.10.2",
     "@playwright/test": "^1.63.0",
     "openapi-typescript": "^7.13.0",
     "typescript": "^5.9.3"

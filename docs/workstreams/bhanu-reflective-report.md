@@ -57,7 +57,8 @@ Facts:
 - **Change log.** The W6 change was brought forward from 9 Nov to 24 Oct
   ([plan change log](bhanu-studio6-plan.md#plan-change-log)).
 - **Cycle time.** 13 issues closed in W2. In W3 the work went out as PRs (cycle time table).
-- **Client blockers.** #55 and #189 were blocked on INZBC throughout, and are recorded in every
+- **Client blockers.** #55 and #189 were blocked on INZBC until 24 Oct, when both cleared
+  ([launch status](../launch-status-2026-10-24.md)). Until then they were recorded in every
   status report.
 
 **Draft reflection.** The issue-closure table records 13 closures in W2, but it does not measure

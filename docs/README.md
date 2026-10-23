@@ -66,6 +66,8 @@ Two conventions hold across this tree:
   settled. Post-capstone ownership (#97) is one of several still open — see
   [`client-questions.md`](client-questions.md) for the current list, which supersedes any count
   given here.
+- [`launch-status-2026-10-24.md`](launch-status-2026-10-24.md) — **where launch stands now**: inzbc.org
+  live on the inzview build, and #189 and #55 cleared as of 24 Oct 2026.
 - [`client-questions.md`](client-questions.md) — **the current list of what INZBC still owes**,
   compiled 21 August 2026. Grouped by what each item blocks rather than by topic, and it opens by
   naming what is already settled so nothing gets re-asked. Four signatures sit at the top; they
