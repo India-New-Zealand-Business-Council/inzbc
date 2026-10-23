@@ -316,12 +316,30 @@ def _reject_duplicate_keys(pairs: list[tuple[str, object]]) -> dict[str, object]
     return seen
 
 
+def _unwrap_code_fence(text: str) -> str:
+    """One surrounding Markdown code fence removed, if the whole reply is wrapped in one.
+
+    A live model wraps its JSON in ```json ... ``` in a large share of replies, which made every
+    such step fail closed and a live run stop almost at once. Only the wrapper goes: what is
+    inside must still be exactly one JSON object that passes every check below, so nothing the
+    fence held can reach a tool that a bare reply could not.
+    """
+    stripped = text.strip()
+    if not (stripped.startswith("```") and stripped.endswith("```")) or len(stripped) < 6:
+        return text
+    body = stripped[3:-3]
+    first_line, _, rest = body.partition("\n")
+    if first_line.strip() not in {"", "json"}:
+        return text
+    return rest
+
+
 def parse_tool_proposal(text: str) -> AgentToolProposal:
     """Strictly parse a model completion into an `AgentToolProposal`, or fail closed."""
     if not isinstance(text, str) or not text.strip():
         raise AgentProposalParseError("model output was empty")
     try:
-        raw = json.loads(text, object_pairs_hook=_reject_duplicate_keys)
+        raw = json.loads(_unwrap_code_fence(text), object_pairs_hook=_reject_duplicate_keys)
     except json.JSONDecodeError as error:
         raise AgentProposalParseError("model output was not valid JSON") from error
     if not isinstance(raw, dict):
