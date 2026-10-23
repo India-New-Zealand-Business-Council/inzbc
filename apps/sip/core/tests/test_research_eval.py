@@ -35,15 +35,25 @@ def test_runs_replay_and_reexecute_exactly() -> None:
 def test_tamper_detection_matches_the_recorded_baseline() -> None:
     report = replay_fidelity.run_measurement(runs=12, seed=7)
     by_mutation = report["tamper_by_mutation"]
-    # Known gap at baseline: a forged transition carrying a HumanDecision is accepted, because
-    # nothing binds a decision to the person who made it. When decisions are signed, this
-    # assertion should flip to `detected == applied`.
+    # Unsigned mode, kept as the "before" column: a forged transition carrying a HumanDecision is
+    # accepted, because nothing binds a decision to the person who made it. Signed mode, below,
+    # closes it.
     forged = by_mutation["forge-qa-pass-with-human-decision"]
     assert forged["applied"] == 12
     assert forged["detected"] == 0
     for name, row in by_mutation.items():
         if row["safety_relevant"] and name != "forge-qa-pass-with-human-decision":
             assert row["detected"] == row["applied"], name
+
+
+def test_signed_mode_detects_every_tamper_including_forgery_and_metadata() -> None:
+    report = replay_fidelity.run_measurement(runs=12, seed=7, signed=True)
+    assert report["replay_exact"] == 12
+    assert report["reexecution_identical"] == 12
+    by_mutation = report["tamper_by_mutation"]
+    assert "forge-qa-pass-with-human-decision" in by_mutation
+    for name, row in by_mutation.items():
+        assert row["detected"] == row["applied"], name
 
 
 def test_judge_agreement_is_computed_from_scores_not_estimated() -> None:

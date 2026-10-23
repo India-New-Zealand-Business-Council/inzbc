@@ -16,6 +16,8 @@ across `apps`, `services` and `scripts` rather than from memory.
 | `DATABASE_URL` | `services/api/persistence.py`, the persistence tests | **Yes** (contains a password) | For persistence. Tests skip cleanly without it. |
 | `SIP_MODEL_NAME` | `services/api/model_gateway.py` | No | Optional. Defaults to `gpt-4.1-mini`. |
 | `REDACTION_POLICY_PATH` | `services/api/redaction.py` | No (a path) | **Yes for any model call.** Absent, every call is refused. See `docs/redaction-policy.md`. |
+| `SIP_DECISION_SIGNING_KEY` | `apps/sip/core/audit_seal.py`, `services/api/persistence.py` | **Yes** | Optional, at least 32 bytes. Set, gated decisions are signed when recorded and verified on replay. Rotating it makes rows signed with the old key fail replay, so rotation needs a re-verification plan first. |
+| `SIP_REQUIRE_SIGNED_DECISIONS` | `apps/sip/core/audit_seal.py` | No | Optional. `true` refuses an unsigned gated transition, both when recording and on replay. Needs the key. |
 
 CI supplies `DATABASE_URL` itself for the Postgres service container, with throwaway credentials
 defined inline in `ci.yml`. Those are not secrets and must never be reused anywhere real.

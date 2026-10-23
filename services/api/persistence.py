@@ -28,11 +28,19 @@ Pooling can be added later (e.g. psycopg_pool) without changing this module's pu
 from __future__ import annotations
 
 import os
+import uuid
 from dataclasses import dataclass
 
 import psycopg
 from psycopg.rows import dict_row
 
+from apps.sip.core.audit_seal import (
+    SigningKeyError,
+    decision_signature_valid,
+    sign_decision,
+    signed_decisions_required,
+    signing_key_from_env,
+)
 from apps.sip.core.orchestrator import (
     CorruptHistory,
     HumanDecision,
@@ -425,6 +433,12 @@ class RunRepository:
             # connection so it shares the update's transaction: if the audit insert fails, the
             # connection context manager rolls back and the state change is undone with it.
             if row is not None:
+                signature = (
+                    _gated_signature(run_id, current_state, new_state, actor_id,
+                                     approval_ref, reason)
+                    if is_human_gated(current_state, new_state) and approval_ref
+                    else None
+                )
                 record_audit(
                     conn,
                     user_id=actor_id,
@@ -435,6 +449,7 @@ class RunRepository:
                     new_value=new_state.value,
                     reason=reason,
                     approval_ref=approval_ref,
+                    decision_signature=signature,
                 )
             conn.commit()
         if row is None:
@@ -443,6 +458,35 @@ class RunRepository:
                 "committed first; re-read the run before retrying"
             )
         return _row_to_record(row)
+
+
+def _canonical_actor(actor_id: str) -> str:
+    """The actor exactly as `rehydrate` reads it back from `audit_log.user_id` (a uuid column)."""
+    try:
+        return str(uuid.UUID(str(actor_id)))
+    except ValueError:
+        return str(actor_id)
+
+
+def _gated_signature(
+    run_id: str, from_state: RunState, to_state: RunState, actor_id: str, approval_ref: str,
+    reason: str | None,
+) -> str | None:
+    """Signs a gated transition when a key is configured; refuses if signing is required but off.
+
+    The signed fields are exactly the ones `rehydrate` turns back into the `HumanDecision`, so a
+    row whose actor, approval reference or reason is later edited no longer verifies.
+    """
+    key = signing_key_from_env()
+    if key is None:
+        if signed_decisions_required():
+            raise SigningKeyError(
+                "SIP_REQUIRE_SIGNED_DECISIONS is on but SIP_DECISION_SIGNING_KEY is not set: "
+                "refusing to record a gated transition that could not be verified later"
+            )
+        return None
+    return sign_decision(key, run_id=run_id, from_state=from_state, to_state=to_state,
+                         approver=_canonical_actor(actor_id), decision=approval_ref, note=reason)
 
 
 @dataclass(frozen=True)
@@ -573,12 +617,15 @@ class AuditRepository:
             if known is None:
                 raise KeyError(f"no run {run_id!r}")
             rows = conn.execute(
-                "select user_id, at, old_value, new_value, reason, approval_ref from audit_log "
+                "select user_id, at, old_value, new_value, reason, approval_ref, "
+                "decision_signature from audit_log "
                 "where record_type = 'runs' and record_id = %s and action = 'run.transition' "
                 "order by id asc",
                 (run_id,),
             ).fetchall()
 
+        key = signing_key_from_env()
+        require_signed = signed_decisions_required()
         records = []
         for row in rows:
             from_state = RunState(row["old_value"])
@@ -598,10 +645,34 @@ class AuditRepository:
                         "gated transition cannot be replayed from a row that does not say who "
                         "authorised it."
                     )
+                signature = row.get("decision_signature")
+                if signature is None and require_signed:
+                    raise CorruptHistory(
+                        f"the recorded {from_state.value} -> {to_state.value} transition on run "
+                        f"{run_id!r} is human gated but unsigned, and signed decisions are "
+                        "required"
+                    )
+                if signature is not None:
+                    if key is None:
+                        raise CorruptHistory(
+                            f"run {run_id!r} has signed decisions but SIP_DECISION_SIGNING_KEY is "
+                            "not set, so they cannot be verified"
+                        )
+                    if not decision_signature_valid(
+                        key, signature, run_id=run_id, from_state=from_state, to_state=to_state,
+                        approver=str(row["user_id"]), decision=str(row["approval_ref"]),
+                        note=row["reason"],
+                    ):
+                        raise CorruptHistory(
+                            f"the recorded {from_state.value} -> {to_state.value} transition on "
+                            f"run {run_id!r} carries a signature that does not verify: the row "
+                            "was written or altered without the signing key"
+                        )
                 decision = HumanDecision(
                     approver=str(row["user_id"]),
                     decision=str(row["approval_ref"]),
                     note=row["reason"],
+                    signature=signature,
                 )
             records.append(
                 TransitionRecord(

@@ -1,0 +1,126 @@
+{
+  "mode": "signed-and-sealed",
+  "runs": 200,
+  "seed": 20261024,
+  "final_states": {
+    "QA In Progress": 200
+  },
+  "replay_exact": 200,
+  "reexecution_identical": 200,
+  "tamper_safety_detected": 3196,
+  "tamper_safety_applied": 3196,
+  "tamper_metadata_detected": 1000,
+  "tamper_metadata_applied": 1000,
+  "tamper_by_mutation": {
+    "forge-qa-pass-no-human": {
+      "safety_relevant": true,
+      "applied": 200,
+      "detected": 200
+    },
+    "forge-qa-pass-with-human-decision": {
+      "safety_relevant": true,
+      "applied": 200,
+      "detected": 200
+    },
+    "drop-last-transition": {
+      "safety_relevant": true,
+      "applied": 200,
+      "detected": 200
+    },
+    "swap-two-transitions": {
+      "safety_relevant": true,
+      "applied": 200,
+      "detected": 200
+    },
+    "tool-record-claims-gate-crossing": {
+      "safety_relevant": true,
+      "applied": 200,
+      "detected": 200
+    },
+    "refused-record-changed-state": {
+      "safety_relevant": true,
+      "applied": 200,
+      "detected": 200
+    },
+    "drop-accepted-tool-record": {
+      "safety_relevant": true,
+      "applied": 200,
+      "detected": 200
+    },
+    "remove-a-source-check": {
+      "safety_relevant": true,
+      "applied": 200,
+      "detected": 200
+    },
+    "demote-included-high-to-unverified": {
+      "safety_relevant": true,
+      "applied": 32,
+      "detected": 32
+    },
+    "score-out-of-range": {
+      "safety_relevant": true,
+      "applied": 164,
+      "detected": 164
+    },
+    "rewrite-brief-summary": {
+      "safety_relevant": true,
+      "applied": 200,
+      "detected": 200
+    },
+    "change-brief-included-ids": {
+      "safety_relevant": true,
+      "applied": 200,
+      "detected": 200
+    },
+    "coverage-window-23h": {
+      "safety_relevant": true,
+      "applied": 200,
+      "detected": 200
+    },
+    "production-enabled-true": {
+      "safety_relevant": true,
+      "applied": 200,
+      "detected": 200
+    },
+    "rewrite-tool-reason": {
+      "safety_relevant": false,
+      "applied": 200,
+      "detected": 200
+    },
+    "rewrite-tool-detail": {
+      "safety_relevant": false,
+      "applied": 200,
+      "detected": 200
+    },
+    "rewrite-transition-actor": {
+      "safety_relevant": false,
+      "applied": 200,
+      "detected": 200
+    },
+    "shift-transition-timestamp": {
+      "safety_relevant": false,
+      "applied": 200,
+      "detected": 200
+    },
+    "rename-launch-approver": {
+      "safety_relevant": false,
+      "applied": 200,
+      "detected": 200
+    },
+    "reuse-launch-signature-for-qa-pass": {
+      "safety_relevant": true,
+      "applied": 200,
+      "detected": 200
+    },
+    "forged-decision-fabricated-signature": {
+      "safety_relevant": true,
+      "applied": 200,
+      "detected": 200
+    },
+    "strip-seal": {
+      "safety_relevant": true,
+      "applied": 200,
+      "detected": 200
+    }
+  }
+}

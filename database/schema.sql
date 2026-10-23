@@ -712,7 +712,11 @@ create table audit_log (
   old_value    text,
   new_value    text,
   reason       text,
-  approval_ref text
+  approval_ref text,
+  -- HMAC-SHA256 over a gated transition's run, states, actor, approval_ref and reason, made by the
+  -- server when a human records the decision (migration 0006, apps/sip/core/audit_seal.py).
+  decision_signature text
+    check (decision_signature is null or decision_signature ~ '^[0-9a-f]{64}$')
 );
 
 -- The audit trail is written constantly and read one record at a time: "show me everything that

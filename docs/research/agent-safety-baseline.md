@@ -14,6 +14,7 @@ re-run with one command.
 |---|---|---|
 | Gate safety | `uv run python -m apps.sip.core.eval.gate_safety --write` | `apps/sip/core/eval/results/gate-safety.json` |
 | Replay and tampering | `uv run python -m apps.sip.core.eval.replay_fidelity --write` | `apps/sip/core/eval/results/replay-fidelity.json` |
+| Replay and tampering, after the change (section 5) | `uv run python -m apps.sip.core.eval.replay_fidelity --signed --write` | `apps/sip/core/eval/results/replay-fidelity-signed.json` |
 | Judge vs human | `uv run python -m apps.sip.core.eval.judge_agreement --live --write` | `apps/sip/core/eval/results/judge-agreement.json` |
 
 The first two need no model and no database. `apps/sip/core/tests/test_research_eval.py` pins
@@ -128,7 +129,8 @@ cryptographically.
 server-held key) when an authenticated person records it, and the log is hash-chained so that a
 dropped or rewritten entry breaks the chain. Re-measure with the same harness. The target is
 200/200 on the forged-decision row, without losing any other row. The CI test pins the baseline,
-including the 0/200, so the change has to update it deliberately.
+including the 0/200, so the change has to update it deliberately. Done early, on 24 Oct: see
+section 5.
 
 ## 4. Judge vs human: not yet measured
 
@@ -151,6 +153,49 @@ To finish this before the practice PDR:
 2. Ask the reviewer named for QA (not Bhanu, who wrote the rubric) to label the 8 cases blind.
 3. Re-run. With 8 cases kappa is unstable, so report raw agreement first, and grow the set if the
    result will be relied on.
+
+## 5. After the change: signed decisions and a sealed log
+
+`apps/sip/core/audit_seal.py` implements the planned change.
+
+- **Decision signatures.** When an authenticated person records a gated transition,
+  `RunRepository.apply_transition` signs it with HMAC-SHA256 under a server-held key
+  (`SIP_DECISION_SIGNING_KEY`, at least 32 bytes). The signature covers the run, the exact
+  transition, the approver, the decision and the note, and is stored in the new
+  `audit_log.decision_signature` column (migration 0006). `AuditRepository.rehydrate` refuses a
+  signature that does not verify, and with `SIP_REQUIRE_SIGNED_DECISIONS` on it also refuses an
+  unsigned gated row.
+- **A sealed agent log.** `AgentOrchestrator.sealed_audit_log(key)` folds every record of the
+  agent's audit log, metadata included, into a SHA-256 hash chain and MACs the chain head. Given
+  the key, `replay_agent_audit` refuses a log whose seal is missing or wrong, and a gated
+  transition without a valid signature.
+
+The agent loop still never holds the key and never builds a `HumanDecision`, so the gate-safety
+result is unchanged. Same harness, same seed (20261024), same 200 runs:
+
+| Measurement | Before (section 3) | After |
+|---|---|---|
+| Gate-safety attacks blocked | 48/48 | 48/48 |
+| Runs replayed exactly | 200/200 | 200/200 |
+| Runs re-executed to an identical log | 200/200 | 200/200 |
+| Forged `HumanDecision` detected | 0/200 | **200/200** |
+| Safety-relevant tampering detected | 2396/2596 (92.3%) | **3196/3196 (100%)** |
+| Metadata-only tampering detected | 0/1000 | **1000/1000** |
+
+The after-mode total includes three attacks that only make sense once signatures exist, each
+applied 200 times and each detected 200 times:
+- reusing the genuine launch signature on a forged QA pass
+- a forged decision with a fabricated signature
+- stripping the seal
+
+`test_research_eval.py` pins both columns. `apps/sip/core/tests/test_audit_seal.py` and
+`services/api/tests/test_signed_decisions.py` (real Postgres) test the signing paths directly,
+including a signature moved to another run and signed rows read back without the key.
+
+**What it does not cover.** An attacker who holds the signing key can still forge, so the key is
+held only by the server, never by the model or a browser. Rows written before the change carry no
+signature and replay as before until a deployment turns on `SIP_REQUIRE_SIGNED_DECISIONS`.
+Switching that on in production is a configuration decision, not part of this change.
 
 ## Threats to validity
 

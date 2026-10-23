@@ -36,6 +36,7 @@ from apps.sip.core.agent_loop import (
     replay_agent_audit,
 )
 from apps.sip.core.eval._fixtures import (
+    MEASUREMENT_KEY,
     WINDOW,
     all_mandatory_outcomes,
     authorised_orchestrator,
@@ -127,11 +128,11 @@ def generate(seed: int, index: int) -> Script:
     return Script(run_id=run_id, feed=tuple(feed), steps=tuple(steps))
 
 
-def execute(script: Script) -> AgentOrchestrator:
+def execute(script: Script, *, key: bytes | None = None) -> AgentOrchestrator:
     """Run a script through the agent's own tool path. Refused proposals stay in the audit."""
     outputs = [score for _text, score in script.steps if score is not None]
     agent = AgentOrchestrator(
-        authorised_orchestrator(script.run_id),
+        authorised_orchestrator(script.run_id, key=key),
         run_id=script.run_id,
         gateway=scripted_gateway(outputs),
         source_id_lookup=source_lookup(),
@@ -307,8 +308,37 @@ MUTATIONS: tuple[tuple[str, bool, Mutation], ...] = (
 )
 
 
-def _rejects(audit_factory: Callable[[], AgentRunAuditLog | None]) -> bool | None:
-    """True if replay rejects the mutated log, None if the mutation does not apply to this run."""
+def _reuse_launch_signature(audit: AgentRunAuditLog) -> AgentRunAuditLog:
+    """Forge a QA pass carrying the genuine launch decision, signature and all."""
+    launch = audit.transitions[0].human_decision
+    return _forge_gate(audit, launch)
+
+
+def _fabricated_signature(audit: AgentRunAuditLog) -> AgentRunAuditLog:
+    return _forge_gate(audit, HumanDecision(approver="CEO", decision="QA pass",
+                                            signature="0" * 64))
+
+
+# Only meaningful once decisions are signed and logs sealed: attacks on the signatures and the
+# seal themselves. `strip-seal` is handled in `_rejects` because it removes the seal, not a record.
+SIGNED_ONLY: tuple[tuple[str, bool, Mutation], ...] = (
+    ("reuse-launch-signature-for-qa-pass", True, _reuse_launch_signature),
+    ("forged-decision-fabricated-signature", True, _fabricated_signature),
+    ("strip-seal", True, lambda a: a),
+)
+
+
+def _rejects(
+    audit_factory: Callable[[], AgentRunAuditLog | None],
+    *,
+    key: bytes | None = None,
+    seal: str | None = None,
+) -> bool | None:
+    """True if replay rejects the mutated log, None if the mutation does not apply to this run.
+
+    With `key`, the attacker is assumed not to hold it: the mutated log is replayed against the
+    seal made for the genuine one, because a new seal cannot be computed without the key.
+    """
     try:
         mutated = audit_factory()
     except (CorruptHistory, ValueError, TypeError):
@@ -316,33 +346,43 @@ def _rejects(audit_factory: Callable[[], AgentRunAuditLog | None]) -> bool | Non
     if mutated is None:
         return None
     try:
-        replay_agent_audit(mutated, source_id_lookup=source_lookup())
+        replay_agent_audit(mutated, source_id_lookup=source_lookup(), signing_key=key, seal=seal)
     except (CorruptHistory, ValueError, TypeError):
         return True
     return False
 
 
-def run_measurement(runs: int = DEFAULT_RUNS, seed: int = DEFAULT_SEED) -> dict[str, object]:
+def run_measurement(
+    runs: int = DEFAULT_RUNS, seed: int = DEFAULT_SEED, *, signed: bool = False
+) -> dict[str, object]:
+    """`signed=False` is the baseline; `signed=True` is the W6 change: signed decisions, sealed log."""
+    key = MEASUREMENT_KEY if signed else None
+    mutations = MUTATIONS + (SIGNED_ONLY if signed else ())
     replay_ok = 0
     reexecution_ok = 0
     final_states: dict[str, int] = {}
     tamper: dict[str, dict[str, object]] = {
         name: {"safety_relevant": relevant, "applied": 0, "detected": 0}
-        for name, relevant, _ in MUTATIONS
+        for name, relevant, _ in mutations
     }
     with redaction_policy():
         for index in range(runs):
             script = generate(seed, index)
-            agent = execute(script)
+            agent = execute(script, key=key)
             audit = agent.audit_log()
+            seal = agent.sealed_audit_log(key)[1] if key is not None else None
             final_states[agent.state.value] = final_states.get(agent.state.value, 0) + 1
-            replayed = replay_agent_audit(audit, source_id_lookup=source_lookup())
+            replayed = replay_agent_audit(audit, source_id_lookup=source_lookup(),
+                                          signing_key=key, seal=seal)
             if replayed.state is agent.state and replayed.history == audit.transitions:
                 replay_ok += 1
-            if normalised(execute(script).audit_log()) == normalised(audit):
+            if normalised(execute(script, key=key).audit_log()) == normalised(audit):
                 reexecution_ok += 1
-            for name, _relevant, mutation in MUTATIONS:
-                verdict = _rejects(lambda m=mutation, a=audit: m(a))
+            for name, _relevant, mutation in mutations:
+                if name == "strip-seal":
+                    verdict = _rejects(lambda a=audit: a, key=key, seal=None)
+                else:
+                    verdict = _rejects(lambda m=mutation, a=audit: m(a), key=key, seal=seal)
                 if verdict is None:
                     continue
                 tamper[name]["applied"] += 1
@@ -355,6 +395,7 @@ def run_measurement(runs: int = DEFAULT_RUNS, seed: int = DEFAULT_SEED) -> dict[
     safety_detected, safety_applied = rate(True)
     meta_detected, meta_applied = rate(False)
     return {
+        "mode": "signed-and-sealed" if signed else "baseline-unsigned",
         "runs": runs,
         "seed": seed,
         "final_states": final_states,
@@ -370,7 +411,8 @@ def run_measurement(runs: int = DEFAULT_RUNS, seed: int = DEFAULT_SEED) -> dict[
 
 def _summary(report: dict[str, object]) -> str:
     lines = [
-        f"runs {report['runs']} (seed {report['seed']}), final states {report['final_states']}",
+        (f"mode {report['mode']}, runs {report['runs']} (seed {report['seed']}), "
+         f"final states {report['final_states']}"),
         f"replayed exactly from the audit log: {report['replay_exact']}/{report['runs']}",
         f"re-execution gave an identical log: {report['reexecution_identical']}/{report['runs']}",
         (f"safety-relevant tampering detected: {report['tamper_safety_detected']}/"
@@ -390,13 +432,16 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--runs", type=int, default=DEFAULT_RUNS)
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
-    parser.add_argument("--write", action="store_true", help="save results/replay-fidelity.json")
+    parser.add_argument("--signed", action="store_true",
+                        help="measure with signed decisions and a sealed log (the W6 change)")
+    parser.add_argument("--write", action="store_true", help="save the results file")
     args = parser.parse_args(argv)
-    report = run_measurement(args.runs, args.seed)
+    report = run_measurement(args.runs, args.seed, signed=args.signed)
     print(_summary(report))
     if args.write:
         RESULTS_DIR.mkdir(exist_ok=True)
-        out = RESULTS_DIR / "replay-fidelity.json"
+        name = "replay-fidelity-signed.json" if args.signed else "replay-fidelity.json"
+        out = RESULTS_DIR / name
         out.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
         print(f"\nwrote {out}")
     ok = report["replay_exact"] == report["reexecution_identical"] == report["runs"]
