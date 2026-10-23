@@ -10,7 +10,7 @@ A coordinator may use this *internal* candidate sample before checking reviewer 
 
 ## Blinded packet
 
-Provide only opaque question identifiers and query text in a shuffled order, plus a separate reference corpus export with each entry's `FTA-*` ID, source content and citation. Build that export from `apps/fta/corpus.py` and reconcile it to the controlling `docs/fta-source-corpus.md`. Do not include `expected_ids`, question `type`, the original question ID if it reveals sampling, `current.json`, or variant outputs. The reviewer records corpus IDs (possibly none), cited evidence, uncertainty, and the date *before* seeing expected labels.
+Provide only opaque question identifiers and query text in a shuffled order, plus a separate reference corpus export with each entry's `FTA-*` ID, source content and citation. Build that export from `apps/fta/corpus.py` and reconcile it to the controlling `docs/fta-source-corpus.md`. Do not include `expected_ids`, question `type`, the original QIDs (`questions.csv` numbers them in contiguous blocks by type, e.g. Q37–Q46 are all `no_match`, so a QID always reveals the label), `current.json`, or variant outputs. The reviewer records corpus IDs (possibly none), cited evidence, uncertainty, and the date *before* seeing expected labels.
 
 ## Reconciliation and evidence
 
