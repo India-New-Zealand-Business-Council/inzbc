@@ -174,3 +174,28 @@ def test_main_writes_held_out_variant_reports_without_mixing_sets(
         )
         assert all(row["qid"].startswith("H") for row in blind_errors[name])
 
+
+def test_held_out_overlap_audit_detects_case_and_whitespace_matches() -> None:
+    from apps.fta.eval.run_eval import Question
+    from apps.fta.eval.variants import held_out_overlap
+
+    development = [Question("Q1", "  Milk   Powder ", frozenset({"FTA-013"}), "synonym")]
+    blind = [Question("H1", "milk powder", frozenset({"FTA-013"}), "synonym"),
+             Question("H2", "different question", frozenset({"FTA-013"}), "synonym")]
+    assert held_out_overlap(development, blind) == [
+        {"held_out_qid": "H1", "development_qid": "Q1", "query": "milk powder"}
+    ]
+
+
+def test_held_out_overlap_report_is_generated_and_identifies_existing_repeats(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    from apps.fta.eval.run_eval import HELD_OUT_CSV, load_questions
+    from apps.fta.eval.variants import held_out_overlap
+
+    monkeypatch.setattr(variants_module, "RESULTS_DIR", tmp_path)
+    assert main(["--write"]) == 0
+    overlap = json.loads((tmp_path / "held-out-overlap.json").read_text(encoding="utf-8"))
+    assert overlap == held_out_overlap(load_questions(), load_questions(HELD_OUT_CSV))
+    assert {row["held_out_qid"] for row in overlap} == {"H03", "H04"}
+    assert "WARNING: 2 held-out rows repeat development queries" in capsys.readouterr().out
