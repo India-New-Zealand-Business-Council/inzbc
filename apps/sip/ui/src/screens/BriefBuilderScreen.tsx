@@ -133,7 +133,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
   const [sourceEvidence, setSourceEvidence] = useState<Record<string, string>>({})
   const [sourceSave, setSourceSave] = useState<{ code: string; kind: 'saving' | 'error' | 'saved'; message?: string } | null>(null)
   const activeRun = useRef(report.runId)
-  activeRun.current = report.runId
+  useEffect(() => { activeRun.current = report.runId }, [report.runId])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -507,7 +507,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
           ) : null}
         </div>
         <p className="mb-2 text-sm text-slate-600">
-          {report.sourceCoverage.length} mandatory sources — {recordedSourceCount} recorded
+          {report.sourceCoverage.length} mandatory sources — {recordedSourceCount} selected locally; {unsavedSourceCount} missing or not saved to the run
         </p>
         <div className="space-y-2">
           {sourceGroups.map(([label, rows]) => {
@@ -543,6 +543,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
                           <th scope="col" className="px-3 py-2">
                             Fallback attempt (if inaccessible/excluded)
                           </th>
+                          <th scope="col" className="px-3 py-2">Evidence and confirmation</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -586,6 +587,36 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
                                 onChange={(event) => setSourceFallback(row.sourceId, event.target.value)}
                                 className="w-full rounded-md border border-inzbc-navy/20 px-2 py-1 text-sm transition-colors hover:border-inzbc-navy/40"
                               />
+                            </td>
+                            <td className="px-3 py-2 align-top">
+                              <label className="sr-only" htmlFor={`evidence-${row.sourceId}`}>
+                                Evidence reference for {row.sourceName}
+                              </label>
+                              <input
+                                id={`evidence-${row.sourceId}`}
+                                type="text"
+                                value={sourceEvidence[row.sip185Code] ?? ''}
+                                onChange={(event) => setSourceEvidence((prev) => ({
+                                  ...prev, [row.sip185Code]: event.target.value,
+                                }))}
+                                placeholder="Evidence URL or reference"
+                                className="w-full rounded-md border border-inzbc-navy/20 px-2 py-1 text-sm"
+                              />
+                              <button
+                                type="button"
+                                disabled={!isDraft || sourceSave?.kind === 'saving' || !sourceIdsByCode.has(row.sip185Code)}
+                                onClick={() => void saveSourceOutcome(row)}
+                                className="mt-1 rounded bg-inzbc-navy px-2 py-1 text-xs text-white disabled:opacity-50"
+                              >
+                                {sourceSave?.code === row.sip185Code && sourceSave.kind === 'saving'
+                                  ? 'Saving…' : 'Save confirmed outcome'}
+                              </button>
+                              {persistedOutcomes.get(row.sip185Code) === row.outcome && row.outcome
+                                ? <span className="ml-2 text-xs text-inzbc-forest">Saved for this run</span>
+                                : <span className="ml-2 text-xs text-slate-500">Not saved</span>}
+                              {sourceSave?.code === row.sip185Code && sourceSave.kind === 'error'
+                                ? <p role="alert" className="text-xs text-inzbc-crimson">{sourceSave.message}</p>
+                                : null}
                             </td>
                           </tr>
                         ))}
