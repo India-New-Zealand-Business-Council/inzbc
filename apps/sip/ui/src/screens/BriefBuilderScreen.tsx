@@ -593,6 +593,8 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
                               />
                             </td>
                             <td className="px-3 py-2 align-top">
+                              {row.outcome ? (
+                                <>
                               <label className="sr-only" htmlFor={`evidence-${row.sourceId}`}>
                                 Evidence reference for {row.sourceName}
                               </label>
@@ -621,6 +623,8 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
                               {sourceSave?.code === row.sip185Code && sourceSave.kind === 'error'
                                 ? <p role="alert" className="text-xs text-inzbc-crimson">{sourceSave.message}</p>
                                 : null}
+                                </>
+                              ) : <span className="text-xs text-slate-500">Choose an outcome first</span>}
                             </td>
                           </tr>
                         ))}
