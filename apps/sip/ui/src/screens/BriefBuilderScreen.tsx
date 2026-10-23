@@ -48,7 +48,7 @@ function categoryForSource(sip185Code: string): string {
 function SourceProgressIndicator({ recorded, total }: { recorded: number; total: number }) {
   return (
     <p className="rounded-md border border-inzbc-navy/20 bg-white p-3 text-sm text-slate-700 shadow-sm">
-      {recorded} / {total} sources recorded
+      {recorded} / {total} sources selected locally
     </p>
   )
 }
@@ -529,7 +529,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
                     {label} ({rows.length})
                   </span>
                   <span className="flex items-center gap-2 text-xs font-normal text-slate-500">
-                    {recordedInGroup} / {rows.length} recorded
+                    {recordedInGroup} / {rows.length} selected locally
                     <span aria-hidden="true">{isExpanded ? '▲' : '▼'}</span>
                   </span>
                 </button>
