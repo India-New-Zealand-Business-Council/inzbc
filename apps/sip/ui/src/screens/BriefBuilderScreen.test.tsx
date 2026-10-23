@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -501,11 +501,12 @@ describe('BriefBuilderScreen candidate source', () => {
     }))
     render(<ControlledBriefBuilder initial={reportOnRun()} />)
     await userEvent.click(screen.getByRole('button', { name: /nz official/i }))
-    await screen.findByText(/New Zealand Parliament/)
     // The source lookup resolves NZ-OFF-001 to the API's src-1 foreign key.
     await userEvent.selectOptions(screen.getAllByRole('combobox')[0]!, 'Included')
     await userEvent.type(screen.getAllByPlaceholderText('Evidence URL or reference')[0]!, 'internal://evidence/1')
-    await userEvent.click(screen.getAllByRole('button', { name: /save confirmed outcome/i })[0]!)
+    const save = screen.getAllByRole('button', { name: /save confirmed outcome/i })[0]!
+    await waitFor(() => expect(save).toBeEnabled())
+    await userEvent.click(save)
     expect(await screen.findByText('Saved for this run')).toBeInTheDocument()
     expect(posts).toHaveLength(1)
     expect(posts[0]?.url).toBe('/api/runs/run-1/source-checks')
