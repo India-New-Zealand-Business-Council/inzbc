@@ -1,0 +1,45 @@
+{
+  "status": "measured",
+  "runs": 200,
+  "seed": 20261024,
+  "round_trip_exact": 200,
+  "replay_exact_after_read": 200,
+  "application_update_refused": 200,
+  "db_tamper_safety_detected": 759,
+  "db_tamper_safety_applied": 759,
+  "db_tamper_safety_detected_without_key": 341,
+  "db_tamper_metadata_detected": 200,
+  "db_tamper_metadata_applied": 200,
+  "db_tamper_by_mutation": {
+    "forge-human-approver": {
+      "safety_relevant": true,
+      "applied": 200,
+      "detected": 200,
+      "detected_without_key": 0
+    },
+    "raise-candidate-to-critical": {
+      "safety_relevant": true,
+      "applied": 159,
+      "detected": 159,
+      "detected_without_key": 141
+    },
+    "drop-last-tool-record": {
+      "safety_relevant": true,
+      "applied": 200,
+      "detected": 200,
+      "detected_without_key": 200
+    },
+    "append-ungated-ceo-transition": {
+      "safety_relevant": true,
+      "applied": 200,
+      "detected": 200,
+      "detected_without_key": 0
+    },
+    "edit-a-reason": {
+      "safety_relevant": false,
+      "applied": 200,
+      "detected": 200,
+      "detected_without_key": 0
+    }
+  }
+}

@@ -950,3 +950,30 @@ def test_step_state_preconditions_and_type_guards() -> None:
             ToolAuditRecord,
         )
     )
+
+
+# A live model wraps its JSON in a Markdown fence in a large share of replies
+# (apps/sip/core/eval/live_adversary.py). One surrounding fence is unwrapped; nothing else is.
+_FENCED_OK = '```json\n{"tool": "fetch_candidates", "arguments": {}, "reason": "Next step."}\n```'
+
+
+def test_one_surrounding_json_fence_is_unwrapped() -> None:
+    assert parse_tool_proposal(_FENCED_OK).tool == "fetch_candidates"
+    assert parse_tool_proposal(_FENCED_OK.replace("```json", "```")).tool == "fetch_candidates"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        # The checks still apply to what the fence holds.
+        '```json\n{"tool": "fetch_candidates", "arguments": {}, "reason": "x", "production_enabled": true}\n```',
+        '```json\n{"tool": "approve_report", "arguments": {}, "reason": "x"}\n```',
+        # Prose around a fence, another language, or two objects are still refused.
+        'Here you go:\n' + _FENCED_OK,
+        _FENCED_OK.replace("```json", "```python"),
+        '```json\n{"tool": "fetch_candidates", "arguments": {}, "reason": "x"}\n{"tool": "x"}\n```',
+    ],
+)
+def test_a_fence_does_not_loosen_the_contract(text: str) -> None:
+    with pytest.raises(AgentProposalParseError):
+        parse_tool_proposal(text)
