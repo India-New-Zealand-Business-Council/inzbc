@@ -212,8 +212,17 @@ Read-only scan of each public route, after scrolling so the reveal animations ha
 
 The inzview fixes are merged but reach inzbc.org only when someone publishes in Vibe.
 
+## Keyboard-only checks, 24 October 2026
+
+`e2e/keyboard.spec.ts` and the keyboard test in `e2e/fta-a11y.spec.ts` drive the main flows with
+the keyboard alone, on every PR: the skip link moves focus into the page, every module opens and
+its introduction dismisses with Tab and Enter, focus is visibly outlined, the assistant can be
+asked and answered and returns focus to its box, and a member can query the FTA Explainer. All
+pass; no keyboard trap or unreachable control was found on those paths.
+
 ## Still to do for REQ-U-03
 
-- A keyboard-only pass of every page and screen.
+- A manual keyboard pass of the screens the automated tests do not walk (each workflow form,
+  the Comms brief and approval, and every inzbc.org page).
 - A screen-reader pass (NVDA or VoiceOver) of the main tasks.
 - Re-scan inzbc.org after the next Vibe publish.
