@@ -35,7 +35,7 @@ from collections.abc import Callable
 
 from apps.fta import explainer
 from apps.fta.corpus import CORPUS, TariffOutcome
-from apps.fta.eval.run_eval import HELD_OUT_CSV, RESULTS_DIR, evaluate, load_questions
+from apps.fta.eval.run_eval import HELD_OUT_CSV, RESULTS_DIR, Question, evaluate, load_questions
 
 # The usual defaults. With one short topic and sector per entry, length normalisation (b) has
 # little to work on, which is itself a finding worth recording rather than tuning away.
@@ -146,6 +146,29 @@ def compare(*, question_path=None) -> dict[str, dict[str, object]]:
     return {
         name: evaluate(questions, retrieve) for name, retrieve in variants().items()
     }
+
+
+def held_out_overlap(
+    development: list[Question], held_out: list[Question]
+) -> list[dict[str, str]]:
+    """Identify identical queries across sets, despite distinct question IDs.
+
+    A separately authored question is not genuinely unseen if its query already appears in
+    the development set. Report the overlap rather than silently deleting rows or
+    retroactively changing the pre-existing held-out dataset.
+    """
+    def normalized(query: str) -> str:
+        return " ".join(query.casefold().split())
+
+    development_by_query: dict[str, list[str]] = {}
+    for item in development:
+        development_by_query.setdefault(normalized(item.query), []).append(item.qid)
+    return [
+        {"held_out_qid": item.qid, "development_qid": development_qid,
+         "query": item.query}
+        for item in held_out
+        for development_qid in development_by_query.get(normalized(item.query), [])
+    ]
 
 
 def _matched_terms(query: str, entry_id: str, *, synonyms: bool) -> list[str]:
@@ -262,9 +285,14 @@ def main(argv: list[str] | None = None) -> int:
     # descriptive evidence only; it is not permission to tune the synonym map on held-out rows.
     held_out_reports = None
     held_out_errors = None
+    overlaps: list[dict[str, str]] = []
     if HELD_OUT_CSV.exists():
         held_out_reports = compare(question_path=HELD_OUT_CSV)
         held_out_errors = error_analysis(held_out_reports)
+        overlaps = held_out_overlap(load_questions(), load_questions(HELD_OUT_CSV))
+        if overlaps:
+            print(f"WARNING: {len(overlaps)} held-out rows repeat development queries: "
+                  + ", ".join(row["held_out_qid"] for row in overlaps))
         print("\nHeld-out questions (#390), separately scored:")
         print(_summary(held_out_reports))
         print("\n" + _errors_summary(held_out_errors))
@@ -285,6 +313,9 @@ def main(argv: list[str] | None = None) -> int:
                 out = RESULTS_DIR / filename
                 out.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
                 print(f"\nwrote {out}")
+            overlap_path = RESULTS_DIR / "held-out-overlap.json"
+            overlap_path.write_text(json.dumps(overlaps, indent=2) + "\n", encoding="utf-8")
+            print(f"\nwrote {overlap_path}")
     return 0
 
 
