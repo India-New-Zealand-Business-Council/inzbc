@@ -1,0 +1,177 @@
+{
+  "keyword": [
+    {
+      "qid": "H07",
+      "query": "visitor numbers",
+      "type": "synonym",
+      "expected": [
+        "FTA-023"
+      ],
+      "returned_top3": [],
+      "reason": "no_result",
+      "expected_matched": {
+        "FTA-023": []
+      }
+    },
+    {
+      "qid": "H09",
+      "query": "economic impact study",
+      "type": "synonym",
+      "expected": [
+        "FTA-018"
+      ],
+      "returned_top3": [
+        "FTA-022"
+      ],
+      "reason": "missed",
+      "top": "FTA-022",
+      "top_matched": [
+        "study"
+      ],
+      "expected_matched": {
+        "FTA-018": []
+      }
+    }
+  ],
+  "bm25": [
+    {
+      "qid": "H01",
+      "query": "logs",
+      "type": "synonym",
+      "expected": [
+        "FTA-004"
+      ],
+      "returned_top3": [],
+      "reason": "no_result",
+      "expected_matched": {
+        "FTA-004": []
+      }
+    },
+    {
+      "qid": "H02",
+      "query": "crayfish",
+      "type": "synonym",
+      "expected": [
+        "FTA-008"
+      ],
+      "returned_top3": [],
+      "reason": "no_result",
+      "expected_matched": {
+        "FTA-008": []
+      }
+    },
+    {
+      "qid": "H05",
+      "query": "overseas students",
+      "type": "synonym",
+      "expected": [
+        "FTA-022"
+      ],
+      "returned_top3": [],
+      "reason": "no_result",
+      "expected_matched": {
+        "FTA-022": []
+      }
+    },
+    {
+      "qid": "H07",
+      "query": "visitor numbers",
+      "type": "synonym",
+      "expected": [
+        "FTA-023"
+      ],
+      "returned_top3": [],
+      "reason": "no_result",
+      "expected_matched": {
+        "FTA-023": []
+      }
+    },
+    {
+      "qid": "H09",
+      "query": "economic impact study",
+      "type": "synonym",
+      "expected": [
+        "FTA-018"
+      ],
+      "returned_top3": [
+        "FTA-022"
+      ],
+      "reason": "missed",
+      "top": "FTA-022",
+      "top_matched": [
+        "study"
+      ],
+      "expected_matched": {
+        "FTA-018": []
+      }
+    }
+  ],
+  "bm25_synonyms": [
+    {
+      "qid": "H07",
+      "query": "visitor numbers",
+      "type": "synonym",
+      "expected": [
+        "FTA-023"
+      ],
+      "returned_top3": [],
+      "reason": "no_result",
+      "expected_matched": {
+        "FTA-023": []
+      }
+    },
+    {
+      "qid": "H09",
+      "query": "economic impact study",
+      "type": "synonym",
+      "expected": [
+        "FTA-018"
+      ],
+      "returned_top3": [
+        "FTA-022"
+      ],
+      "reason": "missed",
+      "top": "FTA-022",
+      "top_matched": [
+        "study"
+      ],
+      "expected_matched": {
+        "FTA-018": []
+      }
+    }
+  ],
+  "bm25_synonyms_framing": [
+    {
+      "qid": "H07",
+      "query": "visitor numbers",
+      "type": "synonym",
+      "expected": [
+        "FTA-023"
+      ],
+      "returned_top3": [],
+      "reason": "no_result",
+      "expected_matched": {
+        "FTA-023": []
+      }
+    },
+    {
+      "qid": "H09",
+      "query": "economic impact study",
+      "type": "synonym",
+      "expected": [
+        "FTA-018"
+      ],
+      "returned_top3": [
+        "FTA-022"
+      ],
+      "reason": "missed",
+      "top": "FTA-022",
+      "top_matched": [
+        "study"
+      ],
+      "expected_matched": {
+        "FTA-018": []
+      }
+    }
+  ]
+}

@@ -225,3 +225,36 @@ def test_nonoverlap_subset_excludes_duplicate_queries_and_keeps_historical_repor
             {"H03", "H04"}
         )
     assert "Non-overlapping held-out subset" in capsys.readouterr().out
+
+
+def test_write_removes_nonoverlap_reports_when_every_held_out_query_overlaps(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    # A stale eight-query report must not survive a rerun against a held-out set that has no
+    # non-overlapping queries, or it would read as a result for the current data.
+    monkeypatch.setattr(variants_module, "RESULTS_DIR", tmp_path)
+    variants_module.main(["--write"])
+    for filename in variants_module.NONOVERLAP_OUTPUTS:
+        assert (tmp_path / filename).exists()
+
+    all_overlap = tmp_path / "all_overlap.csv"
+    all_overlap.write_text(
+        "qid,query,expected_ids,type,checked_by\nH01,wool,FTA-005,synonym,\n", encoding="utf-8"
+    )
+    monkeypatch.setattr(variants_module, "HELD_OUT_CSV", all_overlap)
+    variants_module.main(["--write"])
+    for filename in variants_module.NONOVERLAP_OUTPUTS:
+        assert not (tmp_path / filename).exists()
+    assert (tmp_path / "variants-held-out.json").exists()
+
+
+def test_write_removes_all_held_out_reports_when_the_held_out_file_is_missing(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    monkeypatch.setattr(variants_module, "RESULTS_DIR", tmp_path)
+    variants_module.main(["--write"])
+    monkeypatch.setattr(variants_module, "HELD_OUT_CSV", tmp_path / "missing.csv")
+    variants_module.main(["--write"])
+    for filename in (*variants_module.HELD_OUT_OUTPUTS, *variants_module.NONOVERLAP_OUTPUTS):
+        assert not (tmp_path / filename).exists()
+    assert (tmp_path / "variants.json").exists()

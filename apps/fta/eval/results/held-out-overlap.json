@@ -1,0 +1,12 @@
+[
+  {
+    "held_out_qid": "H03",
+    "development_qid": "Q27",
+    "query": "milk powder"
+  },
+  {
+    "held_out_qid": "H04",
+    "development_qid": "Q31",
+    "query": "baby formula"
+  }
+]
