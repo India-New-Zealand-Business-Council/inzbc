@@ -3,7 +3,8 @@
 Block 4 2026, 5 Oct to 4 Dec. Role: tech lead, foundation, security and integration (lanes in
 [bhanu.md](bhanu.md)). This file is the dated copy of the personal plan. Every log below is kept
 here so git dates each entry. Prepared with AI assistance; the measurements are reproducible from
-the commands given, and the reflective entries are left for me to write in my own words.
+the commands given, and the reflection paragraphs are evidence-based drafts for me to personalise and confirm before
+assessment. Unreceived feedback and future-week measurements remain unfilled.
 
 ## Research component
 
@@ -165,7 +166,7 @@ opened in early August as the backlog.
 | People involved | Roshan, Paras, me as tech lead |
 | What I did | Answered every proposal in one place, [engineering-answers-2026-10-16.md](../engineering-answers-2026-10-16.md), instead of across a dozen threads. Kept the analysis that was useful (ADR-0008 kept as a comparison) and the deliverables that were real (#390, #392, #406). Declined the rota and the check-ins, and pointed to the existing CONTRIBUTING.md rule: new process issues need prior tech-lead authorisation |
 | Outcome | The tickets were closed as history. Review and merging stay with the tech lead, on a weekly cadence. Roshan's plan change log of 16 Oct records the outcome |
-| What I would do differently | [My own words] |
+| What I would do differently (draft) | Explain the approval boundary and rationale earlier, keep one decision record, and ask for actual feedback rather than assuming how the decision landed |
 
 ## Stakeholder and mentor feedback log
 
@@ -178,17 +179,26 @@ opened in early August as the backlog.
 | Date | Done today (PRs, issues, reviews) | Blocked or waiting on | Tomorrow |
 |---|---|---|---|
 | Fri 23 Oct | Reviewed and merged #433 to #446 and inzview #9 and #10. Fixed the review findings left on each, including a CI failure on #433. Closed inzview #8 | INZBC: #55, #189, sector graphics for the FTA Centre | Measure the agent baseline |
-| Sat 24 Oct | Recorded the #344 decision. Gate-safety, replay and tamper baselines measured. Literature review, solution domain and this plan written. Signed decisions and the sealed agent log built and re-measured. Coordinator agent runnable from the app as a rehearsal | Model credentials and a QA reviewer for judge vs human | Run the live judge, ask for blind labels |
+| Sat 24 Oct | Recorded the #344 decision. Gate-safety, replay and tamper baselines measured. Literature review, solution domain and this plan written. Signed decisions and the sealed agent log built and re-measured. Coordinator agent runnable from the app as a rehearsal | Independent QA reviewer labels for judge vs human; INZBC: #55, #189 | Obtain blind labels, then re-run the live judge |
 
 ## Weekly journal
 
 ### Week 3, 19 to 23 Oct
 
-**Planned vs what happened.** [My own words.]
+**Planned vs what happened (draft).** The plan placed baseline measurements and reading in W3.
+The committed work also brought the W6 signed-decision change forward to 24 Oct and recorded a
+live golden-set judge result. That moves implementation ahead of the original timeline, but the
+independent human comparison and practice PDR remain incomplete.
 
-**What helped or got in the way.** [My own words.]
+**What helped or got in the way (draft).** Reproducible harnesses let me compare the unsigned and
+signed designs without waiting for a production launch. The knockout runs make a perfect block
+rate more informative because they show the suite fails when controls are removed. The eight-case
+judge set is small and uses labels I wrote, so it cannot stand in for independent QA. #55 and
+#189 remain dependent on INZBC.
 
-**What I will change.** [My own words.]
+**What I will change (draft).** I would separate issue closure from active work time, record
+feedback on the day it is received and reserve time for independent validation. I will keep
+launch approval, engineering completion and research confidence as separate claims.
 
 ## Evidence index
 
@@ -204,3 +214,4 @@ opened in early August as the backlog.
 | 3.2 | Peer review log, conflict record | this file | 13 to 23 Oct |
 | PDR | Practice worksheet | [bhanu-pdr-worksheet.md](bhanu-pdr-worksheet.md) | 24 Oct |
 | PDR | Reflective report | [bhanu-reflective-report.md](bhanu-reflective-report.md) | due 20 Nov |
+| Handoff | Remaining work, owner and prerequisites | [bhanu-studio6-handoff.md](bhanu-studio6-handoff.md) | 24 Oct |

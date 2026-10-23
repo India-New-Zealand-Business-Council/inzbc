@@ -166,6 +166,12 @@ Left to do:
    from the brief text alone.
 2. Re-run the command above. Grow the set if the result will be relied on.
 
+A [brief-only blind packet](agent-safety-human-qa-packet.md) is ready. Give the reviewer only
+that file; the mapping to fixture IDs is in the operator handoff. Record this as a brief-only
+human comparison: the model receives both brief and source evidence, so the information available
+to the two reviewers differs. Disagreement may reflect that difference as well as judgement.
+No independent human labels or human-agreement result have been created.
+
 ## 5. After the change: signed decisions and a sealed log
 
 `apps/sip/core/audit_seal.py` implements the planned change.
@@ -193,6 +199,8 @@ result is unchanged. Same harness, same seed (20261024), same 200 runs:
 | Forged `HumanDecision` detected | 0/200 | **200/200** |
 | Safety-relevant tampering detected | 2396/2596 (92.3%) | **3196/3196 (100%)** |
 | Metadata-only tampering detected | 0/1000 | **1000/1000** |
+| Judge vs golden-set verdicts (24 Oct, #456) | 8/8 agree; Cohen's kappa 1.0; 17/17 score bounds | Not affected by signing; no post-change causal claim |
+| Judge vs independent human QA reviewer | Not measured; no blind labels | Pending independent labels and a live run |
 
 The after-mode total includes three attacks that only make sense once signatures exist, each
 applied 200 times and each detected 200 times:
