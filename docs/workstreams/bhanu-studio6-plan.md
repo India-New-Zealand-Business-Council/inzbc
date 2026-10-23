@@ -110,11 +110,12 @@ Keep these in every status report until they move, so the delay stays recorded a
 | [x] | W3 | #344 decision recorded on the issue (24 Oct) | 3.1 |
 | [ ] | W4 | Judge vs golden set, live run | 2.2 |
 | [ ] | W4 | Blind QA reviewer labels for the 8 golden cases, then judge vs human | 2.2 |
-| [ ] | W4 | Practice PDR worksheet | PDR |
+| [x] | W4 | Practice PDR worksheet drafted from the evidence ([bhanu-pdr-worksheet.md](bhanu-pdr-worksheet.md)); reflective answers still mine to write | PDR |
 | [ ] | W5 | Practice PDR feedback written down | PDR |
 | [x] | W6 | Signed human decisions and hash-chained audit log (brought forward, 24 Oct) | 2.2 |
 | [ ] | W7 | Before vs after table for all three harnesses (gate safety and replay done 24 Oct; judge waits on W4) | 2.2 |
-| [ ] | W7 | Reflective report, evidence index and final worksheet ready by Fri 20 Nov | PDR |
+| [x] | W3 | Decision record for the W6 change, four options compared ([ADR-0010](../decisions/ADR-0010-signed-human-decisions.md)) | 1.1 |
+| [ ] | W7 | Reflective report ([scaffold](bhanu-reflective-report.md)), evidence index (below) and final worksheet ready by Fri 20 Nov | PDR |
 | [ ] | W8 | Final PDR attended, Moodle upload done, feedback logged | PDR |
 
 ## Plan change log
@@ -124,6 +125,45 @@ Keep these in every status report until they move, so the delay stays recorded a
 | 2026-10-24 | W6 change set: signed human decisions and a hash-chained audit log | The replay baseline found a forged human decision is accepted (0/200 detected). This is the change with the most direct link to the research question |
 | 2026-10-24 | W6 change brought forward from 9 Nov | It needed no client input and the harness was ready. W6 and W7 now cover the judge measurements if W4 slips |
 | 2026-10-24 | Judge vs human split into two measurements | The golden labels are the rubric author's synthetic test labels, not a QA reviewer's decisions. Agreement with an independent reviewer has to be measured separately |
+
+## Decision record (1.1)
+
+How to close the forged-decision gap: database privileges only, server-held HMAC signatures,
+per-approver signatures, or an external ledger. Chose HMAC, and recorded per-approver signatures
+as the next step if INZBC needs proof of authorship. See
+[ADR-0010](../decisions/ADR-0010-signed-human-decisions.md).
+
+## Cycle time (1.2)
+
+Issues assigned to me and closed in the week, from GitHub. "Days open" runs from when the issue was
+created, not from when work started, so it overstates time spent working: most of these were
+opened in early August as the backlog.
+
+| Week | Closed | Avg days open (completed only) | Not planned | Blocked on INZBC | Note |
+|---|---|---|---|---|---|
+| W2, 12 Oct | 13 | 73.5 (11 completed) | 2 (#46, #201) | #55, #189 | #62 to #65 closed 16 Oct when the four AI builds merged |
+| W3, 19 Oct | 0 | n/a | 0 | #55, #189 | Work went out as PRs instead: #433 to #446 reviewed and merged, #447 and #448 merged, #449 and #450 open |
+| W4, 26 Oct | | | | | |
+| W5, 2 Nov | | | | | |
+| W6, 9 Nov | | | | | |
+| W7, 16 Nov | | | | | |
+
+## Peer review and mentoring log (3.2)
+
+| Date | Who | What I did | Outcome | Evidence |
+|---|---|---|---|---|
+| 13 Oct | Roshan | Pushed a fix to #394: a product reached through a synonym could rank below the general exports entry. Made the eval gate compare every question, not only the totals | Roshan kept the fix and adopted a test rule for future ranking changes | #394, his feedback log entry of 13 Oct |
+| 23 Oct | Roshan, Paras | Reviewed and merged #433 to #446, plus inzview #9 and #10. Fixed the findings left on each myself, including the CI failure on #433 | All merged with CI green | The PRs and their review comments |
+
+## Conflict resolution record (3.2)
+
+| Field | Entry |
+|---|---|
+| Issue | Process proposals opened as issues before they were agreed: a review rota (#320), daily GitHub check-ins (#405), and follow-on tracking issues (#406 to #415) |
+| People involved | Roshan, Paras, me as tech lead |
+| What I did | Answered every proposal in one place, [engineering-answers-2026-10-16.md](../engineering-answers-2026-10-16.md), instead of across a dozen threads. Kept the analysis that was useful (ADR-0008 kept as a comparison) and the deliverables that were real (#390, #392, #406). Declined the rota and the check-ins, and pointed to the existing CONTRIBUTING.md rule: new process issues need prior tech-lead authorisation |
+| Outcome | The tickets were closed as history. Review and merging stay with the tech lead, on a weekly cadence. Roshan's plan change log of 16 Oct records the outcome |
+| What I would do differently | [My own words] |
 
 ## Stakeholder and mentor feedback log
 
@@ -147,3 +187,18 @@ Keep these in every status report until they move, so the delay stays recorded a
 **What helped or got in the way.** [My own words.]
 
 **What I will change.** [My own words.]
+
+## Evidence index
+
+| Obj | Artefact | Link or file | Date |
+|---|---|---|---|
+| 1.1 | Decision record for the W6 change | [ADR-0010](../decisions/ADR-0010-signed-human-decisions.md) | 24 Oct |
+| 1.2 | Cycle time, feedback log, weekly journal | this file | from 23 Oct |
+| 2.1 | Literature review, 17 sources | [agent-safety-literature-review.md](../research/agent-safety-literature-review.md) | 24 Oct |
+| 2.1 | Solution domain | [agent-safety-solution-domain.md](../research/agent-safety-solution-domain.md) | 24 Oct |
+| 2.2 | Baseline and after measurements, harnesses, committed results | [agent-safety-baseline.md](../research/agent-safety-baseline.md), `apps/sip/core/eval/` | 24 Oct |
+| 2.2 | AI builds #62 to #65, signed decisions #448, agent in the app #449 | merged PRs | 16 and 24 Oct |
+| 3.1 | This plan, timeline, change log, daily log, status report lines | this file | from 23 Oct |
+| 3.2 | Peer review log, conflict record | this file | 13 to 23 Oct |
+| PDR | Practice worksheet | [bhanu-pdr-worksheet.md](bhanu-pdr-worksheet.md) | 24 Oct |
+| PDR | Reflective report | [bhanu-reflective-report.md](bhanu-reflective-report.md) | due 20 Nov |
