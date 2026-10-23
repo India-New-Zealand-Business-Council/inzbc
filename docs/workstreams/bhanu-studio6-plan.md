@@ -86,20 +86,21 @@ column comes from the same harness, seed and runs (baseline doc, section 5).
 | #64 quality judge | Done, 16 Oct | Advisory only. Agrees with the golden set 8/8 (kappa 1.0, 24 Oct). Agreement with a human reviewer not yet measured |
 | #65 streaming drafts | Done, 16 Oct | Named-reviewer gate unchanged |
 | #344 source outcomes | Decision recorded 24 Oct | Option A, analyst-confirmed manual outcomes. #446 merged |
-| #55 first production run | **Blocked on INZBC** | Needs a renewed SIP-191 authorisation and an approved PAT. Client's dependency, not engineering |
-| #189 launch approval | **Blocked on INZBC** | Production launch approval outstanding. Client's decision |
+| #55 first production run | **Unblocked 24 Oct** | SIP-191 authorisation and PAT in place, per the tech lead ([launch status](../launch-status-2026-10-24.md)). First production run to be recorded |
+| #189 launch approval | **Cleared 24 Oct** | Production go-ahead reported by the tech lead; INZBC's written record to be linked |
 | #303 written residual-risk acceptance | Waiting on INZBC | Verbal acceptance reported; written condition not yet met |
 | #45 site forms | Receiver merged (#433) | Form types, routing, retention and privacy notice are client decisions |
 
 ## Status report lines (client-owned delays)
 
-Keep these in every status report until they move, so the delay stays recorded as the client's:
+Both moved on 24 Oct ([launch status](../launch-status-2026-10-24.md)). Until then they were the
+client's, and the weekly rows below record them that way:
 
-- **#55 first production run:** blocked on INZBC renewing the SIP-191 authorisation and supplying
-  an approved PAT. The engineering path is ready, and #446 adds the analyst-confirmed source
-  checks.
-- **#189 launch approval:** production launch approval is outstanding from INZBC. Production and
-  automated distribution stay disabled until it is given.
+- **#55 first production run:** unblocked. SIP-191 authorisation and the live-collection PAT are
+  in place, per the tech lead. Record the first production run once it has happened.
+- **#189 launch approval:** cleared, per the tech lead. inzbc.org is live on the inzview build.
+  Link INZBC's written approval and close the issue. The coordinator agent still cannot run
+  production or distribute, by design.
 
 ## Evidence checklist
 

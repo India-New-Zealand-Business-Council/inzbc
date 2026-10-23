@@ -131,7 +131,7 @@ export function PlatformOverviewScreen() {
             >
               <h3 className="font-semibold text-inzbc-ink">{control.name}</h3>
               <p className="mt-1 text-sm text-slate-700">{control.detail}</p>
-              <p className="mt-2 font-mono text-xs text-inzbc-ink/55">{control.where}</p>
+              <p className="mt-2 font-mono text-xs text-inzbc-ink/75">{control.where}</p>
             </li>
           ))}
         </ul>

@@ -25,7 +25,7 @@ have happened.
 | W7 measurement table | Golden-set row is ready. After human QA, record raw agreement, case count and kappa, then check W7 only when all three harnesses' evidence is complete. | Session | Fri 20 Nov |
 | Final PDR | Rehearse, attend the booked meeting, upload the final material to Moodle and verify the receipt. Record real comments and finalise the worksheet. No booking or upload is claimed. | Bhanu | Upload by Fri 27 Nov, 10:30 AM NZDT |
 | Signing configuration | Follow [rollout and rotation prerequisites](../secrets-register.md#decision-signing-key-rollout-and-rotation-prerequisites). Set the server-only key before considering enforcement; deployed settings and legacy runs are not verified. | Tech lead / deployment operator | Before enforcement |
-| Signing enforcement | Enable only after legacy runs are closed and staging checks succeed; maintain a path for unsigned historical replay. Production launch approval remains separate. | Tech lead | Conditional |
+| Signing enforcement | Enable only after legacy runs are closed and staging checks succeed; maintain a path for unsigned historical replay. | Tech lead | Conditional |
 | Per-approver keys | ADR-0010 next step only if INZBC needs it; no new key infrastructure commissioned. | INZBC | Conditional |
 
 ## Human labels: operator instructions (keep from the blind reviewer)
@@ -69,12 +69,15 @@ undefined if returned); do not assume agreement will be perfect. Update baseline
 the before/after judge row, the plan and the worksheet with the measured result. Do not overwrite
 recorded live evidence with a `--write` run that has no labels or lacks model configuration.
 
-## Status lines to retain in every report
+## Launch status
 
-- **#55 first production run:** still open, blocked on INZBC renewing SIP-191 authorisation and
-  supplying an approved PAT. Do not run production without them.
-- **#189 launch approval:** still open; production launch approval remains outstanding from
-  INZBC. Production and automated distribution stay disabled until it is given.
+Both client dependencies cleared on 24 Oct, per the tech lead ([launch status](../launch-status-2026-10-24.md)):
+
+- **#55 first production run:** unblocked. SIP-191 authorisation and the live-collection PAT are
+  in place. Record the first production run once it has happened.
+- **#189 launch approval:** cleared, and inzbc.org is live on the inzview build. Link INZBC's
+  written approval and close the issue. The coordinator agent still cannot run production or
+  distribute, by design.
 
 Reflection and worksheet paragraphs have been drafted from the recorded evidence at Bhanu's
 request. They need his personalisation and confirmation before assessment. Future journals,

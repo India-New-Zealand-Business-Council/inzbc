@@ -73,7 +73,7 @@ existing issues and distinguish client decisions from engineering work.
 - #97 and #192: ownership/OAuth registration and platform choice settled. See the
   [16 October decision update](../meetings/client/2026-10-16-decision-update.md).
 - #133/#134: session and written acceptance reported complete; source location still needed.
-- #189: production launch approval remains outstanding.
+- #189: production go-ahead reported 24 Oct; link INZBC's written approval and close ([launch status](../launch-status-2026-10-24.md)).
 - #291: handover recipient and recorded sponsor session remain client dependencies.
 
 Previously stale next-up entries have been reconciled: redaction (#37), auth/audit (#42),

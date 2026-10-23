@@ -17,7 +17,7 @@ The technical lead has reported a client session and written sign-off (see `docs
 | FTA retrieval research (#387) | Source verification, annotated bibliography and design conclusions | Intelligence & Data, with Technical Lead review |
 | FTA depth API (#392) | Merged in PR #433 (Technical Lead): `depth` parameter with role checks, regenerated OpenAPI/client types and tests. Remaining: link the merged evidence here | Technical Lead |
 | SIP source coverage (#344) | Decide whether source outcomes are generated automatically or remain manual; implement only approved design | Technical Lead to resolve cross-component design |
-| SIP live collection (#55) | **Fresh INZBC SIP-191 authorization and a PAT for live collection** are prerequisites, per `docs/workstreams/roshan.md`; `.github/workflows/sip-full-walk.yml` already exercises the backend | Technical Lead coordinates authorization; Intelligence & Data executes authorized run |
+| SIP live collection (#55) | **Unblocked 24 Oct** per the tech lead: SIP-191 authorization and the live-collection PAT are in place ([launch status](../launch-status-2026-10-24.md)). Record the first production run there; `.github/workflows/sip-full-walk.yml` already exercises the backend | Technical Lead coordinates authorization; Intelligence & Data executes authorized run |
 | SIP safety | Fail-closed distribution, human review, audit and security test evidence | Technical Lead |
 | AI Communications Assistant | Redaction, restricted-input and human-review evidence against canonical handover O3 criteria | Technical Lead |
 | Public website | Cutover, redirects, accessibility and operational evidence against canonical handover O4 criteria | Product & UX / Technical Lead |
