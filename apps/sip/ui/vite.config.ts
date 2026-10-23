@@ -24,9 +24,9 @@ export default defineConfig({
   },
   server: {
     // Same-origin in deployment (ADR-0004); this proxy keeps the dev shape identical rather than
-    // hiding the boundary. `/api/runs`, `/api/candidates` and `/api/dashboard` are live behind
-    // this proxy today (#237, #242, #47). The report/decision endpoints the other four screens
-    // target are still unbuilt, so src/api/reportsStore.ts stays fixture-backed for those.
+    // hiding the boundary. `/api/runs`, `/api/candidates`, `/api/dashboard` and the report/decision
+    // endpoints (`/api/reports`, `/ruling`, `/distribution`) are live behind this proxy (#237,
+    // #242, #47, #361); see src/api/reportsStore.ts for the one path still fixture-backed and why.
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:8000',
