@@ -14,7 +14,11 @@ import { SCREEN_GROUPS, type ScreenId } from '../types'
 import { CommsAssistant } from '@comms/components/CommsAssistant'
 import { FtaQuery } from '@fta/components/FtaQuery'
 import { Dashboard as MemberDashboard } from '@member/pages/Dashboard'
+import { Welcome as CommsWelcome } from '@comms/components/Welcome'
+import { Welcome as FtaWelcome } from '@fta/components/Welcome'
+import { Welcome as MemberWelcome } from '@member/components/Welcome'
 import { Footer } from './Footer'
+import { Welcome as SipWelcome } from './Welcome'
 
 const LOGO_URL = 'https://static.wixstatic.com/media/df219d_0b8e6333d53841efaf66f675038a0798~mv2.jpg'
 
@@ -237,6 +241,11 @@ export function AppShell() {
             </p>
           ) : null}
         </div>
+        {/* Each module's own first-visit introduction, the same one its standalone app shows. */}
+        {WORKFLOW_SCREENS.has(screen) || screen === 'runs-candidates' ? <SipWelcome /> : null}
+        {screen === 'fta' ? <FtaWelcome /> : null}
+        {screen === 'comms' ? <CommsWelcome /> : null}
+        {screen === 'member' ? <MemberWelcome /> : null}
         {screen === 'brief-builder' ? <BriefBuilderScreen report={report} onChange={setReport} /> : null}
         {screen === 'qa-review' ? <QaReviewScreen report={report} onChange={setReport} /> : null}
         {screen === 'ceo-decision' ? <CeoDecisionScreen report={report} onChange={setReport} /> : null}

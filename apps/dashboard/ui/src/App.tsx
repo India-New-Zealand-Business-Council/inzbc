@@ -2,6 +2,7 @@ import { ComingSoon } from './components/ComingSoon'
 import { ExecutiveOverview } from './components/ExecutiveOverview'
 import { Footer } from './components/Footer'
 import { Header } from './components/Header'
+import { Welcome } from './components/Welcome'
 import './index.css'
 
 export function App() {
@@ -19,6 +20,7 @@ export function App() {
               data layer (#47).
             </p>
           </div>
+          <Welcome />
           <ExecutiveOverview />
           <ComingSoon />
         </div>

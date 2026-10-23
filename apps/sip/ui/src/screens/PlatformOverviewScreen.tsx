@@ -1,4 +1,5 @@
 import { ExecutiveOverview } from '@dashboard/components/ExecutiveOverview'
+import { PlatformAssistant } from '../components/PlatformAssistant'
 
 /** One control, its enforcement point, and where it is proven. */
 interface Control {
@@ -67,10 +68,10 @@ const CONTROLS: Control[] = [
 //   CI jobs           the job keys in .github/workflows/ci.yml
 //   AI SDK            grep -rl 'anthropic\|openai' --include=*.py services apps scripts
 const SCALE: { value: string; label: string; note: string }[] = [
-  { value: '60', label: 'REST operations', note: 'across 51 paths, 12 routers' },
+  { value: '68', label: 'REST operations', note: 'across 58 paths, 15 routers' },
   { value: '26', label: 'database tables', note: '50 foreign keys, 31 CHECK constraints' },
   { value: '15', label: 'append-only triggers', note: 'plus TRUNCATE guards' },
-  { value: '1,191', label: 'automated tests', note: 'against a real Postgres' },
+  { value: '1,518', label: 'automated tests', note: 'against a real Postgres' },
   { value: '9', label: 'CI jobs', note: 'gating every merge' },
   { value: '1', label: 'file importing an AI SDK', note: 'of ~10,000 lines' },
 ]
@@ -78,6 +79,8 @@ const SCALE: { value: string; label: string; note: string }[] = [
 export function PlatformOverviewScreen() {
   return (
     <div className="space-y-8">
+      <PlatformAssistant />
+
       <section
         aria-labelledby="scale-heading"
         className="rounded-2xl border border-inzbc-ink/10 bg-white p-6 shadow-sm"

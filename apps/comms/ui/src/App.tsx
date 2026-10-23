@@ -1,6 +1,7 @@
 import { CommsAssistant } from './components/CommsAssistant'
 import { Footer } from './components/Footer'
 import { Header } from './components/Header'
+import { Welcome } from './components/Welcome'
 import './index.css'
 
 export function App() {
@@ -23,6 +24,9 @@ export function App() {
             spotlights. Every draft needs a named human reviewer before it is sent or published
             (docs/modules/comms-assistant.md).
           </p>
+          <div className="mt-6">
+            <Welcome />
+          </div>
           <CommsAssistant />
         </div>
       </main>
