@@ -286,6 +286,8 @@ def main(argv: list[str] | None = None) -> int:
     held_out_reports = None
     held_out_errors = None
     overlaps: list[dict[str, str]] = []
+    nonoverlap_reports = None
+    nonoverlap_errors = None
     if HELD_OUT_CSV.exists():
         held_out_reports = compare(question_path=HELD_OUT_CSV)
         held_out_errors = error_analysis(held_out_reports)
@@ -293,6 +295,19 @@ def main(argv: list[str] | None = None) -> int:
         if overlaps:
             print(f"WARNING: {len(overlaps)} held-out rows repeat development queries: "
                   + ", ".join(row["held_out_qid"] for row in overlaps))
+        overlapping_ids = {row["held_out_qid"] for row in overlaps}
+        nonoverlap = [
+            question for question in load_questions(HELD_OUT_CSV)
+            if question.qid not in overlapping_ids
+        ]
+        if nonoverlap:
+            nonoverlap_reports = {
+                name: evaluate(nonoverlap, retrieve)
+                for name, retrieve in variants().items()
+            }
+            nonoverlap_errors = error_analysis(nonoverlap_reports)
+            print("\\nNon-overlapping held-out subset (descriptive, not fully independent):")
+            print(_summary(nonoverlap_reports))
         print("\nHeld-out questions (#390), separately scored:")
         print(_summary(held_out_reports))
         print("\n" + _errors_summary(held_out_errors))
@@ -315,7 +330,15 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"\nwrote {out}")
             overlap_path = RESULTS_DIR / "held-out-overlap.json"
             overlap_path.write_text(json.dumps(overlaps, indent=2) + "\n", encoding="utf-8")
-            print(f"\nwrote {overlap_path}")
+            print(f"\\nwrote {overlap_path}")
+            if nonoverlap_reports is not None and nonoverlap_errors is not None:
+                for filename, data in (
+                    ("variants-held-out-nonoverlap.json", nonoverlap_reports),
+                    ("variant_errors-held-out-nonoverlap.json", nonoverlap_errors),
+                ):
+                    out = RESULTS_DIR / filename
+                    out.write_text(json.dumps(data, indent=2) + "\\n", encoding="utf-8")
+                    print(f"\\nwrote {out}")
     return 0
 
 
