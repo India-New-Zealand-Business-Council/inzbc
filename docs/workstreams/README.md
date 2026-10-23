@@ -33,8 +33,9 @@ and existing urgent security/incident procedures.
 ## Studio 6 (5 Oct to 4 Dec 2026)
 How the team works this block is set by
 [ADR-0008](../decisions/ADR-0008-delivery-process.md) (proposed until the team has scored it).
-Personal Studio 6 plans sit next to the worklogs, for example
-[roshan-studio6-plan.md](roshan-studio6-plan.md).
+Personal Studio 6 plans sit next to the worklogs:
+[roshan-studio6-plan.md](roshan-studio6-plan.md) and
+[bhanu-studio6-plan.md](bhanu-studio6-plan.md).
 
 ## Quality standard (every change)
 1. **Understand** — read the task and the code it touches; trace the real flow.
