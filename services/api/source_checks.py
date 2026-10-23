@@ -30,8 +30,9 @@ from dataclasses import dataclass
 import psycopg
 from fastapi import APIRouter, Depends
 from psycopg.rows import dict_row
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
+from apps.sip.collector.source_register import FALLBACK_SEQUENCE
 from apps.sip.pipeline.models import SourceOutcome
 from services.api.audit import record_audit
 from services.api.auth import ANALYST, SIP_OWNER, STAFF_READ, Principal
@@ -193,6 +194,36 @@ class RecordSourceCheckIn(BaseModel):
     fallback_used: bool = False
     access_error: str | None = None
     notes: str | None = None
+
+    @model_validator(mode="after")
+    def validate_method_and_confirmed_evidence(self) -> "RecordSourceCheckIn":
+        """Reject unapproved collection claims at the API boundary, not only in the UI.
+
+        Older collector callers may omit notes/fallback trails; do not reinterpret those as
+        analyst confirmation. New UI confirmations explicitly encode their attempt sequence.
+        """
+        if self.method is not None and self.method not in FALLBACK_SEQUENCE:
+            raise ValueError("unapproved SIP-185 collection method")
+        if self.notes and self.notes.startswith("Analyst-confirmed evidence: "):
+            lines = self.notes.splitlines()
+            evidence = lines[0].removeprefix("Analyst-confirmed evidence: ").strip()
+            trail_line = next((x for x in lines if x.startswith("Fallback trail: ")), None)
+            if not evidence or trail_line is None:
+                raise ValueError("confirmed source checks require evidence and fallback trail")
+            trail = [s.strip() for s in trail_line.removeprefix("Fallback trail: ").split(";") if s.strip()]
+            indexes = [FALLBACK_SEQUENCE.index(step) for step in trail if step in FALLBACK_SEQUENCE]
+            if len(indexes) != len(trail) or indexes != sorted(set(indexes)):
+                raise ValueError("unapproved, duplicate or out-of-order SIP-185 fallback trail")
+            if self.method != (trail[-1] if trail else None):
+                raise ValueError("confirmed source check method disagrees with fallback trail")
+            has_fallback = any(step != FALLBACK_SEQUENCE[0] for step in trail)
+            if self.fallback_used != has_fallback:
+                raise ValueError("fallback_used must match actual SIP-185 methods recorded")
+            reason = next((x.removeprefix("Access failure: ").strip() for x in lines if x.startswith("Access failure: ")), "")
+            needs_reason = self.outcome in {SourceOutcome.INACCESSIBLE, SourceOutcome.EXCLUDED} or has_fallback
+            if needs_reason and (not reason or self.access_error != reason):
+                raise ValueError("access/fallback failure requires a matching recorded reason")
+        return self
 
 
 @router.post(
