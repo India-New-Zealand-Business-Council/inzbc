@@ -4,6 +4,8 @@ Prepared 16 October 2026 for INZBC / Sunil, the confirmed post-placement owner (
 This assembles the existing material for #291. **The handover walkthrough has not happened**,
 as corrected by the tech lead on 16 October. The pack is not evidence of that session.
 
+The [supplemental readiness register](operations/sunil-handover-readiness.md) indexes unresolved evidence and authorization decisions; this pack remains the canonical handover source.
+
 ## Operating material
 
 - [Platform operator guide](operator-guide.md): sessions, roles and an end-to-end SIP day.
