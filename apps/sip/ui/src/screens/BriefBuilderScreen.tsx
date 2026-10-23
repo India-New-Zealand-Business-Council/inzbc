@@ -129,6 +129,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
   // is on screen is never ambiguous.
   const [candidates, setCandidates] = useState<Candidate[]>([])
   const [sourceIdsByCode, setSourceIdsByCode] = useState<Map<string, string>>(new Map())
+  const [loadedRun, setLoadedRun] = useState<string | null>(null)
   const [persistedOutcomes, setPersistedOutcomes] = useState<Map<string, SourceOutcome>>(new Map())
   const [sourceEvidence, setSourceEvidence] = useState<Record<string, string>>({})
   const [sourceSave, setSourceSave] = useState<{ code: string; kind: 'saving' | 'error' | 'saved'; message?: string } | null>(null)
@@ -142,10 +143,6 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
     // candidates under another run's number -- and then hash those candidates against the
     // selected run's id on submit.
     const runId = report.runId
-    setSourceIdsByCode(new Map())
-    setPersistedOutcomes(new Map())
-    setSourceSave(null)
-    setSourceEvidence({})
     if (!runId) return
     void (async () => {
       try {
@@ -155,6 +152,9 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
           listSourceChecks(runId, { signal: controller.signal }),
         ])
         if (controller.signal.aborted || activeRun.current !== runId) return
+        setLoadedRun(runId)
+        setSourceSave(null)
+        setSourceEvidence({})
         setSourceIdsByCode(new Map([...sources.values()].filter((source) => Boolean(source.sip185_code)).map((source) => [source.sip185_code as string, source.id])))
         const checkedCodes = new Map<string, SourceOutcome>()
         for (const check of checks) {
@@ -259,7 +259,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
     [report.sourceCoverage],
   )
   const unsavedSourceCount = report.sourceCoverage.filter(
-    (row) => row.mandatory && (row.outcome === '' || persistedOutcomes.get(row.sip185Code) !== row.outcome),
+    (row) => row.mandatory && (row.outcome === '' || loadedRun !== report.runId || persistedOutcomes.get(row.sip185Code) !== row.outcome),
   ).length
 
   function toggleCategory(label: string) {
@@ -328,7 +328,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
     const runId = report.runId
     const sourceId = sourceIdsByCode.get(row.sip185Code)
     const evidence = sourceEvidence[row.sip185Code]?.trim()
-    if (!runId || !sourceId || !row.outcome || !evidence) {
+    if (!runId || loadedRun !== runId || !sourceId || !row.outcome || !evidence) {
       setSourceSave({ code: row.sip185Code, kind: 'error', message: 'Provide an outcome, evidence reference and valid run before saving.' })
       return
     }
@@ -604,14 +604,14 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
                               />
                               <button
                                 type="button"
-                                disabled={!isDraft || sourceSave?.kind === 'saving' || !sourceIdsByCode.has(row.sip185Code)}
+                                disabled={!isDraft || loadedRun !== report.runId || sourceSave?.kind === 'saving' || !sourceIdsByCode.has(row.sip185Code)}
                                 onClick={() => void saveSourceOutcome(row)}
                                 className="mt-1 rounded bg-inzbc-navy px-2 py-1 text-xs text-white disabled:opacity-50"
                               >
                                 {sourceSave?.code === row.sip185Code && sourceSave.kind === 'saving'
                                   ? 'Saving…' : 'Save confirmed outcome'}
                               </button>
-                              {persistedOutcomes.get(row.sip185Code) === row.outcome && row.outcome
+                              {loadedRun === report.runId && persistedOutcomes.get(row.sip185Code) === row.outcome && row.outcome
                                 ? <span className="ml-2 text-xs text-inzbc-forest">Saved for this run</span>
                                 : <span className="ml-2 text-xs text-slate-500">Not saved</span>}
                               {sourceSave?.code === row.sip185Code && sourceSave.kind === 'error'
