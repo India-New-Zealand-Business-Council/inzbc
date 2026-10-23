@@ -48,6 +48,12 @@ from apps.sip.collector.verification import (
     UnverifiedHighSignalError,
     enforce_verification_gate,
 )
+from apps.sip.core.audit_seal import (
+    decision_signature_valid,
+    require_key,
+    seal_audit,
+    seal_valid,
+)
 from apps.sip.core.orchestrator import (
     CorruptHistory,
     HumanGateRequired,
@@ -537,6 +543,11 @@ class AgentOrchestrator:
     def brief_draft(self) -> BriefDraftRecord | None:
         return self.__brief_draft
 
+    def sealed_audit_log(self, key: bytes) -> tuple[AgentRunAuditLog, str]:
+        """The audit log and its seal. The seal is made by the server, which holds the key."""
+        audit = self.audit_log()
+        return audit, seal_audit(audit, key)
+
     def audit_log(self) -> AgentRunAuditLog:
         return AgentRunAuditLog(
             run_id=self.__run_id,
@@ -871,6 +882,8 @@ def replay_agent_audit(
     audit: AgentRunAuditLog,
     *,
     source_id_lookup: SourceIdLookup,
+    signing_key: bytes | None = None,
+    seal: str | None = None,
 ) -> Orchestrator:
     """Deterministically replay and verify an `AgentRunAuditLog` without calling a model.
 
@@ -887,6 +900,11 @@ def replay_agent_audit(
     - any candidate carries an out-of-range score or an unverified `High`/`Critical` signal; or
     - the drafted brief's `content_sha256` does not match the canonical hash of the included
       candidates once the run has reached `Report Drafted`.
+
+    With `signing_key` (the server's decision signing key), it also refuses a log whose `seal`
+    is missing or does not match, and any human-gated transition whose decision lacks a valid
+    signature for that run and that exact transition. Without the key, these two checks cannot
+    run, and a forged decision carrying any approver would replay as valid.
     """
     if type(audit) is not AgentRunAuditLog:
         raise CorruptHistory(
@@ -896,6 +914,27 @@ def replay_agent_audit(
         raise TypeError("source_id_lookup must be an exact SourceIdLookup instance")
 
     orchestrator = Orchestrator.from_history(audit.transitions, run_id=audit.run_id)
+
+    if signing_key is not None:
+        require_key(signing_key)
+        if not seal_valid(audit, seal, signing_key):
+            raise CorruptHistory(
+                "audit log seal is missing or does not match: the log was altered after it was "
+                "sealed, or was never sealed"
+            )
+        for index, transition in enumerate(audit.transitions):
+            if not is_human_gated(transition.from_state, transition.to_state):
+                continue
+            decision = transition.human_decision
+            if decision is None or not decision_signature_valid(
+                signing_key, decision.signature, run_id=audit.run_id,
+                from_state=transition.from_state, to_state=transition.to_state,
+                approver=decision.approver, decision=decision.decision, note=decision.note,
+            ):
+                raise CorruptHistory(
+                    f"transition {index} ({transition.from_state.value} -> "
+                    f"{transition.to_state.value}) carries no valid signed human decision"
+                )
 
     expected_transitions: list[tuple[RunState, RunState]] = []
     for index, record in enumerate(audit.tool_records):

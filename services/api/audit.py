@@ -29,6 +29,7 @@ def record_audit(
     new_value: str | None = None,
     reason: str | None = None,
     approval_ref: str | None = None,
+    decision_signature: str | None = None,
 ) -> int:
     """Insert one row into `audit_log` on `conn`, without committing; returns the new row id.
 
@@ -43,8 +44,10 @@ def record_audit(
     with conn.cursor(row_factory=tuple_row) as cur:
         cur.execute(
             "insert into audit_log "
-            "(user_id, action, record_type, record_id, old_value, new_value, reason, approval_ref) "
-            "values (%s, %s, %s, %s, %s, %s, %s, %s) returning id",
-            (user_id, action, record_type, record_id, old_value, new_value, reason, approval_ref),
+            "(user_id, action, record_type, record_id, old_value, new_value, reason, approval_ref, "
+            "decision_signature) "
+            "values (%s, %s, %s, %s, %s, %s, %s, %s, %s) returning id",
+            (user_id, action, record_type, record_id, old_value, new_value, reason, approval_ref,
+             decision_signature),
         )
         return cur.fetchone()[0]

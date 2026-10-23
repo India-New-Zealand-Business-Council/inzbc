@@ -116,9 +116,19 @@ class HumanDecision:
     approver: str
     decision: str
     note: str | None = None
+    # HMAC-SHA256 the server stores when an authenticated person records the decision
+    # (`apps/sip/core/audit_seal.sign_decision`). Replay with the signing key refuses a gated
+    # transition whose decision lacks a valid signature, which is what stops a forged approval.
+    signature: str | None = None
 
     def __post_init__(self) -> None:
         _require_non_blank(self)
+        if self.signature is not None and (
+            not isinstance(self.signature, str)
+            or len(self.signature) != 64
+            or any(c not in "0123456789abcdef" for c in self.signature)
+        ):
+            raise ValueError("HumanDecision signature must be 64 lowercase hex characters")
 
 
 def _require_non_blank(decision: HumanDecision) -> None:

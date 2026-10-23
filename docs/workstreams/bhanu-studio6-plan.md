@@ -57,20 +57,22 @@ controls guarantee it never skips a human approval step?
 
 | Measurement | Baseline | Target | After the W6 change |
 |---|---|---|---|
-| Gate-safety attacks blocked | **48/48 (100%)** | 100% | |
-| Control knockouts that let their own attacks through | **4/4** | 4/4 (proves the suite can fail) | |
-| Runs replayed exactly from the audit log | **200/200** | 200/200 | |
-| Runs re-executed to an identical log | **200/200** | 200/200 | |
-| Safety-relevant tampering detected | **2396/2596 (92.3%)** | 100% | |
-| Forged human decision detected | **0/200** | 200/200 | |
-| Judge vs golden-set verdicts | Not run (no model credentials) | Report with kappa | |
-| Judge vs human QA reviewer | Not measured (no reviewer labels yet) | Report with kappa | |
+| Gate-safety attacks blocked | **48/48 (100%)** | 100% | 48/48 |
+| Control knockouts that let their own attacks through | **4/4** | 4/4 (proves the suite can fail) | 4/4 |
+| Runs replayed exactly from the audit log | **200/200** | 200/200 | 200/200 |
+| Runs re-executed to an identical log | **200/200** | 200/200 | 200/200 |
+| Safety-relevant tampering detected | **2396/2596 (92.3%)** | 100% | **3196/3196 (100%)** |
+| Forged human decision detected | **0/200** | 200/200 | **200/200** |
+| Metadata-only tampering detected | 0/1000 | Not a target | 1000/1000 |
+| Judge vs golden-set verdicts | Not run (no model credentials) | Report with kappa | Not affected by the change |
+| Judge vs human QA reviewer | Not measured (no reviewer labels yet) | Report with kappa | Not affected by the change |
 
 What the baseline shows: the agent cannot cross a human gate. 48 of 48 attempts fail, and each
 control is proven necessary by its knockout. The audit artefact has a weakness the agent does not.
-Someone with write access to stored logs could forge a human approval that replay accepts. Today
-that is held off by database privileges (INSERT and SELECT only), not by the log itself. That is
-the W6 change.
+Someone with write access to stored logs could forge a human approval that replay accepts. At
+baseline that was held off by database privileges (INSERT and SELECT only), not by the log itself.
+The W6 change, made early on 24 Oct, signs each human decision and seals the agent log. The "After"
+column comes from the same harness, seed and runs (baseline doc, section 5).
 
 ## Issues
 
@@ -110,8 +112,8 @@ Keep these in every status report until they move, so the delay stays recorded a
 | [ ] | W4 | Blind QA reviewer labels for the 8 golden cases, then judge vs human | 2.2 |
 | [ ] | W4 | Practice PDR worksheet | PDR |
 | [ ] | W5 | Practice PDR feedback written down | PDR |
-| [ ] | W6 | Signed human decisions and hash-chained audit log | 2.2 |
-| [ ] | W7 | Before vs after table for all three harnesses | 2.2 |
+| [x] | W6 | Signed human decisions and hash-chained audit log (brought forward, 24 Oct) | 2.2 |
+| [ ] | W7 | Before vs after table for all three harnesses (gate safety and replay done 24 Oct; judge waits on W4) | 2.2 |
 | [ ] | W7 | Reflective report, evidence index and final worksheet ready by Fri 20 Nov | PDR |
 | [ ] | W8 | Final PDR attended, Moodle upload done, feedback logged | PDR |
 
@@ -120,6 +122,7 @@ Keep these in every status report until they move, so the delay stays recorded a
 | Date | Change | Why |
 |---|---|---|
 | 2026-10-24 | W6 change set: signed human decisions and a hash-chained audit log | The replay baseline found a forged human decision is accepted (0/200 detected). This is the change with the most direct link to the research question |
+| 2026-10-24 | W6 change brought forward from 9 Nov | It needed no client input and the harness was ready. W6 and W7 now cover the judge measurements if W4 slips |
 | 2026-10-24 | Judge vs human split into two measurements | The golden labels are the rubric author's synthetic test labels, not a QA reviewer's decisions. Agreement with an independent reviewer has to be measured separately |
 
 ## Stakeholder and mentor feedback log
@@ -133,7 +136,7 @@ Keep these in every status report until they move, so the delay stays recorded a
 | Date | Done today (PRs, issues, reviews) | Blocked or waiting on | Tomorrow |
 |---|---|---|---|
 | Fri 23 Oct | Reviewed and merged #433 to #446 and inzview #9 and #10. Fixed the review findings left on each, including a CI failure on #433. Closed inzview #8 | INZBC: #55, #189, sector graphics for the FTA Centre | Measure the agent baseline |
-| Sat 24 Oct | Recorded the #344 decision. Gate-safety, replay and tamper baselines measured. Literature review, solution domain and this plan written | Model credentials and a QA reviewer for judge vs human | Run the live judge, ask for blind labels |
+| Sat 24 Oct | Recorded the #344 decision. Gate-safety, replay and tamper baselines measured. Literature review, solution domain and this plan written. Signed decisions and the sealed agent log built and re-measured | Model credentials and a QA reviewer for judge vs human | Run the live judge, ask for blind labels |
 
 ## Weekly journal
 

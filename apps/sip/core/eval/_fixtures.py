@@ -18,11 +18,16 @@ from types import SimpleNamespace
 from apps.sip.collector.source_lookup import SourceIdLookup
 from apps.sip.collector.source_register import MANDATORY_SOURCES
 from apps.sip.core.agent_loop import AgentOrchestrator, parse_tool_proposal
+from apps.sip.core.audit_seal import sign_decision
 from apps.sip.core.orchestrator import HumanDecision, Orchestrator
 from apps.sip.pipeline.models import RunState, SourceOutcome
 from services.api.model_gateway import ModelGateway
 
 WINDOW = ("2026-07-27T19:00:00+00:00", "2026-07-28T19:00:00+00:00")
+
+# A fixed key for reproducible measurement. Never a deployment key: production reads its own from
+# `SIP_DECISION_SIGNING_KEY`.
+MEASUREMENT_KEY = b"inzbc-studio6-measurement-key-not-for-production"
 
 
 @contextmanager
@@ -97,13 +102,23 @@ def score_output(signal: str, *, nz: int = 4, india: int = 4, member: int = 4) -
     )
 
 
-def authorised_orchestrator(run_id: str) -> Orchestrator:
-    """A run whose launch authority was recorded by a human, the only legal way in."""
+def authorised_orchestrator(run_id: str, *, key: bytes | None = None) -> Orchestrator:
+    """A run whose launch authority was recorded by a human, the only legal way in.
+
+    With `key`, the decision carries the signature the server would store when the CEO records
+    it through the authenticated API.
+    """
+    signature = None
+    if key is not None:
+        signature = sign_decision(key, run_id=run_id, from_state=RunState.DRAFT,
+                                  to_state=RunState.RUN_AUTHORISED, approver="CEO",
+                                  decision="Launch authorised")
     orchestrator = Orchestrator(run_id=run_id)
     orchestrator.advance(
         RunState.RUN_AUTHORISED,
         actor="sip-owner",
-        human_decision=HumanDecision(approver="CEO", decision="Launch authorised"),
+        human_decision=HumanDecision(approver="CEO", decision="Launch authorised",
+                                     signature=signature),
     )
     return orchestrator
 

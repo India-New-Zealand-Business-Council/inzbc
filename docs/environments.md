@@ -65,6 +65,8 @@ carries data worth keeping — which, given the append-only audit trail, is from
 | `REDACTION_POLICY_PATH` | Unset, or a test policy | Set by the test that needs it | The approved policy — until then, every model call refuses |
 | `OPENAI_API_KEY` | A separate development key, or unset | Unset; no test calls a provider | Production key, environment only |
 | `PORT` | 8000 | — | Injected by the host |
+| `SIP_DECISION_SIGNING_KEY` | Unset, or a local key | Set by the test that needs it | A server-held key of at least 32 bytes, environment only |
+| `SIP_REQUIRE_SIGNED_DECISIONS` | Unset | Set by the test that needs it | Unset until the tech lead decides to require signatures |
 
 **`REDACTION_POLICY_PATH` unset means refusal, not permission.** So an environment that has not
 been configured fails closed rather than sending unredacted text to a model. That is the correct

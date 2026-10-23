@@ -111,8 +111,12 @@ that carries a `HumanDecision` is accepted (0/200), because nothing binds a deci
 author. Metadata edits are not detected either (0/1000). Schneier and Kelsey (1999) describe this
 weakness and its fix.
 
-**Next (W6–W7).** The API signs each human decision with a server-held key when an authenticated
-person records it, and the log is hash-chained. Then re-measure.
+**The fix (W6, done 24 Oct).** `apps/sip/core/audit_seal.py`. The API signs each gated decision
+with HMAC-SHA256 under a server-held key when an authenticated person records it, and the
+signature is stored in `audit_log.decision_signature`. The agent's log is folded into a SHA-256
+hash chain whose head is MACed with the same key. Re-measured on the same 200 runs: a forged
+decision is detected 200/200, safety-relevant tampering 3196/3196, and metadata edits 1000/1000.
+Gate safety is unchanged at 48/48.
 
 ### 7. A judge that only advises
 
@@ -148,5 +152,6 @@ be the author.
   undefended.
 - **Autonomy past QA.** By design, the agent never completes a run. Everything after QA is a human
   act.
-- **The audit log is not yet signed.** Its integrity against someone with write access to storage
-  rests on database privileges until the W6–W7 change lands.
+- **A key to guard.** The audit log's integrity now rests on one server-held key instead of on
+  database privileges alone. Anyone holding the key can forge. Rows written before the change
+  replay unsigned until `SIP_REQUIRE_SIGNED_DECISIONS` is turned on.
