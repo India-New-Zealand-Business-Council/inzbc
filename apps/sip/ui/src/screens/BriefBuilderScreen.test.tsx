@@ -161,7 +161,7 @@ describe('BriefBuilderScreen', () => {
     const report = newDraftReportFixture()
     render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)
 
-    expect(screen.getByText('0 / 112 sources recorded')).toBeInTheDocument()
+    expect(screen.getByText('0 / 112 sources selected locally')).toBeInTheDocument()
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
@@ -327,7 +327,7 @@ describe('BriefBuilderScreen', () => {
     const report = newDraftReportFixture()
     render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)
 
-    expect(screen.getByText('0 / 112 sources recorded')).toBeInTheDocument()
+    expect(screen.getByText('0 / 112 sources selected locally')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: /submit for qa/i }))
 
     expect(screen.queryByText(/sources recorded/i)).not.toBeInTheDocument()
