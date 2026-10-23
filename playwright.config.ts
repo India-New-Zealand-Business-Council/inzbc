@@ -36,7 +36,7 @@ export default defineConfig({
     // (e2e/support/platformApi.ts): it needs Postgres and a session the docker image has not got.
     {
       name: 'platform',
-      testMatch: /platform\.spec\.ts/,
+      testMatch: /(platform|keyboard)\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], baseURL: PLATFORM_URL },
     },
     {

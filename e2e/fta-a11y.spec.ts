@@ -16,3 +16,18 @@ test('the FTA Explainer has no WCAG 2.2 AA violations axe can detect, before and
   await expect(page.getByRole('article').first()).toBeVisible()
   expect(await scan()).toEqual([])
 })
+
+test('a member can ask the FTA Explainer a question with the keyboard alone', async ({ page }) => {
+  await page.goto('/')
+  await page.keyboard.press('Tab')
+  await expect(page.getByRole('link', { name: 'Skip to main content' })).toBeFocused()
+  await page.keyboard.press('Enter')
+  const input = page.getByLabel('Ask about the NZ–India FTA')
+  for (let i = 0; i < 20 && !(await input.evaluate((el) => el === document.activeElement)); i += 1) {
+    await page.keyboard.press('Tab')
+  }
+  await expect(input).toBeFocused()
+  await page.keyboard.type('wool')
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('article').first()).toBeVisible()
+})
