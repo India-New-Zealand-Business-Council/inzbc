@@ -1,6 +1,7 @@
 # Literature review: retrieval for governed AI
 
-**Author:** Roshan Aryal. **Status:** Annotated draft, updated 23 Oct 2026. Bibliographic record of all
+**Authors:** Roshan Aryal and Bhanu Gupta. Section 5 annotations expanded by Bhanu Gupta,
+23 Oct 2026. **Status:** Annotated draft, updated 23 Oct 2026. Bibliographic record of all
 12 sources checked 14 Oct 2026 (section 6). Annotated bibliography due W4 (26 to 30 Oct).
 Studio 6 objective 2.1, applied in 2.2 through `apps/fta/eval/`.
 
@@ -120,12 +121,13 @@ is what a committed eval set and a before vs after score provide.
 The deciding risk for INZBC is not the miss but the false answer. A dense retriever always
 returns its nearest neighbour, even for "steel" or "pharmaceuticals", which the corpus does not
 cover. Today those return no match and route to INZBC (no-match accuracy 1.000). Any change has
-to keep that, which means a similarity threshold, tuned and checked on the six no-match
-questions.
+to keep that, which means a similarity threshold, tuned and checked on the no-match
+questions (ten in the current set).
 
 ## 4. What this means for the project
 
-1. **Measure first.** Done (#382). The set has since grown to 52 questions.
+1. **Measure first.** Done (#382). The set has since grown to 55 questions, plus a 10-question
+   held-out synonym set (#390).
 2. **Cheapest change first:** a curated synonym map inside `apps/fta`, with no model call. Done
    (#383): synonym hit@1 went from 0.200 to 1.000. The map left out "log", "baby" and "travel"
    because those words point at more than one topic. That was a project choice. Carpineto and
@@ -147,50 +149,193 @@ questions.
 
 ## 5. Annotated bibliography
 
-Twelve structured draft annotations are provided below, with source contribution, critical evaluation and INZBC application. Their original-text verification limits are stated explicitly; final academic verification is still required by 30 Oct.
+Twelve annotations follow, each in four parts: reference, summary, evaluation and application to
+INZBC. The check of each source against its original is in section 6.
 
 | # | Source | Type | Checked against original | Annotation done |
 |---|---|---|---|---|
-| 1 | Robertson & Zaragoza (2009) | Peer-reviewed | 14 Oct 2026, citation | Draft (verification pending) |
-| 2 | Manning, Raghavan & Schütze (2008) | Textbook | 14 Oct 2026, citation | Draft (verification pending) |
-| 3 | Karpukhin et al. (2020) | Peer-reviewed | 14 Oct 2026, citation and abstract | Draft (verification pending) |
-| 4 | Thakur et al. (2021) | Peer-reviewed | 14 Oct 2026, citation and abstract | Draft (verification pending) |
-| 5 | Cormack, Clarke & Büttcher (2009) | Peer-reviewed | 14 Oct 2026, citation | Draft (verification pending) |
-| 6 | Bruch, Gai & Ingber (2023) | Peer-reviewed | 14 Oct 2026, citation and abstract | Draft (verification pending) |
-| 7 | Lewis et al. (2020) | Peer-reviewed | 14 Oct 2026, citation and abstract | Draft (verification pending) |
-| 8 | Gao et al. (2023) | Preprint survey | 14 Oct 2026, citation and section headings | Draft (verification pending) |
-| 9 | Es et al. (2023) | Preprint | 14 Oct 2026, citation and terms | Draft (verification pending) |
-| 10 | Moreau & Missier (2013) | Standard | 14 Oct 2026, recommendation text | Draft (verification pending) |
-| 11 | NIST (2023) | Framework | 14 Oct 2026, PDF | Draft (verification pending) |
-| 12 | Carpineto & Romano (2012) | Peer-reviewed survey | 14 Oct 2026, citation and abstract | Draft (verification pending) |
+| 1 | Robertson & Zaragoza (2009) | Peer-reviewed | 14 Oct 2026, citation | 23 Oct 2026 |
+| 2 | Manning, Raghavan & Schütze (2008) | Textbook | 14 Oct 2026, citation | 23 Oct 2026 |
+| 3 | Karpukhin et al. (2020) | Peer-reviewed | 14 Oct 2026, citation and abstract | 23 Oct 2026 |
+| 4 | Thakur et al. (2021) | Peer-reviewed | 14 Oct 2026, citation and abstract | 23 Oct 2026 |
+| 5 | Cormack, Clarke & Büttcher (2009) | Peer-reviewed | 14 Oct 2026, citation | 23 Oct 2026 |
+| 6 | Bruch, Gai & Ingber (2023) | Peer-reviewed | 14 Oct 2026, citation and abstract | 23 Oct 2026 |
+| 7 | Lewis et al. (2020) | Peer-reviewed | 14 Oct 2026, citation and abstract | 23 Oct 2026 |
+| 8 | Gao et al. (2023) | Preprint survey | 14 Oct 2026, citation and section headings | 23 Oct 2026 |
+| 9 | Es et al. (2023) | Preprint | 14 Oct 2026, citation and terms | 23 Oct 2026 |
+| 10 | Moreau & Missier (2013) | Standard | 14 Oct 2026, recommendation text | 23 Oct 2026 |
+| 11 | NIST (2023) | Framework | 14 Oct 2026, PDF | 23 Oct 2026 |
+| 12 | Carpineto & Romano (2012) | Peer-reviewed survey | 14 Oct 2026, citation and abstract | 23 Oct 2026 |
 
-### Structured annotations — working draft (23 Oct 2026)
+### Annotations (23 Oct 2026)
 
-Each annotation separates the source's contribution from **local experiment results** and states the extent of prior source checking. These are completed *draft annotations*, not certification that every full text was reread; a final original-source verification pass is still required before academic sign-off.
+Each annotation has four parts: reference, summary, evaluation and application to INZBC. What was
+checked against each original, and what was not, is recorded once in section 6. Nothing here goes
+beyond those checks. Project results are cited to their issue or PR, not to the source.
 
-**1. Robertson & Zaragoza (2009).** The probabilistic-relevance treatment provides the theoretical basis for BM25, including weighted lexical evidence and document-length effects. It is useful as a primary methodological reference, not evidence that BM25 must beat every alternative. The bibliographic citation was checked against the publisher; the detailed parameter discussion was not independently verified against the full monograph in the earlier source audit. The local #398 experiment is therefore the evidence for performance in this implementation: on a 23-entry corpus with short topic descriptions, a rare framing term can dominate the intended product. This supports keeping BM25 as a measured comparator, not replacing the live ranker merely because BM25 performs well on larger benchmarks. A subsequent design review should reproduce the comparison with the frozen evaluation data.
+**1. Robertson & Zaragoza (2009).**
+*Reference.* Robertson, S., & Zaragoza, H. (2009). The probabilistic relevance framework: BM25 and
+beyond. *Foundations and Trends in Information Retrieval, 3*(4), 333-389.
+https://doi.org/10.1561/1500000019
+*Summary.* The monograph sets out the probabilistic relevance framework by the authors of BM25,
+the ranking function it leads to. It is the standard reference for scoring a document by the
+query terms it contains, weighted by how rare they are.
+*Evaluation.* It is authoritative on the method because its authors wrote it. It is a theory
+monograph, not a benchmark, so it says what BM25 is, not how well it does on a given corpus.
+*Application.* BM25 was implemented and measured in #398. On product plus framing questions it
+scored 0.333 hit@1 against 1.000 for the live ranker, because the rare word "exports" outweighed
+"dairy". So BM25 stays a measured comparator and not a replacement.
 
-**2. Manning, Raghavan & Schütze (2008).** This textbook explains the established information-retrieval framework behind term weighting, vector-space matching and ranking evaluation. Its principal contribution here is definitional: the FTA evaluator reports hit@1, hit@3 and mean reciprocal rank, and the live retriever uses rarity-weighted lexical terms. The publisher/authors' bibliographic record and chapter subjects were checked, but a line-by-line reading of the relevant chapters was not recorded. It is a credible educational source rather than a contemporary comparative study. Its relevance is highest for specifying and interpreting reproducible retrieval metrics. It cannot, by itself, establish that a measured improvement generalises beyond the current questions; this requires separate held-out data and independent ground-truth review under #390 and #406.
+**2. Manning, Raghavan & Schütze (2008).**
+*Reference.* Manning, C. D., Raghavan, P., & Schütze, H. (2008). *Introduction to information
+retrieval*. Cambridge University Press. https://nlp.stanford.edu/IR-book/
+*Summary.* The textbook covers term weighting and the vector space model (chapter 6) and the
+evaluation of ranked retrieval (chapter 8). These are the basic ideas behind keyword ranking and
+the measures used to judge it.
+*Evaluation.* It is a textbook, not new research. It is the accepted reference for the basics,
+and it will not settle which method suits a particular corpus.
+*Application.* The live FTA ranker in `apps/fta/explainer.py` weights shared terms by rarity, and
+`apps/fta/eval/run_eval.py` reports hit@1, hit@3 and mean reciprocal rank. Both come from these
+chapters. The book defines the measures. Whether a gain carries over to new questions is a
+separate question, answered by the held-out set (#390) and independent label checks (#406).
 
-**3. Karpukhin et al. (2020).** Dense Passage Retrieval trains question and passage encoders to rank semantically related passages in open-domain question answering. The EMNLP abstract reports top-20 passage retrieval accuracy 9 to 19 percentage points (absolute) above Lucene-BM25 in its evaluated setting. The publication metadata and abstract were checked in the previous audit; the exact training and ablation details were not independently reanalysed here. Because that system relies on substantial training examples and longer passages, the magnitude of its reported gains should not be transferred to INZBC's 23 short, controlled entries. The actionable insight is that semantic retrieval could recover vocabulary mismatches, but a pretrained embedding service must be evaluated locally, including exact-term preservation, provenance and no-match refusals. It requires explicit authorisation under #63 and the model data boundary.
+**3. Karpukhin et al. (2020).**
+*Reference.* Karpukhin, V., Oguz, B., Min, S., Lewis, P., Wu, L., Edunov, S., Chen, D., & Yih,
+W. (2020). Dense passage retrieval for open-domain question answering. In *Proceedings of the
+2020 Conference on Empirical Methods in Natural Language Processing* (pp. 6769-6781).
+https://doi.org/10.18653/v1/2020.emnlp-main.550
+*Summary.* Dense Passage Retrieval trains two encoders on question and passage pairs and ranks
+passages by vector similarity. The abstract reports top-20 retrieval accuracy 9 to 19 percentage
+points above Lucene-BM25 on open-domain question answering.
+*Evaluation.* The gains are large, but they come from training on many labelled pairs, inside the
+domain being tested.
+*Application.* INZBC has 23 short entries and no labelled training pairs, so training a retriever
+is out. A pre-trained embedding model used zero-shot is the only realistic option. It would need
+approval under #63 and the model data boundary, and it would have to keep exact-wording and
+no-match results.
 
-**4. Thakur et al. (2021).** BEIR studies zero-shot retrieval over 18 heterogeneous datasets and identifies BM25 as a robust reference point, with uneven generalisation by dense methods. The abstract and bibliographic information were checked in the prior audit. Breadth across datasets makes it useful for evaluating the risk of choosing a dense retriever based on one favourable benchmark; it does not claim that lexical retrieval is optimal for every corpus. INZBC's own #398 comparison illustrates that distinction: its BM25 variant misses product-plus-framing matches that the guarded keyword ranker handles. The practical decision is to preserve an unchanged baseline and compare every candidate on the same independently checked question set, including a separate held-out slice. No general-purpose zero-shot ranking score substitutes for testing the specific FTA corpus.
+**4. Thakur et al. (2021).**
+*Reference.* Thakur, N., Reimers, N., Rücklé, A., Srivastava, A., & Gurevych, I. (2021). BEIR: A
+heterogeneous benchmark for zero-shot evaluation of information retrieval models. In
+*Proceedings of the Neural Information Processing Systems Track on Datasets and Benchmarks*.
+https://arxiv.org/abs/2104.08663
+*Summary.* BEIR tests retrievers zero-shot across 18 datasets. The abstract finds BM25 a robust
+baseline, and many dense models do worse outside the domain they were trained on.
+*Evaluation.* Its breadth makes it a good guard against choosing a retriever on one favourable
+benchmark. It is a general finding, and it does not claim BM25 is best on every corpus.
+*Application.* #398 is a case where the general result did not hold. On a 23-entry corpus with one
+short topic each, BM25 lost to the live ranker on product plus framing questions. The lesson for
+#63 is that any embedding model has to beat the live ranker on our own questions, including the
+held-out set, not on BEIR.
 
-**5. Cormack, Clarke & Büttcher (2009).** Reciprocal Rank Fusion combines results from multiple ranked lists using positions rather than incompatible retrieval scores. Its SIGIR paper is the method reference; the previous research audit checked the citation, but did not record a complete re-read of its experiments. Rank-only fusion is attractive when combining an existing keyword system with an embedding candidate because it avoids inventing a shared score scale. The important limitation is that combining lists does not establish which answers are safe to return: an irrelevant result can still rank first. In INZBC, any fusion comparison therefore needs an explicit no-match threshold and source-citation behaviour, alongside hit@k and MRR. RRF remains a candidate under #393, not an authorised deployment decision or a guarantee of superior FTA answers.
+**5. Cormack, Clarke & Büttcher (2009).**
+*Reference.* Cormack, G. V., Clarke, C. L. A., & Büttcher, S. (2009). Reciprocal rank fusion
+outperforms Condorcet and individual rank learning methods. In *Proceedings of the 32nd
+International ACM SIGIR Conference on Research and Development in Information Retrieval* (pp.
+758-759). https://doi.org/10.1145/1571941.1572114
+*Summary.* Reciprocal Rank Fusion merges several ranked lists using only each item's rank. As its
+title states, the paper compares it with Condorcet fusion and individual rank-learning methods.
+*Evaluation.* It is a two-page SIGIR paper, but the method is simple and widely reused. Its
+attraction is that it needs no score calibration between systems.
+*Application.* RRF is the obvious first way to combine the live ranker with an embedding ranker
+under #393, since their scores are on different scales. Fusion alone does not stop a wrong answer
+ranking first. Any hybrid also needs a similarity cut-off, or the ten no-match questions start
+returning answers.
 
-**6. Bruch, Gai & Ingber (2023).** This hybrid-retrieval analysis compares fusion functions and indicates that a normalised convex score combination can improve results relative to simpler rank fusion in certain evaluated conditions. The earlier audit checked the publisher record and abstract, not a full reproduction of the experiments. Its significance is a caution against treating RRF as universally best; the choice depends on score distributions, tuning data and evaluation design. INZBC has 23 corpus entries and 55 labelled questions (`apps/fta/eval/questions.csv`), so tuning fusion weights on that set risks fitting the evaluation rather than the task. A sensible comparison would report fixed, preregistered fusion rules before any tuning, and use held-out questions for decisions. The paper motivates a comparison framework but does not justify changing the production ranker without authorisation and evidence.
+**6. Bruch, Gai & Ingber (2023).**
+*Reference.* Bruch, S., Gai, S., & Ingber, A. (2023). An analysis of fusion functions for hybrid
+retrieval. *ACM Transactions on Information Systems, 42*(1), 1-35.
+https://doi.org/10.1145/3596512
+*Summary.* The paper compares ways of fusing lexical and dense results. The abstract reports that
+a convex combination of normalised scores outperforms RRF in and out of domain, and that RRF is
+sensitive to its own parameter.
+*Evaluation.* It is a careful, recent journal study and a useful check on treating RRF as the
+default. The convex combination's gain depends on having data to set its weight.
+*Application.* INZBC has 23 corpus entries and 55 labelled questions (`apps/fta/eval/questions.csv`),
+so tuning fusion weights on that set risks fitting the evaluation rather than the task. RRF, with
+its fixed rule, is the safer first comparison. A tuned convex combination would need to be judged
+on the held-out questions (#390).
 
-**7. Lewis et al. (2020).** The retrieval-augmented generation paper integrates retrieval with sequence generation so the generated answer is conditioned on retrieved information. Its publication information and abstract were checked in the earlier review. It is foundational for understanding the separation between finding evidence and composing an answer; it is not evidence that generative output belongs in every retrieval application. The INZBC FTA Explainer currently returns a verified corpus entry and its citation rather than generating new language. Introducing a generator would create additional faithfulness, citation and governance risks without an established requirement. Here, the retriever-design ideas are relevant while the generation architecture is more relevant to SIP brief and Communications Assistant contexts, where draft content still requires human review.
+**7. Lewis et al. (2020).**
+*Reference.* Lewis, P., Perez, E., Piktus, A., Petroni, F., Karpukhin, V., Goyal, N., Küttler, H.,
+Lewis, M., Yih, W., Rocktäschel, T., Riedel, S., & Kiela, D. (2020). Retrieval-augmented
+generation for knowledge-intensive NLP tasks. In *Advances in Neural Information Processing
+Systems 33*.
+https://proceedings.neurips.cc/paper/2020/hash/6b493230205f780e1bc26945df7481e5-Abstract.html
+*Summary.* The paper that named RAG joins a dense retriever to a generator, so answers are
+written from retrieved passages. On generation tasks the abstract reports more specific, diverse
+and factual language than a parametric-only baseline.
+*Evaluation.* It is foundational for separating finding evidence from writing an answer. It is
+not evidence that every retrieval system should generate text.
+*Application.* The FTA Explainer returns the corpus entry and its citation and writes no prose, so
+the retrieval half applies and the generation half does not. Generation fits the Comms Assistant
+and SIP briefs, where drafts already need human review.
 
-**8. Gao et al. (2023).** This survey provides a taxonomy of retrieval-augmented generation, including naive, advanced and modular approaches, and identifies where retrieval and post-retrieval work fit within larger pipelines. Its bibliographic record and section organisation were checked, but it is an arXiv preprint survey rather than direct empirical evidence for this FTA deployment. The survey helps locate candidate design patterns and frame research questions, but does not establish which component produces the greatest improvement in INZBC. The earlier draft appropriately withdrew an unsupported 'main lever' claim. The local retrieval baseline, synonym failure cases and source-grounding requirement are the actual reasons to prioritise retrieval evaluation here. The survey should remain background context, separated from measured project findings and approved implementation scope.
+**8. Gao et al. (2023).**
+*Reference.* Gao, Y., Xiong, Y., Gao, X., Jia, K., Pan, J., Bi, Y., Dai, Y., Sun, J., Wang, M., &
+Wang, H. (2023). *Retrieval-augmented generation for large language models: A survey*
+(arXiv:2312.10997). arXiv. https://doi.org/10.48550/arXiv.2312.10997
+*Summary.* The survey groups RAG systems since Lewis et al. into naive, advanced and modular RAG.
+Advanced RAG is where it places pre-retrieval and post-retrieval work on retrieval quality.
+*Evaluation.* It is a preprint survey. That makes it useful as a map of the field, not as
+evidence for any single result. An earlier note claimed it called retrieval quality the main
+lever on answer quality. That sentence is not in the text checked, so it is not used.
+*Application.* The grouping places the FTA work in the retrieval stage. The decision to measure
+retrieval first comes from the project's own baseline, where synonym hit@1 was 0.200, not from
+this survey.
 
-**9. Es et al. (2023).** RAGAS proposes reference-free evaluation signals for retrieval-augmented generation, including faithfulness, answer relevance and context relevance. The arXiv record and metric terminology were checked in the earlier source review. These methods are relevant when a language model composes answers from retrieved passages, but their automated judgments are model-dependent and do not replace human acceptance criteria. The FTA Explainer is a small corpus-returning system: checking known relevant entry IDs and no-match cases provides more direct, interpretable evidence. RAGAS is therefore not recommended as the primary FTA evaluator. It can inform work on SIP or Communications Assistant output quality under a separately authorised evaluation design, with explicit tests for judge error and the human-approval requirement.
+**9. Es et al. (2023).**
+*Reference.* Es, S., James, J., Espinosa-Anke, L., & Schockaert, S. (2023). *Ragas: Automated
+evaluation of retrieval augmented generation* (arXiv:2309.15217). arXiv.
+https://doi.org/10.48550/arXiv.2309.15217
+*Summary.* Ragas scores a RAG pipeline without reference answers. It measures faithfulness,
+answer relevance and context relevance, each judged by a language model.
+*Evaluation.* It is a preprint, and its scores depend on the judging model. That suits systems that
+write text, but it adds a model's errors to the measurement.
+*Application.* For FTA answers a hand-labelled set of known entry IDs and no-match cases is cheaper
+and easier to trust than a model judge, so Ragas is not the FTA evaluator. It is relevant to #64,
+judging SIP brief quality, where generated text has to be checked. Any judge there would need its
+own error testing, and it would sit alongside human approval, not replace it.
 
-**10. Moreau & Missier (2013).** The W3C PROV Data Model defines a standard way to express relationships among entities, activities and responsible agents. The recommendation text was checked in the preceding audit. As a standards document, it supplies a precise vocabulary for provenance rather than performance evidence about retrieval methods. INZBC already stores useful provenance attributes on FTA entries, including citation, source tier and verification date. A future schema could map those records to PROV concepts to make source-to-answer lineage easier to inspect. The immediate requirement is narrower: retain stable entry IDs, distinguish source facts from inferred statements, and expose citation and effective-date evidence. Adopting a formal PROV representation would require its own scoped decision and should not be represented as implemented.
+**10. Moreau & Missier (2013).**
+*Reference.* Moreau, L., & Missier, P. (Eds.). (2013). *PROV-DM: The PROV data model* (W3C
+Recommendation). World Wide Web Consortium. https://www.w3.org/TR/prov-dm/
+*Summary.* PROV-DM models provenance as entities, the activities that used or produced them and
+the agents responsible. It names relations such as `wasDerivedFrom` and `wasAttributedTo`.
+*Evaluation.* It is a W3C Recommendation, so it is authoritative but abstract. It supplies a
+vocabulary for provenance, not evidence about any retrieval method.
+*Application.* Each FTA corpus entry already carries a citation, a source tier and a verified date,
+which is provenance in all but name. PROV-DM gives those fields standard names, if INZBC ever needs
+to show source-to-answer lineage outside the code. What matters now is narrower: stable entry IDs,
+source facts kept apart from inference, and the citation and effective date shown with each
+answer. Adopting PROV formally would be a separate, scoped decision.
 
-**11. NIST (2023).** The AI Risk Management Framework structures risk management around Govern, Map, Measure and Manage. The official PDF was checked during the earlier audit. It is a governance framework, not a retriever benchmark or a mandatory specification for the current application. Its value is in connecting measurable technical evidence to accountability: a versioned evaluation set supports measurement, source controls clarify mapped risks, and sign-off processes assign governance decisions. In the FTA project, a high aggregate hit@1 alone cannot demonstrate safe operation if independent labels, refusal behaviour or source freshness remain unverified. The framework therefore supports documenting explicit risk owners and acceptance conditions. It does not remove the need for INZBC to authorise live data use and production distribution.
+**11. NIST (2023).**
+*Reference.* National Institute of Standards and Technology. (2023). *Artificial intelligence risk
+management framework (AI RMF 1.0)* (NIST AI 100-1). https://doi.org/10.6028/NIST.AI.100-1
+*Summary.* The framework organises AI risk work into four functions: Govern, Map, Measure and
+Manage. It names "valid and reliable" and "accountable and transparent" among the marks of
+trustworthy AI.
+*Evaluation.* It is a government framework, not research, and it is voluntary. Its value is the
+shared structure it gives to connecting technical evidence with accountability.
+*Application.* In this project the committed question set and the CI eval gate (#394) are the
+Measure function in practice, and the human approval gates are Govern and Manage. The framework
+also shows why one high hit@1 is not enough on its own. Independent label checks (#406),
+no-match behaviour and source freshness all have to hold before anyone calls the Explainer
+reliable.
 
-**12. Carpineto & Romano (2012).** This peer-reviewed survey reviews automatic query-expansion approaches used to bridge the mismatch between short user queries and relevant documents. The prior audit checked the citation and abstract; detailed claims about its internal taxonomy and precision trade-offs were deliberately withdrawn pending full-text verification. INZBC's manually curated synonym map is a simple, transparent expansion mechanism that improved the measured synonym questions. The in-sample synonym result partly reflects the mapping being built against known questions, so it overstates unseen-query performance. The blind held-out synonym set (#390, `held_out_questions.csv`) is the better estimate: hit@1 0.800 with the map against 0.500 without it. Remaining work is to review ambiguous words and record false-positive or no-match regressions. The implementation choices on #383, leaving out "log", "baby" and "travel" and scoring expanded terms at half weight (`_SYNONYM_WEIGHT = 0.5` in `apps/fta/explainer.py`), were local engineering decisions, not findings attributed to this survey.
+**12. Carpineto & Romano (2012).**
+*Reference.* Carpineto, C., & Romano, G. (2012). A survey of automatic query expansion in
+information retrieval. *ACM Computing Surveys, 44*(1), 1-50. https://doi.org/10.1145/2071389.2071390
+*Summary.* The survey reviews automatic query expansion. Its abstract describes a short keyword
+query as a poor model of the user's need, and expansion as adding terms with a similar meaning.
+*Evaluation.* It is a broad, peer-reviewed survey and the standard reference for the method.
+Claims about its taxonomy and precision trade-offs are not used until the full text is read
+(section 6).
+*Application.* The #383 synonym map is manual query expansion. It raised in-sample synonym hit@1
+from 0.200 to 1.000, and on the blind held-out set (#390) it scores 0.800, against 0.500 without
+the map. Leaving out "log", "baby" and "travel" and scoring expanded terms at half weight
+(`_SYNONYM_WEIGHT = 0.5`) were project choices, not findings of this survey.
 
 ## References
 
