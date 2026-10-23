@@ -42,3 +42,29 @@ export async function listSourceChecks(
     options,
   )
 }
+
+/** POST writes one analyst-confirmed SIP-185 outcome under the current run.
+ * CSRF and session credentials come from the shared apiRequest transport.
+ * Never derive an outcome from fetch-health and never POST a blank outcome.
+ */
+export type RecordSourceCheckIn = components['schemas']['RecordSourceCheckIn']
+export async function saveConfirmedSourceCheck(
+  runId: string,
+  body: RecordSourceCheckIn,
+  options: RequestOptions = {},
+): Promise<SourceCheckOut> {
+  if (!runId.trim()) throw new Error('Select a run before recording a source check.')
+  if (!body.source_id.trim()) throw new Error('A resolved source-library ID is required.')
+  if (!body.outcome) throw new Error('Choose a confirmed source outcome.')
+  if (!body.notes?.trim()) throw new Error('An evidence reference is required.')
+  return apiRequest<SourceCheckOut>(
+    `/api/runs/${encodeURIComponent(runId)}/source-checks`,
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: options.signal,
+    },
+  )
+}
