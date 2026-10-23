@@ -15,7 +15,7 @@ The technical lead has reported a client session and written sign-off (see `docs
 | Delivery scope | Signed client scope, exclusions and foundation decisions; do not treat all nine proposed modules as committed | Executive Sponsor for client scope; Technical Lead for engineering authorization, per `docs/raci.md` |
 | FTA independent evaluation (#406) | Reviewer remains **unassigned** pending tech-lead authorization; blinded, independent answer checks and reconciled metrics | Technical Lead to designate checker |
 | FTA retrieval research (#387) | Source verification, annotated bibliography and design conclusions | Intelligence & Data, with Technical Lead review |
-| FTA depth API (#392) | Explicit ownership decision, role checks, OpenAPI regeneration and regression evidence | Technical Lead to authorize API-lane work |
+| FTA depth API (#392) | Merged in PR #433 (Technical Lead): `depth` parameter with role checks, regenerated OpenAPI/client types and tests. Remaining: link the merged evidence here | Technical Lead |
 | SIP source coverage (#344) | Decide whether source outcomes are generated automatically or remain manual; implement only approved design | Technical Lead to resolve cross-component design |
 | SIP live collection (#55) | **Fresh INZBC SIP-191 authorization and a PAT for live collection** are prerequisites, per `docs/workstreams/roshan.md`; `.github/workflows/sip-full-walk.yml` already exercises the backend | Technical Lead coordinates authorization; Intelligence & Data executes authorized run |
 | SIP safety | Fail-closed distribution, human review, audit and security test evidence | Technical Lead |
