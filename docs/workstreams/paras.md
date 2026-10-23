@@ -37,29 +37,17 @@ on three part-time engineers sharing one client, and this list is bigger than th
 must-do line, so it's clear what drops first if the block runs short rather than discovering that
 in week 7:
 
-**Must-do:** the bookkeeping + verification on #292 below, #61's first real slice, the 320px
-reflow Playwright case (moved up, see Weeks 2–4), the `inzview` gap list itself.
-**If time allows, roughly in this order:** the rest of the Playwright suite, the WCAG audit sweep,
-#58's design system, #198/#199/#200.
+**Must-do:** the 320px reflow Playwright case (done, see Done below), the `inzview` gap list
+itself (done), the final WCAG audit sweep.
+**If time allows, roughly in this order:** the rest of the Playwright suite, #58's design system,
+#198/#199/#200.
 **Cut first if the block is short:** #69 (tooling/Storybook) — already flagged below as a
 nice-to-have, not a blocker for anything else on this list.
 
+#292 (QA review interface) and #61 (executive dashboard, first real slice) are both closed —
+see Done, below.
+
 **Weeks 1–2 — close the gap between what's built and what's tracked, then finish SIP's own UI**
-- [ ] **Bookkeeping first, costs an hour, not a sprint — but verify all of it, not just the one
-      piece already checked.** #292 (QA review interface, REQ-U-01) is still open.
-      `QaReviewScreen.tsx` does call the real `POST /api/reports/{id}/qa` endpoint
-      (`reportsStore.submitQaResult`) on both Pass and Fail — Roshan confirmed this against the
-      code during review of this plan. Two more acceptance criteria still need confirming before
-      closing it, with a test or a screenshot, not just asserted: **the reviewer is recorded and
-      cannot be the run's own analyst**, and **a Critical failure blocks progression to the CEO
-      decision**. Don't close #292 until all three are confirmed, not just the one already checked.
-- [ ] **#61 Executive dashboard UI, for real this time.** What exists today (`apps/dashboard/ui`)
-      is `SipOverview.tsx` plus the branding pass — a first SIP-only slice, by the dashboard
-      module's own description. `docs/modules/dashboards.md` lists executive view (control state,
-      open Critical/High actions, next CEO decision, exceptions) and the board scorecards
-      (membership, trade/FTA, sponsors) — none of that is built. Reads Bhanu's data-layer
-      endpoints; confirm what's actually live on `/api/dashboard` before scoping the UI, don't
-      assume the shape from the module doc alone.
 - [ ] **Final WCAG 2.2 AA audit across every public page and every app.** Components already carry
       the behaviour from each build's own accessibility pass; this is the end-to-end verification
       sweep, including the real-browser check that both member-portal Done entries below flag as
@@ -124,6 +112,26 @@ nice-to-have, not a blocker for anything else on this list.
   re-open them.
 
 ## Done
+- **#61 Executive dashboard, first real slice** (PR #437, 23 Oct 2026). Replaced the client-side
+  composition (`listRuns()[0]` + `listCandidates(run.id)`, tallying verification states in
+  TypeScript) with `ExecutiveOverview`, reading Bhanu's real `GET /api/dashboard` endpoint (#47,
+  closed): current run, candidate coverage, QA/distribution gates, and the open-actions panel —
+  previously unreachable since `action_register` had no endpoint at all. Deleted the now-dead
+  `candidatesClient`/`runsClient`/`candidateSummary` modules and their tests. Also fixed a
+  cross-app break the first pass missed: `apps/sip/ui`'s `PlatformOverviewScreen` imported the
+  deleted `SipOverview` via the `@dashboard` Vite alias — repointed at `ExecutiveOverview`.
+  Board/measures scorecards (membership, trade/FTA, sponsors) still not built — `ComingSoon`'s
+  copy corrected to say so, since #47 closing unblocked the executive view, not those.
+- **#292 QA review interface — self-verification exception UI** (PR #435, 23 Oct 2026). The
+  checklist half (item-by-item SIP-188, Critical blocks CEO decision, reviewer-cannot-be-analyst)
+  was already confirmed end-to-end back in August (see the issue's own comment thread) — this
+  closed the remaining gap: a real UI state for the `/api/candidates/{id}/verify` 403 a
+  self-verifying reviewer hits, distinguishable from the generic error toast the issue explicitly
+  asked not to ship. Both 403s on that endpoint carry the same `code: "http_error"`
+  (`services/api/hardening.py` gives every `HTTPException` the same code), so
+  `isSelfVerificationError` discriminates on message text instead. Adds an exception-id field and
+  a distinct alert; exception-row creation itself stays out of scope, tracked by #348's own
+  explicit two-track split.
 - **#100 Playwright E2E suite for the FTA query flow, including the 320px reflow case** (21 Oct
   2026). Runs against the real running service (no mock) — the same two queries the `docker` CI
   job already curls at the HTTP level (`q=wool` matches, `q=zzzznotathing` doesn't), now asserted
@@ -354,6 +362,16 @@ come back.
   `box-sizing` reset for 320px reflow, stale-request identity check, deeper response validation.
 - **Two member-facing strings still need a named reviewer**: the `<h1>` and intro paragraph in
   `apps/fta/ui/src/App.tsx`. Everything else on screen comes from the API.
+- **SIP agent-rehearsal panel** (PR #449, refs the sealed-audit work in #448). A "Coordinator
+  agent" panel on the Run Detail screen (`apps/sip/ui`) — staff can run the SIP coordinator agent
+  over an in-memory copy of a run (never the persisted one), see its outcome, step trail, and
+  whether the hash chain/seal/replay still verify. Server side: `POST /api/runs/:id/agent-rehearsals`
+  plus list/get, append-only `agent_rehearsals` storage (migration 0007).
+- **SIP role-aware Getting Started walkthrough** (PR #450, refs #62). First visit to `apps/sip/ui`
+  opens on a new "Getting started" screen instead of the overview — reads `GET /api/session`,
+  shows one card per role (Analyst/SIP Owner/Reviewer/Secretariat), and builds each step's list
+  from the real `write_access(...)` roles on that route so it never promises an action that
+  answers 403. Stacked on #449 (one Analyst step links to the rehearsal panel).
 - **Still yours:** the design system and brand tokens, the Comms review UI (check #60's actual
   scope before assuming it's unbuilt — see Next up), the accessibility audit, and the public site
   — now `inzview` (Wix Vibe), not the Wix Studio build this line used to name. (The SIP
@@ -382,4 +400,4 @@ right owner; SIP UI lets a brief be QA'd, approved and packaged for manual send,
 (already true since v1.0.0); dashboards read the DB for real, not just the SIP slice. No pipeline
 writes.
 
-Base: main @ 3c8899a (10 Oct 2026) — record when you start a task; rebase if behind.
+Base: main @ 6731818 (23 Oct 2026) — record when you start a task; rebase if behind.
