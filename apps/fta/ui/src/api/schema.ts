@@ -299,6 +299,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/assistant/chat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Chat
+         * @description One assistant turn. A POST with CSRF because it spends model budget, though it writes
+         *     nothing; open to every staff role, since every tool is one any staff role can already read.
+         *
+         *     Failures map as `POST /api/comms/draft` does: missing configuration is 503, a provider
+         *     failure after its retry is 502.
+         */
+        post: operations["chat_api_assistant_chat_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/candidates": {
         parameters: {
             query?: never;
@@ -1470,6 +1494,23 @@ export interface components {
             /** In Coverage Window */
             in_coverage_window?: boolean | null;
         };
+        /**
+         * ChatIn
+         * @description The conversation so far, oldest first, ending with the staff member's new question.
+         */
+        ChatIn: {
+            /** Messages */
+            messages: components["schemas"]["Turn"][];
+        };
+        /** ChatOut */
+        ChatOut: {
+            /** Answer */
+            answer: string;
+            /** Steps */
+            steps: components["schemas"]["StepOut"][];
+            /** Disclaimer */
+            disclaimer: string;
+        };
         /** CommsDraftOut */
         CommsDraftOut: {
             /** Id */
@@ -2273,6 +2314,13 @@ export interface components {
          * @enum {string}
          */
         SourceOutcome: "Included" | "Context" | "Suppressed" | "Inaccessible" | "Excluded" | "No Qualifying Item";
+        /** StepOut */
+        StepOut: {
+            /** Tool */
+            tool: string;
+            /** Summary */
+            summary: string;
+        };
         /** SubmitReportIn */
         SubmitReportIn: {
             /** Run Id */
@@ -2318,6 +2366,16 @@ export interface components {
             reason: string;
             /** Approval Ref */
             approval_ref?: string | null;
+        };
+        /** Turn */
+        Turn: {
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "user" | "assistant";
+            /** Content */
+            content: string;
         };
         /** UpdateActionStatusIn */
         UpdateActionStatusIn: {
@@ -3167,6 +3225,53 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RehearsalOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    chat_api_assistant_chat_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatOut"];
                 };
             };
             /** @description No session, or the session has expired or been idle too long. */

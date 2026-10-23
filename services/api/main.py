@@ -35,6 +35,7 @@ from apps.fta.explainer import (
     no_match,
 )
 from services.api.agent_rehearsals import router as agent_rehearsals_router
+from services.api.assistant import router as assistant_router
 from services.api.auth import (
     STAFF_READ,
     NotAuthorisedError,
@@ -86,6 +87,7 @@ app = FastAPI(
 app.include_router(runs_router)
 app.include_router(run_authorisations_router)
 app.include_router(agent_rehearsals_router)
+app.include_router(assistant_router)
 
 # Rate limiting, one error shape, security headers, and CORS only when configured (#98). Applied
 # here rather than per endpoint so a route added later is covered by default instead of by

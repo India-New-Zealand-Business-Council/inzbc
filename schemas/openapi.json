@@ -992,6 +992,60 @@
         }
       }
     },
+    "/api/assistant/chat": {
+      "post": {
+        "tags": [
+          "Platform Assistant"
+        ],
+        "summary": "Chat",
+        "description": "One assistant turn. A POST with CSRF because it spends model budget, though it writes\nnothing; open to every staff role, since every tool is one any staff role can already read.\n\nFailures map as `POST /api/comms/draft` does: missing configuration is 503, a provider\nfailure after its retry is 502.",
+        "operationId": "chat_api_assistant_chat_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ]
+      }
+    },
     "/api/candidates": {
       "post": {
         "tags": [
@@ -4641,6 +4695,53 @@
         ],
         "title": "CaptureCandidateIn"
       },
+      "ChatIn": {
+        "properties": {
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/Turn"
+            },
+            "type": "array",
+            "maxItems": 8,
+            "minItems": 1,
+            "title": "Messages"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "messages"
+        ],
+        "title": "ChatIn",
+        "description": "The conversation so far, oldest first, ending with the staff member's new question."
+      },
+      "ChatOut": {
+        "properties": {
+          "answer": {
+            "type": "string",
+            "title": "Answer"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/StepOut"
+            },
+            "type": "array",
+            "title": "Steps"
+          },
+          "disclaimer": {
+            "type": "string",
+            "title": "Disclaimer"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "answer",
+          "steps",
+          "disclaimer"
+        ],
+        "title": "ChatOut"
+      },
       "CommsDraftOut": {
         "properties": {
           "id": {
@@ -6902,6 +7003,25 @@
         ],
         "title": "SourceOutcome"
       },
+      "StepOut": {
+        "properties": {
+          "tool": {
+            "type": "string",
+            "title": "Tool"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "tool",
+          "summary"
+        ],
+        "title": "StepOut"
+      },
       "SubmitReportIn": {
         "properties": {
           "run_id": {
@@ -7006,6 +7126,31 @@
         ],
         "title": "TransitionIn",
         "description": "Body shared by all four lifecycle commands. `approval_ref` is optional at the schema level\nbecause only three of the four transitions are human-gated (`complete` is not) - `RunRepository`\nis still the sole enforcer of which ones actually require it; this model does not duplicate\nthat rule."
+      },
+      "Turn": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant"
+            ],
+            "title": "Role"
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Content"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "Turn"
       },
       "UpdateActionStatusIn": {
         "properties": {

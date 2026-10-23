@@ -1,6 +1,7 @@
 import { FtaQuery } from './components/FtaQuery'
 import { Footer } from './components/Footer'
 import { Header } from './components/Header'
+import { Welcome } from './components/Welcome'
 import './index.css'
 
 export function App() {
@@ -22,6 +23,9 @@ export function App() {
             Ask about tariff outcomes under the New Zealand–India Free Trade Agreement. Answers are
             drawn from official sources; where INZBC cannot verify an answer, it says so.
           </p>
+          <div className="mt-6">
+            <Welcome />
+          </div>
           <FtaQuery />
         </div>
       </main>

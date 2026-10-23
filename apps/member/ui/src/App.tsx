@@ -5,6 +5,7 @@ import { Header } from './components/Header'
 import { MembershipSection } from './components/MembershipSection'
 import { NotificationsSection } from './components/NotificationsSection'
 import { ResourcesSection } from './components/ResourcesSection'
+import { Welcome } from './components/Welcome'
 import { Dashboard } from './pages/Dashboard'
 import './index.css'
 
@@ -33,6 +34,9 @@ export function App() {
             links out to Member Jungle for those rather than holding membership data itself.
           </p>
 
+          <div className="mt-6">
+            <Welcome />
+          </div>
           <Dashboard />
 
           <NotificationsSection />
