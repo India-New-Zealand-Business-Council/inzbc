@@ -38,6 +38,27 @@ function reportReadyForQa(): DailyBriefReport {
   return report
 }
 
+/** Existing persisted checks are the only coverage that permits QA submission. */
+function stubCompleteSourceChecks(): void {
+  const originalFetch = fetch
+  const rows = reportReadyForQa().sourceCoverage
+  vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+    const uri = String(url)
+    if (uri === '/api/source-library') {
+      return new Response(JSON.stringify(rows.map((row) => ({
+        id: 'db-' + row.sip185Code, sip185_code: row.sip185Code, name: row.sourceName,
+      }))), { status: 200 })
+    }
+    if (uri === '/api/runs/run-1/source-checks' && (!init?.method || init.method === 'GET')) {
+      return new Response(JSON.stringify(rows.map((row) => ({
+        run_id: 'run-1', source_id: 'db-' + row.sip185Code,
+        outcome: 'Included', method: null,
+      }))), { status: 200 })
+    }
+    return originalFetch(url, init)
+  }))
+}
+
 describe('BriefBuilderScreen', () => {
   it('renders the run header as read-only data, not editable inputs', () => {
     const report = newDraftReportFixture()
@@ -191,7 +212,7 @@ describe('BriefBuilderScreen', () => {
     const report = newDraftReportFixture()
     render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)
 
-    expect(screen.getByText('112 mandatory sources — 0 recorded')).toBeInTheDocument()
+    expect(screen.getByText(/112 mandatory sources — 0 selected locally/)).toBeInTheDocument()
     // No source rows rendered until a category is expanded — none of the 224 per-row form
     // controls exist in the DOM by default.
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
@@ -250,11 +271,12 @@ describe('BriefBuilderScreen', () => {
     expect(screen.queryByText('World Trade Organization')).not.toBeInTheDocument()
   })
 
-  it('clears once a candidate is selected and every mandatory source has an outcome', () => {
+  it('does not treat locally filled outcomes as saved coverage', async () => {
     render(<ControlledBriefBuilder initial={reportReadyForQa()} />)
 
-    expect(screen.getByText(/ready to submit for qa/i)).toBeInTheDocument()
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(screen.queryByText(/ready to submit for qa/i)).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /submit for qa/i }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(/not saved to this run/i)
   })
 
   it('shows the reviewer\'s findings when a run comes back for correction', () => {
@@ -340,7 +362,9 @@ describe('BriefBuilderScreen', () => {
   })
 
   it('shows a loading state, then a submitted banner, on a successful submit', async () => {
+    stubCompleteSourceChecks()
     render(<ControlledBriefBuilder initial={reportReadyForQa()} />)
+    await screen.findByText(/ready to submit for qa/i)
 
     const submit = screen.getByRole('button', { name: /submit for qa/i })
     expect(submit).toBeEnabled()
@@ -351,8 +375,10 @@ describe('BriefBuilderScreen', () => {
   })
 
   it('surfaces a submit failure without transitioning the report', async () => {
+    stubCompleteSourceChecks()
     vi.spyOn(reportsStore, 'submitReportForQa').mockRejectedValue(new Error('network down'))
     render(<ControlledBriefBuilder initial={reportReadyForQa()} />)
+    await screen.findByText(/ready to submit for qa/i)
 
     await userEvent.click(screen.getByRole('button', { name: /submit for qa/i }))
 
