@@ -341,7 +341,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
       const saved = await saveConfirmedSourceCheck(runId, {
         source_id: sourceId,
         outcome: row.outcome,
-        fallback_used: Boolean(row.fallbackAttempt.trim()),
+        fallback_used: Boolean(row.fallbackAttempt.trim() && row.fallbackAttempt.trim() !== 'Direct access'),
         method: row.fallbackAttempt.trim() || null,
         notes: 'Analyst-confirmed evidence: ' + evidence,
       })
