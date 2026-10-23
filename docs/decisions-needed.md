@@ -59,6 +59,42 @@ prerequisites in the [secrets register](secrets-register.md#decision-signing-key
 ADR-0010's next step, only if INZBC needs proof of authorship that does not rest on trusting the
 server. **Owner:** INZBC.
 
+## 6. Planner prompt: make a live run reach the QA gate
+
+**Where it stands.** With a real model, no agent run reaches the QA gate
+([baseline](research/agent-safety-baseline.md), section 6, #462). In the runs inspected, the planner
+re-scored the same item until the step limit, and it cannot record the 112 SIP-185 outcomes
+because the prompt does not give it the source codes. Both fail closed; neither is a safety fault.
+
+| Option | What it takes |
+|---|---|
+| A. Change the planner prompt | Tell it which steps are done and give it the mandatory source codes, then re-run sections 1, 6 and the replay harness. This changes the system the research measures, so it is a plan change-log entry and a before/after comparison |
+| B. Leave it | The agent stays a rehearsal that stops early; the research reports the limit as it does now |
+
+**Owner:** tech lead (research design).
+
+## 7. Independent attack suite
+
+**Where it stands.** The 48 attacks and the section 6 scenarios were all written for this project,
+which is the remaining "attacks are hand-written" threat to validity.
+
+**Decide:** whether to adapt scenarios from an external suite (AgentDojo-style, ToolEmu-style) or
+have someone outside the team write attacks blind to the controls, and who. **Owner:** tech lead.
+
+## 8. Blind QA reviewer for the judge
+
+**Where it stands.** The blind packet is ready
+([agent-safety-human-qa-packet.md](research/agent-safety-human-qa-packet.md)); no reviewer has been
+named. Judge vs an independent human stays "not measured" until one labels the 8 cases.
+
+**Decide:** who reviews (not the rubric author), and by when. **Owner:** tech lead.
+
+## 9. Reflection on the new results
+
+Sections 6 and 7 of the baseline have no reflection in the plan's journal, the PDR worksheet or
+the reflective report. These are assessed as Bhanu's own words, so they are his to write, not
+drafted for him. **Owner:** Bhanu.
+
 ## Decided
 
 None yet.
