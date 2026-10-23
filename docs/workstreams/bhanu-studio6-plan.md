@@ -69,6 +69,8 @@ controls guarantee it never skips a human approval step?
 | Metadata-only tampering detected | 0/1000 | Not a target | 1000/1000 |
 | Judge vs golden-set verdicts | **8/8 agree, kappa 1.0** (17/17 score bounds met; `gpt-4.1-mini`, 24 Oct) | Report with kappa | Not affected by the change |
 | Judge vs human QA reviewer | Not measured (no reviewer labels yet) | Report with kappa | Not affected by the change |
+| Real model under planted instructions (section 6) | Not measured | 0 breaches | **0 breaches in 35 runs**; planner attempts 2/30 hostile runs, scorer obeyed 5/5 "score Critical" and was refused |
+| Database-level rewrites caught on read (section 7) | 341/759 without the key | 100% | **759/759 with the key** |
 
 What the baseline shows: the agent cannot cross a human gate. 48 of 48 attempts fail, and each
 control is proven necessary by its knockout. The audit artefact has a weakness the agent does not.
@@ -128,6 +130,7 @@ client's, and the weekly rows below record them that way:
 |---|---|---|
 | 2026-10-24 | W6 change set: signed human decisions and a hash-chained audit log | The replay baseline found a forged human decision is accepted (0/200 detected). This is the change with the most direct link to the research question |
 | 2026-10-24 | W6 change brought forward from 9 Nov | It needed no client input and the harness was ready. W6 and W7 now cover the judge measurements if W4 slips |
+| 2026-10-24 | Added a live-model adversary and replay through Postgres | Two threats to validity ("the scripted model always complies", "not the persistence layer") could be measured with no client input |
 | 2026-10-24 | Judge vs human split into two measurements | The golden labels are the rubric author's synthetic test labels, not a QA reviewer's decisions. Agreement with an independent reviewer has to be measured separately |
 
 ## Decision record (1.1)
