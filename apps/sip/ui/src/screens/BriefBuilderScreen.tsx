@@ -639,7 +639,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
 
       {isDraft && hasAttemptedSubmit && errors.length > 0 ? <ValidationSummary errors={errors} /> : null}
 
-      {isDraft && errors.length === 0 ? (
+      {isDraft && errors.length === 0 && unsavedSourceCount === 0 ? (
         <p className="text-sm font-medium text-inzbc-forest">Ready to submit for QA.</p>
       ) : null}
 
