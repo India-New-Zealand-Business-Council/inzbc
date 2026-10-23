@@ -1,4 +1,4 @@
-import { useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { isUuid } from '../api/httpClient'
 import {
   isSelfVerificationError,
@@ -75,6 +75,13 @@ export function CandidateActionPanel({ candidate, onUpdated }: Props) {
   const [included, setIncluded] = useState(false)
   const [duplicateOf, setDuplicateOf] = useState('')
   const [panelState, setPanelState] = useState<PanelState>({ kind: 'idle' })
+  const sodExceptionRef = useRef<HTMLInputElement>(null)
+
+  // Not `autoFocus`: React applies that only when the input mounts, and this field is already on
+  // screen before the 403 arrives, so the refusal has to move focus explicitly.
+  useEffect(() => {
+    if (panelState.kind === 'self-verification') sodExceptionRef.current?.focus()
+  }, [panelState])
   const formId = useId()
 
   function openPanel(action: ActionKind) {
@@ -215,7 +222,7 @@ export function CandidateActionPanel({ candidate, onUpdated }: Props) {
                   type="text"
                   value={sodExceptionId}
                   onChange={(event) => setSodExceptionId(event.target.value)}
-                  autoFocus={panelState.kind === 'self-verification'}
+                  ref={sodExceptionRef}
                   aria-describedby={panelState.kind === 'self-verification' ? `${formId}-sod-message` : undefined}
                   className="mt-1 w-full rounded-md border border-inzbc-navy/20 p-2 text-sm transition-colors hover:border-inzbc-navy/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
                 />

@@ -167,7 +167,7 @@ describe('CandidateActionPanel', () => {
     expect(alert).toHaveTextContent('Enter the exception id above')
     // The exception-id field stays on screen so the caller can cite one and resubmit, unlike the
     // generic error path which just reports the message.
-    expect(screen.getByLabelText(/Exception id/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/Exception id/)).toHaveFocus()
   })
 
   it('cites the exception id on retry after a self-verification refusal', async () => {
