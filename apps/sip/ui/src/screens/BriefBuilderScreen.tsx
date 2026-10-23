@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { ReportsApiError, submitReportForQa } from '../api/reportsStore'
 import { GOVERNANCE_LINE, type Candidate, type DailyBriefReport, type SourceCoverageRow, type SourceOutcome } from '../domain'
 import { type CandidateOut, listCandidates } from '../api/candidatesClient'
-import { listSourceChecks, type SourceLibraryOut, sourceLookup } from '../api/sourceLibraryClient'
+import { listSourceChecks, saveConfirmedSourceCheck, type SourceLibraryOut, sourceLookup } from '../api/sourceLibraryClient'
 import { candidatesFixture } from '../lib/fixtures'
 import { FOCUS_NOTE_MAX_LENGTH, validateBrief } from '../lib/validation'
 
@@ -128,6 +128,12 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
   // clearly-labelled placeholder rows beats rendering nothing. It keeps its prefix, so which one
   // is on screen is never ambiguous.
   const [candidates, setCandidates] = useState<Candidate[]>([])
+  const [sourceIdsByCode, setSourceIdsByCode] = useState<Map<string, string>>(new Map())
+  const [persistedOutcomes, setPersistedOutcomes] = useState<Map<string, SourceOutcome>>(new Map())
+  const [sourceEvidence, setSourceEvidence] = useState<Record<string, string>>({})
+  const [sourceSave, setSourceSave] = useState<{ code: string; kind: 'saving' | 'error' | 'saved'; message?: string } | null>(null)
+  const activeRun = useRef(report.runId)
+  activeRun.current = report.runId
 
   useEffect(() => {
     const controller = new AbortController()
@@ -136,6 +142,10 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
     // candidates under another run's number -- and then hash those candidates against the
     // selected run's id on submit.
     const runId = report.runId
+    setSourceIdsByCode(new Map())
+    setPersistedOutcomes(new Map())
+    setSourceSave(null)
+    setSourceEvidence({})
     if (!runId) return
     void (async () => {
       try {
@@ -144,6 +154,14 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
           sourceLookup({ signal: controller.signal }),
           listSourceChecks(runId, { signal: controller.signal }),
         ])
+        if (controller.signal.aborted || activeRun.current !== runId) return
+        setSourceIdsByCode(new Map([...sources.values()].filter((source) => Boolean(source.sip185_code)).map((source) => [source.sip185_code as string, source.id])))
+        const checkedCodes = new Map<string, SourceOutcome>()
+        for (const check of checks) {
+          const code = sources.get(check.source_id)?.sip185_code
+          if (code) checkedCodes.set(code, check.outcome as SourceOutcome)
+        }
+        setPersistedOutcomes(checkedCodes)
         if (live.length > 0) {
           setCandidates(live.map((candidate) => toDomainCandidate(candidate, sources)))
         }
@@ -182,6 +200,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
           })
         }
       } catch {
+        if (controller.signal.aborted || activeRun.current !== runId) return
         // A brief builder that renders nothing because the API is down is less useful than one
         // that renders clearly-labelled placeholder rows, so the fixture appears here and only
         // here -- on a failure, never before a successful load.
@@ -239,6 +258,9 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
     () => report.sourceCoverage.filter((row) => row.outcome !== '').length,
     [report.sourceCoverage],
   )
+  const unsavedSourceCount = report.sourceCoverage.filter(
+    (row) => row.mandatory && (row.outcome === '' || persistedOutcomes.get(row.sip185Code) !== row.outcome),
+  ).length
 
   function toggleCategory(label: string) {
     setExpandedCategories((prev) => {
@@ -260,6 +282,10 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
     // borders (both gated on this flag elsewhere in this component).
     setHasAttemptedSubmit(true)
     if (errors.length > 0 || !isDraft) return
+    if (unsavedSourceCount > 0) {
+      setSubmitState({ kind: 'error', message: String(unsavedSourceCount) + ' mandatory source outcomes are not saved to this run.' })
+      return
+    }
     inFlight.current?.abort()
     const controller = new AbortController()
     inFlight.current = controller
@@ -296,6 +322,35 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
         row.sourceId === sourceId ? { ...row, outcome } : row,
       ),
     })
+  }
+
+  async function saveSourceOutcome(row: SourceCoverageRow) {
+    const runId = report.runId
+    const sourceId = sourceIdsByCode.get(row.sip185Code)
+    const evidence = sourceEvidence[row.sip185Code]?.trim()
+    if (!runId || !sourceId || !row.outcome || !evidence) {
+      setSourceSave({ code: row.sip185Code, kind: 'error', message: 'Provide an outcome, evidence reference and valid run before saving.' })
+      return
+    }
+    setSourceSave({ code: row.sip185Code, kind: 'saving' })
+    try {
+      const saved = await saveConfirmedSourceCheck(runId, {
+        source_id: sourceId,
+        outcome: row.outcome,
+        fallback_used: Boolean(row.fallbackAttempt.trim()),
+        method: row.fallbackAttempt.trim() || null,
+        notes: 'Analyst-confirmed evidence: ' + evidence,
+      })
+      if (activeRun.current !== runId) return
+      if (saved.run_id !== runId || saved.source_id !== sourceId || saved.outcome !== row.outcome) {
+        throw new Error('The service returned a check for a different run, source or outcome.')
+      }
+      setPersistedOutcomes((previous) => new Map(previous).set(row.sip185Code, row.outcome))
+      setSourceSave({ code: row.sip185Code, kind: 'saved' })
+    } catch (error) {
+      if (activeRun.current !== runId) return
+      setSourceSave({ code: row.sip185Code, kind: 'error', message: error instanceof Error ? error.message : 'Could not save the source outcome.' })
+    }
   }
 
   function setSourceFallback(sourceId: string, fallbackAttempt: string) {
