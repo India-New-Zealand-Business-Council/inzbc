@@ -41,7 +41,7 @@ function reportReadyForQa(): DailyBriefReport {
 }
 
 /** Existing persisted checks are the only coverage that permits QA submission. */
-function stubCompleteSourceChecks(): void {
+function stubCompleteSourceChecks(withEvidence = true): void {
   const originalFetch = fetch
   const rows = reportReadyForQa().sourceCoverage
   vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
@@ -55,6 +55,7 @@ function stubCompleteSourceChecks(): void {
       return new Response(JSON.stringify(rows.map((row) => ({
         run_id: 'run-1', source_id: 'db-' + row.sip185Code,
         outcome: 'Included', method: null,
+        notes: withEvidence ? 'Analyst-confirmed evidence: internal://verified/' + row.sip185Code + '\nFallback trail: ' : null,
       }))), { status: 200 })
     }
     return originalFetch(url, init)
@@ -376,6 +377,17 @@ describe('BriefBuilderScreen', () => {
     expect(screen.queryByRole('button', { name: /submit for qa/i })).not.toBeInTheDocument()
   })
 
+  it('rejects 112 legacy outcome-only checks without evidence at the QA gate', async () => {
+    stubCompleteSourceChecks(false)
+    render(<ControlledBriefBuilder initial={reportReadyForQa()} />)
+    await screen.findByText(/112 mandatory sources — 112 selected locally/)
+    expect(screen.queryByText(/ready to submit for qa/i)).not.toBeInTheDocument()
+    const submit = vi.spyOn(reportsStore, 'submitReportForQa')
+    await userEvent.click(screen.getByRole('button', { name: /submit for qa/i }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(/not saved to this run/i)
+    expect(submit).not.toHaveBeenCalled()
+  })
+
   it('surfaces a submit failure without transitioning the report', async () => {
     stubCompleteSourceChecks()
     vi.spyOn(reportsStore, 'submitReportForQa').mockRejectedValue(new Error('network down'))
@@ -512,9 +524,84 @@ describe('BriefBuilderScreen candidate source', () => {
     expect(posts[0]?.url).toBe('/api/runs/run-1/source-checks')
     expect(JSON.parse(String(posts[0]?.init.body))).toMatchObject({
       source_id: 'src-1', outcome: 'Included',
-      notes: 'Analyst-confirmed evidence: internal://evidence/1',
+      notes: 'Analyst-confirmed evidence: internal://evidence/1\\nFallback trail: ',
     })
     expect(posts[0]?.init.headers).toMatchObject({ 'X-CSRF-Token': 'csrf-test' })
+  })
+
+  it('invalidates the saved status when the evidence reference is edited', async () => {
+    seedSession({ userId: 'analyst', name: 'Analyst', roles: ['Analyst'], csrfToken: 't' })
+    const previous = fetch
+    vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      if (String(url).endsWith('/source-checks') && init?.method === 'POST') {
+        const data = JSON.parse(String(init.body)) as { source_id: string; outcome: string; notes: string }
+        return new Response(JSON.stringify({ id: 'check', run_id: 'run-1', ...data, method: null }), { status: 201 })
+      }
+      return previous(url, init)
+    }))
+    render(<ControlledBriefBuilder initial={reportOnRun()} />)
+    await userEvent.click(screen.getByRole('button', { name: /nz official/i }))
+    await userEvent.selectOptions(screen.getAllByRole('combobox')[0]!, 'Included')
+    const input = screen.getAllByPlaceholderText('Evidence URL or reference')[0]!
+    await userEvent.type(input, 'internal://first')
+    const button = screen.getAllByRole('button', { name: /save confirmed outcome/i })[0]!
+    await waitFor(() => expect(button).toBeEnabled())
+    await userEvent.click(button)
+    expect(await screen.findByText('Saved for this run')).toBeInTheDocument()
+    await userEvent.clear(input)
+    await userEvent.type(input, 'internal://changed')
+    expect(screen.queryByText('Saved for this run')).not.toBeInTheDocument()
+    expect(screen.getByText('Not saved')).toBeInTheDocument()
+  })
+
+  it('refuses unapproved fallback methods and does not POST', async () => {
+    seedSession({ userId: 'analyst', name: 'Analyst', roles: ['Analyst'], csrfToken: 't' })
+    const previous = fetch
+    const posts = vi.fn()
+    vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      if (String(url).endsWith('/source-checks') && init?.method === 'POST') {
+        posts()
+        return new Response('{}', { status: 201 })
+      }
+      return previous(url, init)
+    }))
+    render(<ControlledBriefBuilder initial={reportOnRun()} />)
+    await userEvent.click(screen.getByRole('button', { name: /nz official/i }))
+    await userEvent.selectOptions(screen.getAllByRole('combobox')[0]!, 'Inaccessible')
+    await userEvent.type(screen.getAllByPlaceholderText('Evidence URL or reference')[0]!, 'internal://test')
+    await userEvent.type(screen.getAllByPlaceholderText('Access/fallback reason (required for failures)')[0]!, 'Request timed out')
+    fireEvent.change(screen.getAllByRole('textbox').find((el) => el.id === 'fallback-NZ-OFF-001')!, {
+      target: { value: 'Unapproved scraper' },
+    })
+    const save = screen.getAllByRole('button', { name: /save confirmed outcome/i })[0]!
+    await waitFor(() => expect(save).toBeEnabled())
+    await userEvent.click(save)
+    expect(await screen.findByRole('alert')).toHaveTextContent(/approved SIP-185 methods/i)
+    expect(posts).not.toHaveBeenCalled()
+  })
+
+  it('refuses out-of-order fallback steps and requires a failure reason', async () => {
+    seedSession({ userId: 'analyst', name: 'Analyst', roles: ['Analyst'], csrfToken: 't' })
+    const previous = fetch
+    const posts = vi.fn()
+    vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      if (String(url).endsWith('/source-checks') && init?.method === 'POST') { posts(); return new Response('{}', { status: 201 }) }
+      return previous(url, init)
+    }))
+    render(<ControlledBriefBuilder initial={reportOnRun()} />)
+    await userEvent.click(screen.getByRole('button', { name: /nz official/i }))
+    await userEvent.selectOptions(screen.getAllByRole('combobox')[0]!, 'Inaccessible')
+    await userEvent.type(screen.getAllByPlaceholderText('Evidence URL or reference')[0]!, 'internal://test')
+    const fallback = screen.getAllByRole('textbox').find((el) => el.id === 'fallback-NZ-OFF-001')!
+    fireEvent.change(fallback, { target: { value: 'RSS or approved feed; Direct access' } })
+    const save = screen.getAllByRole('button', { name: /save confirmed outcome/i })[0]!
+    await waitFor(() => expect(save).toBeEnabled())
+    await userEvent.click(save)
+    expect(await screen.findByRole('alert')).toHaveTextContent(/approved SIP-185 methods/i)
+    fireEvent.change(fallback, { target: { value: 'Direct access; RSS or approved feed' } })
+    await userEvent.click(save)
+    expect(await screen.findByRole('alert')).toHaveTextContent(/access failure or fallback reason/i)
+    expect(posts).not.toHaveBeenCalled()
   })
 
   it('keeps the labelled fixture when the API cannot be reached', async () => {
