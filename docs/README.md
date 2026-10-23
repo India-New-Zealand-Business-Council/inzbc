@@ -11,6 +11,11 @@ Two conventions hold across this tree:
 
 ---
 
+## I am preparing a client handover
+- [`handover-pack.md`](handover-pack.md) — canonical delivery evidence, limitations and recipient walkthrough.
+- [`operations/sunil-handover-readiness.md`](operations/sunil-handover-readiness.md) — supplemental evidence/decision index; not a separate approval authority.
+- [`testing/acceptance-register.md`](testing/acceptance-register.md) — recorded client acceptance evidence and remaining traceability.
+
 ## I am new to the project
 1. [`project-charter.md`](project-charter.md) — scope, objectives, roles, phase gates and the four
    decisions INZBC owns. The **proposed** shape of the engagement, in one page. It is not signed
