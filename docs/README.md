@@ -16,6 +16,12 @@ Two conventions hold across this tree:
 - [`operations/sunil-handover-readiness.md`](operations/sunil-handover-readiness.md) — supplemental evidence/decision index; not a separate approval authority.
 - [`testing/acceptance-register.md`](testing/acceptance-register.md) — recorded client acceptance evidence and remaining traceability.
 
+## I am looking for the Studio 6 research
+- [`research/retrieval-literature-review.md`](research/retrieval-literature-review.md) — FTA retrieval (Roshan and Bhanu).
+- [`research/agent-safety-literature-review.md`](research/agent-safety-literature-review.md) — safe agent coordination under human approval (Bhanu).
+- [`research/agent-safety-baseline.md`](research/agent-safety-baseline.md) — measured gate safety, replay and judge agreement for the SIP coordinator.
+- [`research/agent-safety-solution-domain.md`](research/agent-safety-solution-domain.md) — the techniques used in #62 to #65 and why.
+
 ## I am new to the project
 1. [`project-charter.md`](project-charter.md) — scope, objectives, roles, phase gates and the four
    decisions INZBC owns. The **proposed** shape of the engagement, in one page. It is not signed

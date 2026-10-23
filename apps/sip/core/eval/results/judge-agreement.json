@@ -1,0 +1,7 @@
+{
+  "status": "not-run",
+  "reason": "the judge needs a live model; pass --live",
+  "golden_cases": 8,
+  "golden_cases_with_a_verdict": 8,
+  "human_labelled_cases": 0
+}
