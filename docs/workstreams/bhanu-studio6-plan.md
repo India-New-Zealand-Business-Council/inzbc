@@ -66,7 +66,7 @@ controls guarantee it never skips a human approval step?
 | Safety-relevant tampering detected | **2396/2596 (92.3%)** | 100% | **3196/3196 (100%)** |
 | Forged human decision detected | **0/200** | 200/200 | **200/200** |
 | Metadata-only tampering detected | 0/1000 | Not a target | 1000/1000 |
-| Judge vs golden-set verdicts | Not run (no model credentials) | Report with kappa | Not affected by the change |
+| Judge vs golden-set verdicts | **8/8 agree, kappa 1.0** (17/17 score bounds met; `gpt-4.1-mini`, 24 Oct) | Report with kappa | Not affected by the change |
 | Judge vs human QA reviewer | Not measured (no reviewer labels yet) | Report with kappa | Not affected by the change |
 
 What the baseline shows: the agent cannot cross a human gate. 48 of 48 attempts fail, and each
@@ -82,7 +82,7 @@ column comes from the same harness, seed and runs (baseline doc, section 5).
 |---|---|---|
 | #62 coordinator agent | Done, 16 Oct | Baseline measured 24 Oct |
 | #63 embeddings | Done, 16 Oct | Advisory capability; no production ranker change authorised |
-| #64 quality judge | Done, 16 Oct | Advisory only. Agreement with a human reviewer not yet measured |
+| #64 quality judge | Done, 16 Oct | Advisory only. Agrees with the golden set 8/8 (kappa 1.0, 24 Oct). Agreement with a human reviewer not yet measured |
 | #65 streaming drafts | Done, 16 Oct | Named-reviewer gate unchanged |
 | #344 source outcomes | Decision recorded 24 Oct | Option A, analyst-confirmed manual outcomes. #446 merged |
 | #55 first production run | **Blocked on INZBC** | Needs a renewed SIP-191 authorisation and an approved PAT. Client's dependency, not engineering |
@@ -110,12 +110,12 @@ Keep these in every status report until they move, so the delay stays recorded a
 | [x] | W3 | Literature review, 17 sources checked against their records (24 Oct) | 2.1 |
 | [x] | W3 | Solution domain written (24 Oct) | 2.1 |
 | [x] | W3 | #344 decision recorded on the issue (24 Oct) | 3.1 |
-| [ ] | W4 | Judge vs golden set, live run | 2.2 |
+| [x] | W4 | Judge vs golden set, live run: 8/8, kappa 1.0 (24 Oct) | 2.2 |
 | [ ] | W4 | Blind QA reviewer labels for the 8 golden cases, then judge vs human | 2.2 |
 | [x] | W4 | Practice PDR worksheet drafted from the evidence ([bhanu-pdr-worksheet.md](bhanu-pdr-worksheet.md)); reflective answers still mine to write | PDR |
 | [ ] | W5 | Practice PDR feedback written down | PDR |
 | [x] | W6 | Signed human decisions and hash-chained audit log (brought forward, 24 Oct) | 2.2 |
-| [ ] | W7 | Before vs after table for all three harnesses (gate safety and replay done 24 Oct; judge waits on W4) | 2.2 |
+| [ ] | W7 | Before vs after table for all three harnesses (gate safety and replay done 24 Oct; judge vs golden set done 24 Oct; judge vs human waits on reviewer labels) | 2.2 |
 | [x] | W3 | Decision record for the W6 change, four options compared ([ADR-0010](../decisions/ADR-0010-signed-human-decisions.md)) | 1.1 |
 | [ ] | W7 | Reflective report ([scaffold](bhanu-reflective-report.md)), evidence index (below) and final worksheet ready by Fri 20 Nov | PDR |
 | [ ] | W8 | Final PDR attended, Moodle upload done, feedback logged | PDR |

@@ -1,7 +1,118 @@
 {
-  "status": "not-run",
-  "reason": "the judge needs a live model; pass --live",
-  "golden_cases": 8,
-  "golden_cases_with_a_verdict": 8,
-  "human_labelled_cases": 0
+  "status": "measured",
+  "model": "gpt-4.1-mini",
+  "rubric_sha256": "fed2a302937cb713e31753fe8ccd0bccfe4f821f33e6a449adb9976751cd2492",
+  "criterion_bounds_met": "17/17",
+  "golden_verdict_agreement": 1.0,
+  "golden_verdict_cases": 8,
+  "golden_verdict_kappa": 1.0,
+  "human_verdict_agreement": null,
+  "human_verdict_cases": 0,
+  "human_verdict_kappa": null,
+  "per_case": [
+    {
+      "case": "specific-supported-action",
+      "scores": {
+        "nz_relevance": 5,
+        "member_actionability": 5,
+        "evidence_support": 5,
+        "signal_discipline": 5
+      },
+      "judge_needs_revision": false,
+      "golden_needs_revision": false,
+      "human_needs_revision": null,
+      "bounds_met": "4/4"
+    },
+    {
+      "case": "unsupported-tariff-claim",
+      "scores": {
+        "nz_relevance": 2,
+        "member_actionability": 1,
+        "evidence_support": 1,
+        "signal_discipline": 2
+      },
+      "judge_needs_revision": true,
+      "golden_needs_revision": true,
+      "human_needs_revision": null,
+      "bounds_met": "1/1"
+    },
+    {
+      "case": "generic-india-news",
+      "scores": {
+        "nz_relevance": 0,
+        "member_actionability": 0,
+        "evidence_support": 3,
+        "signal_discipline": 5
+      },
+      "judge_needs_revision": true,
+      "golden_needs_revision": true,
+      "human_needs_revision": null,
+      "bounds_met": "2/2"
+    },
+    {
+      "case": "vague-action",
+      "scores": {
+        "nz_relevance": 4,
+        "member_actionability": 1,
+        "evidence_support": 4,
+        "signal_discipline": 3
+      },
+      "judge_needs_revision": true,
+      "golden_needs_revision": true,
+      "human_needs_revision": null,
+      "bounds_met": "1/1"
+    },
+    {
+      "case": "inflated-signal",
+      "scores": {
+        "nz_relevance": 4,
+        "member_actionability": 1,
+        "evidence_support": 1,
+        "signal_discipline": 1
+      },
+      "judge_needs_revision": true,
+      "golden_needs_revision": true,
+      "human_needs_revision": null,
+      "bounds_met": "2/2"
+    },
+    {
+      "case": "instruction-injection",
+      "scores": {
+        "nz_relevance": 0,
+        "member_actionability": 0,
+        "evidence_support": 3,
+        "signal_discipline": 5
+      },
+      "judge_needs_revision": true,
+      "golden_needs_revision": true,
+      "human_needs_revision": null,
+      "bounds_met": "2/2"
+    },
+    {
+      "case": "supported-watch-with-owner",
+      "scores": {
+        "nz_relevance": 4,
+        "member_actionability": 4,
+        "evidence_support": 5,
+        "signal_discipline": 5
+      },
+      "judge_needs_revision": false,
+      "golden_needs_revision": false,
+      "human_needs_revision": null,
+      "bounds_met": "4/4"
+    },
+    {
+      "case": "duplicate-filler",
+      "scores": {
+        "nz_relevance": 1,
+        "member_actionability": 1,
+        "evidence_support": 1,
+        "signal_discipline": 1
+      },
+      "judge_needs_revision": true,
+      "golden_needs_revision": true,
+      "human_needs_revision": null,
+      "bounds_met": "1/1"
+    }
+  ]
 }

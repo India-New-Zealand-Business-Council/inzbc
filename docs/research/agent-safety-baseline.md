@@ -15,7 +15,7 @@ re-run with one command.
 | Gate safety | `uv run python -m apps.sip.core.eval.gate_safety --write` | `apps/sip/core/eval/results/gate-safety.json` |
 | Replay and tampering | `uv run python -m apps.sip.core.eval.replay_fidelity --write` | `apps/sip/core/eval/results/replay-fidelity.json` |
 | Replay and tampering, after the change (section 5) | `uv run python -m apps.sip.core.eval.replay_fidelity --signed --write` | `apps/sip/core/eval/results/replay-fidelity-signed.json` |
-| Judge vs human | `uv run python -m apps.sip.core.eval.judge_agreement --live --write` | `apps/sip/core/eval/results/judge-agreement.json` |
+| Judge agreement (needs `OPENAI_API_KEY`) | `REDACTION_POLICY_PATH=config/redaction-policy.json uv run python -m apps.sip.core.eval.judge_agreement --live --write` | `apps/sip/core/eval/results/judge-agreement.json` |
 
 The first two need no model and no database. `apps/sip/core/tests/test_research_eval.py` pins
 them in CI, so a change that weakens a control fails the build.
@@ -132,27 +132,39 @@ dropped or rewritten entry breaks the chain. Re-measure with the same harness. T
 including the 0/200, so the change has to update it deliberately. Done early, on 24 Oct: see
 section 5.
 
-## 4. Judge vs human: not yet measured
+## 4. Judge agreement: golden set measured, human reviewer not yet
 
-The quality judge (#64) needs a live model. The container this baseline was measured in has no
-model credentials, so `judge_agreement --live` did not run, and no number is reported or estimated.
+**Measured 24 Oct 2026**, `gpt-4.1-mini`, rubric `fed2a302…cd2492`, with the approved
+redaction policy (`REDACTION_POLICY_PATH=config/redaction-policy.json`):
 
-Two comparisons are set up, and they are kept apart:
+    REDACTION_POLICY_PATH=config/redaction-policy.json \
+      uv run python -m apps.sip.core.eval.judge_agreement --live --write
 
-- **Judge vs golden-set labels.** The golden set holds 8 hand-authored synthetic cases, and each
-  case's score bounds imply a verdict. The harness reports how many score bounds the judge met,
-  verdict agreement, and Cohen's kappa. These labels were written as test labels, so this compares
-  the judge with the rubric author, not with an independent reviewer.
+Two comparisons, kept apart:
+
+| Comparison | Cases | Agreement | Cohen's kappa |
+|---|---|---|---|
+| Judge vs golden-set verdicts | 8 | **8/8 (100%)** | **1.0** |
+| Judge score within the golden case's bounds | 17 bounds | **17/17** | n/a |
+| Judge vs a human QA reviewer | 0 | Not yet measured | Not yet measured |
+
+The judge marked 6 cases as needing revision and 2 as not, matching the golden labels exactly,
+including the `instruction-injection` case, which it scored 0 for NZ relevance and actionability
+rather than following the injected instruction. A second live run gave the same agreement and
+kappa. Per-case scores are in `apps/sip/core/eval/results/judge-agreement.json`.
+
+- **Judge vs golden-set labels.** These were written as test labels by the rubric author, so this
+  compares the judge with the rubric author, not with an independent reviewer. 8 cases with a 6:2
+  split is small: one disagreement would move kappa a long way, so read the raw agreement first.
 - **Judge vs a human QA reviewer.** A reviewer who has not seen the judge's output records a
   verdict for each case in `apps/sip/core/eval/human-qa-labels.csv`
   (`case_id,needs_revision,reviewer,date`). Until that file exists, this number stays "not yet
   measured".
 
-To finish this before the practice PDR:
-1. Run `judge_agreement --live --write` with model credentials.
-2. Ask the reviewer named for QA (not Bhanu, who wrote the rubric) to label the 8 cases blind.
-3. Re-run. With 8 cases kappa is unstable, so report raw agreement first, and grow the set if the
-   result will be relied on.
+Left to do:
+1. Ask the reviewer named for QA (not Bhanu, who wrote the rubric) to label the 8 cases blind,
+   from the brief text alone.
+2. Re-run the command above. Grow the set if the result will be relied on.
 
 ## 5. After the change: signed decisions and a sealed log
 
@@ -207,4 +219,5 @@ Switching that on in production is a configuration decision, not part of this ch
   nothing about how often a real model would attempt these actions, which is a separate question.
 - **The replay runs are synthetic.** They cover the agent's whole tool set, but not live
   collector data or the API persistence layer.
-- **The judge result is pending**, and its golden set is small and synthetic.
+- **The judge golden set is small and synthetic** (8 cases, written by the rubric author), and the
+  comparison with an independent human reviewer is still pending.

@@ -52,7 +52,7 @@ skips a human approval step?
 | Forged human decision detected | 0/200 | 200/200 |
 | Safety-relevant tampering detected | 2396/2596 | 3196/3196 |
 | Metadata tampering detected | 0/1000 | 1000/1000 |
-| Judge vs golden set | Not run yet | Needs `OPENAI_API_KEY` as an environment secret |
+| Judge vs golden set | 8/8 agree, kappa 1.0 (17/17 score bounds; 24 Oct) | Not affected by the change |
 | Judge vs a human QA reviewer | Not measured | Needs blind labels from a reviewer |
 
 - **Source of these numbers:** [agent-safety-baseline.md](../research/agent-safety-baseline.md),
@@ -98,7 +98,8 @@ skips a human approval step?
 - **"Why not per-approver signatures?"** ADR-0010: they are stronger, but they need the client to
   issue keys. They are recorded as the next step.
 - **"Where is the human comparison for the judge?"** Not measured yet, and the baseline says so
-  rather than estimating it. It needs a live model run and blind labels from a QA reviewer.
+  rather than estimating it. The live run against the golden set is done (8/8, kappa 1.0), but
+  those labels are the rubric author's. It still needs blind labels from a QA reviewer.
 
 ## 5. What I want feedback on at the practice PDR
 
