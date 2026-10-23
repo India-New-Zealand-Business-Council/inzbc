@@ -4990,6 +4990,13 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Request body exceeds the webhook size limit. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -4999,7 +5006,7 @@ export interface operations {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
-            /** @description WIX_WEBHOOK_SECRET is not configured on the server. */
+            /** @description WIX_WEBHOOK_SECRET or DATABASE_URL is not configured on the server. */
             503: {
                 headers: {
                     [name: string]: unknown;

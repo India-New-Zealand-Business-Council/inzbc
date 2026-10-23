@@ -7,6 +7,10 @@ Implements the contract in `schemas/webhooks.md`:
   missing, expired, or invalid (401).
 - Refuses any request carrying query-string parameters (400) before reading the body, so neither
   webhook secrets nor submitter personal data can ever be sent in the URL or query string.
+- Bounds unauthenticated work: the body is capped at `MAX_WEBHOOK_BODY_BYTES` (413) while it is
+  read, and the database connection is opened only after the signature verifies.
+- Fails closed (503) when `DATABASE_URL` is unset: a submission is never acknowledged unless it
+  is durably stored.
 - Idempotent on `event_id`: retries with an identical canonical payload return 200 with
   `deduplicated=True`; reusing `event_id` with a mutated payload returns 409 Conflict.
 - `GET /api/site-forms` and `GET /api/site-forms/{submission_id}`: staff-authenticated read surface
@@ -22,6 +26,8 @@ import os
 import re
 import time
 import uuid
+from collections.abc import Callable, Iterator
+from contextlib import AbstractContextManager, contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import Enum
@@ -48,6 +54,10 @@ WEBHOOK_SECRET_ENV = "WIX_WEBHOOK_SECRET"
 SIGNATURE_HEADER = "X-Wix-Webhook-Signature"
 TIMESTAMP_HEADER = "X-Wix-Webhook-Timestamp"
 REPLAY_WINDOW_SECONDS = 300
+# The largest valid payload (5000-char message, 20 x 500-char metadata values, the other capped
+# fields) is well under 32 KiB of JSON, so 64 KiB leaves room without letting an unauthenticated
+# caller make the process buffer an arbitrarily large body before the signature is checked.
+MAX_WEBHOOK_BODY_BYTES = 64 * 1024
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -66,6 +76,14 @@ class WebhookNotConfiguredError(RuntimeError):
 
 class WebhookSignatureError(ValueError):
     """Raised when the webhook timestamp or HMAC-SHA256 signature is missing, stale, or invalid."""
+
+
+class SiteFormStoreNotConfiguredError(RuntimeError):
+    """Raised when `DATABASE_URL` is unset, so there is nowhere durable to store a submission."""
+
+
+class WebhookBodyTooLargeError(ValueError):
+    """Raised when the webhook body exceeds `MAX_WEBHOOK_BODY_BYTES`."""
 
 
 class SiteFormIdempotencyConflictError(ValueError):
@@ -404,12 +422,16 @@ class PostgresSiteFormRepository:
                     record_id=stored.id,
                     user_id=None,
                     old_value=None,
-                    new_value={
-                        "event_id": stored.event_id,
-                        "form_type": stored.form_type.value,
-                        "page_slug": stored.page_slug,
-                        "payload_sha256": stored.payload_sha256,
-                    },
+                    # `audit_log.new_value` is text; psycopg cannot adapt a bare dict.
+                    new_value=json.dumps(
+                        {
+                            "event_id": stored.event_id,
+                            "form_type": stored.form_type.value,
+                            "page_slug": stored.page_slug,
+                            "payload_sha256": stored.payload_sha256,
+                        },
+                        sort_keys=True,
+                    ),
                     reason=f"Wix site-form webhook ({stored.form_type.value})",
                 )
                 self._conn.commit()
@@ -581,19 +603,54 @@ def _to_out(item: StoredSiteFormSubmission) -> SiteFormSubmissionOut:
     )
 
 
-_DEFAULT_REPO = InMemorySiteFormRepository()
+SiteFormRepositoryOpener = Callable[[], AbstractContextManager[SiteFormRepository]]
 
 
-def get_site_form_repository():
-    """Yields a Postgres repository when `DATABASE_URL` is set, else the in-memory store."""
+@contextmanager
+def open_site_form_repository() -> Iterator[SiteFormRepository]:
+    """Opens the Postgres repository, refusing when `DATABASE_URL` is unset.
+
+    There is deliberately no in-memory fallback outside tests: acknowledging a webhook whose
+    personal data lives only in process memory would lose it on restart while Wix treats it as
+    delivered. Tests inject `InMemorySiteFormRepository` through dependency overrides.
+    """
     database_url = os.getenv("DATABASE_URL")
     if not database_url:
-        yield _DEFAULT_REPO
-        return
+        raise SiteFormStoreNotConfiguredError("DATABASE_URL is not configured")
     import psycopg
 
     with psycopg.connect(database_url) as conn:
         yield PostgresSiteFormRepository(conn)
+
+
+def get_site_form_repository_opener() -> SiteFormRepositoryOpener:
+    """The webhook opens the store itself, after verifying the signature, rather than having
+    FastAPI connect to Postgres for every unauthenticated request before the handler runs."""
+    return open_site_form_repository
+
+
+def get_site_form_repository(
+    opener: SiteFormRepositoryOpener = Depends(get_site_form_repository_opener),
+) -> Iterator[SiteFormRepository]:
+    """The staff read endpoints' repository; 503 when no durable store is configured."""
+    try:
+        with opener() as repository:
+            yield repository
+    except SiteFormStoreNotConfiguredError as exc:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+
+
+async def _read_capped_body(request: Request) -> bytes:
+    """Reads the body, refusing once it passes `MAX_WEBHOOK_BODY_BYTES` instead of buffering it all."""
+    declared = request.headers.get("content-length")
+    if declared is not None and declared.isdigit() and int(declared) > MAX_WEBHOOK_BODY_BYTES:
+        raise WebhookBodyTooLargeError
+    body = bytearray()
+    async for chunk in request.stream():
+        body.extend(chunk)
+        if len(body) > MAX_WEBHOOK_BODY_BYTES:
+            raise WebhookBodyTooLargeError
+    return bytes(body)
 
 
 def get_webhook_secret() -> str | None:
@@ -621,7 +678,10 @@ site_forms_router = APIRouter(
         400: {"description": "Query string parameters present on webhook URL, or malformed JSON."},
         401: {"description": "Missing, expired, or invalid Wix HMAC-SHA256 webhook signature."},
         409: {"description": "Duplicate event_id replayed with a different payload."},
-        503: {"description": "WIX_WEBHOOK_SECRET is not configured on the server."},
+        413: {"description": "Request body exceeds the webhook size limit."},
+        503: {
+            "description": "WIX_WEBHOOK_SECRET or DATABASE_URL is not configured on the server."
+        },
     },
 )
 async def receive_wix_site_form(
@@ -630,7 +690,7 @@ async def receive_wix_site_form(
     wix_timestamp: str | None = Header(default=None, alias=TIMESTAMP_HEADER),
     wix_signature: str | None = Header(default=None, alias=SIGNATURE_HEADER),
     secret: str | None = Depends(get_webhook_secret),
-    repository: SiteFormRepository = Depends(get_site_form_repository),
+    open_repository: SiteFormRepositoryOpener = Depends(get_site_form_repository_opener),
 ) -> SiteFormWebhookAckOut:
     """Receives, verifies, and persists a Wix site-form submission (#45)."""
     # Acceptance criterion: no sensitive value (or any parameter) in the URL or query string.
@@ -643,7 +703,13 @@ async def receive_wix_site_form(
             ),
         )
 
-    raw_body = await request.body()
+    try:
+        raw_body = await _read_capped_body(request)
+    except WebhookBodyTooLargeError as exc:
+        raise HTTPException(
+            status.HTTP_413_CONTENT_TOO_LARGE,
+            detail=f"request body exceeds {MAX_WEBHOOK_BODY_BYTES} bytes",
+        ) from exc
     try:
         verify_wix_webhook_signature(
             raw_body,
@@ -669,7 +735,10 @@ async def receive_wix_site_form(
         raise RequestValidationError(exc.errors()) from exc
 
     try:
-        stored, deduplicated = repository.record(payload)
+        with open_repository() as repository:
+            stored, deduplicated = repository.record(payload)
+    except SiteFormStoreNotConfiguredError as exc:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
     except SiteFormIdempotencyConflictError as exc:
         raise HTTPException(status.HTTP_409_CONFLICT, detail=str(exc)) from exc
 

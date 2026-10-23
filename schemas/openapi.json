@@ -3298,8 +3298,11 @@
           "409": {
             "description": "Duplicate event_id replayed with a different payload."
           },
+          "413": {
+            "description": "Request body exceeds the webhook size limit."
+          },
           "503": {
-            "description": "WIX_WEBHOOK_SECRET is not configured on the server."
+            "description": "WIX_WEBHOOK_SECRET or DATABASE_URL is not configured on the server."
           },
           "422": {
             "description": "Validation Error",
