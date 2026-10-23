@@ -30,6 +30,10 @@ const SOURCE_CATEGORIES: { label: string; prefixes: string[] }[] = [
   { label: 'Media', prefixes: ['NZ-MED-', 'IND-MED-', 'GLB-MED-'] },
 ]
 
+function sourceSignature(outcome: string, fallback: string): string {
+  return JSON.stringify([outcome, fallback.trim()])
+}
+
 function categoryForSource(sip185Code: string): string {
   const category = SOURCE_CATEGORIES.find((entry) => entry.prefixes.some((prefix) => sip185Code.startsWith(prefix)))
   return category?.label ?? 'Other'
@@ -130,7 +134,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
   const [candidates, setCandidates] = useState<Candidate[]>([])
   const [sourceIdsByCode, setSourceIdsByCode] = useState<Map<string, string>>(new Map())
   const [loadedRun, setLoadedRun] = useState<string | null>(null)
-  const [persistedOutcomes, setPersistedOutcomes] = useState<Map<string, SourceOutcome>>(new Map())
+  const [persistedOutcomes, setPersistedOutcomes] = useState<Map<string, string>>(new Map())
   const [sourceEvidence, setSourceEvidence] = useState<Record<string, string>>({})
   const [sourceSave, setSourceSave] = useState<{ code: string; kind: 'saving' | 'error' | 'saved'; message?: string } | null>(null)
   const activeRun = useRef(report.runId)
@@ -156,10 +160,10 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
         setSourceSave(null)
         setSourceEvidence({})
         setSourceIdsByCode(new Map([...sources.values()].filter((source) => Boolean(source.sip185_code)).map((source) => [source.sip185_code as string, source.id])))
-        const checkedCodes = new Map<string, SourceOutcome>()
+        const checkedCodes = new Map<string, string>()
         for (const check of checks) {
           const code = sources.get(check.source_id)?.sip185_code
-          if (code) checkedCodes.set(code, check.outcome as SourceOutcome)
+          if (code) checkedCodes.set(code, sourceSignature(check.outcome, check.method ?? ''))
         }
         setPersistedOutcomes(checkedCodes)
         if (live.length > 0) {
@@ -195,7 +199,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
             ...report,
             sourceCoverage: report.sourceCoverage.map((row) => {
               const check = bySource.get(row.sip185Code)
-              return check ? { ...row, outcome: check.outcome as typeof row.outcome } : row
+              return check ? { ...row, outcome: check.outcome as typeof row.outcome, fallbackAttempt: check.method ?? '' } : row
             }),
           })
         }
@@ -259,7 +263,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
     [report.sourceCoverage],
   )
   const unsavedSourceCount = report.sourceCoverage.filter(
-    (row) => row.mandatory && (row.outcome === '' || loadedRun !== report.runId || persistedOutcomes.get(row.sip185Code) !== row.outcome),
+    (row) => row.mandatory && (row.outcome === '' || loadedRun !== report.runId || persistedOutcomes.get(row.sip185Code) !== sourceSignature(row.outcome, row.fallbackAttempt)),
   ).length
 
   function toggleCategory(label: string) {
@@ -345,7 +349,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
       if (saved.run_id !== runId || saved.source_id !== sourceId || saved.outcome !== row.outcome) {
         throw new Error('The service returned a check for a different run, source or outcome.')
       }
-      setPersistedOutcomes((previous) => new Map(previous).set(row.sip185Code, row.outcome))
+      setPersistedOutcomes((previous) => new Map(previous).set(row.sip185Code, sourceSignature(saved.outcome, saved.method ?? '')))
       setSourceSave({ code: row.sip185Code, kind: 'saved' })
     } catch (error) {
       if (activeRun.current !== runId) return
@@ -611,7 +615,7 @@ export function BriefBuilderScreen({ report, onChange }: Props) {
                                 {sourceSave?.code === row.sip185Code && sourceSave.kind === 'saving'
                                   ? 'Saving…' : 'Save confirmed outcome'}
                               </button>
-                              {loadedRun === report.runId && persistedOutcomes.get(row.sip185Code) === row.outcome && row.outcome
+                              {loadedRun === report.runId && persistedOutcomes.get(row.sip185Code) === sourceSignature(row.outcome, row.fallbackAttempt) && row.outcome
                                 ? <span className="ml-2 text-xs text-inzbc-forest">Saved for this run</span>
                                 : <span className="ml-2 text-xs text-slate-500">Not saved</span>}
                               {sourceSave?.code === row.sip185Code && sourceSave.kind === 'error'
