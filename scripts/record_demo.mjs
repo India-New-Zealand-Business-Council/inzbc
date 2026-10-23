@@ -13,9 +13,10 @@
  *   node scripts/record_demo.mjs
  *   node scripts/record_demo.mjs --url http://localhost:5174 --run RUN-SEED-06
  *
- * Needs the app running (scripts/platform.cmd) and playwright available.
+ * Needs the app running (scripts/platform.cmd) and the root `@playwright/test` dev dependency
+ * installed (`pnpm install`), which provides the same `chromium` launcher.
  */
-import { chromium } from 'playwright'
+import { chromium } from '@playwright/test'
 import { mkdirSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
