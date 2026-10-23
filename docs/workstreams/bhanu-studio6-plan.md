@@ -28,6 +28,7 @@ controls guarantee it never skips a human approval step?
 | AI quality judge for briefs, with a golden test set (#64) | 16 Oct |
 | Streaming drafts for the Comms Assistant (#65) | 16 Oct |
 | Coordinator agent run from the app: sealed, re-verified rehearsals on Run Detail | 24 Oct (stacked on the W6 change) |
+| Role-aware Getting Started walkthrough in the platform shell | 24 Oct |
 | Run engine, decision records, audit log, model gateway | Earlier |
 
 ## Key dates

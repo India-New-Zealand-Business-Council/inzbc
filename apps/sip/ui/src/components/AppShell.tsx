@@ -8,6 +8,8 @@ import { DistributionStatusScreen } from '../screens/DistributionStatusScreen'
 import { QaReviewScreen } from '../screens/QaReviewScreen'
 import { RunsCandidatesScreen } from '../screens/RunsCandidatesScreen'
 import { PlatformOverviewScreen } from '../screens/PlatformOverviewScreen'
+import { GettingStartedScreen } from '../screens/GettingStartedScreen'
+import { hasOnboarded, markOnboarded } from '../lib/onboarding'
 import { SCREEN_GROUPS, type ScreenId } from '../types'
 import { CommsAssistant } from '@comms/components/CommsAssistant'
 import { FtaQuery } from '@fta/components/FtaQuery'
@@ -24,6 +26,11 @@ const HEADINGS: Record<ScreenId, { title: string; blurb: string }> = {
     title: 'INZBC Platform',
     blurb:
       'Four modules on one governed backend: trade intelligence, FTA guidance, communications drafting and member services.',
+  },
+  'getting-started': {
+    title: 'Getting started',
+    blurb:
+      'What this platform is for, what your roles let you do in it, and what it will never do without a person.',
   },
   'runs-candidates': {
     title: 'Runs & Candidates',
@@ -112,7 +119,9 @@ function briefForRun(run: RunOut): DailyBriefReport {
 // screen) because later screens' availability depends on this same report's state
 // (schemas/state-machine.md — e.g. the CEO decision screen isn't reachable until QA has passed).
 export function AppShell() {
-  const [screen, setScreen] = useState<ScreenId>('overview')
+  // A first visit opens on Getting Started; after that, on the overview. The walkthrough stays in the
+  // nav, so it is one click away for anyone who wants it again.
+  const [screen, setScreen] = useState<ScreenId>(() => (hasOnboarded() ? 'overview' : 'getting-started'))
   const [workingRun, setWorkingRun] = useState<RunOut | null>(null)
   // Edits are held against the run they were made on. The brief itself is derived below rather
   // than copied into state and kept in step with an effect: two sources for one value is how they
@@ -236,6 +245,14 @@ export function AppShell() {
           <RunsCandidatesScreen onWorkRun={setWorkingRun} workingRunId={workingRun?.id ?? null} />
         ) : null}
         {screen === 'overview' ? <PlatformOverviewScreen /> : null}
+        {screen === 'getting-started' ? (
+          <GettingStartedScreen
+            onGo={(next) => {
+              markOnboarded()
+              setScreen(next)
+            }}
+          />
+        ) : null}
         {screen === 'fta' ? <FtaQuery /> : null}
         {screen === 'comms' ? <CommsAssistant /> : null}
         {screen === 'member' ? <MemberDashboard /> : null}

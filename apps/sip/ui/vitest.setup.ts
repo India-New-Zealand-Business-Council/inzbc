@@ -8,8 +8,13 @@ import '@testing-library/jest-dom/vitest'
 // session's own behaviour is proven.
 import { beforeEach } from 'vitest'
 import { seedSession } from './src/api/session'
+import { markOnboarded } from './src/lib/onboarding'
 
 beforeEach(() => {
+  // Most tests are about a screen, not the first-visit walkthrough, so they start as a returning
+  // viewer and the shell opens on the overview. `GettingStartedScreen.test.tsx` and the shell's
+  // first-visit test reset this.
+  markOnboarded()
   seedSession({
     userId: '00000000-0000-0000-0000-0000000000aa',
     name: 'Test Principal',

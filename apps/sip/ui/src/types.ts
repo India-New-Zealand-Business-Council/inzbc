@@ -1,5 +1,6 @@
 export type ScreenId =
   | 'overview'
+  | 'getting-started'
   | 'brief-builder'
   | 'qa-review'
   | 'ceo-decision'
@@ -21,7 +22,10 @@ export interface ScreenGroup {
 export const SCREEN_GROUPS: ScreenGroup[] = [
   {
     label: 'Platform',
-    screens: [{ id: 'overview', label: 'Overview' }],
+    screens: [
+      { id: 'overview', label: 'Overview' },
+      { id: 'getting-started', label: 'Getting started' },
+    ],
   },
   {
     label: 'Trade Intelligence',
