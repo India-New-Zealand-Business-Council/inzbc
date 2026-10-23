@@ -143,6 +143,23 @@ def record_source_outcome(
             "be seeded in source_library yet, or its sip185_code doesn't match the v1.0 register"
         )
 
+    # Each claimed method must be one of the approved SIP-185 steps, in the order recorded by
+    # the controlled register. An unknown, duplicated or backwards step would otherwise be
+    # persisted as an apparently valid collection trail and be used to justify source coverage.
+    if fallback_attempts:
+        positions = {step: index for index, step in enumerate(FALLBACK_SEQUENCE)}
+        prior = -1
+        for step in fallback_attempts:
+            index = positions.get(step)
+            if index is None:
+                raise ValueError(f"unknown SIP-185 fallback attempt {step!r}")
+            if index <= prior:
+                raise ValueError(
+                    "SIP-185 fallback attempts must follow the approved order "
+                    "without duplicates"
+                )
+            prior = index
+
     # A fallback happened if the final method actually tried isn't the first step in the
     # sequence - a single recorded attempt that skipped straight to a later step (e.g. only
     # "RSS or approved feed" was tried) is still a fallback, not "no fallback used".
