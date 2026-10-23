@@ -4,7 +4,7 @@
 
 ## Actual state (23 October 2026)
 
-The original issue describes the Brief Builder as wholly fixture-backed. That is no longer accurate. `apps/sip/ui/src/screens/BriefBuilderScreen.tsx` now requests `listCandidates(runId)`, `sourceLookup()`, and `listSourceChecks(runId)`. It maps recorded `source_id` UUIDs through `source_library` to SIP-185 codes and copies **only existing** check outcomes into the 112 mandatory-source rows. A missing check remains blank; the screen does not invent coverage. `apps/sip/ui/src/api/sourceLibraryClient.ts` supplies the source-library and per-run check GET calls.
+The original issue describes the Brief Builder as wholly fixture-backed. That is no longer accurate. `apps/sip/ui/src/screens/BriefBuilderScreen.tsx` now requests `listCandidates(runId)`, `sourceLookup()`, and `listSourceChecks(runId)`. It maps recorded `source_id` UUIDs through `source_library` to SIP-185 codes and copies **only existing** check outcomes into the 112 mandatory-source rows. A missing check remains blank; the screen does not invent coverage. **The screen's `setSourceOutcome()` currently only updates local `report.sourceCoverage` through `onChange`: it does not POST changed source outcomes to the API.** The server already provides an authenticated `POST /api/runs/{run_id}/source-checks` route, but the UI has no source-check write integration. Consequently, what an analyst edits on screen is not, by itself, persisted run evidence. `apps/sip/ui/src/api/sourceLibraryClient.ts` supplies the source-library and per-run check GET calls.
 
 The remaining question is **where real run-scoped outcomes originate and how they become accepted evidence**. `apps/sip/collector/source_register.py` defines the worklist and `record_source_outcome(...)` constructs a `SourceCheck`, but its caller must provide a justified `SourceOutcome`; the function does not visit the source or infer coverage. The separate news agent records source fetch health, which is **not automatically equivalent** to an SIP-185 coverage determination.
 
@@ -12,8 +12,8 @@ The remaining question is **where real run-scoped outcomes originate and how the
 
 | Option | Data path | Trade-off |
 | --- | --- | --- |
-| A: Analyst-confirmed manual outcomes | Existing run UI and API; analyst records each source's documented outcome from actual evidence | No undocumented inference; high 112-source workload |
-| B: Proposed collection adapter + human confirmation | Authorized collection run emits source-id-linked evidence; adapter validates source identity and run window, proposes an outcome; analyst confirms using existing source-check write path | Reduces repetitive entry; requires a controlled semantic mapping, provenance and failure behavior |
+| A: Analyst-confirmed manual outcomes | Analyst collects evidence and confirms each outcome; **new** UI-to-authenticated-POST integration persists it as a run-scoped check | No undocumented inference; high 112-source workload; write integration still required |
+| B: Proposed collection adapter + human confirmation | Authorized collection run emits source-id-linked evidence; adapter validates source identity and run window, proposes an outcome; analyst confirms and a **new UI-to-POST integration** persists the decision using the existing authenticated backend endpoint | Reduces repetitive entry; requires controlled semantic mapping, provenance, failure behavior, and the missing UI write integration |
 | C: Automated final outcomes | Agent directly submits inferred SIP-185 outcomes without analyst confirmation | **Not proposed.** Fetch success or empty results cannot by itself establish `Included`, `No Qualifying Item` or `Excluded`; risks false coverage claims |
 
 **Recommendation for review, not implementation authority:** evaluate B against the controlled launch rules; keep A until source mappings, client authorization and evidence semantics are approved. This document does not transfer UI or API ownership from Paras/Bhanu.
@@ -34,7 +34,7 @@ The existing enum (`Included`, `Context`, `Suppressed`, `Inaccessible`, `Exclude
 1. Reject unknown SIP-185 codes, ambiguous aliases, missing DB source ids, incorrect run ids and access to runs outside authorization. Preserve the current `SourceIdLookup` exact-type guard.
 2. Never treat a quiet source, stale cache, partial GDELT query set, or unchecked source as proof of complete coverage. The current-run source-health fix in news-agent PR #14 remains a separate prerequisite.
 3. Do not write `source_checks` from fixtures or a preview session. Use the existing authenticated persistence endpoint, its role policy and audit history; verify those independently in CI.
-4. Do not overwrite analyst changes on a slow UI fetch or after switching runs; tests should exercise in-flight response ordering and user edits.
+4. Add the missing analyst-confirmation-to-POST integration only after approval. Test authenticated session/CSRF, authorized actor, correct run ID, server-confirmed persistence and reload; local `onChange` alone is not a saved source check. Do not overwrite analyst changes on a slow UI fetch or after switching runs; test in-flight response ordering and user edits.
 5. Gate QA on **all 112 mandatory source IDs** actually recorded with evidence. A blank or unresolved mandatory check stays a Critical stop. Optional sources must not be counted as substitutes.
 6. Exercise an authorized end-to-end run (#55) only after INZBC renews SIP-191 authorization and supplies the approved PAT through secured secrets management. No live fetch is authorized by this proposal.
 
@@ -52,4 +52,4 @@ The existing enum (`Included`, `Context`, `Suppressed`, `Inaccessible`, `Exclude
 
 ## Decision record requested (no new ticket)
 
-Use existing issue #344 to record: (1) selected option; (2) authorized owner of the cross-repo adapter and API contract; (3) permissible source-health-to-outcome mapping; (4) audit/provenance requirements; (5) whether the initial rollout stays manual until #55. Do not implement an automated writer before this decision.
+Use existing issue #344 to record: (1) selected option; (2) authorized owner of the cross-repo adapter and the missing UI-to-POST integration (Paras's UI / Bhanu's API lanes); (3) permissible source-health-to-outcome mapping; (4) audit/provenance requirements; (5) whether the initial rollout stays manual until #55. Do not implement an automated writer before this decision.
