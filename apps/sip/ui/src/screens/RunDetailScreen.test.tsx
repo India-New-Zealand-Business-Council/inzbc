@@ -24,6 +24,7 @@ const RUN = {
 
 function stubCandidates() {
   vi.spyOn(candidatesClient, 'listCandidates').mockResolvedValue([])
+  vi.spyOn(runsClient, 'listRehearsals').mockResolvedValue([])
 }
 
 describe('RunDetailScreen', () => {

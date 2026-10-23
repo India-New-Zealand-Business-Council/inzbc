@@ -803,6 +803,195 @@
         }
       }
     },
+    "/api/runs/{run_id}/agent-rehearsals": {
+      "post": {
+        "tags": [
+          "Agent rehearsals"
+        ],
+        "summary": "Start Rehearsal",
+        "description": "Runs the agent over an in-memory copy of a launch-authorised run, and stores the trail.",
+        "operationId": "start_rehearsal_api_runs__run_id__agent_rehearsals_post",
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/RehearsalIn"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RehearsalOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Agent rehearsals"
+        ],
+        "summary": "List Rehearsals",
+        "operationId": "list_rehearsals_api_runs__run_id__agent_rehearsals_get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RehearsalOut"
+                  },
+                  "title": "Response List Rehearsals Api Runs  Run Id  Agent Rehearsals Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/runs/{run_id}/agent-rehearsals/{rehearsal_id}": {
+      "get": {
+        "tags": [
+          "Agent rehearsals"
+        ],
+        "summary": "Read Rehearsal",
+        "operationId": "read_rehearsal_api_runs__run_id__agent_rehearsals__rehearsal_id__get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          },
+          {
+            "name": "rehearsal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Rehearsal Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RehearsalOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session, or the session has expired or been idle too long."
+          },
+          "403": {
+            "description": "Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/candidates": {
       "post": {
         "tags": [
@@ -5918,6 +6107,129 @@
         ],
         "title": "RecordSourceCheckIn"
       },
+      "RehearsalIn": {
+        "properties": {
+          "max_steps": {
+            "type": "integer",
+            "maximum": 64.0,
+            "minimum": 1.0,
+            "title": "Max Steps",
+            "default": 32
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "RehearsalIn"
+      },
+      "RehearsalOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "started_by": {
+            "type": "string",
+            "title": "Started By"
+          },
+          "started_at": {
+            "type": "string",
+            "title": "Started At"
+          },
+          "outcome": {
+            "type": "string",
+            "title": "Outcome"
+          },
+          "stop_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop Reason"
+          },
+          "final_state": {
+            "type": "string",
+            "title": "Final State"
+          },
+          "steps": {
+            "type": "integer",
+            "title": "Steps"
+          },
+          "accepted": {
+            "type": "integer",
+            "title": "Accepted"
+          },
+          "refused": {
+            "type": "integer",
+            "title": "Refused"
+          },
+          "candidates": {
+            "type": "integer",
+            "title": "Candidates"
+          },
+          "brief_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brief Summary"
+          },
+          "production_enabled": {
+            "type": "boolean",
+            "title": "Production Enabled"
+          },
+          "chain_head": {
+            "type": "string",
+            "title": "Chain Head"
+          },
+          "sealed": {
+            "type": "boolean",
+            "title": "Sealed"
+          },
+          "tool_steps": {
+            "items": {
+              "$ref": "#/components/schemas/ToolStepOut"
+            },
+            "type": "array",
+            "title": "Tool Steps"
+          },
+          "verification": {
+            "$ref": "#/components/schemas/VerificationOut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "run_id",
+          "started_by",
+          "started_at",
+          "outcome",
+          "stop_reason",
+          "final_state",
+          "steps",
+          "accepted",
+          "refused",
+          "candidates",
+          "brief_summary",
+          "production_enabled",
+          "chain_head",
+          "sealed",
+          "tool_steps",
+          "verification"
+        ],
+        "title": "RehearsalOut"
+      },
       "ReportOut": {
         "properties": {
           "report": {
@@ -6616,6 +6928,54 @@
         ],
         "title": "SubmitReportIn"
       },
+      "ToolStepOut": {
+        "properties": {
+          "sequence": {
+            "type": "integer",
+            "title": "Sequence"
+          },
+          "tool": {
+            "type": "string",
+            "title": "Tool"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "outcome": {
+            "type": "string",
+            "title": "Outcome"
+          },
+          "detail": {
+            "type": "string",
+            "title": "Detail"
+          },
+          "state_before": {
+            "type": "string",
+            "title": "State Before"
+          },
+          "state_after": {
+            "type": "string",
+            "title": "State After"
+          },
+          "at": {
+            "type": "string",
+            "title": "At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sequence",
+          "tool",
+          "reason",
+          "outcome",
+          "detail",
+          "state_before",
+          "state_after",
+          "at"
+        ],
+        "title": "ToolStepOut"
+      },
       "TransitionIn": {
         "properties": {
           "expected_version": {
@@ -6736,6 +7096,29 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "VerificationOut": {
+        "properties": {
+          "chain_intact": {
+            "type": "boolean",
+            "title": "Chain Intact"
+          },
+          "seal": {
+            "type": "string",
+            "title": "Seal"
+          },
+          "replay": {
+            "type": "string",
+            "title": "Replay"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chain_intact",
+          "seal",
+          "replay"
+        ],
+        "title": "VerificationOut"
       },
       "VerificationState": {
         "type": "string",

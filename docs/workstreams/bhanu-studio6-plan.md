@@ -27,6 +27,7 @@ controls guarantee it never skips a human approval step?
 | Embeddings and pgvector semantic retrieval (#63) | 16 Oct |
 | AI quality judge for briefs, with a golden test set (#64) | 16 Oct |
 | Streaming drafts for the Comms Assistant (#65) | 16 Oct |
+| Coordinator agent run from the app: sealed, re-verified rehearsals on Run Detail | 24 Oct (stacked on the W6 change) |
 | Run engine, decision records, audit log, model gateway | Earlier |
 
 ## Key dates
@@ -176,7 +177,7 @@ opened in early August as the backlog.
 | Date | Done today (PRs, issues, reviews) | Blocked or waiting on | Tomorrow |
 |---|---|---|---|
 | Fri 23 Oct | Reviewed and merged #433 to #446 and inzview #9 and #10. Fixed the review findings left on each, including a CI failure on #433. Closed inzview #8 | INZBC: #55, #189, sector graphics for the FTA Centre | Measure the agent baseline |
-| Sat 24 Oct | Recorded the #344 decision. Gate-safety, replay and tamper baselines measured. Literature review, solution domain and this plan written. Signed decisions and the sealed agent log built and re-measured | Model credentials and a QA reviewer for judge vs human | Run the live judge, ask for blind labels |
+| Sat 24 Oct | Recorded the #344 decision. Gate-safety, replay and tamper baselines measured. Literature review, solution domain and this plan written. Signed decisions and the sealed agent log built and re-measured. Coordinator agent runnable from the app as a rehearsal | Model credentials and a QA reviewer for judge vs human | Run the live judge, ask for blind labels |
 
 ## Weekly journal
 

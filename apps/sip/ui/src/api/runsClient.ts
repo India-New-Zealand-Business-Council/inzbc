@@ -95,3 +95,30 @@ export function nextAction(state: string): 'start' | 'pause' | 'resume' | 'compl
       return null
   }
 }
+
+export type RehearsalOut = components['schemas']['RehearsalOut']
+
+/**
+ * The coordinator agent's rehearsals of a run (`services/api/agent_rehearsals.py`): advisory, never
+ * changing the run itself, each with a sealed trail the server re-verifies on every read.
+ */
+export async function listRehearsals(runId: string, options: RequestOptions = {}): Promise<RehearsalOut[]> {
+  const { signal, baseUrl = '' } = options
+  return apiRequest<RehearsalOut[]>(`${baseUrl}/api/runs/${encodeURIComponent(runId)}/agent-rehearsals`, {
+    signal,
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json' },
+  })
+}
+
+/** Runs the agent to the QA gate, or to its first refusal. Analyst or SIP Owner only. */
+export async function startRehearsal(runId: string, options: RequestOptions = {}): Promise<RehearsalOut> {
+  const { signal, baseUrl = '' } = options
+  return apiRequest<RehearsalOut>(`${baseUrl}/api/runs/${encodeURIComponent(runId)}/agent-rehearsals`, {
+    method: 'POST',
+    signal,
+    credentials: 'same-origin',
+    headers: JSON_HEADERS,
+    body: JSON.stringify({}),
+  })
+}

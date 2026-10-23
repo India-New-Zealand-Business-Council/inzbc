@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useState } from 'react'
 import { getRun, nextAction, type RunOut, SipApiError } from '../api/runsClient'
 import { RUN_ACTION_LABEL as ACTION_LABEL, RUN_APPROVAL_REF_LABEL as APPROVAL_REF_LABEL, submitRunAction } from '../lib/runActions'
 import { stateBadgeClass } from '../lib/runState'
+import { AgentRehearsalPanel } from '../components/AgentRehearsalPanel'
 import { CandidatesListScreen } from './CandidatesListScreen'
 
 interface Props {
@@ -227,6 +228,8 @@ export function RunDetailScreen({ runId, onBack, onSelectCandidate }: Props) {
               </div>
             ) : null}
           </div>
+
+          <AgentRehearsalPanel runId={state.run.id} runState={state.run.state} />
 
           <CandidatesListScreen runId={state.run.id} onSelectCandidate={onSelectCandidate} />
         </>

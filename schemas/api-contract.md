@@ -183,6 +183,19 @@ rows and tables, so they are enforced by the command inside its transaction, not
 CHECK. `Continue With Correction` does not permit release; it requires a corrected report version,
 fresh approval and fresh authority.
 
+## Coordinator agent rehearsals (Studio 6 — Bhanu's)
+```
+POST   /api/runs/:id/agent-rehearsals       run the coordinator agent to the QA gate (Analyst, SIP Owner)
+GET    /api/runs/:id/agent-rehearsals       list rehearsals, each re-verified on read (STAFF_READ)
+GET    /api/runs/:id/agent-rehearsals/:rid  read one rehearsal's sealed trail (STAFF_READ)
+```
+Advisory. The agent works on an in-memory copy of the run, rebuilt from its recorded launch
+authority. It never changes the run, its candidates or its source checks, and it stops at the QA
+gate. Every trail is stored append-only with its SHA-256 chain head, plus an HMAC seal when
+`SIP_DECISION_SIGNING_KEY` is set. A read recomputes the head, checks the seal and replays the
+trail with no model call. A run without launch authority is `409`. No model configured is `503`,
+and nothing is stored.
+
 ## Webhooks & site forms (#45 — contract in `schemas/webhooks.md`)
 ```
 POST   /api/webhooks/wix/site-forms  receive HMAC-signed Wix form submission (no query params allowed)
