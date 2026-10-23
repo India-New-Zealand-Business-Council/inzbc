@@ -467,14 +467,44 @@ def test_the_runtime_image_installs_everything_the_api_imports() -> None:
     # Module-level imports only. An import inside a function does not run at startup, so it
     # cannot stop the container: `model_gateway.py` imports `openai` lazily precisely so a
     # deployment with no model configured still serves the FTA path.
+    #
+    # The walk follows module-level imports into `apps/` too. `services/api/agent_rehearsals.py`
+    # imports the agent loop, which reaches `requests` through scoring and the pipeline client:
+    # checking only the files under `services/api/` passed while the container would not start.
     imported: set[str] = set()
-    for path in (REPO_ROOT / "services" / "api").glob("*.py"):
+    pending = list((REPO_ROOT / "services" / "api").glob("*.py"))
+    seen: set[Path] = set()
+
+    def local_module(name: str) -> Path | None:
+        base = REPO_ROOT.joinpath(*name.split("."))
+        for candidate in (base.with_suffix(".py"), base / "__init__.py"):
+            if candidate.is_file():
+                return candidate
+        return None
+
+    while pending:
+        path = pending.pop()
+        if path in seen:
+            continue
+        seen.add(path)
         tree = ast.parse(path.read_text(encoding="utf-8"))
         for node in tree.body:
             if isinstance(node, ast.Import):
-                imported.update(alias.name.split(".")[0] for alias in node.names)
+                names = [alias.name for alias in node.names]
             elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
-                imported.add(node.module.split(".")[0])
+                names = [node.module]
+            else:
+                continue
+            for name in names:
+                top = name.split(".")[0]
+                imported.add(top)
+                if top in {"apps", "services"}:
+                    # Each package on the way is imported too, so walk its __init__ as well.
+                    parts = name.split(".")
+                    for depth in range(1, len(parts) + 1):
+                        module = local_module(".".join(parts[:depth]))
+                        if module is not None:
+                            pending.append(module)
 
     third_party = {
         name for name in imported

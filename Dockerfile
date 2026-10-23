@@ -38,13 +38,15 @@ WORKDIR /app
 # What the FTA read path, the run-lifecycle endpoints (#120) and the candidate command endpoints
 # (#121) import. Installing the full project would still pull in the collector's dependencies,
 # which this service does not run. psycopg is needed for services/api/persistence.py, reached from
-# main.py via runs.py and candidates.py.
+# main.py via runs.py and candidates.py. requests arrives with the coordinator agent behind
+# /api/runs/{id}/agent-rehearsals: agent_loop imports scoring, which imports the pipeline client.
 RUN pip install --no-cache-dir \
       "fastapi>=0.115" \
       "uvicorn[standard]>=0.32" \
       "pydantic>=2.0" \
       "psycopg[binary]>=3.1" \
-      "httpx>=0.27"
+      "httpx>=0.27" \
+      "requests>=2.31"
 
 COPY apps/ apps/
 COPY services/ services/
