@@ -32,6 +32,7 @@ import json
 import math
 from collections import Counter
 from collections.abc import Callable
+from pathlib import Path
 
 from apps.fta import explainer
 from apps.fta.corpus import CORPUS, TariffOutcome
@@ -146,12 +147,23 @@ def variants() -> dict[str, Callable[[str], list[str]]]:
     }
 
 
-def compare(*, question_path=None) -> dict[str, dict[str, object]]:
+def compare(*, question_path: Path | None = None) -> dict[str, dict[str, object]]:
     """Compare all variants on exactly one question set, without combining held-out scores."""
     questions = load_questions(question_path) if question_path is not None else load_questions()
     return {
         name: evaluate(questions, retrieve) for name, retrieve in variants().items()
     }
+
+
+HELD_OUT_OUTPUTS = (
+    "variants-held-out.json",
+    "variant_errors-held-out.json",
+    "held-out-overlap.json",
+)
+NONOVERLAP_OUTPUTS = (
+    "variants-held-out-nonoverlap.json",
+    "variant_errors-held-out-nonoverlap.json",
+)
 
 
 def held_out_overlap(
@@ -326,6 +338,18 @@ def main(argv: list[str] | None = None) -> int:
             out = RESULTS_DIR / filename
             out.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
             print(f"\nwrote {out}")
+        # Remove any held-out output this run does not produce, so a report from an earlier
+        # dataset can never sit in results/ looking like the current one.
+        stale: list[str] = []
+        if held_out_reports is None:
+            stale += [*HELD_OUT_OUTPUTS, *NONOVERLAP_OUTPUTS]
+        elif nonoverlap_reports is None:
+            stale += NONOVERLAP_OUTPUTS
+        for filename in stale:
+            out = RESULTS_DIR / filename
+            if out.exists():
+                out.unlink()
+                print(f"\nremoved stale {out}")
         if held_out_reports is not None and held_out_errors is not None:
             for filename, data in (
                 ("variants-held-out.json", held_out_reports),

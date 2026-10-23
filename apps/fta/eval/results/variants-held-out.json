@@ -1,0 +1,560 @@
+{
+  "keyword": {
+    "question_count": 10,
+    "overall": {
+      "answerable": 10,
+      "unanswerable": 0,
+      "hit_at_1": 0.8,
+      "hit_at_3": 0.8,
+      "mrr": 0.8,
+      "no_match_accuracy": null
+    },
+    "by_type": {
+      "synonym": {
+        "answerable": 10,
+        "unanswerable": 0,
+        "hit_at_1": 0.8,
+        "hit_at_3": 0.8,
+        "mrr": 0.8,
+        "no_match_accuracy": null
+      }
+    },
+    "per_question": [
+      {
+        "qid": "H01",
+        "query": "logs",
+        "type": "synonym",
+        "expected": [
+          "FTA-004"
+        ],
+        "returned_top3": [
+          "FTA-004"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "H02",
+        "query": "crayfish",
+        "type": "synonym",
+        "expected": [
+          "FTA-008"
+        ],
+        "returned_top3": [
+          "FTA-008"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "H03",
+        "query": "milk powder",
+        "type": "synonym",
+        "expected": [
+          "FTA-013"
+        ],
+        "returned_top3": [
+          "FTA-013"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "H04",
+        "query": "baby formula",
+        "type": "synonym",
+        "expected": [
+          "FTA-014"
+        ],
+        "returned_top3": [
+          "FTA-014"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "H05",
+        "query": "overseas students",
+        "type": "synonym",
+        "expected": [
+          "FTA-022"
+        ],
+        "returned_top3": [
+          "FTA-022"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "H06",
+        "query": "graduate work rights",
+        "type": "synonym",
+        "expected": [
+          "FTA-022"
+        ],
+        "returned_top3": [
+          "FTA-022"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "H07",
+        "query": "visitor numbers",
+        "type": "synonym",
+        "expected": [
+          "FTA-023"
+        ],
+        "returned_top3": [],
+        "rank": null
+      },
+      {
+        "qid": "H08",
+        "query": "bilateral trade",
+        "type": "synonym",
+        "expected": [
+          "FTA-017"
+        ],
+        "returned_top3": [
+          "FTA-017"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "H09",
+        "query": "economic impact study",
+        "type": "synonym",
+        "expected": [
+          "FTA-018"
+        ],
+        "returned_top3": [
+          "FTA-022"
+        ],
+        "rank": null
+      },
+      {
+        "qid": "H10",
+        "query": "coal mining",
+        "type": "synonym",
+        "expected": [
+          "FTA-007"
+        ],
+        "returned_top3": [
+          "FTA-007"
+        ],
+        "rank": 1
+      }
+    ]
+  },
+  "bm25": {
+    "question_count": 10,
+    "overall": {
+      "answerable": 10,
+      "unanswerable": 0,
+      "hit_at_1": 0.5,
+      "hit_at_3": 0.5,
+      "mrr": 0.5,
+      "no_match_accuracy": null
+    },
+    "by_type": {
+      "synonym": {
+        "answerable": 10,
+        "unanswerable": 0,
+        "hit_at_1": 0.5,
+        "hit_at_3": 0.5,
+        "mrr": 0.5,
+        "no_match_accuracy": null
+      }
+    },
+    "per_question": [
+      {
+        "qid": "H01",
+        "query": "logs",
+        "type": "synonym",
+        "expected": [
+          "FTA-004"
+        ],
+        "returned_top3": [],
+        "rank": null
+      },
+      {
+        "qid": "H02",
+        "query": "crayfish",
+        "type": "synonym",
+        "expected": [
+          "FTA-008"
+        ],
+        "returned_top3": [],
+        "rank": null
+      },
+      {
+        "qid": "H03",
+        "query": "milk powder",
+        "type": "synonym",
+        "expected": [
+          "FTA-013"
+        ],
+        "returned_top3": [
+          "FTA-013"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "H04",
+        "query": "baby formula",
+        "type": "synonym",
+        "expected": [
+          "FTA-014"
+        ],
+        "returned_top3": [
+          "FTA-014"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "H05",
+        "query": "overseas students",
+        "type": "synonym",
+        "expected": [
+          "FTA-022"
+        ],
+        "returned_top3": [],
+        "rank": null
+      },
+      {
+        "qid": "H06",
+        "query": "graduate work rights",
+        "type": "synonym",
+        "expected": [
+          "FTA-022"
+        ],
+        "returned_top3": [
+          "FTA-022"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "H07",
+        "query": "visitor numbers",
+        "type": "synonym",
+        "expected": [
+          "FTA-023"
+        ],
+        "returned_top3": [],
+        "rank": null
+      },
+      {
+        "qid": "H08",
+        "query": "bilateral trade",
+        "type": "synonym",
+        "expected": [
+          "FTA-017"
+        ],
+        "returned_top3": [
+          "FTA-017"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "H09",
+        "query": "economic impact study",
+        "type": "synonym",
+        "expected": [
+          "FTA-018"
+        ],
+        "returned_top3": [
+          "FTA-022"
+        ],
+        "rank": null
+      },
+      {
+        "qid": "H10",
+        "query": "coal mining",
+        "type": "synonym",
+        "expected": [
+          "FTA-007"
+        ],
+        "returned_top3": [
+          "FTA-007"
+        ],
+        "rank": 1
+      }
+    ]
+  },
+  "bm25_synonyms": {
+    "question_count": 10,
+    "overall": {
+      "answerable": 10,
+      "unanswerable": 0,
+      "hit_at_1": 0.8,
+      "hit_at_3": 0.8,
+      "mrr": 0.8,
+      "no_match_accuracy": null
+    },
+    "by_type": {
+      "synonym": {
+        "answerable": 10,
+        "unanswerable": 0,
+        "hit_at_1": 0.8,
+        "hit_at_3": 0.8,
+        "mrr": 0.8,
+        "no_match_accuracy": null
+      }
+    },
+    "per_question": [
+      {
+        "qid": "H01",
+        "query": "logs",
+        "type": "synonym",
+        "expected": [
+          "FTA-004"
+        ],
+        "returned_top3": [
+          "FTA-004"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "H02",
+        "query": "crayfish",
+        "type": "synonym",
+        "expected": [
+          "FTA-008"
+        ],
+        "returned_top3": [
+          "FTA-008"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "H03",
+        "query": "milk powder",
+        "type": "synonym",
+        "expected": [
+          "FTA-013"
+        ],
+        "returned_top3": [
+          "FTA-013"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "H04",
+        "query": "baby formula",
+        "type": "synonym",
+        "expected": [
+          "FTA-014"
+        ],
+        "returned_top3": [
+          "FTA-014"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "H05",
+        "query": "overseas students",
+        "type": "synonym",
+        "expected": [
+          "FTA-022"
+        ],
+        "returned_top3": [
+          "FTA-022"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "H06",
+        "query": "graduate work rights",
+        "type": "synonym",
+        "expected": [
+          "FTA-022"
+        ],
+        "returned_top3": [
+          "FTA-022"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "H07",
+        "query": "visitor numbers",
+        "type": "synonym",
+        "expected": [
+          "FTA-023"
+        ],
+        "returned_top3": [],
+        "rank": null
+      },
+      {
+        "qid": "H08",
+        "query": "bilateral trade",
+        "type": "synonym",
+        "expected": [
+          "FTA-017"
+        ],
+        "returned_top3": [
+          "FTA-017"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "H09",
+        "query": "economic impact study",
+        "type": "synonym",
+        "expected": [
+          "FTA-018"
+        ],
+        "returned_top3": [
+          "FTA-022"
+        ],
+        "rank": null
+      },
+      {
+        "qid": "H10",
+        "query": "coal mining",
+        "type": "synonym",
+        "expected": [
+          "FTA-007"
+        ],
+        "returned_top3": [
+          "FTA-007"
+        ],
+        "rank": 1
+      }
+    ]
+  },
+  "bm25_synonyms_framing": {
+    "question_count": 10,
+    "overall": {
+      "answerable": 10,
+      "unanswerable": 0,
+      "hit_at_1": 0.8,
+      "hit_at_3": 0.8,
+      "mrr": 0.8,
+      "no_match_accuracy": null
+    },
+    "by_type": {
+      "synonym": {
+        "answerable": 10,
+        "unanswerable": 0,
+        "hit_at_1": 0.8,
+        "hit_at_3": 0.8,
+        "mrr": 0.8,
+        "no_match_accuracy": null
+      }
+    },
+    "per_question": [
+      {
+        "qid": "H01",
+        "query": "logs",
+        "type": "synonym",
+        "expected": [
+          "FTA-004"
+        ],
+        "returned_top3": [
+          "FTA-004"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "H02",
+        "query": "crayfish",
+        "type": "synonym",
+        "expected": [
+          "FTA-008"
+        ],
+        "returned_top3": [
+          "FTA-008"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "H03",
+        "query": "milk powder",
+        "type": "synonym",
+        "expected": [
+          "FTA-013"
+        ],
+        "returned_top3": [
+          "FTA-013"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "H04",
+        "query": "baby formula",
+        "type": "synonym",
+        "expected": [
+          "FTA-014"
+        ],
+        "returned_top3": [
+          "FTA-014"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "H05",
+        "query": "overseas students",
+        "type": "synonym",
+        "expected": [
+          "FTA-022"
+        ],
+        "returned_top3": [
+          "FTA-022"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "H06",
+        "query": "graduate work rights",
+        "type": "synonym",
+        "expected": [
+          "FTA-022"
+        ],
+        "returned_top3": [
+          "FTA-022"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "H07",
+        "query": "visitor numbers",
+        "type": "synonym",
+        "expected": [
+          "FTA-023"
+        ],
+        "returned_top3": [],
+        "rank": null
+      },
+      {
+        "qid": "H08",
+        "query": "bilateral trade",
+        "type": "synonym",
+        "expected": [
+          "FTA-017"
+        ],
+        "returned_top3": [
+          "FTA-017"
+        ],
+        "rank": 1
+      },
+      {
+        "qid": "H09",
+        "query": "economic impact study",
+        "type": "synonym",
+        "expected": [
+          "FTA-018"
+        ],
+        "returned_top3": [
+          "FTA-022"
+        ],
+        "rank": null
+      },
+      {
+        "qid": "H10",
+        "query": "coal mining",
+        "type": "synonym",
+        "expected": [
+          "FTA-007"
+        ],
+        "returned_top3": [
+          "FTA-007"
+        ],
+        "rank": 1
+      }
+    ]
+  }
+}
