@@ -58,10 +58,8 @@ the automated WCAG sweep is done — see Done, below.
       until then.
 
 **Weeks 2–4 — the website, on the stack it's actually on**
-- [ ] **Forms UI: confirmation + owner notification**, now that the gap list (Done, below) says
-      which forms still need it — both of `inzview`'s contact forms, currently mailto-only.
-      SHARED-OK: the webhook-to-internal delivery (contract + receiver service) stays on Bhanu's
-      worklog; this is the form UI and the confirmation messaging only.
+- [x] **Forms UI: confirmation + owner notification** — built (`inzview` `8a260cc`, 25 Oct 2026),
+      see Done below. Blocked on platform hosting (#99) before it actually delivers anywhere.
 
 **Weeks 4–6 — Comms Assistant and FTA, the two still genuinely unfinished AI-facing surfaces**
 - [ ] **Comms Assistant review UI.** #60 is closed in GitHub, but check what it actually shipped
@@ -116,6 +114,22 @@ the automated WCAG sweep is done — see Done, below.
   re-open them.
 
 ## Done
+- **Forms UI: both `inzview` contact forms submit for real** (`inzview` `8a260cc`, 25 Oct 2026,
+  refs #45). Connect's `ContactForm` and Home's quick-contact form were mailto-only — honestly
+  labelled as such, but nothing reached the Secretariat unless the visitor's own client sent it.
+  Both now POST to a new `src/pages/api/site-forms.ts` (Astro SSR route, `inzview`'s stack is
+  `output: "server"`): it signs the submission (HMAC-SHA256 over `<timestamp>.<body>`, matching
+  `schemas/webhooks.md`'s contract, #45) with `WIX_WEBHOOK_SECRET` and forwards to the platform's
+  receiver at `INZBC_API_BASE_URL`. **Neither env var is set yet** — the platform API has no
+  public host (#99, "Platform hosting" is still open in `decisions-needed.md`) — so the route
+  returns a distinct `not_configured` response both forms use to fall back to the previous
+  mailto draft automatically, same visible behaviour as before, never a dead "Send" button.
+  `src/lib/siteForms.ts` holds the shared submit-with-fallback helper. Not run through `astro
+  check`/`vitest` — `inzview` can't install dependencies locally (`@wix/locale-dataset-javascript`
+  is on Wix's private registry, `inzview/HANDOVER.md` already documents this) — reviewed by eye
+  against the webhook contract instead; still needs the real browser/editor pass
+  `inzview/HANDOVER.md` calls for, and the two env vars set on `inzview`'s Vibe deployment once
+  #99 lands.
 - **Verified the 23–24 Oct merge wave against this repo** (24 Oct 2026). A large batch of Bhanu's
   work landed overnight (sealed agent audit, agent-rehearsal panel, platform assistant, module
   onboarding across all five UIs, the platform-wide WCAG scan below, replay/adversary eval work).
