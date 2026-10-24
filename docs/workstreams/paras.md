@@ -59,7 +59,8 @@ the automated WCAG sweep is done — see Done, below.
 
 **Weeks 2–4 — the website, on the stack it's actually on**
 - [x] **Forms UI: confirmation + owner notification** — built (`inzview` `8a260cc`, 25 Oct 2026),
-      see Done below. Blocked on platform hosting (#99) before it actually delivers anywhere.
+      see Done below. Delivers nowhere until the platform API and its database are hosted
+      (decision 3 in `decisions-needed.md`); the form copy also needs one fix, below.
 
 **Weeks 4–6 — Comms Assistant and FTA, the two still genuinely unfinished AI-facing surfaces**
 - [ ] **Comms Assistant review UI.** #60 is closed in GitHub, but check what it actually shipped
@@ -121,15 +122,25 @@ the automated WCAG sweep is done — see Done, below.
   `output: "server"`): it signs the submission (HMAC-SHA256 over `<timestamp>.<body>`, matching
   `schemas/webhooks.md`'s contract, #45) with `WIX_WEBHOOK_SECRET` and forwards to the platform's
   receiver at `INZBC_API_BASE_URL`. **Neither env var is set yet** — the platform API has no
-  public host (#99, "Platform hosting" is still open in `decisions-needed.md`) — so the route
-  returns a distinct `not_configured` response both forms use to fall back to the previous
-  mailto draft automatically, same visible behaviour as before, never a dead "Send" button.
-  `src/lib/siteForms.ts` holds the shared submit-with-fallback helper. Not run through `astro
+  public host — so the route returns `not_configured` (503). `src/lib/siteForms.ts`, the shared
+  helper, falls back to the previous mailto draft on that or any other non-OK response or
+  network failure, so there is never a dead "Send" button. Not run through `astro
   check`/`vitest` — `inzview` can't install dependencies locally (`@wix/locale-dataset-javascript`
   is on Wix's private registry, `inzview/HANDOVER.md` already documents this) — reviewed by eye
-  against the webhook contract instead; still needs the real browser/editor pass
-  `inzview/HANDOVER.md` calls for, and the two env vars set on `inzview`'s Vibe deployment once
-  #99 lands.
+  against the webhook contract instead.
+  - *Still open (checked by Bhanu Gupta, 25 Oct 2026):*
+    - **Hosting dependency.** #99 alone does not unblock delivery. #99's free-tier deploy is
+      the FTA slice with no database, and the receiver refuses with 503 until `DATABASE_URL` is
+      set. Delivery needs the platform API and Postgres hosted (decision 3, "Platform hosting",
+      in `decisions-needed.md`), the same `WIX_WEBHOOK_SECRET` set on both that deployment and
+      `inzview`'s Vibe deployment, and `INZBC_API_BASE_URL` on `inzview`.
+    - **Copy.** Not the same visible behaviour as before. The line under both forms now reads
+      "Sends straight to the Secretariat." While the route is unconfigured, every visitor who
+      reads that is then sent to their own email app. Until delivery is live, the line should
+      keep saying that sending opens the visitor's email app. Fix this in `inzview` before the
+      next Vibe publish.
+    - **Browser pass.** Still needs the real browser/editor pass `inzview/HANDOVER.md` calls
+      for, then re-verification against the live receiver.
 - **Verified the 23–24 Oct merge wave against this repo** (24 Oct 2026). A large batch of Bhanu's
   work landed overnight (sealed agent audit, agent-rehearsal panel, platform assistant, module
   onboarding across all five UIs, the platform-wide WCAG scan below, replay/adversary eval work).
