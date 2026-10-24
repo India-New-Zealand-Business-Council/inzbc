@@ -38,14 +38,24 @@ must-do line, so it's clear what drops first if the block runs short rather than
 in week 7:
 
 **Must-do:** the 320px reflow Playwright case (done, see Done below), the `inzview` gap list
-itself (done), the final WCAG audit sweep (done, see Done below).
+itself (done), the final WCAG audit sweep (automated part done, see Done below; manual part
+still open, see Weeks 1–2).
 **If time allows, roughly in this order:** the rest of the Playwright suite, #58's design system,
 #198/#199/#200.
 **Cut first if the block is short:** #69 (tooling/Storybook) — already flagged below as a
 nice-to-have, not a blocker for anything else on this list.
 
-#292 (QA review interface), #61 (executive dashboard, first real slice), and the WCAG audit are
-all closed — see Done, below. Weeks 1–2 is clear; next real item is Weeks 2–4's forms UI.
+#292 (QA review interface) and #61 (executive dashboard, first real slice) are both closed, and
+the automated WCAG sweep is done — see Done, below.
+
+**Weeks 1–2 — what is left**
+- [ ] **Final WCAG 2.2 AA audit (REQ-U-03): the manual part.** The automated axe sweep is done
+      (Done, below), but `docs/accessibility-audit.md` says it does not replace manual checks.
+      Still to do, per that file's "Still to do for REQ-U-03": a keyboard-only pass of the
+      screens and pages the automated tests do not walk (each workflow form, the Comms brief
+      and approval, every inzbc.org page), an NVDA or VoiceOver pass of the main tasks, and a
+      re-scan of inzbc.org after the next Vibe publish, since the inzview fixes are not live
+      until then.
 
 **Weeks 2–4 — the website, on the stack it's actually on**
 - [ ] **Forms UI: confirmation + owner notification**, now that the gap list (Done, below) says
@@ -114,7 +124,7 @@ all closed — see Done, below. Weeks 1–2 is clear; next real item is Weeks 2�
   change. Local dev Postgres (`inzbc-dev-pg`) was missing migrations 0005–0007 (site forms,
   decision signatures, agent rehearsals); applied before re-running so the Python suite wasn't
   failing against stale schema rather than real code.
-- **Final WCAG 2.2 AA audit across every public page and every app — closed, SHARED-OK** (24 Oct
+- **Automated WCAG 2.2 AA sweep across every app and the live site — done, SHARED-OK** (24 Oct
   2026). Bhanu did the actual sweep: an axe scan of all ten platform screens plus the FTA
   Explainer (`e2e/platform.spec.ts`, `e2e/fta-a11y.spec.ts`, `docs/accessibility-audit.md`), one
   real fix in `apps/sip/ui` (the overview's control-card code references under 4.5:1 contrast),
@@ -122,8 +132,9 @@ all closed — see Done, below. Weeks 1–2 is clear; next real item is Weeks 2�
   home gallery counter at 4.11:1 and a non-focusable photo strip, a `dl` with two wrapper `div`s
   around each `dt`/`dd` pair on the India Market Opportunities page, 60%-opacity body text at
   3.54:1 on Sponsors/Membership/contact-form/social-feed pages, and an FTA review note at 4.43:1.
-  Not something I need to redo — recorded here since it closes this list's own Must-do item, and
-  because it reached deep into my lane (see SHARED-OK, below).
+  Not something I need to redo — recorded here since it is the automated half of this list's
+  WCAG Must-do item, and because it reached deep into my lane (see SHARED-OK, below). The manual
+  half (keyboard, screen reader, post-publish re-scan) stays open under Weeks 1–2.
 - **#61 Executive dashboard, first real slice** (PR #437, 23 Oct 2026). Replaced the client-side
   composition (`listRuns()[0]` + `listCandidates(run.id)`, tallying verification states in
   TypeScript) with `ExecutiveOverview`, reading Bhanu's real `GET /api/dashboard` endpoint (#47,
@@ -393,7 +404,7 @@ come back.
   redaction applied like every other model call. Touches `PlatformOverviewScreen.tsx` again (on
   top of the accessibility fix below).
 - **Platform-wide WCAG scan + accessibility fixes** (commit `2a4c2ff`, refs #189, 24 Oct 2026).
-  Recorded above under Done (closes this list's own WCAG Must-do item) — noted here too since it
+  Recorded above under Done (the automated half of this list's WCAG Must-do item) — noted here too since it
   edited `apps/sip/ui/src/screens/PlatformOverviewScreen.tsx` directly (a contrast fix on the
   control-card code references).
 - **Accessibility fixes on the live `inzview` site itself** (commit `a003d9f` on the `inzview`
@@ -405,7 +416,8 @@ come back.
   links, among others —
   worth raising at stand-up given the scale, not because anything found was wrong.
 - **Still yours:** the design system and brand tokens, the Comms review UI (check #60's actual
-  scope before assuming it's unbuilt — see Next up), the accessibility audit, and the public site
+  scope before assuming it's unbuilt — see Next up), the manual accessibility checks (keyboard
+  and screen-reader passes, and the post-publish re-scan of inzbc.org; see Weeks 1–2), and the public site
   — now `inzview` (Wix Vibe), not the Wix Studio build this line used to name. (The SIP
   review/approval UI is Done, above, and has been reading real data since v1.0.0 shipped 9 Sep
   2026 — the "still needs the live endpoints" caveat that used to be here no longer applies.)
