@@ -118,7 +118,7 @@ all closed — see Done, below. Weeks 1–2 is clear; next real item is Weeks 2�
   2026). Bhanu did the actual sweep: an axe scan of all ten platform screens plus the FTA
   Explainer (`e2e/platform.spec.ts`, `e2e/fta-a11y.spec.ts`, `docs/accessibility-audit.md`), one
   real fix in `apps/sip/ui` (the overview's control-card code references under 4.5:1 contrast),
-  and separately an axe scan of the live `inzview` site itself fixing four real failures: the
+  and separately an axe scan of the live `inzview` site itself fixing five real failures: the
   home gallery counter at 4.11:1 and a non-focusable photo strip, a `dl` with two wrapper `div`s
   around each `dt`/`dd` pair on the India Market Opportunities page, 60%-opacity body text at
   3.54:1 on Sponsors/Membership/contact-form/social-feed pages, and an FTA review note at 4.43:1.
@@ -399,9 +399,10 @@ come back.
 - **Accessibility fixes on the live `inzview` site itself** (commit `a003d9f` on the `inzview`
   repo, 24 Oct 2026) — also recorded above under Done. Flagging separately because this is a
   different repo than the rest of this section: `inzview` has been built single-handedly by me
-  (see Done, below, "`inzview` — the live public website"), and this is 1 of **33 commits Bhanu
-  pushed directly to `inzview`'s `main`** in this same window (home gallery photos, FTA
-  sector-card corrections, a Partners page, chapter-list updates, social links, among others) —
+  (see Done, below, "`inzview` — the live public website"), and Bhanu has **19 commits on `inzview`'s
+  `main` since 21 Oct** (33 in total), 17 pushed directly and 2 through PRs (#11, #12): home
+  gallery photos, FTA sector-card corrections, a Partners page, chapter-list updates, social
+  links, among others —
   worth raising at stand-up given the scale, not because anything found was wrong.
 - **Still yours:** the design system and brand tokens, the Comms review UI (check #60's actual
   scope before assuming it's unbuilt — see Next up), the accessibility audit, and the public site
