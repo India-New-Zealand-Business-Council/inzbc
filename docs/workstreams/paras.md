@@ -134,13 +134,12 @@ the automated WCAG sweep is done — see Done, below.
       set. Delivery needs the platform API and Postgres hosted (decision 3, "Platform hosting",
       in `decisions-needed.md`), the same `WIX_WEBHOOK_SECRET` set on both that deployment and
       `inzview`'s Vibe deployment, and `INZBC_API_BASE_URL` on `inzview`.
-    - **Copy.** Not the same visible behaviour as before. The line under both forms now reads
-      "Sends straight to the Secretariat." While the route is unconfigured, every visitor who
-      reads that is then sent to their own email app. Until delivery is live, the line should
-      keep saying that sending opens the visitor's email app. Fix this in `inzview` before the
-      next Vibe publish.
+    - ~~**Copy.**~~ Fixed (`inzview` `b9052d5`, 25 Oct 2026). Both forms' idle-state text and
+      Home's button label reverted to the honest mailto-opening wording they had before this
+      week's change — no longer promises direct delivery ahead of a visitor actually hitting
+      the fallback.
     - **Browser pass.** Still needs the real browser/editor pass `inzview/HANDOVER.md` calls
-      for, then re-verification against the live receiver.
+      for, then re-verification against the live receiver, once published.
 - **Verified the 23–24 Oct merge wave against this repo** (24 Oct 2026). A large batch of Bhanu's
   work landed overnight (sealed agent audit, agent-rehearsal panel, platform assistant, module
   onboarding across all five UIs, the platform-wide WCAG scan below, replay/adversary eval work).
