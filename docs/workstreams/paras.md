@@ -38,20 +38,14 @@ must-do line, so it's clear what drops first if the block runs short rather than
 in week 7:
 
 **Must-do:** the 320px reflow Playwright case (done, see Done below), the `inzview` gap list
-itself (done), the final WCAG audit sweep.
+itself (done), the final WCAG audit sweep (done, see Done below).
 **If time allows, roughly in this order:** the rest of the Playwright suite, #58's design system,
 #198/#199/#200.
 **Cut first if the block is short:** #69 (tooling/Storybook) — already flagged below as a
 nice-to-have, not a blocker for anything else on this list.
 
-#292 (QA review interface) and #61 (executive dashboard, first real slice) are both closed —
-see Done, below.
-
-**Weeks 1–2 — close the gap between what's built and what's tracked, then finish SIP's own UI**
-- [ ] **Final WCAG 2.2 AA audit across every public page and every app.** Components already carry
-      the behaviour from each build's own accessibility pass; this is the end-to-end verification
-      sweep, including the real-browser check that both member-portal Done entries below flag as
-      never having happened (`Chrome tools weren't enabled` at the time).
+#292 (QA review interface), #61 (executive dashboard, first real slice), and the WCAG audit are
+all closed — see Done, below. Weeks 1–2 is clear; next real item is Weeks 2–4's forms UI.
 
 **Weeks 2–4 — the website, on the stack it's actually on**
 - [ ] **Forms UI: confirmation + owner notification**, now that the gap list (Done, below) says
@@ -112,6 +106,24 @@ see Done, below.
   re-open them.
 
 ## Done
+- **Verified the 23–24 Oct merge wave against this repo** (24 Oct 2026). A large batch of Bhanu's
+  work landed overnight (sealed agent audit, agent-rehearsal panel, platform assistant, module
+  onboarding across all five UIs, the platform-wide WCAG scan below, replay/adversary eval work).
+  Re-ran everything after pulling: full Python suite (1,526 passed, 3 skipped, 0 failed),
+  frontend lint and the full frontend test suite, all clean — no regression from the volume of
+  change. Local dev Postgres (`inzbc-dev-pg`) was missing migrations 0005–0007 (site forms,
+  decision signatures, agent rehearsals); applied before re-running so the Python suite wasn't
+  failing against stale schema rather than real code.
+- **Final WCAG 2.2 AA audit across every public page and every app — closed, SHARED-OK** (24 Oct
+  2026). Bhanu did the actual sweep: an axe scan of all ten platform screens plus the FTA
+  Explainer (`e2e/platform.spec.ts`, `e2e/fta-a11y.spec.ts`, `docs/accessibility-audit.md`), one
+  real fix in `apps/sip/ui` (the overview's control-card code references under 4.5:1 contrast),
+  and separately an axe scan of the live `inzview` site itself fixing four real failures: the
+  home gallery counter at 4.11:1 and a non-focusable photo strip, a `dl` with two wrapper `div`s
+  around each `dt`/`dd` pair on the India Market Opportunities page, 60%-opacity body text at
+  3.54:1 on Sponsors/Membership/contact-form/social-feed pages, and an FTA review note at 4.43:1.
+  Not something I need to redo — recorded here since it closes this list's own Must-do item, and
+  because it reached deep into my lane (see SHARED-OK, below).
 - **#61 Executive dashboard, first real slice** (PR #437, 23 Oct 2026). Replaced the client-side
   composition (`listRuns()[0]` + `listCandidates(run.id)`, tallying verification states in
   TypeScript) with `ExecutiveOverview`, reading Bhanu's real `GET /api/dashboard` endpoint (#47,
@@ -372,6 +384,25 @@ come back.
   shows one card per role (Analyst/SIP Owner/Reviewer/Secretariat), and builds each step's list
   from the real `write_access(...)` roles on that route so it never promises an action that
   answers 403. Stacked on #449 (one Analyst step links to the rehearsal panel).
+- **Module onboarding + platform assistant, all five UIs** (commit `203a865`, refs #62, 24 Oct
+  2026). `ModuleWelcome`/`Welcome` components added to `apps/comms/ui`, `apps/dashboard/ui`,
+  `apps/fta/ui`, `apps/member/ui` and `apps/sip/ui` — a first-visit introduction per module,
+  dismissed per module, one click away after. Also a read-only chat assistant on the SIP platform
+  home (`PlatformAssistant.tsx`, `POST /api/assistant/chat`): three fixed read-only tools (FTA
+  corpus with citations, recent run metadata, a fixed platform guide), no writes, no storage,
+  redaction applied like every other model call. Touches `PlatformOverviewScreen.tsx` again (on
+  top of the accessibility fix below).
+- **Platform-wide WCAG scan + accessibility fixes** (commit `2a4c2ff`, refs #189, 24 Oct 2026).
+  Recorded above under Done (closes this list's own WCAG Must-do item) — noted here too since it
+  edited `apps/sip/ui/src/screens/PlatformOverviewScreen.tsx` directly (a contrast fix on the
+  control-card code references).
+- **Accessibility fixes on the live `inzview` site itself** (commit `a003d9f` on the `inzview`
+  repo, 24 Oct 2026) — also recorded above under Done. Flagging separately because this is a
+  different repo than the rest of this section: `inzview` has been built single-handedly by me
+  (see Done, below, "`inzview` — the live public website"), and this is 1 of **33 commits Bhanu
+  pushed directly to `inzview`'s `main`** in this same window (home gallery photos, FTA
+  sector-card corrections, a Partners page, chapter-list updates, social links, among others) —
+  worth raising at stand-up given the scale, not because anything found was wrong.
 - **Still yours:** the design system and brand tokens, the Comms review UI (check #60's actual
   scope before assuming it's unbuilt — see Next up), the accessibility audit, and the public site
   — now `inzview` (Wix Vibe), not the Wix Studio build this line used to name. (The SIP
@@ -400,4 +431,4 @@ right owner; SIP UI lets a brief be QA'd, approved and packaged for manual send,
 (already true since v1.0.0); dashboards read the DB for real, not just the SIP slice. No pipeline
 writes.
 
-Base: main @ 6731818 (23 Oct 2026) — record when you start a task; rebase if behind.
+Base: main @ 5eee5df (24 Oct 2026) — record when you start a task; rebase if behind.
