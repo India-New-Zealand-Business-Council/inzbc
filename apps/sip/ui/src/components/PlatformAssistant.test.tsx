@@ -46,6 +46,24 @@ describe('PlatformAssistant', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('not configured in this environment')
   })
+
+  // A stale disclaimer from the previous conversation must not survive into a new one -- it was
+  // only "New conversation" clearing messages/error and leaving `disclaimer` state untouched.
+  it('clears the disclaimer along with the conversation on New conversation', async () => {
+    vi.spyOn(assistantClient, 'askAssistant').mockResolvedValue({
+      answer: 'Ok.',
+      steps: [],
+      disclaimer: 'AI-generated and advisory.',
+    })
+    render(<PlatformAssistant />)
+
+    await userEvent.type(screen.getByLabelText('Your question'), 'Hello{Enter}')
+    expect(await screen.findByText('AI-generated and advisory.')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'New conversation' }))
+
+    expect(screen.queryByText('AI-generated and advisory.')).not.toBeInTheDocument()
+  })
 })
 
 describe('trimForServer', () => {

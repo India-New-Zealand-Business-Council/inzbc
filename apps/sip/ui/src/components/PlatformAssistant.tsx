@@ -83,6 +83,7 @@ export function PlatformAssistant() {
             onClick={() => {
               setMessages([])
               setError(null)
+              setDisclaimer(null)
             }}
             className="min-h-11 px-2 text-sm font-medium text-inzbc-blue underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
           >
