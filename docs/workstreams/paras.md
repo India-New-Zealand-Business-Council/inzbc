@@ -37,41 +37,29 @@ on three part-time engineers sharing one client, and this list is bigger than th
 must-do line, so it's clear what drops first if the block runs short rather than discovering that
 in week 7:
 
-**Must-do:** the 320px reflow Playwright case (done, see Done below), the `inzview` gap list
-itself (done), the final WCAG audit sweep (automated part done, see Done below; manual part
-still open, see Weeks 1–2).
-**If time allows, roughly in this order:** the rest of the Playwright suite, #58's design system,
-#198/#199/#200.
-**Cut first if the block is short:** #69 (tooling/Storybook) — already flagged below as a
-nice-to-have, not a blocker for anything else on this list.
+**Must-do (as of 26 Oct, see the lane-pivot Done entry below):** small, real, daily-commit-sized
+fixes/polish on `apps/sip/ui`'s two agent surfaces (the coordinator-agent rehearsal panel, the
+platform assistant), plus one research thread a week for the course's own requirement — not the
+items below, which are paused, not abandoned.
 
-#292 (QA review interface) and #61 (executive dashboard, first real slice) are both closed, and
-the automated WCAG sweep is done — see Done, below.
+**Paused, not abandoned — client asked not to touch the live public site further (26 Oct 2026):**
+- `inzview` work of any kind, including the two items below.
+- The 320px reflow Playwright case and the `inzview` gap list are both done (see Done); nothing
+  further needed there regardless.
+- The manual half of the final WCAG 2.2 AA audit (REQ-U-03) — automated sweep is done (see
+  Done), but the remaining keyboard-only pass, NVDA/VoiceOver pass and post-publish re-scan all
+  depend on `inzview` being touched/published again. Pick back up if that changes.
+- **Forms UI: confirmation + owner notification** — built (`inzview` `8a260cc`, 25 Oct 2026),
+  see Done below. Delivers nowhere until the platform API and its database are hosted (decision
+  3 in `decisions-needed.md`) and nothing can be re-verified live while `inzview` is paused.
+- **FTA Explorer embed, deployed** — blocked on embedding into `inzview`, which is paused.
 
-**Weeks 1–2 — what is left**
-- [ ] **Final WCAG 2.2 AA audit (REQ-U-03): the manual part.** The automated axe sweep is done
-      (Done, below), but `docs/accessibility-audit.md` says it does not replace manual checks.
-      Still to do, per that file's "Still to do for REQ-U-03": a keyboard-only pass of the
-      screens and pages the automated tests do not walk (each workflow form, the Comms brief
-      and approval, every inzbc.org page), an NVDA or VoiceOver pass of the main tasks, and a
-      re-scan of inzbc.org after the next Vibe publish, since the inzview fixes are not live
-      until then.
-
-**Weeks 2–4 — the website, on the stack it's actually on**
-- [x] **Forms UI: confirmation + owner notification** — built (`inzview` `8a260cc`, 25 Oct 2026),
-      see Done below. Delivers nowhere until the platform API and its database are hosted
-      (decision 3 in `decisions-needed.md`); the form copy also needs one fix, below.
-
-**Weeks 4–6 — Comms Assistant and FTA, the two still genuinely unfinished AI-facing surfaces**
+**Still active, not `inzview`-dependent:**
 - [ ] **Comms Assistant review UI.** #60 is closed in GitHub, but check what it actually shipped
       against before assuming the reviewer-approval screen exists — the service side
       (`services/api/comms.py`, draft + approve + delete endpoints) is real and live; confirm
       whether a UI was ever built against it or whether #60 was closed for a narrower reason.
       Drafting UI (`apps/comms/ui`) and the delete-draft flow are both Done, below.
-- [ ] **FTA Explorer embed, deployed.** Local implementation (query → sourced answer, citation,
-      confidence, escalation) has been done since #85–#91. What's still open is the actual
-      integration into the live public site — REQ-U-04's real ask — now that the site has a real
-      home (`inzview`) to embed it into.
 - [ ] **#129/#127/#128 — the rest of the Playwright E2E suite,** once #100's 320px case (above)
       has landed and set the pattern. Client-side state-survives-a-refresh and
       illegal-action-rejected cases matter more now there's a real backend to test against, not
@@ -115,6 +103,18 @@ the automated WCAG sweep is done — see Done, below.
   re-open them.
 
 ## Done
+- **Lane pivot, 26 Oct 2026: off `inzview`, onto polishing the agent-facing UI in this repo.**
+  The client doesn't want the live public site touched further right now (risk of breaking a
+  production site someone else owns the fallout for). Remaining work shifts to `apps/sip/ui`'s
+  two agent surfaces — the coordinator-agent rehearsal panel and the platform assistant — small,
+  real, daily-commit-sized fixes and polish, plus one research thread per week for the course's
+  own requirement to show work beyond frontend/backend. Week plan: Mon fix, Tue polish, Wed
+  research, Thu apply a finding, Fri test/a11y pass, Sat buffer, Sun sync + report.
+- **Fix: platform assistant's disclaimer cleared on New conversation** (PR #467, 26 Oct 2026,
+  refs #62). "New conversation" cleared `messages`/`error` but left `disclaimer` untouched, so a
+  stale disclaimer from the previous conversation could linger under the input after starting a
+  fresh one. Found by reading `PlatformAssistant.tsx` end to end before touching it, not guessed
+  at. One-line fix, one new test (256/256 passing after).
 - **Forms UI: both `inzview` contact forms submit for real** (`inzview` `8a260cc`, 25 Oct 2026,
   refs #45). Connect's `ContactForm` and Home's quick-contact form were mailto-only — honestly
   labelled as such, but nothing reached the Secretariat unless the visitor's own client sent it.
