@@ -67,8 +67,11 @@ lead. Process ideas go to the tech lead in conversation first.
 - [ ] **inzbc#473** Local 07:00 versus elapsed 24-hour DST ambiguity tests
   (#55); all nine CI jobs green. SOP policy remains with the authorised owner.
 - [ ] **inzbc#474** Operator-controlled import into an *existing* scanning run
-  (#55), stacked on #472; guarded preflight and explicit operator flags. No
-  production write was made or authorised by this PR. Awaiting CI/lead review.
+  (#55), stacked on #472. **Read-only preflight only**: Bhanu's 26 Oct review
+  found client-side POSTs could permit two concurrent imports; the write mode is
+  disabled until the SIP API owner supplies transactional locking/idempotency.
+  Human source evidence requires the Brief Builder confirmation contract, not
+  generic notes. Latest CI green; pending lead review and API-owner decision.
 
 ## Next up (verified 26 Oct 2026)
 - [ ] **#387** Review/own the 12 annotated literature entries, verify remaining full-text
