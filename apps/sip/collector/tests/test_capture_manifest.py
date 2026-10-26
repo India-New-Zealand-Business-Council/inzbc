@@ -5,7 +5,6 @@ from __future__ import annotations
 import hashlib
 import json
 from copy import deepcopy
-from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
