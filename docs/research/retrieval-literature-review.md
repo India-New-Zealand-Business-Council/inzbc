@@ -497,5 +497,5 @@ quietly choosing a new one. Lewis et al. (2020) and NIST (2023) retain the earli
 
 **Interpretation for INZBC:** None of these external publications supplies a
 valid measured dense/hybrid accuracy figure or a score threshold for our
-23 confirmed FTA entries. Those must come from #393's controlled experiments,
+22 confirmed FTA entries (out of 23 total). Those must come from #393's controlled experiments,
 independently checked labels and the tech lead's subsequent decision.
