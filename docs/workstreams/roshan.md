@@ -45,7 +45,36 @@ Delivery process: the team's existing workflow. [ADR-0008](../decisions/ADR-0008
 is kept as analysis and was not adopted (tech lead, 15 Oct). Review and merging stay with the tech
 lead. Process ideas go to the tech lead in conversation first.
 
-## In review (opened, awaiting tech-lead review)
+## Status reconciliation — 27 Oct 2026 (GitHub-verified)
+
+This is a factual change log, **not** a claim that I performed the production work,
+a personal reflection, client sign-off or a new scope decision. The 26 Oct
+`In review` snapshot below remains for historical traceability but is superseded
+by this dated check.
+
+- **Merged into `main`:** INZBC #469 (offline dense/hybrid harness, no provider
+  scores), #471 (research-evidence clarification), #472 (offline capture
+  validator), #473 (DST-boundary tests), and #474 (preflight-only import).
+  Their merges do **not** mean a real embedding evaluation or SIP production
+  run has occurred.
+- **Open in INZBC:** #476 evidence plan; #477 independently blinded-label
+  tooling (no reviewer has completed the ten human checks); #480 real
+  `sectors` shape validation; #481 collector operational-readiness docs;
+  #482 timezone-naive publication-time fail-closed guard. All remain for
+  Bhanu's review/merger and are not production approvals.
+- **Open in the separate news-agent repo:** #14 per-run freshness/recovery,
+  #15 review-only collector snapshot (stacked on #14). Neither automates
+  approval or distribution.
+- **#55:** source/PAT authority reported by the tech lead on 24 Oct, but
+  a real run ID, original written authority, 112 mandatory source-check
+  results, candidate reconciliation, independent QA, CEO decision and
+  distribution/audit evidence have **not** been linked in #55.
+  See `apps/sip/collector/RUN_EVIDENCE_HANDOFF.md` (proposed in #481).
+- **#387 and #393:** still open; original-source academic review is due
+  30 Oct, and dense/hybrid numbers require real approved full-ranking
+  captures, independent labels and held-out no-match/product questions.
+
+## In review (historical 26 Oct snapshot; superseded above)
 - [ ] **daily-india-nz-news-agent#14** Source freshness, recovery and fail-closed gate
   (#208 days 2 to 4). Review findings addressed 13 Oct; still open in the other repository.
   No merge or live automated distribution is implied.
