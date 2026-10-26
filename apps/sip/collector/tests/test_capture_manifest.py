@@ -67,6 +67,18 @@ def test_legacy_list_sectors_remain_supported(manifest: dict) -> None:
     assert m.validate_capture(manifest).article_count == 1
 
 
+
+def test_tampering_with_string_sector_invalidates_capture_checksum(manifest: dict) -> None:
+    # A real news-agent packet uses a string rather than a list of sector tags.
+    # Its checksum must bind that exact string, not only the title or URL.
+    original_hash = manifest["articles_sha256"]
+    manifest["articles"][0]["sectors"] = "Trade and FTA, Agriculture"
+    assert manifest["articles_sha256"] == original_hash
+
+    with pytest.raises(ValueError, match="articles checksum mismatch"):
+        m.validate_capture(manifest)
+
+
 @pytest.mark.parametrize("mutate,match", [
     (lambda s: s.update(production_run=True), "may not assert"),
     (lambda s: s.update(sip185_outcomes_confirmed=True), "may not assert"),
