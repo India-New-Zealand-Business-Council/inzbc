@@ -119,8 +119,9 @@ def _require_confirmed_source_note(row: dict, code: str) -> None:
         raise ValueError(f"{code}: access error does not match confirmed reason")
 
 
-def _checked_source_codes(client: SipPipelineClient, run_id: str) -> set[str]:
-    sources = client.get_source_library()
+def _checked_source_codes(
+    client: SipPipelineClient, run_id: str, sources: object
+) -> set[str]:
     if not isinstance(sources, list):
         raise TypeError("API source library must be a list")
     _, ids = build_source_lookups(sources)
@@ -180,12 +181,12 @@ def prepare_capture(
     if run.get("state") != "Scanning":
         raise ValueError("run must already be in authorised Scanning state")
     start, end = _run_window(run)
-    _checked_source_codes(client, run_id)
+    sources = client.get_source_library()
+    _checked_source_codes(client, run_id, sources)
     if client.list_candidates(run_id):
         raise ValueError("run already has candidates; reconcile before importing")
 
-    rows = client.get_source_library()
-    name_lookup, _ = build_source_lookups(rows)
+    name_lookup, _ = build_source_lookups(sources)
     candidates: list[Candidate] = []
     seen_urls: set[str] = set()
     for article in capture["articles"]:
@@ -200,7 +201,7 @@ def prepare_capture(
         published_dt = datetime.fromisoformat(published)
         if published_dt.tzinfo is None or published_dt.utcoffset() is None:
             raise ValueError("article publication time has no timezone")
-        if not start <= published_dt <= end or published_dt == end:
+        if not start <= published_dt < end:
             raise ValueError("article outside locked run window; reconcile before importing")
         candidate = map_article(
             article, run_id, name_lookup,
