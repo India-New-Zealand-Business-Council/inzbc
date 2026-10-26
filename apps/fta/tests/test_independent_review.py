@@ -1,4 +1,4 @@
-"""Regression tests for blinded, independent answer-label review."""
+"""Regression tests for blind FTA label verification (#406)."""
 import csv
 from pathlib import Path
 
@@ -14,6 +14,11 @@ def write_csv(path: Path, fields: list[str], rows: list[dict[str, str]]) -> None
         writer.writerows(rows)
 
 
+def read_csv(path: Path) -> list[dict[str, str]]:
+    with path.open(newline="", encoding="utf-8") as handle:
+        return list(csv.DictReader(handle))
+
+
 def source(tmp_path: Path) -> Path:
     path = tmp_path / "original.csv"
     write_csv(path, ["qid", "query", "expected_ids", "type", "checked_by"], [
@@ -23,54 +28,52 @@ def source(tmp_path: Path) -> Path:
     return path
 
 
-def test_prepare_hides_original_expected_ids(tmp_path: Path) -> None:
+def test_prepare_hides_types_ids_and_key_and_protects_outputs(tmp_path: Path) -> None:
     original = source(tmp_path)
-    blind = tmp_path / "blind.csv"
-    prepare(original, blind)
+    blind, mapping = tmp_path / "blind.csv", tmp_path / "private.csv"
+    prepare(original, blind, mapping)
     content = blind.read_text()
-    assert "FTA-005" not in content
-    assert "expected_ids" not in content
+    for secret in ("FTA-005", "expected_ids", "qid", "Q1", "Q2", "no_match", "exact"):
+        assert secret not in content
     assert "wool" in content
-    with pytest.raises(ValueError, match="new file"):
-        prepare(original, blind)
+    assert len(read_csv(mapping)) == 2
+    with pytest.raises(ValueError, match="distinct paths"):
+        prepare(original, blind, mapping)
 
 
-def test_compare_requires_real_review_and_explicit_none(tmp_path: Path) -> None:
+def test_compare_requires_review_and_explicit_none(tmp_path: Path) -> None:
     original = source(tmp_path)
-    blind = tmp_path / "blind.csv"
-    prepare(original, blind)
-    assert compare(original, blind) == (0, 0, 2)
-    write_csv(blind, ["qid", "query", "type", "reviewed_ids", "reviewer", "reviewed_on"], [
-        {"qid": "Q1", "query": "wool", "type": "exact", "reviewed_ids": "FTA-005",
-         "reviewer": "Reviewer A", "reviewed_on": "2026-10-26"},
-        {"qid": "Q2", "query": "unknown topic", "type": "no_match", "reviewed_ids": "NONE",
-         "reviewer": "Reviewer A", "reviewed_on": "2026-10-26"},
-    ])
-    assert compare(original, blind) == (2, 0, 0)
+    blind, mapping = tmp_path / "blind.csv", tmp_path / "private.csv"
+    prepare(original, blind, mapping)
+    assert compare(original, blind, mapping) == (0, 0, 2)
+    reviewed = read_csv(blind)
+    for row in reviewed:
+        row.update({"reviewed_ids": "FTA-005" if row["query"] == "wool" else "NONE",
+                    "reviewer": "Reviewer A", "reviewed_on": "2026-10-25"})
+    write_csv(blind, ["token", "query", "reviewed_ids", "reviewer", "reviewed_on"], reviewed)
+    assert compare(original, blind, mapping) == (2, 0, 0)
 
 
-def test_compare_reports_disagreement_without_changing_source(tmp_path: Path) -> None:
+def test_disagreement_never_rewrites_original(tmp_path: Path) -> None:
     original = source(tmp_path)
-    initial = original.read_bytes()
-    blind = tmp_path / "blind.csv"
-    write_csv(blind, ["qid", "query", "type", "reviewed_ids", "reviewer", "reviewed_on"], [
-        {"qid": "Q1", "query": "wool", "type": "exact", "reviewed_ids": "FTA-010",
-         "reviewer": "Reviewer A", "reviewed_on": "2026-10-26"},
-        {"qid": "Q2", "query": "unknown topic", "type": "no_match", "reviewed_ids": "NONE",
-         "reviewer": "Reviewer A", "reviewed_on": "2026-10-26"},
-    ])
-    assert compare(original, blind) == (1, 1, 0)
-    assert original.read_bytes() == initial
+    before = original.read_bytes()
+    blind, mapping = tmp_path / "blind.csv", tmp_path / "private.csv"
+    prepare(original, blind, mapping)
+    reviewed = read_csv(blind)
+    for row in reviewed:
+        row.update({"reviewed_ids": "FTA-010" if row["query"] == "wool" else "NONE",
+                    "reviewer": "Reviewer A", "reviewed_on": "2026-10-25"})
+    write_csv(blind, ["token", "query", "reviewed_ids", "reviewer", "reviewed_on"], reviewed)
+    assert compare(original, blind, mapping) == (1, 1, 0)
+    assert original.read_bytes() == before
 
 
-def test_rejects_question_changes(tmp_path: Path) -> None:
+def test_rejects_tampered_query(tmp_path: Path) -> None:
     original = source(tmp_path)
-    blind = tmp_path / "blind.csv"
-    write_csv(blind, ["qid", "query", "type", "reviewed_ids", "reviewer", "reviewed_on"], [
-        {"qid": "Q1", "query": "altered", "type": "exact", "reviewed_ids": "",
-         "reviewer": "", "reviewed_on": ""},
-        {"qid": "Q2", "query": "unknown topic", "type": "no_match", "reviewed_ids": "",
-         "reviewer": "", "reviewed_on": ""},
-    ])
-    with pytest.raises(ValueError, match="query/type changed"):
-        compare(original, blind)
+    blind, mapping = tmp_path / "blind.csv", tmp_path / "private.csv"
+    prepare(original, blind, mapping)
+    reviewed = read_csv(blind)
+    reviewed[0]["query"] = "altered"
+    write_csv(blind, ["token", "query", "reviewed_ids", "reviewer", "reviewed_on"], reviewed)
+    with pytest.raises(ValueError, match="question text changed"):
+        compare(original, blind, mapping)
