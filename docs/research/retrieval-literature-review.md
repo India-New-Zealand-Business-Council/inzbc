@@ -158,12 +158,12 @@ against the same ten rows reported as its test would inflate apparent reliabilit
 
 The lexical comparison has two distinct sources of evidence; merging them into one large
 average would conceal how the query expansion was developed. The **55-question development set**
-(\`apps/fta/eval/questions.csv\`) includes 18 exact, 8 multi-term, 10 synonym,
+(`apps/fta/eval/questions.csv`) includes 18 exact, 8 multi-term, 10 synonym,
 10 no-match and 9 product-framing queries. The synonym map was written after seeing the original
 ten synonym cases, so the perfect in-sample synonym score is a fit-to-development result,
 not an independent replication.
 
-Paras separately authored ten synonym questions (\`held_out_questions.csv\`). The live keyword
+Paras separately authored ten synonym questions (`held_out_questions.csv`). The live keyword
 ranker achieves **8/10 = 0.800** on that historical set. A query-text audit found two exact
 overlaps with the development queries: H03/Q27 ("milk powder") and H04/Q31 ("baby formula").
 After excluding those duplicates, the same ranker scores **6/8 = 0.750**. Both numbers are
@@ -178,9 +178,9 @@ the twelve external publications.
 | Query-distinct subset, after overlap audit | 8 | 0.750 | No |
 
 Sources for these exact numbers and overlaps:
-\`apps/fta/eval/results/variants-held-out.json\`,
-\`apps/fta/eval/results/variants-held-out-nonoverlap.json\` and
-\`apps/fta/eval/results/held-out-overlap.json\`. No new scores were produced for this note.
+`apps/fta/eval/results/variants-held-out.json`,
+`apps/fta/eval/results/variants-held-out-nonoverlap.json` and
+`apps/fta/eval/results/held-out-overlap.json`. No new scores were produced for this note.
 
 To choose a new retrieval method without marking its own homework, an evaluation should (a)
 specify the embedding model, corpus version, document/query representation and similarity
@@ -188,7 +188,7 @@ threshold *before* opening held-out labels; (b) record the actual result IDs and
 from the approved, redacted server-side path; (c) compare rankers on the same inputs, breaking
 down lexical exact matches, synonyms, product-framing and no-match; and (d) have a named
 independent human verify expected IDs. Issue #406 was closed on 23 Oct, but the
-\`checked_by\` column of the development CSV is still blank, so the ten-check acceptance
+`checked_by` column of the development CSV is still blank, so the ten-check acceptance
 evidence must not be inferred from issue status. The #439 protocol is not completed review.
 
 Until independent no-match and product-framing test cases and real gateway measurements are
