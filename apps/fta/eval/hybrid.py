@@ -34,7 +34,7 @@ def canonical_embedding_text(entry: object) -> str:
     Operators must index *this exact text*, not an undocumented concatenation.
     A text-only change invalidates every old dense snapshot.
     """
-    return "\n".join((entry.topic, entry.sector, entry.treatment, entry.citation))
+    return f"{entry.topic}\n{entry.sector}\n{entry.treatment}\n{entry.citation}"
 
 
 def indexed_text_sha256(entry: object) -> str:
