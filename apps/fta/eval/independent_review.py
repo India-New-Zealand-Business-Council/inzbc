@@ -8,14 +8,17 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
+import json
+import os
 import secrets
 import sys
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 SOURCE_FIELDS = ("qid", "query", "expected_ids", "type", "checked_by")
-REVIEW_FIELDS = ("token", "query", "reviewed_ids", "reviewer", "reviewed_on")
-MAP_FIELDS = ("token", "qid")
+REVIEW_FIELDS = ("token", "query", "reviewed_ids", "reviewer", "reviewed_on", "evidence", "uncertainty")
+MAP_FIELDS = ("token", "qid", "source_sha256")
 
 
 def read_rows(path: Path, required: tuple[str, ...]) -> list[dict[str, str]]:
@@ -29,7 +32,8 @@ def read_rows(path: Path, required: tuple[str, ...]) -> list[dict[str, str]]:
 
 def write_rows(path: Path, fields: tuple[str, ...], rows: list[dict[str, str]]) -> None:
     # Exclusive creation prevents overwriting earlier independent evidence.
-    with path.open("x", newline="", encoding="utf-8") as handle:
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(fd, "w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=fields)
         writer.writeheader()
         writer.writerows(rows)
@@ -41,8 +45,16 @@ def validate_unique(rows: list[dict[str, str]], key: str, label: str) -> None:
         raise ValueError(f"{label}: empty or duplicate {key}")
 
 
+def _fingerprint(rows: list[dict[str, str]]) -> str:
+    fields = ("qid", "query", "expected_ids", "type")
+    payload = [{name: row[name] for name in fields} for row in rows]
+    return hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
+
+
 def prepare(source: Path, review: Path, mapping: Path) -> None:
     rows = read_rows(source, SOURCE_FIELDS)
+    if len(rows) != 10:
+        raise ValueError("prepare requires an authorised, independent ten-question sample CSV")
     validate_unique(rows, "qid", "source")
     targets = [p.resolve() for p in (source, review, mapping)]
     if len(set(targets)) != 3 or review.exists() or mapping.exists():
@@ -52,13 +64,21 @@ def prepare(source: Path, review: Path, mapping: Path) -> None:
     secrets.SystemRandom().shuffle(pairs)
     review_rows = [
         {"token": token, "query": row["query"], "reviewed_ids": "",
-         "reviewer": "", "reviewed_on": ""}
+         "reviewer": "", "reviewed_on": "", "evidence": "", "uncertainty": ""}
         for token, row in pairs
     ]
-    map_rows = [{"token": token, "qid": row["qid"]} for token, row in pairs]
+    fingerprint = _fingerprint(rows)
+    map_rows = [{"token": token, "qid": row["qid"], "source_sha256": fingerprint} for token, row in pairs]
     # Keep the mapping private; only the review CSV goes to the human reviewer.
-    write_rows(mapping, MAP_FIELDS, map_rows)
-    write_rows(review, REVIEW_FIELDS, review_rows)
+    try:
+        write_rows(mapping, MAP_FIELDS, map_rows)
+        try:
+            write_rows(review, REVIEW_FIELDS, review_rows)
+        except OSError:
+            mapping.unlink()
+            raise
+    except Exception:
+        raise
 
 
 def parse_ids(value: str) -> frozenset[str]:
@@ -75,6 +95,11 @@ def compare(source: Path, review: Path, mapping: Path) -> tuple[int, int, int]:
     for rows, key, name in [(original, "qid", "source"), (checked, "token", "review"),
                              (mapped, "token", "mapping")]:
         validate_unique(rows, key, name)
+    if len(original) != 10:
+        raise ValueError("compare requires the original ten-question sample")
+    fingerprint = _fingerprint(original)
+    if any(row["source_sha256"] != fingerprint for row in mapped):
+        raise ValueError("source label fingerprint mismatch; review baseline changed")
     by_id = {row["qid"]: row for row in original}
     map_by_token = {row["token"]: row["qid"] for row in mapped}
     if set(map_by_token.values()) != set(by_id) or len(mapped) != len(original):
@@ -88,12 +113,13 @@ def compare(source: Path, review: Path, mapping: Path) -> tuple[int, int, int]:
         if row["query"] != old["query"]:
             raise ValueError(f"{row['token']}: question text changed")
         answer = row["reviewed_ids"].strip()
-        if not row["reviewer"].strip() or not row["reviewed_on"].strip() or not answer:
+        if (not row["reviewer"].strip() or not row["reviewed_on"].strip() or not answer
+                or not row["evidence"].strip() or not row["uncertainty"].strip()):
             incomplete += 1
             continue
         try:
             date.fromisoformat(row["reviewed_on"].strip())
-            if date.fromisoformat(row["reviewed_on"].strip()) > date.today():
+            if date.fromisoformat(row["reviewed_on"].strip()) > datetime.now(timezone.utc).date():
                 raise ValueError("future review date")
             selected = frozenset() if answer.upper() == "NONE" else parse_ids(answer)
             if answer.upper() != "NONE" and not selected:
