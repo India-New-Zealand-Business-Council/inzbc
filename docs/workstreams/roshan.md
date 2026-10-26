@@ -53,6 +53,23 @@ lead. Process ideas go to the tech lead in conversation first.
   26 Oct. No real embedding results recorded, no production ranker changed, and no
   threshold/operational decision taken. CI and tech-lead review must finish before merge.
 
+- [ ] **daily-india-nz-news-agent#15** Review-only live-source capture exporter (#55,
+  #208) stacked on #14; five CI jobs green. Produces a checksum-backed, run-scoped
+  manifest with observed fetch health but cannot authorise production or infer
+  112 SIP-185 outcomes.
+- [ ] **inzbc#471** Retrieval literature review methodology update (#387).
+  Corrects the EACL 2024 RAGAs citation, records source-verification limits and
+  held-out query overlap; all nine CI jobs green. Roshan still owns the final
+  academic check and wording for the 30 Oct deadline.
+- [ ] **inzbc#472** Offline collector manifest validator (#55); all nine CI
+  jobs green. This is read-only validation of #15's export, not an operational
+  run or human decision.
+- [ ] **inzbc#473** Local 07:00 versus elapsed 24-hour DST ambiguity tests
+  (#55); all nine CI jobs green. SOP policy remains with the authorised owner.
+- [ ] **inzbc#474** Operator-controlled import into an *existing* scanning run
+  (#55), stacked on #472; guarded preflight and explicit operator flags. No
+  production write was made or authorised by this PR. Awaiting CI/lead review.
+
 ## Next up (verified 26 Oct 2026)
 - [ ] **#387** Review/own the 12 annotated literature entries, verify remaining full-text
   claims and APA 7, and complete the academic submission by 30 Oct. The existing
