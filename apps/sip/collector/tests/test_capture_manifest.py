@@ -22,7 +22,7 @@ def manifest() -> dict:
         "description": "synthetic example",
         "score": 5,
         "nz_relevance_score": 10,
-        "sectors": ["Trade and FTA"],
+        "sectors": "Trade and FTA",
     }]
     return {
         "schema_version": 1,
@@ -57,6 +57,16 @@ def test_valid_manifest_never_claims_approval(manifest: dict) -> None:
     assert result.report()["locked_coverage_window_verified"] is False
 
 
+def test_legacy_list_sectors_remain_supported(manifest: dict) -> None:
+    # The live news-agent emits a string, but earlier synthetic captures used a list.
+    article = manifest["articles"][0]
+    article["sectors"] = ["Trade and FTA"]
+    manifest["articles_sha256"] = hashlib.sha256(
+        m._canonical_bytes(manifest["articles"])
+    ).hexdigest()
+    assert m.validate_capture(manifest).article_count == 1
+
+
 @pytest.mark.parametrize("mutate,match", [
     (lambda s: s.update(production_run=True), "may not assert"),
     (lambda s: s.update(sip185_outcomes_confirmed=True), "may not assert"),
@@ -66,6 +76,8 @@ def test_valid_manifest_never_claims_approval(manifest: dict) -> None:
     (lambda s: s["articles"][0].update(url="file:///etc/passwd"), "HTTP"),
     (lambda s: s["articles"][0].update(url="http://127.0.0.1/admin"), "nonpublic"),
     (lambda s: s["articles"][0].update(password="secret"), "outside"),
+    (lambda s: s["articles"][0].update(sectors=42), "sectors must"),
+    (lambda s: s["articles"][0].update(sectors=["Trade", 42]), "sectors must"),
     (lambda s: s["source_fetch_health"]["GDELT"].update(fetch_outcome="Included"), "fetch outcome"),
     (lambda s: s["source_fetch_health"]["GDELT"].update(queries_failed=19), "exceed"),
     (lambda s: s["source_fetch_health"]["GDELT"].update(queries_failed=1, queries_total=0), "exceed"),
