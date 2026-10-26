@@ -160,7 +160,9 @@ def test_incomplete_run_or_evidence_never_writes(
 
 def test_incomplete_fetch_coverage_is_not_sip185_approval(capture: Path) -> None:
     _change(capture, lambda s: (
-        s["source_fetch_health"]["Synthetic Feed"].update(fetch_outcome="partial"),
+        s["source_fetch_health"]["Synthetic Feed"].update(
+            fetch_outcome="partial", queries_failed=1, queries_total=2
+        ),
         s.update(coverage_state="incomplete", coverage_gaps=["Synthetic Feed"]),
     ))
     with pytest.raises(ValueError, match="incomplete fetch coverage"):
