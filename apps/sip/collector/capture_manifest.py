@@ -113,11 +113,16 @@ def _article(value: object) -> None:
     for field in ("description", "published"):
         if field in value and not isinstance(value[field], str):
             raise TypeError(f"{field} must be a string")
-    if "sectors" in value and (
-        not isinstance(value["sectors"], list)
-        or any(not isinstance(tag, str) for tag in value["sectors"])
-    ):
-        raise TypeError("sectors must be a list of strings")
+    # The upstream agent.clean_articles() currently joins sector tags into a comma-
+    # separated string. Accept that real producer shape plus legacy list fixtures;
+    # do not coerce arbitrary untrusted types or change the checksummed payload.
+    if "sectors" in value:
+        sectors = value["sectors"]
+        if not (
+            isinstance(sectors, str)
+            or (isinstance(sectors, list) and all(isinstance(tag, str) for tag in sectors))
+        ):
+            raise TypeError("sectors must be a string or list of strings")
     for field in ("score", "nz_relevance_score"):
         if field in value and (
             type(value[field]) not in (int, float)
