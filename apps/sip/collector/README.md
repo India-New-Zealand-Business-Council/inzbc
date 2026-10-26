@@ -12,7 +12,7 @@ endpoint; see [OPERATOR_IMPORT.md](OPERATOR_IMPORT.md).
   in `india-new-zealand-business-council/daily-india-nz-news-agent`, not an assumed schema.
   `in_coverage_window` is computed from the run's **supplied locked coverage
   interval** when valid timestamps are provided. With no interval or unknown
-  publication time it remains `None` (unknown), never guessed `True`.
+  publication time it remains `None` (unknown), never guessed `True` **after PR #482 lands**. Until that fix merges, a timezone-naive ISO timestamp on `main` can raise `TypeError` when compared with an aware run window; see #482's regression coverage.
   The news-agent's rolling fetch window is not a substitute for SIP-184's
   fixed 07:00-to-07:00 Pacific/Auckland interval.
 - `ingest.py` — `ingest_articles()`: maps a batch and POSTs each to `/api/candidates` via
