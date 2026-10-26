@@ -84,6 +84,30 @@ def test_ingest_articles_handles_non_string_published_without_aborting_the_batch
     assert "published_at" not in malformed_payload
 
 
+
+def test_mixed_naive_and_aware_publications_do_not_abort_batch() -> None:
+    # Legacy per-item ingestion remains *test-only* for this workflow: the operator
+    # bulk-import write path is disabled until the API enforces atomic idempotency.
+    client = _FakeClient()
+    window = ("2026-07-21T00:00:00+00:00", "2026-07-22T00:00:00+00:00")
+    articles = [
+        _article(title="Unknown timezone", published="2026-07-21T19:32:00"),
+        _article(title="Explicit UTC", published="2026-07-21T19:32:00+00:00"),
+    ]
+
+    result = ingest_articles(client, RUN_ID, articles, coverage_window=window)
+
+    assert result.failed == []
+    assert [row["headline"] for row in result.created] == [
+        "Unknown timezone", "Explicit UTC",
+    ]
+    unknown, confirmed = client.created_payloads
+    assert "published_at" not in unknown
+    assert "in_coverage_window" not in unknown
+    assert confirmed["published_at"] == "2026-07-21T19:32:00+00:00"
+    assert confirmed["in_coverage_window"] is True
+
+
 def test_ingest_articles_records_a_malformed_article_without_aborting_the_batch() -> None:
     # A missing "title" fails inside map_article (Candidate.headline is required) - that must
     # not prevent the well-formed articles around it from being captured.
