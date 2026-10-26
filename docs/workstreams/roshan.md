@@ -45,25 +45,38 @@ Delivery process: the team's existing workflow. [ADR-0008](../decisions/ADR-0008
 is kept as analysis and was not adopted (tech lead, 15 Oct). Review and merging stay with the tech
 lead. Process ideas go to the tech lead in conversation first.
 
-## In review (opened, awaiting merge)
-- [ ] **daily-india-nz-news-agent#14** Source freshness, recovery, fail-closed gate (#208 days
-  2 to 4). Bhanu's three review points from 5 Sep fixed 13 Oct, waiting on his re-review.
+## In review (opened, awaiting tech-lead review)
+- [ ] **daily-india-nz-news-agent#14** Source freshness, recovery and fail-closed gate
+  (#208 days 2 to 4). Review findings addressed 13 Oct; still open in the other repository.
+  No merge or live automated distribution is implied.
+- [ ] **#469** Offline FTA dense/hybrid retrieval comparison harness (#393), opened
+  26 Oct. No real embedding results recorded, no production ranker changed, and no
+  threshold/operational decision taken. CI and tech-lead review must finish before merge.
 
-## Next up
-- [ ] **#387** Literature review annotations in my own words, APA 7, by 30 Oct.
-- [ ] **#406** Check eval answers, not only the top-ranked entry. Needs a named human checker.
-- [ ] **#392** Serve the FTA depth levels through `/api/fta/query`. The tech lead opened #433
-  for it on 16 Oct (`depth` query parameter, `member` and `internal` behind roles), awaiting
-  tech-lead review. Not mine to build or review unless the tech lead assigns it.
-- [ ] **#393** Compare retrieval variants on the eval, Week 7. A result alone does not authorize
-  a new production ranker.
-- [ ] **#344** Brief Builder source table. What remains is what writes source outcomes during a
-  real run, which ties to #55.
-- [ ] **#55** End-to-end SIP-184 production run. Blocked on INZBC: SIP-191's authority window
-  has expired, and a live fetch in CI needs a new PAT secret. #388's durable counters are
-  deferred here.
-- #63, #64 and #38 stay with Bhanu (no transfer, 15 Oct).
-- Not committed scope: #193 and #194, only if the client raises their priority.
+## Next up (verified 26 Oct 2026)
+- [ ] **#387** Review/own the 12 annotated literature entries, verify remaining full-text
+  claims and APA 7, and complete the academic submission by 30 Oct. The existing
+  annotations were expanded by Bhanu on 23 Oct; do not represent them as Roshan's
+  individually written reflections without his review.
+- [ ] **#393** Finish the FTA comparison after #469: collect authorised gateway-based
+  dense scores, lock a justified similarity threshold before inspecting held-out
+  answers, and evaluate independently labelled no-match/product-framing questions.
+  Existing held-out questions are synonym-only and H03/H04 duplicate development
+  queries. Experimental results do not authorise production changes.
+- [ ] **#55** Execute and evidence a real SIP-184 end-to-end run. Tech lead reports
+  SIP-191 authority and the collection PAT in place as of 24 Oct; issue is **unblocked**,
+  not completed. A real run ID/outcome and source evidence must be recorded before closure.
+  Do not infer a production run from the local/dry-run proof.
+- [ ] **Independent expected-answer validation, evidence gap after #406 closure.**
+  #406 is marked closed (23 Oct), but `apps/fta/eval/questions.csv` still has blank
+  `checked_by` cells. #439 provided a blinded review protocol, not ten real reviewer
+  labels. Do not claim completion of the human verification from the issue state alone;
+  a named checker and actual rows are still required before citing independent labels.
+- #392 (FTA depth endpoint), #344 (analyst-confirmed source outcome contract),
+  and #63 (server-side embeddings) are **closed**. Their implementation belongs
+  to the responsible lanes; do not reopen/reimplement them.
+- #64 and #38 remain with Bhanu; #193 and #194 are not committed scope unless the client
+  changes priorities. `inzview` work is paused at the client's request (26 Oct).
 
 ## Done
 - [x] **#382** FTA eval set and baseline (#384). ADR-0008 kept as analysis, not adopted (#385).
