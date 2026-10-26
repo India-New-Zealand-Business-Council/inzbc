@@ -29,32 +29,43 @@ copy of the personal plan and Gantt. Every log below is kept here so git dates e
 
 ## Issues
 
-| Issue | Status | Note |
+Status checked against repository issues and main on **26 Oct 2026**. This is a
+factual reconciliation of my existing plan, not a change in assignments,
+review policy, ceremonies or client-authorisation rules.
+
+| Issue | Status | Evidence / next step |
 |---|---|---|
-| #208 collection engine | In review | #13 merged 5 Sep. News-agent #14 fixed 13 Oct, waiting on the tech lead's re-review |
-| #55 SIP-184 production run | Blocked on INZBC | Needs a fresh SIP-191 authority. Tracked as a dependency |
-| #193, #194 | Not planned | Only if the client raises priority |
-| #63 embeddings | Bhanu's | No transfer (tech lead, 15 Oct). Comparison work stays in apps/fta under #393 |
-| #344 Brief Builder source table | Assigned 13 Oct | #368 fixed the blank table. Remaining: what writes outcomes in a real run (tied to #55) |
-| #320 PR review backlog | Closed, not planned (15 Oct) | No rota. Review and merging stay with the tech lead |
-| #384 FTA eval set and baseline | Done | #382 |
-| #385 ADR-0008 delivery process | Closed, not adopted (15 Oct) | Kept as analysis |
-| #386 FTA synonym gap | Done | #383 |
-| #387 Literature review | In progress | Sources checked in #400 (merged 16 Oct). Annotations due 30 Oct |
-| #388 Cross-run source health store | Done | Per-run reporting only. Durable counters deferred to #55 (tech lead, 16 Oct) |
-| #389 Product outranked by a cross-sector entry | Done | #394 |
-| #390 Held-out eval questions | Done | Paras's #416, merged 16 Oct: held-out synonym hit@1 0.800 with the map, 0.500 without |
-| #391 Eval regression gate in CI | Done | #394 |
-| #392 Depth levels through /api/fta/query | In review, tech lead's | The tech lead opened #433 (Closes #392) on 16 Oct. Not mine to build |
-| #393 Compare four retrieval variants | In progress | #398, #403 and #428 merged (16 Oct). A comparison result alone does not authorize a new production ranker |
-| #404 Steel exports (framing-only match) | Done | Tech lead chose a general answer with a missing-coverage warning (#423). INZBC agreed |
-| #405, #407 to #415 process issues | Closed, not planned (15 Oct) | Tech lead answers in [engineering-answers-2026-10-16.md](../engineering-answers-2026-10-16.md) |
-| #406 Check eval answers, not only rank | Open | Valid. Needs a named human checker, none invented |
+| #208 collection engine | Open; cross-repo PR #14 awaiting tech-lead review | Test source freshness, recovery and fail-closed behaviour; do not enable distribution |
+| #55 SIP-184 production run | Open, **unblocked**, not executed | Tech lead's 24 Oct launch-status note records new SIP-191 authority and PAT. Requires an actual real collector-to-assessment run with run ID, outcomes, source evidence and approval trail; no claimed live success |
+| #193, #194 | Not planned | Add only when INZBC explicitly prioritises |
+| #63 embeddings | Closed, Bhanu's implementation | Shared gateway and semantic store delivered; #393's benchmark is still independent work |
+| #344 Brief Builder source table | Closed | Tech lead selected manual, evidence-backed analyst outcomes, delivered through #446; real SIP-184 run remains #55 |
+| #320 PR review backlog | Closed, not adopted | No review rota. Only tech lead reviews/merges |
+| #384 FTA baseline | Done | #382 |
+| #385 ADR-0008 process | Closed, not adopted | Retained only as analysis |
+| #386 synonym gap | Done | #383 |
+| #387 literature review | Open | 12 structured draft annotations (Bhanu's 23 Oct expansion), 12 bibliographic source checks; Roshan still to review and complete his own account by 30 Oct |
+| #388 cross-run source health | Closed | Per-run only; durable counters deferred to live-run follow-up |
+| #389 product ranking | Done | #394 |
+| #390 held-out FTA questions | Closed | #416, ten synonym questions, including two duplicate texts |
+| #391 eval regression gate | Done | #394 |
+| #392 FTA depth API | Closed | Tech lead's #433 track, not mine to review |
+| #393 compare rankers | Open | Four lexical variants already scored; PR #469 adds offline dense/hybrid evaluation, with real authorized scores and independent held-out labels still required |
+| #404 steel exports | Done | INZBC approved general answer with missing-coverage warning |
+| #405, #407–#415 process issues | Closed, not planned | Do not revive unauthorized ceremonies |
+| #406 expected-answer review | **Closed 23 Oct; evidence incomplete** | The CSV still lacks checked_by labels despite documented blinded-review protocol (#439); cannot assert that ten checks occurred |
+
+**Open, review-only work in my lane:** daily-india-nz-news-agent PR #14;
+INZBC PR #469 (26 Oct, no production ranker changes). Neither may be merged
+without Bhanu's review. The client's 26 Oct request pauses `inzview` work,
+which is not in my implementation lane.
 
 ## FTA retrieval eval (2.2)
 
-Eval set: `apps/fta/eval/questions.csv`, 46 questions in four types (four no-match traps added
-13 Oct with the synonym map). Harness:
+Eval history: the original baseline used 42 questions; the synonym-map comparison used 46.
+The **current** `apps/fta/eval/questions.csv` has 55 questions (including product-framing
+and no-match cases) as of 26 Oct; keep the archived baseline rows separate from present scores.
+Harness:
 `uv run python -m apps.fta.eval.run_eval --write <name>`. Baseline saved to
 `apps/fta/eval/results/baseline.json`.
 
