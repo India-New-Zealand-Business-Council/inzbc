@@ -172,8 +172,12 @@ def validate_capture(snapshot: object) -> CaptureValidation:
         total = row["queries_total"]
         if type(failed) is not int or type(total) is not int or failed < 0 or total < 0:
             raise ValueError("query counters must be nonnegative integers")
-        if total and failed > total:
+        if failed > total:
             raise ValueError("failed queries exceed total")
+        if row["fetch_outcome"] in {"ok", "no_recent"} and failed:
+            raise ValueError("healthy fetch outcome cannot report failed queries")
+        if row["fetch_outcome"] == "partial" and (total == 0 or failed == 0 or failed == total):
+            raise ValueError("partial fetch must have both successful and failed queries")
     gaps = tuple(sorted(
         name for name, row in health.items()
         if row["fetch_outcome"] in _INCOMPLETE
