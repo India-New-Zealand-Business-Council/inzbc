@@ -56,7 +56,7 @@ class FakeClient:
                 "run_id": RUN_ID,
                 "source_id": f"db-{source.source_id}",
                 "outcome": next(iter(SourceOutcome)).value,
-                "notes": "" if self.no_evidence else "Analyst-confirmed evidence: synthetic only\\nFallback trail: ",
+                "notes": "" if self.no_evidence else "Analyst-confirmed evidence: synthetic only\nFallback trail: ",
                 "method": None,
                 "fallback_used": False,
                 "access_error": None,
