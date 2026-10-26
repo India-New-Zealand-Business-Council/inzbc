@@ -6,6 +6,7 @@ import json
 
 import pytest
 
+from apps.fta.corpus import CORPUS
 from apps.fta.eval import hybrid
 from apps.fta.eval.run_eval import Question
 
@@ -21,7 +22,11 @@ def questions() -> list[Question]:
 @pytest.fixture
 def snapshot(questions: list[Question]) -> dict:
     return {
-        "schema_version": 1,
+        "schema_version": 2,
+        "unfiltered_capture": True,
+        "capture_min_score": -1.0,
+        "capture_limit": len([entry for entry in CORPUS if entry.confirmed]),
+        "filters": "none",
         "corpus": "fta_corpus",
         "source": "ModelGateway.embed",
         "snapshot_id": "synthetic-test-only",
@@ -32,11 +37,15 @@ def snapshot(questions: list[Question]) -> dict:
         "questions_sha256": hybrid.questions_fingerprint(questions),
         "results": {
             "Q1": {"query": "wool", "hits": [
-                {"id": "FTA-005", "score": 0.9},
-                {"id": "FTA-010", "score": 0.1},
+                {"id": entry.id,
+                 "score": 0.9 if entry.id == "FTA-005" else 0.1,
+                 "content_sha256": hybrid.indexed_text_sha256(entry)}
+                for entry in CORPUS if entry.confirmed
             ]},
             "Q2": {"query": "travel insurance", "hits": [
-                {"id": "FTA-010", "score": 0.2},
+                {"id": entry.id, "score": 0.2,
+                 "content_sha256": hybrid.indexed_text_sha256(entry)}
+                for entry in CORPUS if entry.confirmed
             ]},
         },
     }
@@ -76,10 +85,14 @@ def test_rrf_deduplicates_and_is_stable_on_ties() -> None:
     (lambda d: d.update(source="unknown"), "approved"),
     (lambda d: d.update(min_score=None), "finite cosine score"),
     (lambda d: d.update(min_score=float("nan")), "finite cosine score"),
-    (lambda d: d["results"]["Q1"]["hits"].append({"id": "FTA-005", "score": 0.8}), "duplicate"),
-    (lambda d: d["results"]["Q1"]["hits"].append({"id": "NOT-A-CORPUS-ID", "score": 0.8}), "unknown"),
+    (lambda d: d["results"]["Q1"]["hits"].append(dict(d["results"]["Q1"]["hits"][0])), "truncated"),
+    (lambda d: d["results"]["Q1"]["hits"][0].update(id="NOT-A-CORPUS-ID"), "unknown"),
     (lambda d: d["results"]["Q1"]["hits"][0].update(score=True), "finite cosine score"),
     (lambda d: d["results"]["Q1"]["hits"][0].update(score=1.1), "between -1 and 1"),
+    (lambda d: d["results"]["Q1"]["hits"].pop(), "truncated"),
+    (lambda d: d.update(capture_limit=10), "capture limit"),
+    (lambda d: d.update(unfiltered_capture=False), "unfiltered"),
+    (lambda d: d["results"]["Q1"]["hits"][0].update(content_sha256="old"), "indexed text digest"),
 ])
 def test_snapshot_fails_closed_on_invalid_or_stale_input(
     questions: list[Question], snapshot: dict, alteration, match: str
@@ -87,6 +100,26 @@ def test_snapshot_fails_closed_on_invalid_or_stale_input(
     alteration(snapshot)
     with pytest.raises(ValueError, match=match):
         hybrid.evaluate_snapshot(snapshot, questions)
+
+
+def test_change_to_indexed_treatment_invalidates_corpus_fingerprint(monkeypatch) -> None:
+    from dataclasses import replace
+
+    original = hybrid.corpus_fingerprint()
+    records = tuple(
+        replace(entry, treatment=entry.treatment + " updated") if entry.confirmed
+        and entry.id == "FTA-005" else entry for entry in CORPUS
+    )
+    monkeypatch.setattr(hybrid, "CORPUS", records)
+    assert hybrid.corpus_fingerprint() != original
+
+
+def test_label_changes_change_report_fingerprint_not_capture_fingerprint(questions: list[Question]) -> None:
+    revised = [
+        Question("Q1", "wool", frozenset({"FTA-010"}), "multi_term"), questions[1]
+    ]
+    assert hybrid.questions_fingerprint(revised) == hybrid.questions_fingerprint(questions)
+    assert hybrid.labels_fingerprint(revised) != hybrid.labels_fingerprint(questions)
 
 
 def test_snapshot_requires_distinct_question_text(snapshot: dict) -> None:
