@@ -38,6 +38,14 @@ def test_parse_published_at_handles_gdelt_compact_no_z() -> None:
     assert parse_published_at("20260721193200") == "2026-07-21T19:32:00+00:00"
 
 
+def test_parse_published_at_does_not_guess_timezone_for_naive_iso() -> None:
+    # Public RSS timestamps without an offset cannot be compared to SIP's UTC window.
+    assert parse_published_at("2026-07-21T19:32:00") is None
+    assert parse_published_at("2026-07-21 19:32:00") is None
+    # A documented UTC GDELT compact form is still explicitly supported.
+    assert parse_published_at("20260721193200") == "2026-07-21T19:32:00+00:00"
+
+
 def test_parse_published_at_returns_none_for_empty() -> None:
     assert parse_published_at("") is None
     assert parse_published_at(None) is None
@@ -88,6 +96,20 @@ def test_map_article_leaves_in_coverage_window_unknown_when_published_at_is_unpa
     window = ("2026-07-21T00:00:00+00:00", "2026-07-22T00:00:00+00:00")
     mapped = map_article(_article(published="not a date"), RUN_ID, coverage_window=window)
     assert mapped.candidate.in_coverage_window is None
+
+
+def test_map_article_naive_publication_is_unknown_not_an_exception() -> None:
+    window = ("2026-07-21T00:00:00+00:00", "2026-07-22T00:00:00+00:00")
+    mapped = map_article(_article(published="2026-07-21T19:32:00"), RUN_ID, coverage_window=window)
+    assert mapped.candidate.published_at is None
+    assert mapped.candidate.in_coverage_window is None
+
+
+def test_map_article_naive_or_reversed_run_window_is_unknown() -> None:
+    naive = ("2026-07-21T00:00:00", "2026-07-22T00:00:00")
+    reversed_utc = ("2026-07-22T00:00:00+00:00", "2026-07-21T00:00:00+00:00")
+    assert map_article(_article(), RUN_ID, coverage_window=naive).candidate.in_coverage_window is None
+    assert map_article(_article(), RUN_ID, coverage_window=reversed_utc).candidate.in_coverage_window is None
 
 
 def test_map_article_leaves_source_id_unset_without_lookup() -> None:
