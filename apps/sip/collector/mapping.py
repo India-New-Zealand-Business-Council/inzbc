@@ -36,7 +36,7 @@ _GDELT_DATE_FORMATS = ("%Y%m%dT%H%M%SZ", "%Y%m%d%H%M%S")
 def parse_published_at(raw: object) -> str | None:
     """Best-effort parse of the agent's `published` field into an ISO 8601 string.
 
-    Returns None on anything empty, non-string, or unrecognised rather than guessing or raising
+    Returns None on empty, non-string, unrecognised or timezone-naive ISO text
     - the agent's output is untrusted external data, so a wrong-typed value (e.g. an int) here
     is treated the same as an unparseable one, not a crash. A missing capture time is preferable
     to a wrong one.
@@ -45,15 +45,15 @@ def parse_published_at(raw: object) -> str | None:
         return None
     value = raw.strip()
 
-    try:
-        return datetime.fromisoformat(value).isoformat()
-    except ValueError:
-        pass
-
-    try:
-        return datetime.fromisoformat(value.replace(" ", "T", 1)).isoformat()
-    except ValueError:
-        pass
+    # External ISO timestamps without a timezone cannot prove SIP-184 coverage.
+    # Only the documented compact GDELT date format below is assigned UTC.
+    for candidate in (value, value.replace(" ", "T", 1)):
+        try:
+            parsed = datetime.fromisoformat(candidate)
+        except ValueError:
+            continue
+        if parsed.utcoffset() is not None:
+            return parsed.isoformat()
 
     for fmt in _GDELT_DATE_FORMATS:
         try:
@@ -82,7 +82,7 @@ class MappedCandidate(BaseModel):
 def _in_locked_window(published_at: str | None, coverage_window: tuple[str, str] | None) -> bool | None:
     """Compares a parsed `published_at` against the run's locked coverage window.
 
-    Returns `None`, not `False`, when either side is missing or unparseable: SIP-184 step 2's
+    Returns `None`, not `False`, when either side is missing, naive or unparseable: SIP-184 step 2's
     window is a fact about the run, and an article whose publish time is unknown or a caller that
     never supplied a window are both "we don't know", not "outside the window". Writing `False`
     for either would store a fabricated coverage fact — the same category of thing this codebase
@@ -95,7 +95,12 @@ def _in_locked_window(published_at: str | None, coverage_window: tuple[str, str]
         published_dt = datetime.fromisoformat(published_at)
         start_dt = datetime.fromisoformat(start_utc)
         end_dt = datetime.fromisoformat(end_utc)
-    except ValueError:
+    except (TypeError, ValueError):
+        return None
+    # A naive timestamp must stay unknown, never crash or be compared as local time.
+    if any(value.utcoffset() is None for value in (published_dt, start_dt, end_dt)):
+        return None
+    if start_dt >= end_dt:
         return None
     return start_dt <= published_dt < end_dt
 
