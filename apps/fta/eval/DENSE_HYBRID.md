@@ -17,7 +17,7 @@ The JSON schema is illustrated below. THIS EXAMPLE IS SYNTHETIC AND INCOMPLETE: 
       "schema_version": 2,
       "unfiltered_capture": true,
       "capture_min_score": -1.0,
-      "capture_limit": 23,
+      "capture_limit": 22,
       "filters": "none",
       "corpus": "fta_corpus",
       "source": "ModelGateway.embed",
@@ -34,7 +34,7 @@ The JSON schema is illustrated below. THIS EXAMPLE IS SYNTHETIC AND INCOMPLETE: 
       }
     }
 
-Replace results with exactly one record for **every** question ID in the selected CSV, and record **every confirmed indexed FTA entry for every question**, including its actual cosine score and its `content_sha256`. Use the real `len([entry for entry in CORPUS if entry.confirmed])` for `capture_limit` (23 at the time this schema was written). Capture using `EmbeddingService.retrieve(corpus="fta_corpus", query=query, source=approved_prompt_source, min_score=-1.0, limit=confirmed_count, filters=RetrievalFilters())` after indexing the canonical text. **Do not use retrieve defaults**: `min_score=0.70` and `limit=10` silently omit low-score or lower-ranked entries. A truncated list, a skipped query, an index missing an entry, a mismatched digest, or an inconsistent corpus version now **fails closed**; zero candidates is not a valid full-rank snapshot. A failed gateway call must be recorded separately from a no-match: no-match is decided by the analysis threshold over the complete stored scores, never by missing fetch data.
+Replace results with exactly one record for **every** question ID in the selected CSV, and record **every confirmed indexed FTA entry for every question**, including its actual cosine score and its `content_sha256`. Use the real `len([entry for entry in CORPUS if entry.confirmed])` for `capture_limit` (22 confirmed of 23 total at the time this schema was written). Capture using `EmbeddingService.retrieve(corpus="fta_corpus", query=query, source=approved_prompt_source, min_score=-1.0, limit=confirmed_count, filters=RetrievalFilters())` after indexing the canonical text. **Do not use retrieve defaults**: `min_score=0.70` and `limit=10` silently omit low-score or lower-ranked entries. A truncated list, a skipped query, an index missing an entry, a mismatched digest, or an inconsistent corpus version now **fails closed**; zero candidates is not a valid full-rank snapshot. A failed gateway call must be recorded separately from a no-match: no-match is decided by the analysis threshold over the complete stored scores, never by missing fetch data.
 
 The **question capture fingerprint** binds IDs and query strings, so the same score snapshot may be independently re-graded. A separate `labels_sha256` in the results binds each question's expected IDs and query type; changing the labels produces a different evaluation provenance even though the source scores remain unchanged. Operator-reported `model`, retrieval filters, index version, and timestamps must be checked against gateway/store logs by a reviewer.
 
