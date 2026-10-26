@@ -56,7 +56,10 @@ class FakeClient:
                 "run_id": RUN_ID,
                 "source_id": f"db-{source.source_id}",
                 "outcome": next(iter(SourceOutcome)).value,
-                "notes": "" if self.no_evidence else "Human checked; evidence: synthetic only",
+                "notes": "" if self.no_evidence else "Analyst-confirmed evidence: synthetic only\\nFallback trail: ",
+                "method": None,
+                "fallback_used": False,
+                "access_error": None,
             }
             for source in codes
         ]
@@ -143,7 +146,7 @@ def test_preview_is_read_only_even_with_complete_112_source_evidence(capture: Pa
 @pytest.mark.parametrize(("changes", "message"), [
     ({"state": "Draft"}, "Scanning"),
     ({"source_gap": True}, "mandatory SIP-185 outcomes"),
-    ({"no_evidence": True}, "evidence notes"),
+    ({"no_evidence": True}, "Analyst-confirmed evidence"),
     ({"existing": [{"id": "already"}]}, "already has candidates"),
 ])
 def test_incomplete_run_or_evidence_never_writes(
@@ -184,46 +187,69 @@ def test_unsafe_capture_items_rejected_before_any_write(
     assert client.requested == 0
 
 
-def test_explicit_commit_requires_exact_run_and_human_confirmation(capture: Path) -> None:
+def test_apply_is_disabled_until_atomic_server_import_exists(capture: Path) -> None:
     client = FakeClient()
     plan = import_capture.prepare_capture(client, RUN_ID, capture)
-    for number, confirmation in [
-        ("WRONG", True), (plan.run_number, False),
-    ]:
-        with pytest.raises(ValueError, match="exact run number"):
-            import_capture.apply_capture(
-                client, plan, confirmed_run_number=number, sip191_reviewed=confirmation
-            )
+    with pytest.raises(RuntimeError, match="idempotent bulk-capture"):
+        import_capture.apply_capture(
+            client, plan, confirmed_run_number=plan.run_number, sip191_reviewed=True
+        )
+    with pytest.raises(RuntimeError, match="idempotent bulk-capture"):
+        import_capture.apply_capture(
+            client, plan, confirmed_run_number=plan.run_number, sip191_reviewed=True
+        )
     assert client.requested == 0
-    result = import_capture.apply_capture(
-        client, plan, confirmed_run_number=plan.run_number, sip191_reviewed=True
-    )
-    assert result["created"] == 1
-    assert client.requested == 1
-    with pytest.raises(ValueError, match="run now contains candidates"):
-        import_capture.apply_capture(
-            client, plan, confirmed_run_number=plan.run_number, sip191_reviewed=True
-        )
-    assert client.requested == 1
 
 
-def test_import_aborts_on_partial_http_write_and_requires_reconciliation(capture: Path) -> None:
-    client = FakeClient(fail_at=2)
-    _change(capture, lambda s: s["articles"].append({
-        **s["articles"][0],
-        "title": "Second synthetic trade item",
-        "url": "https://example.org/trade-2",
-    }))
+def test_changed_file_after_read_cannot_change_mapped_candidates(
+    capture: Path, monkeypatch
+) -> None:
+    client = FakeClient()
+    original = client.get_run
+
+    def overwrite_after_validation(run_id: str) -> dict:
+        file_contents = json.loads(capture.read_text())
+        file_contents["articles"][0]["title"] = "Unvalidated replacement"
+        capture.write_text(json.dumps(file_contents))
+        return original(run_id)
+
+    monkeypatch.setattr(client, "get_run", overwrite_after_validation)
     plan = import_capture.prepare_capture(client, RUN_ID, capture)
-    with pytest.raises(RuntimeError, match="after 1 writes"):
-        import_capture.apply_capture(
-            client, plan, confirmed_run_number=plan.run_number, sip191_reviewed=True
+    assert plan.candidates[0].headline == "India and New Zealand discuss an FTA"
+    assert json.loads(capture.read_text())["articles"][0]["title"] == "Unvalidated replacement"
+    assert client.requested == 0
+
+
+def test_generic_notes_do_not_count_as_human_evidence(capture: Path) -> None:
+    client = FakeClient()
+    original = client.list_source_checks
+
+    def old_notes(run_id: str) -> list[dict]:
+        checks = original(run_id)
+        checks[0]["notes"] = "Old generic machine-written note"
+        return checks
+
+    client.list_source_checks = old_notes
+    with pytest.raises(ValueError, match="Analyst-confirmed evidence"):
+        import_capture.prepare_capture(client, RUN_ID, capture)
+    assert client.requested == 0
+
+
+def test_wrong_fallback_trail_is_rejected(capture: Path) -> None:
+    client = FakeClient()
+    original = client.list_source_checks
+
+    def invalid_trail(run_id: str) -> list[dict]:
+        checks = original(run_id)
+        checks[0]["notes"] = (
+            "Analyst-confirmed evidence: reference\n"
+            "Fallback trail: RSS or approved feed; Direct access"
         )
-    assert len(client.existing) == 1
-    with pytest.raises(ValueError, match="run now contains candidates"):
-        import_capture.apply_capture(
-            client, plan, confirmed_run_number=plan.run_number, sip191_reviewed=True
-        )
+        return checks
+
+    client.list_source_checks = invalid_trail
+    with pytest.raises(ValueError, match="invalid SIP-185 fallback sequence"):
+        import_capture.prepare_capture(client, RUN_ID, capture)
 
 
 def test_cannot_override_dst_ambiguity_through_capture_plan(capture: Path) -> None:
