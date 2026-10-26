@@ -8,12 +8,12 @@ workflow_dispatch CI job (sip-dry-run.yml), which has a real Postgres and servic
 from __future__ import annotations
 
 import json
-
-import pytest
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
+
+import pytest
 
 from apps.sip.collector import run_dry_run
 from apps.sip.pipeline.client import SipApiError
