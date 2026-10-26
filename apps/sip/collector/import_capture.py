@@ -1,8 +1,8 @@
-"""Operator-controlled ingestion of a verified news-agent capture into an EXISTING SIP run.
+"""Operator-only, read-only preflight for a captured SIP run (#55).
 
-No run creation, run transition, SIP-185 decision, assessment, approval, or distribution.
-Dry-run preview is the default. A real write requires exact run confirmation,
-human SIP-191 confirmation, an authenticated Analyst session, and 112 source checks.
+There is NO production write path in this module. Server-side transactional
+import/idempotency is missing, so candidate POST loops are deliberately disabled.
+The preflight cannot authorise SIP-191, score, publish, or infer SIP-185 outcomes.
 """
 
 from __future__ import annotations
@@ -20,10 +20,10 @@ from zoneinfo import ZoneInfo
 from apps.sip.pipeline.client import SipPipelineClient
 from apps.sip.pipeline.models import Candidate, SourceOutcome
 
-from .capture_manifest import validate_file
+from .capture_manifest import validate_capture
 from .mapping import map_article, parse_published_at
 from .source_lookup import build_source_lookups
-from .source_register import MANDATORY_SOURCES, missing_mandatory_outcomes
+from .source_register import FALLBACK_SEQUENCE, MANDATORY_SOURCES, missing_mandatory_outcomes
 
 _AUCKLAND = ZoneInfo("Pacific/Auckland")
 _RUN_NUMBER = re.compile(r"RUN-[0-9]{8}-[0-9]{2}\Z")
@@ -68,7 +68,7 @@ def _run_window(run: dict) -> tuple[datetime, datetime]:
         raise ValueError("run coverage window must be increasing")
     start_local = start.astimezone(_AUCKLAND)
     end_local = end.astimezone(_AUCKLAND)
-    if (start_local.hour, start_local.minute, end_local.hour, end_local.minute) != (7, 0, 7, 0):
+    if (start_local.hour, start_local.minute, start_local.second, start_local.microsecond) != (7, 0, 0, 0) or (end_local.hour, end_local.minute, end_local.second, end_local.microsecond) != (7, 0, 0, 0):
         raise ValueError("run must use SIP-184 local 07:00-to-07:00 boundaries")
     if (end_local.date() - start_local.date()).days != 1:
         raise ValueError("run must span exactly one local calendar day")
@@ -78,6 +78,41 @@ def _run_window(run: dict) -> tuple[datetime, datetime]:
             "obtain an approved SIP-184 interpretation before importing"
         )
     return start, end
+
+
+def _require_confirmed_source_note(row: dict, code: str) -> None:
+    """Mirror the BriefBuilderScreen evidence contract instead of trusting free text."""
+    notes = row.get("notes")
+    prefix, trail_prefix, reason_prefix = (
+        "Analyst-confirmed evidence: ", "Fallback trail: ", "Access failure: "
+    )
+    if not isinstance(notes, str) or not notes.startswith(prefix):
+        raise ValueError(f"{code}: expected Analyst-confirmed evidence notes")
+    lines = notes.split("\n")
+    evidence = lines[0][len(prefix):].strip()
+    trail_lines = [line for line in lines[1:] if line.startswith(trail_prefix)]
+    reason_lines = [line for line in lines[1:] if line.startswith(reason_prefix)]
+    if not evidence or len(trail_lines) != 1 or len(reason_lines) > 1 or len(lines) != 2 + len(reason_lines):
+        raise ValueError(f"{code}: incomplete analyst evidence or fallback trail")
+    raw_steps = trail_lines[0][len(trail_prefix):]
+    steps = [step.strip() for step in raw_steps.split(";") if step.strip()]
+    ordered = {step: n for n, step in enumerate(FALLBACK_SEQUENCE)}
+    last = -1
+    for step in steps:
+        location = ordered.get(step, -1)
+        if location <= last:
+            raise ValueError(f"{code}: invalid SIP-185 fallback sequence")
+        last = location
+    method = steps[-1] if steps else None
+    fallback = any(step != FALLBACK_SEQUENCE[0] for step in steps)
+    if row.get("method") != method or row.get("fallback_used") is not fallback:
+        raise ValueError(f"{code}: source-check method or fallback flag differs from trail")
+    reason = reason_lines[0][len(reason_prefix):].strip() if reason_lines else ""
+    requires_reason = row.get("outcome") in {"Inaccessible", "Excluded"} or fallback
+    if requires_reason and not reason:
+        raise ValueError(f"{code}: fallback/access failure requires recorded reason")
+    if row.get("access_error") != (reason if requires_reason else None):
+        raise ValueError(f"{code}: access error does not match confirmed reason")
 
 
 def _checked_source_codes(client: SipPipelineClient, run_id: str) -> set[str]:
@@ -109,8 +144,7 @@ def _checked_source_codes(client: SipPipelineClient, run_id: str) -> set[str]:
             raise ValueError("duplicate source check for mandatory SIP-185 source")
         if row.get("outcome") not in _SOURCE_OUTCOMES:
             raise ValueError(f"invalid SIP-185 outcome for {code}")
-        if not isinstance(row.get("notes"), str) or not row["notes"].strip():
-            raise ValueError(f"mandatory SIP-185 source {code} has no evidence notes")
+        _require_confirmed_source_note(row, code)
         checked.add(code)
     missing = missing_mandatory_outcomes(checked)
     if missing:
@@ -125,11 +159,14 @@ def prepare_capture(
     client: SipPipelineClient, run_id: str, capture_file: Path
 ) -> CapturePlan:
     """Read-only verification of existing run, evidence and every candidate."""
-    validation = validate_file(capture_file)
-    if validation.gaps:
-        raise ValueError("collection has incomplete fetch coverage; reconcile before import")
+    if capture_file.stat().st_size > 10 * 1024 * 1024:
+        raise ValueError("capture exceeds 10 MiB safety limit")
+    # Parse ONCE. The exact object that passed validation is the object we map.
     with capture_file.open(encoding="utf-8") as handle:
         capture = json.load(handle)
+    validation = validate_capture(capture)
+    if validation.gaps:
+        raise ValueError("collection has incomplete fetch coverage; reconcile before import")
     run = client.get_run(run_id)
     if not isinstance(run, dict) or run.get("id") != run_id:
         raise ValueError("run ID does not match authenticated API response")
@@ -184,33 +221,12 @@ def apply_capture(
     client: SipPipelineClient, plan: CapturePlan,
     *, confirmed_run_number: str, sip191_reviewed: bool,
 ) -> dict:
-    """Explicit operator-only write; partial failures are reported, never concealed."""
-    if confirmed_run_number != plan.run_number or not sip191_reviewed:
-        raise ValueError("exact run number and reviewed SIP-191 authority are required")
-    current = client.get_run(plan.run_id)
-    if (current.get("state") != "Scanning"
-            or current.get("run_number") != plan.run_number):
-        raise ValueError("run changed after preflight; aborting import")
-    if client.list_candidates(plan.run_id):
-        raise ValueError("run now contains candidates; aborting to prevent duplicates")
-    created: list[str] = []
-    for candidate in plan.candidates:
-        try:
-            row = client.create_candidate(candidate)
-        except Exception as error:
-            # HTTP capture has no batch transaction; expose partial writes and stop.
-            raise RuntimeError(
-                f"capture stopped after {len(created)} writes; reconcile run {plan.run_id} "
-                "before any retry"
-            ) from error
-        created.append(str(row["id"]))
-    return {
-        "created": len(created),
-        "run_id": plan.run_id,
-        "run_number": plan.run_number,
-        "articles_sha256": plan.article_checksum,
-        "note": "Capture only. Scoring, SIP-185 decisions, QA and distribution are separate.",
-    }
+    """No writes until the SIP API implements an atomic, idempotent import claim."""
+    raise RuntimeError(
+        "SIP candidate import is disabled: the API lacks a transactionally locked, "
+        "idempotent bulk-capture endpoint. A client-side empty-run check cannot "
+        "prevent concurrent duplicate writes. Tech-lead API work is required."
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -222,6 +238,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--confirm-run-number")
     parser.add_argument("--confirm-sip191-reviewed", action="store_true")
     args = parser.parse_args(argv)
+    if args.apply:
+        parser.error("--apply is unavailable: no server-side atomic/idempotent import endpoint")
     # Auth comes from inherited environment, never command-line arguments or committed files.
     cookie, csrf = os.getenv("SIP_SESSION_COOKIE"), os.getenv("SIP_CSRF_TOKEN")
     if not cookie or not csrf:
@@ -234,16 +252,7 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("API must be HTTPS or a loopback HTTP development endpoint")
     client = SipPipelineClient(args.base_url, cookie, csrf)
     plan = prepare_capture(client, args.run_id, args.capture)
-    if args.apply:
-        if not args.confirm_run_number or not args.confirm_sip191_reviewed:
-            parser.error("--apply requires exact --confirm-run-number and "
-                         "--confirm-sip191-reviewed")
-        result = apply_capture(
-            client, plan, confirmed_run_number=args.confirm_run_number,
-            sip191_reviewed=args.confirm_sip191_reviewed,
-        )
-    else:
-        result = plan.summary()
+    result = plan.summary()
     print(json.dumps(result, indent=2))
     return 0
 
