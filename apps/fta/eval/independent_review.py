@@ -1,25 +1,21 @@
-"""Prepare and reconcile independently checked FTA expected-answer labels.
+"""Prepare and reconcile blinded FTA answer-label reviews (#406).
 
-Generate a blind sheet without the original answers:
-    python -m apps.fta.eval.independent_review prepare questions.csv blind.csv
-
-The reviewer independently fills reviewed_ids, reviewer and reviewed_on (YYYY-MM-DD).
-Compare only *after* review, without modifying the source labels:
-    python -m apps.fta.eval.independent_review compare questions.csv blind.csv
-
-Exit status is nonzero for malformed or incomplete reviews and for disagreements.
-This script never marks the original checked_by field as verified.
+Never send the original QIDs, question types, or mapping file to the reviewer.
+prepare SOURCE REVIEW_CSV PRIVATE_MAPPING_CSV
+compare SOURCE REVIEW_CSV PRIVATE_MAPPING_CSV
 """
 from __future__ import annotations
 
 import argparse
 import csv
+import secrets
 import sys
 from datetime import date
 from pathlib import Path
 
-REVIEW_FIELDS = ("qid", "query", "type", "reviewed_ids", "reviewer", "reviewed_on")
 SOURCE_FIELDS = ("qid", "query", "expected_ids", "type", "checked_by")
+REVIEW_FIELDS = ("token", "query", "reviewed_ids", "reviewer", "reviewed_on")
+MAP_FIELDS = ("token", "qid")
 
 
 def read_rows(path: Path, required: tuple[str, ...]) -> list[dict[str, str]]:
@@ -28,61 +24,89 @@ def read_rows(path: Path, required: tuple[str, ...]) -> list[dict[str, str]]:
         if not reader.fieldnames or any(field not in reader.fieldnames for field in required):
             raise ValueError(f"{path}: missing required columns")
         rows = list(reader)
-    ids = [row["qid"] for row in rows]
-    if not rows or any(not qid.strip() for qid in ids) or len(ids) != len(set(ids)):
-        raise ValueError(f"{path}: empty or duplicate question IDs")
     return rows
 
 
-def prepare(source: Path, destination: Path) -> None:
-    rows = read_rows(source, SOURCE_FIELDS)
-    if destination.resolve() == source.resolve() or destination.exists():
-        raise ValueError("destination must be a new file, separate from the source")
-    with destination.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=REVIEW_FIELDS)
+def write_rows(path: Path, fields: tuple[str, ...], rows: list[dict[str, str]]) -> None:
+    # Exclusive creation prevents overwriting earlier independent evidence.
+    with path.open("x", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields)
         writer.writeheader()
-        for row in rows:
-            writer.writerow({"qid": row["qid"], "query": row["query"], "type": row["type"],
-                             "reviewed_ids": "", "reviewer": "", "reviewed_on": ""})
+        writer.writerows(rows)
+
+
+def validate_unique(rows: list[dict[str, str]], key: str, label: str) -> None:
+    values = [row[key] for row in rows]
+    if not values or any(not x.strip() for x in values) or len(set(values)) != len(values):
+        raise ValueError(f"{label}: empty or duplicate {key}")
+
+
+def prepare(source: Path, review: Path, mapping: Path) -> None:
+    rows = read_rows(source, SOURCE_FIELDS)
+    validate_unique(rows, "qid", "source")
+    targets = [p.resolve() for p in (source, review, mapping)]
+    if len(set(targets)) != 3 or review.exists() or mapping.exists():
+        raise ValueError("source, review and mapping must be three distinct paths; outputs must be new")
+    pairs = [(secrets.token_hex(16), row) for row in rows]
+    # Shuffle order so CSV row position does not reveal original category blocks.
+    secrets.SystemRandom().shuffle(pairs)
+    review_rows = [
+        {"token": token, "query": row["query"], "reviewed_ids": "",
+         "reviewer": "", "reviewed_on": ""}
+        for token, row in pairs
+    ]
+    map_rows = [{"token": token, "qid": row["qid"]} for token, row in pairs]
+    # Keep the mapping private; only the review CSV goes to the human reviewer.
+    write_rows(mapping, MAP_FIELDS, map_rows)
+    write_rows(review, REVIEW_FIELDS, review_rows)
 
 
 def parse_ids(value: str) -> frozenset[str]:
-    ids = [part.strip() for part in value.split(";") if part.strip()]
-    if len(ids) != len(set(ids)):
-        raise ValueError("duplicate IDs")
-    return frozenset(ids)
+    parts = [item.strip() for item in value.split(";") if item.strip()]
+    if len(parts) != len(set(parts)):
+        raise ValueError("duplicate answer ID")
+    return frozenset(parts)
 
 
-def compare(source: Path, review: Path) -> tuple[int, int, int]:
-    expected = read_rows(source, SOURCE_FIELDS)
-    reviewed = read_rows(review, REVIEW_FIELDS)
-    source_by_id = {row["qid"]: row for row in expected}
-    if set(source_by_id) != {row["qid"] for row in reviewed}:
-        raise ValueError("review IDs differ from source IDs")
+def compare(source: Path, review: Path, mapping: Path) -> tuple[int, int, int]:
+    original = read_rows(source, SOURCE_FIELDS)
+    checked = read_rows(review, REVIEW_FIELDS)
+    mapped = read_rows(mapping, MAP_FIELDS)
+    for rows, key, name in [(original, "qid", "source"), (checked, "token", "review"),
+                             (mapped, "token", "mapping")]:
+        validate_unique(rows, key, name)
+    by_id = {row["qid"]: row for row in original}
+    map_by_token = {row["token"]: row["qid"] for row in mapped}
+    if set(map_by_token.values()) != set(by_id) or len(mapped) != len(original):
+        raise ValueError("mapping does not cover original question IDs exactly")
+    if set(map_by_token) != {row["token"] for row in checked}:
+        raise ValueError("review token set differs from mapping")
     matches = disagreements = incomplete = 0
-    for row in reviewed:
-        original = source_by_id[row["qid"]]
-        if row["query"] != original["query"] or row["type"] != original["type"]:
-            raise ValueError(f"{row['qid']}: query/type changed since sheet generation")
-        if not row["reviewer"].strip() or not row["reviewed_on"].strip() or not row["reviewed_ids"].strip():
-            # A no-match judgment must be explicitly written as NONE, not left blank.
+    for row in checked:
+        qid = map_by_token[row["token"]]
+        old = by_id[qid]
+        if row["query"] != old["query"]:
+            raise ValueError(f"{row['token']}: question text changed")
+        answer = row["reviewed_ids"].strip()
+        if not row["reviewer"].strip() or not row["reviewed_on"].strip() or not answer:
             incomplete += 1
             continue
         try:
             date.fromisoformat(row["reviewed_on"].strip())
-            supplied = (frozenset() if row["reviewed_ids"].strip().upper() == "NONE"
-                        else parse_ids(row["reviewed_ids"]))
-            if row["reviewed_ids"].strip().upper() != "NONE" and not supplied:
+            if date.fromisoformat(row["reviewed_on"].strip()) > date.today():
+                raise ValueError("future review date")
+            selected = frozenset() if answer.upper() == "NONE" else parse_ids(answer)
+            if answer.upper() != "NONE" and not selected:
                 raise ValueError("missing expected IDs")
         except ValueError as exc:
-            raise ValueError(f"{row['qid']}: invalid review date or IDs: {exc}") from exc
-        prior = parse_ids(original["expected_ids"])
-        if supplied == prior:
+            raise ValueError(f"{row['token']}: invalid review: {exc}") from exc
+        expected = parse_ids(old["expected_ids"])
+        if selected == expected:
             matches += 1
         else:
             disagreements += 1
-            print(f"DISAGREEMENT {row['qid']}: original={';'.join(sorted(prior)) or 'NONE'} "
-                  f"independent={';'.join(sorted(supplied)) or 'NONE'}")
+            print(f"DISAGREEMENT {qid}: original={';'.join(sorted(expected)) or 'NONE'} "
+                  f"reviewed={';'.join(sorted(selected)) or 'NONE'}")
     return matches, disagreements, incomplete
 
 
@@ -91,13 +115,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("action", choices=("prepare", "compare"))
     parser.add_argument("source", type=Path)
     parser.add_argument("review", type=Path)
+    parser.add_argument("mapping", type=Path)
     args = parser.parse_args(argv)
     try:
         if args.action == "prepare":
-            prepare(args.source, args.review)
-            print(f"Created blinded sheet: {args.review}")
+            prepare(args.source, args.review, args.mapping)
+            print(f"Blinded review sheet: {args.review}; PRIVATE mapping: {args.mapping}")
             return 0
-        matches, disagreements, incomplete = compare(args.source, args.review)
+        matches, disagreements, incomplete = compare(args.source, args.review, args.mapping)
         print(f"Matches: {matches}; disagreements: {disagreements}; incomplete: {incomplete}")
         return 1 if disagreements or incomplete else 0
     except (ValueError, OSError) as exc:
