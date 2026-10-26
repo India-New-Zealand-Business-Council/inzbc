@@ -121,6 +121,12 @@ items below, which are paused, not abandoned.
   stale disclaimer from the previous conversation could linger under the input after starting a
   fresh one. Found by reading `PlatformAssistant.tsx` end to end before touching it, not guessed
   at. One-line fix, one new test (256/256 passing after).
+- **Add a Refresh control to the agent rehearsal panel** (PR #478, 27 Oct 2026, refs #62). The
+  rehearsal list only loaded once on mount — no way to see a rehearsal started elsewhere
+  (another tab, another reviewer) without reloading the page. Reuses the same abort-in-flight
+  pattern as `ExecutiveOverview`'s `fetchDashboard` (#61's own fix, PR #437's follow-up): a
+  slower older response can never overwrite a newer one, unmounting aborts whatever is still
+  pending. One new test (257/257 passing after).
 - **Forms UI: both `inzview` contact forms submit for real** (`inzview` `8a260cc`, 25 Oct 2026,
   refs #45). Connect's `ContactForm` and Home's quick-contact form were mailto-only — honestly
   labelled as such, but nothing reached the Secretariat unless the visitor's own client sent it.
