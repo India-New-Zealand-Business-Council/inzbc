@@ -23,7 +23,11 @@ from apps.sip.pipeline.models import Candidate, SourceOutcome
 from .capture_manifest import validate_capture
 from .mapping import map_article, parse_published_at
 from .source_lookup import build_source_lookups
-from .source_register import FALLBACK_SEQUENCE, MANDATORY_SOURCES, missing_mandatory_outcomes
+from .source_register import (
+    FALLBACK_SEQUENCE,
+    MANDATORY_SOURCES,
+    missing_mandatory_outcomes,
+)
 
 _AUCKLAND = ZoneInfo("Pacific/Auckland")
 _RUN_NUMBER = re.compile(r"RUN-[0-9]{8}-[0-9]{2}\Z")
