@@ -462,3 +462,40 @@ in the note was compared with that text.
 | 10 | https://www.w3.org/TR/prov-dm/ | W3C Recommendation, 30 April 2013. Editors Luc Moreau and Paolo Missier. The text defines entities, activities and agents, and uses `wasDerivedFrom` and `wasAttributedTo`. | No discrepancy recorded. |
 | 11 | PDF at https://doi.org/10.6028/NIST.AI.100-1 | NIST AI 100-1, January 2023. The core functions are Govern, Map, Measure and Manage. "Valid and reliable" and "accountable and transparent" are named characteristics. | Crossref lists Elham Tabassi as author. The PDF cover names NIST. The reference keeps the institutional author, which is what the cover shows. |
 | 12 | Crossref `10.1145/2071389.2071390`, including the abstract. | *ACM Computing Surveys*, 44(1), 1-50, 2012. Authors Carpineto and Romano. The abstract is a survey of automatic query expansion. | The abstract does not give the four method groups, and it does not say expansion hurts precision by drifting. Those claims are withdrawn in note 12 and in section 4 until the article body is read. |
+
+
+## 7. Original-source follow-up, 26 Oct 2026
+
+The citations below are a documented second check of accessible **publisher or canonical
+record/abstract pages** on 26 Oct. These are not claims to have read the full copyrighted
+paper bodies; section 6 still records the scope of the first check. At least eight of
+the twelve references are peer-reviewed papers or peer-reviewed research monographs:
+Robertson & Zaragoza, Karpukhin et al., Thakur et al., Cormack et al., Bruch et al.,
+Lewis et al., Es et al. (now EACL 2024), and Carpineto & Romano. Manning et al. is a
+textbook; W3C PROV-DM and NIST AI RMF are standards/frameworks, and Gao et al. is
+retained as a preprint survey rather than misrepresented as a peer-reviewed journal.
+
+| Source | Accessible record opened on 26 Oct | Check and bound |
+|---|---|---|
+| Manning et al. (2008) | https://www.cambridge.org/highereducation/books/introduction-to-information-retrieval/669D108D20F556C5C30957D63B5AB65C | The publisher lists chapter 6 for term weighting and chapter 8 for evaluation; no fresh close-reading of either chapter |
+| Karpukhin et al. (2020) | https://aclanthology.org/2020.emnlp-main.550/ | ACL Anthology confirms authors, EMNLP venue, pp. 6769–6781 and abstract's 9–19 percentage-point top-20 retrieval advantage *on tested QA datasets*, not on INZBC |
+| Thakur et al. (2021) | https://datasets-benchmarks-proceedings.neurips.cc/paper_files/paper/2021/hash/65b9eea6e1cc6bb9f0cd2a47751a186f-Abstract-round2.html | NeurIPS abstract confirms 18 datasets, BM25 as a robust general baseline, and many zero-shot dense models underperforming; no assertion this transfers to INZBC |
+| Cormack et al. (2009) | https://dl.acm.org/doi/10.1145/1571941.1572114 | ACM confirms SIGIR 2009, pp. 758–759 and ranking-fusion claim; no fresh full-paper review or claim of an optimal k on INZBC |
+| Bruch et al. (2023) | https://arxiv.org/abs/2210.11934 | Abstract corroborates the comparison of convex score fusion and RRF, including RRF parameter sensitivity and the small labelled sample needed for score-fusion tuning; the cited *journal* is still the authoritative venue |
+| Gao et al. (2023) | https://arxiv.org/abs/2312.10997 | Abstract confirms naive, advanced and modular RAG taxonomy; no attribution of unsupported 'main lever' claim |
+| Es et al. (2024) | https://aclanthology.org/2024.eacl-demo.16/ | **Correction:** peer-reviewed EACL 2024 demonstration, pp. 150–158; original 2023 arXiv record was not the final paper citation |
+| W3C PROV-DM (2013) | https://www.w3.org/TR/prov-dm/ | Official Recommendation names entities, activities and agents; this does not mean INZBC has implemented full PROV-DM lineage |
+| Carpineto & Romano (2012) | https://doi.org/10.1145/2071389.2071390 | Previously verified publisher/Crossref citation; the abstract establishes the concept of query expansion but does not substantiate a numeric precision or 'query drift' claim for our map |
+
+**Remaining evidence limits:** Full text for Robertson & Zaragoza, Cormack et al.,
+Bruch et al. and Carpineto & Romano was not re-read in this 26 Oct session.
+Robertson & Zaragoza's publisher-suggested first citation (3(4), 333–389) and the
+later Emerald/DOI page's 4(1–2), 1–174 display are still a known bibliographic
+discrepancy; the reference retains the originally verified citation instead of
+quietly choosing a new one. Lewis et al. (2020) and NIST (2023) retain the earlier
+14 Oct proceedings/PDF verification in section 6, not a fabricated 26 Oct review.
+
+**Interpretation for INZBC:** None of these external publications supplies a
+valid measured dense/hybrid accuracy figure or a score threshold for our
+23 confirmed FTA entries. Those must come from #393's controlled experiments,
+independently checked labels and the tech lead's subsequent decision.
