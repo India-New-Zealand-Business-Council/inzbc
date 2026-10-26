@@ -29,6 +29,7 @@ def manifest() -> dict:
         "kind": "INZBC_SIP_REVIEW_CAPTURE",
         "production_run": False,
         "sip185_outcomes_confirmed": False,
+        "locked_sip184_window": False,
         "fetch_started_utc": "2026-10-26T02:00:00+00:00",
         "fetch_finished_utc": "2026-10-26T02:05:00+00:00",
         "rolling_fetch_hours": 24,
