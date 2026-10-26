@@ -1,7 +1,9 @@
 # Literature review: retrieval for governed AI
 
 **Authors:** Roshan Aryal and Bhanu Gupta. Section 5 annotations expanded by Bhanu Gupta,
-23 Oct 2026. **Status:** Annotated draft, updated 23 Oct 2026. Bibliographic record of all
+23 Oct 2026. **Status:** Annotated draft; evaluation-methods caveat updated 26 Oct 2026.
+The 26 Oct update does not claim full-text verification of sources that were previously checked
+only through publisher records or abstracts. Bibliographic record of all
 12 sources checked 14 Oct 2026 (section 6). Annotated bibliography due W4 (26 to 30 Oct).
 Studio 6 objective 2.1, applied in 2.2 through `apps/fta/eval/`.
 
@@ -116,13 +118,14 @@ is what a committed eval set and a before vs after score provide.
 | BM25 | TF-IDF with saturation and length normalisation. That account of the 2009 article was not re-read on 14 Oct (section 6) | Robust zero-shot baseline (BEIR abstract) | Same vocabulary gap. A rare framing word can outweigh the product | Measured worse (#398): 0.333 hit@1 on product plus framing questions, where "exports" outweighs "dairy" |
 | Keyword plus synonym list | Expand the query with terms of a similar meaning (Carpineto & Romano, 2012) | Explainable, no model call, cheap to test | The list has to be maintained by hand, and misses terms nobody listed. On this corpus an ambiguous added term can point at another topic. That limit is from #383, not from the survey abstract | Built (#383). Synonym hit@1 0.200 to 1.000, no-match unchanged |
 | Dense embeddings | Rank by vector similarity | Matches meaning, so it handles synonyms | Zero-shot reliability (BEIR). Needs a model, which may cross the model data boundary in ADR-0006 | Possible, but must not lose an exact or no-match result |
-| Hybrid (RRF) | Fuse lexical and dense rankings | Keeps exact matches and adds semantic recall | Two systems to run. A similarity cut-off is needed or no-match questions start returning answers | Best candidate if embeddings are approved under #63 |
+| Hybrid (RRF) | Fuse lexical and dense rankings | Can combine exact-wording and semantic matches; performance is unmeasured here | Two systems to run. Without a validated similarity cut-off, no-match queries risk false answers | #63 delivered embedding infrastructure, not approval of a production hybrid ranker; evaluate via #393 first |
 
-The deciding risk for INZBC is not the miss but the false answer. A dense retriever always
+The deciding risk for INZBC is not the miss but the false answer. A dense retriever ordinarily
 returns its nearest neighbour, even for "steel" or "pharmaceuticals", which the corpus does not
-cover. Today those return no match and route to INZBC (no-match accuracy 1.000). Any change has
-to keep that, which means a similarity threshold, tuned and checked on the no-match
-questions (ten in the current set).
+cover. Today those return no match and route to INZBC (no-match accuracy 1.000 on the ten
+current development questions). A threshold must be chosen using development evidence, then
+validated on **different, independently labelled no-match questions**. Choosing the threshold
+against the same ten rows reported as its test would inflate apparent reliability.
 
 ## 4. What this means for the project
 
@@ -138,14 +141,61 @@ questions (ten in the current set).
    topic ("exports") gets a high IDF and outranks the product, so BM25 scored 0.333 on product
    plus framing questions against 1.000 for the live ranker. A general benchmark result did not
    transfer to a 23-entry corpus, which is why every candidate is scored on our own questions.
-4. **Then embeddings under #63**, if Bhanu agrees and the model data boundary allows it. The
-   design would be hybrid with RRF, plus a similarity threshold so no-match questions stay
-   unanswered.
-5. **Report all variants in one table** (keyword, keyword plus synonyms, embeddings, hybrid), by
-   question type, in W7.
+4. **Evaluate embeddings, do not assume they win.** #63's shared server-side embedding path
+   is now implemented, but its availability is not a production-ranking decision. #393 remains
+   open; PR #469 proposes an *offline* comparison using actual provider-generated scores,
+   a preselected threshold and hybrid RRF, without changing `answer_query()`.
+5. **Compare on equivalent evidence.** Report the existing keyword, keyword plus synonyms and
+   BM25 variants with dense and hybrid on matched question sets, separately by query type;
+   include no-match accuracy, provenance, label-check status and held-out limitations in W7.
+   No dense or hybrid measured score is claimed by this draft.
 6. **What does not apply:** training a DPR model (no labelled pairs, and 23 entries do not
    justify it), and RAG generation for FTA answers (the Explainer must quote the corpus, not
    paraphrase it).
+
+
+### 4.1 Measurement independence and falsifiable acceptance (26 Oct 2026)
+
+The lexical comparison has two distinct sources of evidence; merging them into one large
+average would conceal how the query expansion was developed. The **55-question development set**
+(\`apps/fta/eval/questions.csv\`) includes 18 exact, 8 multi-term, 10 synonym,
+10 no-match and 9 product-framing queries. The synonym map was written after seeing the original
+ten synonym cases, so the perfect in-sample synonym score is a fit-to-development result,
+not an independent replication.
+
+Paras separately authored ten synonym questions (\`held_out_questions.csv\`). The live keyword
+ranker achieves **8/10 = 0.800** on that historical set. A query-text audit found two exact
+overlaps with the development queries: H03/Q27 ("milk powder") and H04/Q31 ("baby formula").
+After excluding those duplicates, the same ranker scores **6/8 = 0.750**. Both numbers are
+reported, because retroactively discarding questions cannot recreate a fully unseen dataset.
+The eight unique questions remain too few, and too homogeneous, to estimate production
+accuracy for member traffic. These are **repository experiment results**, not claims made by
+the twelve external publications.
+
+| Evidence set | n | Keyword hit@1 | Can test independent no-match? |
+|---|---:|---:|---|
+| Historical separately authored synonym set | 10 | 0.800 | No |
+| Query-distinct subset, after overlap audit | 8 | 0.750 | No |
+
+Sources for these exact numbers and overlaps:
+\`apps/fta/eval/results/variants-held-out.json\`,
+\`apps/fta/eval/results/variants-held-out-nonoverlap.json\` and
+\`apps/fta/eval/results/held-out-overlap.json\`. No new scores were produced for this note.
+
+To choose a new retrieval method without marking its own homework, an evaluation should (a)
+specify the embedding model, corpus version, document/query representation and similarity
+threshold *before* opening held-out labels; (b) record the actual result IDs and cosine scores
+from the approved, redacted server-side path; (c) compare rankers on the same inputs, breaking
+down lexical exact matches, synonyms, product-framing and no-match; and (d) have a named
+independent human verify expected IDs. Issue #406 was closed on 23 Oct, but the
+\`checked_by\` column of the development CSV is still blank, so the ten-check acceptance
+evidence must not be inferred from issue status. The #439 protocol is not completed review.
+
+Until independent no-match and product-framing test cases and real gateway measurements are
+available, the justified choice is **retain the measured lexical ranker**, not declare hybrid
+better based on a general retrieval paper. This is an evaluation recommendation, not a
+production architecture approval.
+
 
 ## 5. Annotated bibliography
 
