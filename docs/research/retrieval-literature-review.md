@@ -1,7 +1,8 @@
 # Literature review: retrieval for governed AI
 
 **Authors:** Roshan Aryal and Bhanu Gupta. Section 5 annotations expanded by Bhanu Gupta,
-23 Oct 2026. **Status:** Annotated draft; evaluation-methods caveat updated 26 Oct 2026.
+23 Oct 2026. **Status:** Annotated draft; evaluation caveat and one venue/year correction updated
+26 Oct 2026.
 The 26 Oct update does not claim full-text verification of sources that were previously checked
 only through publisher records or abstracts. Bibliographic record of all
 12 sources checked 14 Oct 2026 (section 6). Annotated bibliography due W4 (26 to 30 Oct).
@@ -91,7 +92,7 @@ generation half applies to the Comms Assistant and SIP briefs, not to the FTA an
 ### 2.5 Evaluating retrieval and RAG
 
 Ranked retrieval is measured with hit@k and mean reciprocal rank (Manning et al., 2008), which
-is what `apps/fta/eval/` reports. RAGAS (Es et al., 2023) proposes reference-free scores for a
+is what `apps/fta/eval/` reports. RAGAs (Es et al., 2024) proposes reference-free scores for a
 whole RAG pipeline: faithfulness (is the answer supported by the retrieved context), answer
 relevance, and context relevance. These are judged by a language model.
 
@@ -212,7 +213,7 @@ INZBC. The check of each source against its original is in section 6.
 | 6 | Bruch, Gai & Ingber (2023) | Peer-reviewed | 14 Oct 2026, citation and abstract | 23 Oct 2026 |
 | 7 | Lewis et al. (2020) | Peer-reviewed | 14 Oct 2026, citation and abstract | 23 Oct 2026 |
 | 8 | Gao et al. (2023) | Preprint survey | 14 Oct 2026, citation and section headings | 23 Oct 2026 |
-| 9 | Es et al. (2023) | Preprint | 14 Oct 2026, citation and terms | 23 Oct 2026 |
+| 9 | Es et al. (2024) | Peer-reviewed conference demo (EACL 2024) | 14 Oct arXiv; 26 Oct ACL Anthology bibliographic record and abstract | 23 Oct 2026; corrected 26 Oct |
 | 10 | Moreau & Missier (2013) | Standard | 14 Oct 2026, recommendation text | 23 Oct 2026 |
 | 11 | NIST (2023) | Framework | 14 Oct 2026, PDF | 23 Oct 2026 |
 | 12 | Carpineto & Romano (2012) | Peer-reviewed survey | 14 Oct 2026, citation and abstract | 23 Oct 2026 |
@@ -334,18 +335,22 @@ lever on answer quality. That sentence is not in the text checked, so it is not 
 retrieval first comes from the project's own baseline, where synonym hit@1 was 0.200, not from
 this survey.
 
-**9. Es et al. (2023).**
-*Reference.* Es, S., James, J., Espinosa-Anke, L., & Schockaert, S. (2023). *Ragas: Automated
-evaluation of retrieval augmented generation* (arXiv:2309.15217). arXiv.
-https://doi.org/10.48550/arXiv.2309.15217
-*Summary.* Ragas scores a RAG pipeline without reference answers. It measures faithfulness,
-answer relevance and context relevance, each judged by a language model.
-*Evaluation.* It is a preprint, and its scores depend on the judging model. That suits systems that
-write text, but it adds a model's errors to the measurement.
-*Application.* For FTA answers a hand-labelled set of known entry IDs and no-match cases is cheaper
-and easier to trust than a model judge, so Ragas is not the FTA evaluator. It is relevant to #64,
-judging SIP brief quality, where generated text has to be checked. Any judge there would need its
-own error testing, and it would sit alongside human approval, not replace it.
+**9. Es et al. (2024).**
+*Reference.* Es, S., James, J., Espinosa-Anke, L., & Schockaert, S. (2024). RAGAs: Automated
+evaluation of retrieval augmented generation. In *Proceedings of the 18th Conference of the
+European Chapter of the Association for Computational Linguistics: System Demonstrations*
+(pp. 150–158). Association for Computational Linguistics.
+https://doi.org/10.18653/v1/2024.eacl-demo.16
+*Summary.* RAGAs proposes reference-free evaluation for retrieval-augmented generation,
+separating retrieval relevance, how faithfully a generator uses its context, and the quality of
+the generated answer. Its EACL abstract describes evaluation without human-labelled ground truth.
+*Evaluation.* This is a peer-reviewed EACL 2024 system-demonstration paper, not solely a 2023
+preprint. The metrics still depend on automated evaluation and must be validated against humans
+where unsupported answers are consequential. The 26 Oct verification covered the ACL Anthology
+bibliographic record and abstract, **not** a new review of the entire paper body.
+*Application.* The FTA Explainer returns cited corpus entries rather than generating prose; its
+entry-ID and no-match eval is more direct than model-judged answer faithfulness. RAGAs is more
+relevant to #64's generated SIP briefs, but it would supplement, not replace, human QA.
 
 **10. Moreau & Missier (2013).**
 *Reference.* Moreau, L., & Missier, P. (Eds.). (2013). *PROV-DM: The PROV data model* (W3C
@@ -400,8 +405,10 @@ Condorcet and individual rank learning methods. In *Proceedings of the 32nd Inte
 SIGIR Conference on Research and Development in Information Retrieval* (pp. 758-759).
 https://doi.org/10.1145/1571941.1572114
 
-Es, S., James, J., Espinosa-Anke, L., & Schockaert, S. (2023). *Ragas: Automated evaluation of
-retrieval augmented generation* (arXiv:2309.15217). arXiv. https://doi.org/10.48550/arXiv.2309.15217
+Es, S., James, J., Espinosa-Anke, L., & Schockaert, S. (2024). RAGAs: Automated evaluation of
+retrieval augmented generation. In *Proceedings of the 18th Conference of the European Chapter of
+the Association for Computational Linguistics: System Demonstrations* (pp. 150–158). Association
+for Computational Linguistics. https://doi.org/10.18653/v1/2024.eacl-demo.16
 
 Gao, Y., Xiong, Y., Gao, X., Jia, K., Pan, J., Bi, Y., Dai, Y., Sun, J., Wang, M., & Wang, H.
 (2023). *Retrieval-augmented generation for large language models: A survey* (arXiv:2312.10997).
@@ -451,7 +458,7 @@ in the note was compared with that text.
 | 6 | Crossref `10.1145/3596512`, including the abstract. | *ACM Transactions on Information Systems*, 42(1), 1-35, 2023. Authors Bruch, Gai and Ingber. Abstract: a convex combination outperforms RRF in in-domain and out-of-domain settings, and RRF is sensitive to its parameters. | No discrepancy recorded. The paper body was not re-read. |
 | 7 | NeurIPS 2020 proceedings abstract and the 16-page proceedings PDF. | Authors, title, NeurIPS 2020. Abstract: on generation tasks, RAG produces more specific, diverse and factual language than a parametric-only baseline. | An earlier draft gave pages 9459-9474. Neither the abstract page nor the proceedings PDF prints that span, so the pages were removed. |
 | 8 | arXiv:2312.10997 HTML, DataCite DOI `10.48550/arXiv.2312.10997`. | Authors and title match. Headings: Naive RAG, Advanced RAG, Modular RAG. Advanced RAG describes pre-retrieval and post-retrieval steps aimed at retrieval quality. | "Retrieval quality is the main lever on answer quality" was not in the text that was opened. It is removed from section 2.4 and note 8. |
-| 9 | DataCite DOI `10.48550/arXiv.2309.15217`. arXiv HTML. | Authors Es, James, Espinosa-Anke and Schockaert. The paper's title is "Ragas", not "RAGAS". The HTML uses faithfulness, answer relevance and context relevance. | The reference title now follows the paper. |
+| 9 | **26 Oct follow-up:** ACL Anthology https://aclanthology.org/2024.eacl-demo.16/ bibliographic record and abstract; previous 14 Oct arXiv metadata retained as history. | Peer-reviewed EACL 2024 System Demonstrations paper, pp. 150–158, DOI `10.18653/v1/2024.eacl-demo.16`, by the four named authors. The abstract supports a reference-free framework assessing retrieval/context and generation quality. | The older draft treated only the 2023 arXiv preprint as the final venue. Corrected the source and in-text year to 2024. Full proceedings paper not re-read on 26 Oct; claims beyond the abstract remain bounded. |
 | 10 | https://www.w3.org/TR/prov-dm/ | W3C Recommendation, 30 April 2013. Editors Luc Moreau and Paolo Missier. The text defines entities, activities and agents, and uses `wasDerivedFrom` and `wasAttributedTo`. | No discrepancy recorded. |
 | 11 | PDF at https://doi.org/10.6028/NIST.AI.100-1 | NIST AI 100-1, January 2023. The core functions are Govern, Map, Measure and Manage. "Valid and reliable" and "accountable and transparent" are named characteristics. | Crossref lists Elham Tabassi as author. The PDF cover names NIST. The reference keeps the institutional author, which is what the cover shows. |
 | 12 | Crossref `10.1145/2071389.2071390`, including the abstract. | *ACM Computing Surveys*, 44(1), 1-50, 2012. Authors Carpineto and Romano. The abstract is a survey of automatic query expansion. | The abstract does not give the four method groups, and it does not say expansion hurts precision by drifting. Those claims are withdrawn in note 12 and in section 4 until the article body is read. |
