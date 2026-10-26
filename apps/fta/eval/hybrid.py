@@ -83,7 +83,7 @@ def _ranked_dense(
     threshold = _finite_score(snapshot.get("min_score"), "min_score")
     rows = snapshot.get("results")
     if not isinstance(rows, dict):
-        raise ValueError("results must be a map keyed by question id")
+        raise TypeError("results must be a map keyed by question id")
     expected_qids = {q.qid for q in questions}
     if len(expected_qids) != len(questions):
         raise ValueError("evaluation question IDs must be unique")
@@ -100,12 +100,12 @@ def _ranked_dense(
             raise ValueError(f"{question.qid}: query text differs from evaluation CSV")
         hits = record.get("hits")
         if not isinstance(hits, list):
-            raise ValueError(f"{question.qid}: hits must be a list (empty is permitted)")
+            raise TypeError(f"{question.qid}: hits must be a list (empty is permitted)")
         seen: set[str] = set()
         scored: list[tuple[float, str]] = []
         for hit in hits:
             if not isinstance(hit, dict):
-                raise ValueError(f"{question.qid}: invalid hit")
+                raise TypeError(f"{question.qid}: invalid hit")
             entry_id = hit.get("id")
             if not isinstance(entry_id, str) or entry_id not in confirmed_ids:
                 raise ValueError(f"{question.qid}: unconfirmed or unknown corpus id")
@@ -189,7 +189,7 @@ def main(argv: list[str] | None = None) -> int:
     with args.snapshot.open(encoding="utf-8") as handle:
         snapshot = json.load(handle)
     if not isinstance(snapshot, dict):
-        raise ValueError("snapshot must be a JSON object")
+        raise TypeError("snapshot must be a JSON object")
     report = evaluate_snapshot(snapshot, questions)
     print(json.dumps({
         "provenance": report["provenance"],
