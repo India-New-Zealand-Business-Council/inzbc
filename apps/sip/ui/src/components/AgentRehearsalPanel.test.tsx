@@ -111,4 +111,16 @@ describe('AgentRehearsalPanel', () => {
     render(<AgentRehearsalPanel runId="run-1" runState="Run Authorised" />)
     expect(await screen.findByRole('alert')).toHaveTextContent('Something went wrong')
   })
+
+  it('refreshes the list to pick up a rehearsal started elsewhere', async () => {
+    const list = vi.spyOn(runsClient, 'listRehearsals').mockResolvedValueOnce([])
+    render(<AgentRehearsalPanel runId="run-1" runState="Run Authorised" />)
+    expect(await screen.findByText('No rehearsals yet.')).toBeInTheDocument()
+
+    list.mockResolvedValueOnce([REHEARSAL])
+    await userEvent.click(screen.getByRole('button', { name: 'Refresh' }))
+
+    expect(await screen.findByText('Stopped at the QA gate · QA In Progress')).toBeInTheDocument()
+    expect(list).toHaveBeenCalledTimes(2)
+  })
 })
