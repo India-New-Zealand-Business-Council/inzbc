@@ -8,6 +8,8 @@ workflow_dispatch CI job (sip-dry-run.yml), which has a real Postgres and servic
 from __future__ import annotations
 
 import json
+
+import pytest
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -53,7 +55,7 @@ class _FakeClient:
         return payload
 
 
-def test_locked_coverage_window_is_exact_24h_previous_day_0700_to_today_0700():
+def test_locked_coverage_window_is_24h_on_an_ordinary_non_dst_day():
     now_utc = datetime(2026, 8, 8, 3, 0, tzinfo=UTC)  # 15:00 NZST, well after 07:00
     start, end = run_dry_run._locked_coverage_window(now_utc)
 
@@ -151,3 +153,27 @@ def test_main_returns_nonzero_when_an_article_fails_to_map(monkeypatch, tmp_path
     )
 
     assert exit_code == 1
+
+
+@pytest.mark.parametrize(
+    ("now_utc", "elapsed_hours"),
+    [
+        (datetime(2026, 9, 27, 0, 0, tzinfo=UTC), 23),  # NZ clocks move forward
+        (datetime(2026, 4, 5, 0, 0, tzinfo=UTC), 25),   # NZ clocks move backward
+    ],
+)
+def test_local_0700_window_exposes_dst_elapsed_hours_without_claiming_exact_24h(
+    now_utc: datetime, elapsed_hours: int
+) -> None:
+    from apps.sip.collector import run_dry_run, walk_full_run
+
+    auckland = ZoneInfo("Pacific/Auckland")
+    for fn in (run_dry_run._locked_coverage_window, walk_full_run._locked_coverage_window):
+        start, end = fn(now_utc)
+        start_dt = datetime.fromisoformat(start)
+        end_dt = datetime.fromisoformat(end)
+        local_start = start_dt.astimezone(auckland)
+        local_end = end_dt.astimezone(auckland)
+        assert (local_start.hour, local_end.hour) == (7, 7)
+        assert (local_end.date() - local_start.date()).days == 1
+        assert (end_dt - start_dt).total_seconds() == elapsed_hours * 3600
