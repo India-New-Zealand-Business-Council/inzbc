@@ -94,3 +94,23 @@ new PAT secret (infra decision), not something added unilaterally. `POST /api/ru
 building the dry run, not yet fixed, so SIP-184 step 4 (mandatory-source outcome recording) still
 can't complete an actual write even though `GET /api/source-library` now resolves the ids it
 would need.
+
+
+## SIP-184 coverage-window ambiguity at daylight-saving changes (#55, 26 Oct)
+
+SIP-184 v0.9, step 2 simultaneously demands **"Exactly 24h"** and **07:00
+Pacific/Auckland on the previous day through 07:00 on the current day**.
+These are mutually incompatible over the daylight-saving transition in New
+Zealand: on **27 Sep 2026** the local 07:00-to-07:00 window spans **23 elapsed
+UTC hours**, and on **5 Apr 2026** it spans **25**. The collector helpers
+`run_dry_run._locked_coverage_window` and
+`walk_full_run._locked_coverage_window` preserve the local 07:00 boundaries;
+a regression test records both transition cases without changing the actual
+window.
+
+This is **not** a decision to waive the SOP or redefine a production window.
+A responsible operator / INZBC must choose whether the operative definition is
+an elapsed 24-hour UTC interval or a local civil-day interval on those two
+dates, and record the decision before a production run on a transition day.
+Both synthetic run scripts remain nonproduction and must not assert that this
+contract ambiguity has been resolved.
