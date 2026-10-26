@@ -62,7 +62,12 @@ _AUCKLAND = ZoneInfo("Pacific/Auckland")
 
 
 def _locked_coverage_window(now_utc: datetime) -> tuple[str, str]:
-    """SIP-184 step 2: previous day 07:00 to current day 07:00 Pacific/Auckland, exact 24h."""
+    """SIP-184 local 07:00-to-07:00 day, with an unresolved DST policy conflict.
+
+    The elapsed UTC duration is 23/25 hours at DST changes, despite the SOP calling
+    this both \"exactly 24h\" and a local 07-to-07 period. Do not claim a valid
+    production window on those dates without a responsible policy decision.
+    """
     now_nz = now_utc.astimezone(_AUCKLAND)
     end_nz = now_nz.replace(hour=7, minute=0, second=0, microsecond=0)
     if now_nz.hour < 7:
