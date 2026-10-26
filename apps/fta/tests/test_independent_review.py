@@ -52,7 +52,7 @@ def test_compare_requires_review_and_explicit_none(tmp_path: Path) -> None:
     assert compare(original, blind, mapping) == (0, 0, 10)
     reviewed = read_csv(blind)
     for row in reviewed:
-        row.update({"reviewed_ids": ("FTA-005" if row["query"] == "wool" else "NONE" if row["query"] == "unknown topic" else ('FTA-%03d' % int(row['query'].split()[1]))),
+        row.update({"reviewed_ids": ("FTA-005" if row["query"] == "wool" else "NONE" if row["query"] == "unknown topic" else f"FTA-{int(row['query'].split()[1]):03d}"),
                     "reviewer": "Reviewer A", "reviewed_on": "2026-10-25",
                     "evidence": "Verified corpus citation", "uncertainty": "none"})
     write_csv(blind, ["token", "query", "reviewed_ids", "reviewer", "reviewed_on", "evidence", "uncertainty"], reviewed)
@@ -66,7 +66,7 @@ def test_disagreement_never_rewrites_original(tmp_path: Path) -> None:
     prepare(original, blind, mapping)
     reviewed = read_csv(blind)
     for row in reviewed:
-        row.update({"reviewed_ids": ("FTA-010" if row["query"] == "wool" else "NONE" if row["query"] == "unknown topic" else ('FTA-%03d' % int(row['query'].split()[1]))),
+        row.update({"reviewed_ids": ("FTA-010" if row["query"] == "wool" else "NONE" if row["query"] == "unknown topic" else f"FTA-{int(row['query'].split()[1]):03d}"),
                     "reviewer": "Reviewer A", "reviewed_on": "2026-10-25",
                     "evidence": "Verified corpus citation", "uncertainty": "none"})
     write_csv(blind, ["token", "query", "reviewed_ids", "reviewer", "reviewed_on", "evidence", "uncertainty"], reviewed)
@@ -112,3 +112,25 @@ def test_requires_coordinator_sample_of_ten(tmp_path: Path) -> None:
     write_csv(original, ["qid", "query", "expected_ids", "type", "checked_by"], rows)
     with pytest.raises(ValueError, match="ten-question"):
         prepare(original, tmp_path / "blind.csv", tmp_path / "private.csv")
+
+
+def test_failed_review_create_cleans_mapping_without_touching_existing_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from apps.fta.eval import independent_review
+
+    original = source(tmp_path)
+    blind, mapping = tmp_path / "blind.csv", tmp_path / "private.csv"
+    real_write = independent_review.write_rows
+
+    def simulate_racing_existing_file(path: Path, fields: tuple[str, ...],
+                                      rows: list[dict[str, str]]) -> None:
+        if path == blind:
+            blind.write_text("Existing review file must survive", encoding="utf-8")
+        real_write(path, fields, rows)
+
+    monkeypatch.setattr(independent_review, "write_rows", simulate_racing_existing_file)
+    with pytest.raises(FileExistsError):
+        prepare(original, blind, mapping)
+    assert not mapping.exists()
+    assert blind.read_text(encoding="utf-8") == "Existing review file must survive"
