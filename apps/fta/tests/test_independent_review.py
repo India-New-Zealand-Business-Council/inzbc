@@ -52,10 +52,10 @@ def test_compare_requires_review_and_explicit_none(tmp_path: Path) -> None:
     assert compare(original, blind, mapping) == (0, 0, 10)
     reviewed = read_csv(blind)
     for row in reviewed:
-        row.update({"reviewed_ids": ("FTA-005" if row["query"] == "wool" else "NONE" if row["query"] == "unknown topic" else f"FTA-{int(row[\"query\"].split()[1]):03d}"),
+        row.update({"reviewed_ids": ("FTA-005" if row["query"] == "wool" else "NONE" if row["query"] == "unknown topic" else ('FTA-%03d' % int(row['query'].split()[1]))),
                     "reviewer": "Reviewer A", "reviewed_on": "2026-10-25",
                     "evidence": "Verified corpus citation", "uncertainty": "none"})
-    write_csv(blind, ["token", "query", "reviewed_ids", "reviewer", "reviewed_on"], reviewed)
+    write_csv(blind, ["token", "query", "reviewed_ids", "reviewer", "reviewed_on", "evidence", "uncertainty"], reviewed)
     assert compare(original, blind, mapping) == (10, 0, 0)
 
 
@@ -66,10 +66,10 @@ def test_disagreement_never_rewrites_original(tmp_path: Path) -> None:
     prepare(original, blind, mapping)
     reviewed = read_csv(blind)
     for row in reviewed:
-        row.update({"reviewed_ids": ("FTA-010" if row["query"] == "wool" else "NONE" if row["query"] == "unknown topic" else f"FTA-{int(row[\"query\"].split()[1]):03d}"),
+        row.update({"reviewed_ids": ("FTA-010" if row["query"] == "wool" else "NONE" if row["query"] == "unknown topic" else ('FTA-%03d' % int(row['query'].split()[1]))),
                     "reviewer": "Reviewer A", "reviewed_on": "2026-10-25",
                     "evidence": "Verified corpus citation", "uncertainty": "none"})
-    write_csv(blind, ["token", "query", "reviewed_ids", "reviewer", "reviewed_on"], reviewed)
+    write_csv(blind, ["token", "query", "reviewed_ids", "reviewer", "reviewed_on", "evidence", "uncertainty"], reviewed)
     assert compare(original, blind, mapping) == (9, 1, 0)
     assert original.read_bytes() == before
 
@@ -80,7 +80,7 @@ def test_rejects_tampered_query(tmp_path: Path) -> None:
     prepare(original, blind, mapping)
     reviewed = read_csv(blind)
     reviewed[0]["query"] = "altered"
-    write_csv(blind, ["token", "query", "reviewed_ids", "reviewer", "reviewed_on"], reviewed)
+    write_csv(blind, ["token", "query", "reviewed_ids", "reviewer", "reviewed_on", "evidence", "uncertainty"], reviewed)
     with pytest.raises(ValueError, match="question text changed"):
         compare(original, blind, mapping)
 
