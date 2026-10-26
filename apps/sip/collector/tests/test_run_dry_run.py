@@ -174,6 +174,7 @@ def test_local_0700_window_exposes_dst_elapsed_hours_without_claiming_exact_24h(
         end_dt = datetime.fromisoformat(end)
         local_start = start_dt.astimezone(auckland)
         local_end = end_dt.astimezone(auckland)
-        assert (local_start.hour, local_end.hour) == (7, 7)
+        assert (local_start.hour, local_start.minute, local_start.second, local_start.microsecond) == (7, 0, 0, 0)
+        assert (local_end.hour, local_end.minute, local_end.second, local_end.microsecond) == (7, 0, 0, 0)
         assert (local_end.date() - local_start.date()).days == 1
         assert (end_dt - start_dt).total_seconds() == elapsed_hours * 3600
