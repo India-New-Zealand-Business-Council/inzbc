@@ -13,7 +13,7 @@ import json
 import os
 import secrets
 import sys
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 SOURCE_FIELDS = ("qid", "query", "expected_ids", "type", "checked_by")
@@ -33,10 +33,15 @@ def read_rows(path: Path, required: tuple[str, ...]) -> list[dict[str, str]]:
 def write_rows(path: Path, fields: tuple[str, ...], rows: list[dict[str, str]]) -> None:
     # Exclusive creation prevents overwriting earlier independent evidence.
     fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-    with os.fdopen(fd, "w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fields)
-        writer.writeheader()
-        writer.writerows(rows)
+    try:
+        with os.fdopen(fd, "w", newline="", encoding="utf-8") as handle:
+            writer = csv.DictWriter(handle, fieldnames=fields)
+            writer.writeheader()
+            writer.writerows(rows)
+    except Exception:
+        # Exclusive creation succeeded here; this is our partial file to delete.
+        path.unlink(missing_ok=True)
+        raise
 
 
 def validate_unique(rows: list[dict[str, str]], key: str, label: str) -> None:
@@ -70,14 +75,13 @@ def prepare(source: Path, review: Path, mapping: Path) -> None:
     fingerprint = _fingerprint(rows)
     map_rows = [{"token": token, "qid": row["qid"], "source_sha256": fingerprint} for token, row in pairs]
     # Keep the mapping private; only the review CSV goes to the human reviewer.
+    write_rows(mapping, MAP_FIELDS, map_rows)
     try:
-        write_rows(mapping, MAP_FIELDS, map_rows)
-        try:
-            write_rows(review, REVIEW_FIELDS, review_rows)
-        except OSError:
-            mapping.unlink()
-            raise
+        write_rows(review, REVIEW_FIELDS, review_rows)
     except Exception:
+        # The mapping was created here; remove it if the packet could not be prepared.
+        # write_rows owns cleanup of any partially created review CSV.
+        mapping.unlink(missing_ok=True)
         raise
 
 
@@ -119,7 +123,7 @@ def compare(source: Path, review: Path, mapping: Path) -> tuple[int, int, int]:
             continue
         try:
             date.fromisoformat(row["reviewed_on"].strip())
-            if date.fromisoformat(row["reviewed_on"].strip()) > datetime.now(timezone.utc).date():
+            if date.fromisoformat(row["reviewed_on"].strip()) > datetime.now(UTC).date():
                 raise ValueError("future review date")
             selected = frozenset() if answer.upper() == "NONE" else parse_ids(answer)
             if answer.upper() != "NONE" and not selected:
