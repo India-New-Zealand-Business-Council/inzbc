@@ -103,7 +103,11 @@ class Account:
 
 
 def _locked_coverage_window(now_utc: datetime) -> tuple[str, str]:
-    """SIP-184 step 2: previous day 07:00 to current day 07:00 Pacific/Auckland, exact 24h."""
+    """SIP-184 local 07:00-to-07:00 day; DST can make it 23/25 elapsed hours.
+
+    The SOP simultaneously requires exactly 24h. That discrepancy is not
+    resolved by a synthetic full walk or silently corrected by this function.
+    """
     now_nz = now_utc.astimezone(_AUCKLAND)
     end_nz = now_nz.replace(hour=7, minute=0, second=0, microsecond=0)
     if now_nz.hour < 7:
