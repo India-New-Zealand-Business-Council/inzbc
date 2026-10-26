@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { listRehearsals, type RehearsalOut, SipApiError, startRehearsal } from '../api/runsClient'
 
 interface Props {
@@ -43,17 +43,34 @@ export function AgentRehearsalPanel({ runId, runState }: Props) {
   const [list, setList] = useState<ListState>({ kind: 'loading' })
   const [start, setStart] = useState<StartState>({ kind: 'idle' })
   const [openId, setOpenId] = useState<string | null>(null)
+  // One request in flight at a time, same reasoning as ExecutiveOverview's fetchDashboard: Refresh
+  // aborts the previous one so a slower older response can never overwrite a newer one, and
+  // unmounting aborts whatever is still pending.
+  const inFlight = useRef<AbortController | null>(null)
 
-  useEffect(() => {
+  const fetchRehearsals = useCallback(() => {
+    inFlight.current?.abort()
     const controller = new AbortController()
+    inFlight.current = controller
     listRehearsals(runId, { signal: controller.signal })
-      .then((items) => setList({ kind: 'loaded', items }))
+      .then((items) => {
+        if (!controller.signal.aborted) setList({ kind: 'loaded', items })
+      })
       .catch((error: unknown) => {
-        if (error instanceof DOMException && error.name === 'AbortError') return
+        if (controller.signal.aborted) return
         setList({ kind: 'error', message: message(error) })
       })
-    return () => controller.abort()
   }, [runId])
+
+  useEffect(() => {
+    fetchRehearsals()
+    return () => inFlight.current?.abort()
+  }, [fetchRehearsals])
+
+  function refresh() {
+    setList({ kind: 'loading' })
+    fetchRehearsals()
+  }
 
   async function run() {
     setStart({ kind: 'running' })
@@ -84,14 +101,24 @@ export function AgentRehearsalPanel({ runId, runState }: Props) {
             QA gate. This run, its candidates and its source checks are not changed.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => void run()}
-          disabled={!launchRecorded || start.kind === 'running'}
-          className="min-h-11 rounded-md bg-inzbc-tangerine px-3 py-2 text-sm font-semibold text-inzbc-navy transition-colors hover:enabled:bg-inzbc-tangerine/90 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue"
-        >
-          {start.kind === 'running' ? 'Running agent…' : 'Run the agent'}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={refresh}
+            disabled={list.kind === 'loading'}
+            className="min-h-11 rounded-md border border-inzbc-navy/20 px-3 py-2 text-sm font-medium text-inzbc-navy transition-colors hover:enabled:border-inzbc-navy/40 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue"
+          >
+            Refresh
+          </button>
+          <button
+            type="button"
+            onClick={() => void run()}
+            disabled={!launchRecorded || start.kind === 'running'}
+            className="min-h-11 rounded-md bg-inzbc-tangerine px-3 py-2 text-sm font-semibold text-inzbc-navy transition-colors hover:enabled:bg-inzbc-tangerine/90 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-inzbc-blue"
+          >
+            {start.kind === 'running' ? 'Running agent…' : 'Run the agent'}
+          </button>
+        </div>
       </div>
 
       {!launchRecorded ? (
