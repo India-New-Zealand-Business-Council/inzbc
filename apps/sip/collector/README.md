@@ -1,21 +1,26 @@
 # apps/sip/collector — integration with the collection agent
 
 Owner: Roshan. Maps the `daily-india-nz-news-agent` repo's output onto
-`apps/sip/pipeline`'s `Candidate` model, then writes it into an existing run via
-`apps/sip/pipeline/client.py`.
+`apps/sip/pipeline`'s `Candidate` model. The legacy `ingest_articles()`
+helper can issue individual candidate POSTs, but the **operator capture-import path
+remains preview-only** until the API owner supplies an atomic, idempotent bulk
+endpoint; see [OPERATOR_IMPORT.md](OPERATOR_IMPORT.md).
 
 - `mapping.py` — `map_article()`/`map_articles()`: turns one of `agent.py`'s `clean_articles()`
   output dicts into a `Candidate` (SIP-184 step 5, raw capture only — no scoring, verification,
   duplicate or routing decisions; those are later SOP steps). Read from the actual agent source
   in `india-new-zealand-business-council/daily-india-nz-news-agent`, not an assumed schema.
-  **Known simplification:** `in_coverage_window` is hardcoded `True` rather than computed
-  against the run's locked window — see the docstring on `map_article` for why the agent's own
-  rolling filter isn't quite the same boundary as SIP-184's fixed 07:00-to-07:00 NZT window.
+  `in_coverage_window` is computed from the run's **supplied locked coverage
+  interval** when valid timestamps are provided. With no interval or unknown
+  publication time it remains `None` (unknown), never guessed `True`.
+  The news-agent's rolling fetch window is not a substitute for SIP-184's
+  fixed 07:00-to-07:00 Pacific/Auckland interval.
 - `ingest.py` — `ingest_articles()`: maps a batch and POSTs each to `/api/candidates` via
   `SipPipelineClient.create_candidate`, collecting per-item failures instead of aborting the
-  batch on the first one. Takes a required `actor_id` — `CaptureCandidateIn`
-  (`services/api/candidates.py`) requires it in the body (audit-only, not a `Candidate` field);
-  found by running #55's dry run against a live server, not by any test against a fake.
+  batch on the first one. **No `actor_id` argument** is accepted: the current
+  session-cookie + CSRF API obtains the actor from the authenticated session.
+  The per-item helper is not an approved live import protocol because two writers
+  could interleave despite a prior empty-run check (see #474).
 - `source_register.py` — SIP-185's mandatory source worklist (`MANDATORY_SOURCES`), the fallback
   sequence, `missing_mandatory_outcomes()` (client-side check mirroring SIP-184's "blank
   mandatory-source outcome is a Critical stop"), and `record_source_outcome()` to build a
@@ -71,29 +76,40 @@ lookups this module needs:
   `source_checks.source_id` is **NOT NULL** (`database/schema.sql`), so there is no valid source
   check without one; this can't degrade gracefully the way candidate capture can.
 
-## Live runs (#55) — current state, 8 Aug 2026
-Collection-engine secrets are supplied (both `inzbc` and `daily-india-nz-news-agent` have every
-secret `docs/sip/README.md` lists). `services/api` is no longer a stub —
-`run_dry_run.py` exercises `create_run` → `get_source_library` → `ingest_articles` against a real
-Postgres + `services/api`, and running it for real (not just against a fake client) surfaced three
-contract bugs no test had ever caught, all now fixed:
-- `SipPipelineClient.create_run` sent the whole `Run` model, including server-only fields with
-  non-None defaults (`coverage_timezone`) — 422s against `CreateRunIn`'s `extra="forbid"` for
-  every real caller. Now sends only the fields `CreateRunIn` accepts.
-- `SipPipelineClient.create_candidate` had no way to send `actor_id`, which
-  `CaptureCandidateIn` requires — `Candidate` doesn't carry it (it's audit-only, like `runs.py`'s
-  `initiated_by`). Now a required second parameter, threaded through `ingest_articles`.
-- `GET /api/source-library` didn't exist (`services/api/source_library.py`, #55) and
-  `source_library` was never seeded (`scripts/seed_source_library.py`, #55) — both fixed, see
-  `docs/workstreams/roshan.md` for the full account.
+## Live-run readiness (#55; checked 27 Oct 2026)
 
-**Still not wired:** a live `agent.py` fetch. `run_dry_run.py` consumes a fixture file
-(`data/dry_run_fixture_articles.json`) rather than pulling real output across repos — that needs a
-new PAT secret (infra decision), not something added unilaterally. `POST /api/runs/{id}/source-checks`
-(`SipPipelineClient.record_source_check`) also still doesn't exist in `services/api` — found while
-building the dry run, not yet fixed, so SIP-184 step 4 (mandatory-source outcome recording) still
-can't complete an actual write even though `GET /api/source-library` now resolves the ids it
-would need.
+The August integration history is in [Roshan's worklog](../../../docs/workstreams/roshan.md).
+Since then, the session-cookie/CSRF API replaced the old caller-supplied
+`actor_id` and `initiated_by` contracts; authenticated source-library and
+source-check endpoints exist. `run_dry_run.py` still consumes fixture articles,
+and its output is **not** a live SIP-184 run.
+
+- The tech lead's [24 Oct launch-status note](../../../docs/launch-status-2026-10-24.md)
+  reports that SIP-191 authority and the collection PAT are in place, but the
+  underlying written authority and a real run record are not linked there yet.
+- Cross-repo news-agent PRs
+  [#14](https://github.com/India-New-Zealand-Business-Council/daily-india-nz-news-agent/pull/14)
+  (per-run freshness) and
+  [#15](https://github.com/India-New-Zealand-Business-Council/daily-india-nz-news-agent/pull/15)
+  (review-only capture exporter) are open as of this check. Their output is
+  **not** a 112-source SIP-185 determination.
+- INZBC PRs #472 (offline capture validation), #473 (DST ambiguity tests),
+  and #474 (preflight-only operator tool) **are merged into main**. Candidate
+  import remains intentionally disabled: API-side transactionally locked,
+  idempotent bulk import plus two-writer testing belongs to the API owner.
+- [PR #480](https://github.com/India-New-Zealand-Business-Council/inzbc/pull/480)
+  proposes accepting the upstream collector's actual comma-separated
+  `sectors` string in the read-only validator; it is not merged.
+- The [operator import guide](OPERATOR_IMPORT.md) is the source for preflight
+  commands/stop rules; [the evidence index](RUN_EVIDENCE_HANDOFF.md) records
+  exactly what still has to be attached to close #55. The controlled
+  [SIP-184 procedure](../../../docs/sip/launch/SIP-184_daily_run_SOP_v0.9.md)
+  and [daily run record](../../../docs/sip/launch/daily-run-record_v0.9.md)
+  remain the operating documents, **not** this technical README.
+
+There is no verified live run ID, completed mandatory-source register, QA,
+CEO decision, authorised delivery or audit read-back on #55 as of this check.
+No code or document here licenses production ingestion or distribution.
 
 
 ## SIP-184 coverage-window ambiguity at daylight-saving changes (#55, 26 Oct)
