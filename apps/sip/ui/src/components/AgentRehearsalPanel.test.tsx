@@ -86,6 +86,31 @@ describe('AgentRehearsalPanel', () => {
     expect(screen.getByText('refused: edited')).toBeInTheDocument()
   })
 
+  it.each([
+    ['unsealed', 'unsealed'],
+    ['key-not-configured', 'uncheckable'],
+  ] as const)('does not claim a %s trail is verified (%s)', async (seal) => {
+    vi.spyOn(runsClient, 'listRehearsals').mockResolvedValue([
+      { ...REHEARSAL, verification: { chain_intact: true, seal, replay: 'exact' } },
+    ])
+    render(<AgentRehearsalPanel runId="run-1" runState="Run Authorised" />)
+
+    const neutral = await screen.findByText('Seal not verified')
+    expect(neutral).toHaveClass('bg-slate-100')
+    expect(screen.queryByText('Trail verified')).not.toBeInTheDocument()
+    expect(screen.queryByText('Trail check failed')).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /Seal not verified/ }))
+    expect(screen.getByText(seal === 'unsealed' ? 'Not sealed (no signing key)' : 'Sealed; key not available to check')).toBeInTheDocument()
+  })
+
+  it('reports a failed replay even if the seal itself verifies', async () => {
+    vi.spyOn(runsClient, 'listRehearsals').mockResolvedValue([
+      { ...REHEARSAL, verification: { chain_intact: true, seal: 'valid', replay: 'different' } },
+    ])
+    render(<AgentRehearsalPanel runId="run-1" runState="Run Authorised" />)
+    expect(await screen.findByText('Trail check failed')).toBeInTheDocument()
+  })
+
   it('cannot run before launch authority is recorded', async () => {
     vi.spyOn(runsClient, 'listRehearsals').mockResolvedValue([])
     render(<AgentRehearsalPanel runId="run-1" runState="Draft" />)
