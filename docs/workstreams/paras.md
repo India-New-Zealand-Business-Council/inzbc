@@ -111,7 +111,7 @@ items below, which are paused, not abandoned.
   own requirement to show work beyond frontend/backend. Week plan: Mon fix, Tue polish, Wed
   research, Thu apply a finding, Fri test/a11y pass, Sat buffer, Sun sync + report.
 - **Research: surfacing agent trust and reasoning in the UI** (PR #484, 28 Oct 2026, refs #62).
-  Five sources, each checked against its real record (DOI/ACL Anthology/Zenodo) on 28 Oct 2026 —
+  Six sources, each checked against its real record (DOI/ACL Anthology/Zenodo) on 28 Oct 2026 —
   see `docs/research/agent-transparency-ui-literature-review.md`. Complementary to Bhanu's
   `agent-safety-literature-review.md`: his asks how the agent is constrained, this asks how the
   interface should represent what it did. One concrete finding to act on Thursday: a rehearsal's
