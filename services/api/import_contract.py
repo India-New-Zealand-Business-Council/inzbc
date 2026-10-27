@@ -7,6 +7,7 @@ The backend must independently enforce these invariants INSIDE its run-lock tran
 from __future__ import annotations
 
 import hashlib
+import re
 import uuid
 from dataclasses import dataclass
 from datetime import datetime

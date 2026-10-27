@@ -63,8 +63,8 @@ def test_malformed_and_unsafe_envelopes_refused(mutate):
 ])
 def test_snapshot_guard_refuses_unreconciled_import(update, message):
     batch = ImportBatchIn.model_validate(payload())
-    args = dict(run_id=RUN_ID, run_version=4, state="Scanning",
-                existing_count=0, capture_digest=DIGEST)
+    args = {"run_id": RUN_ID, "run_version": 4, "state": "Scanning",
+            "existing_count": 0, "capture_digest": DIGEST}
     args.update(update)
     with pytest.raises(ValueError, match=message):
         require_consistent_batch(batch, **args)
