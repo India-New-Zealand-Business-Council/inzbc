@@ -110,6 +110,12 @@ items below, which are paused, not abandoned.
   real, daily-commit-sized fixes and polish, plus one research thread per week for the course's
   own requirement to show work beyond frontend/backend. Week plan: Mon fix, Tue polish, Wed
   research, Thu apply a finding, Fri test/a11y pass, Sat buffer, Sun sync + report.
+- **Research: surfacing agent trust and reasoning in the UI** (PR #484, 28 Oct 2026, refs #62).
+  Five sources, each checked against its real record (DOI/ACL Anthology/Zenodo) on 28 Oct 2026 —
+  see `docs/research/agent-transparency-ui-literature-review.md`. Complementary to Bhanu's
+  `agent-safety-literature-review.md`: his asks how the agent is constrained, this asks how the
+  interface should represent what it did. One concrete finding to act on Thursday: a rehearsal's
+  refused step has no more visual weight than the accepted steps around it.
 - **Fix: platform assistant's disclaimer cleared on New conversation** (PR #467, 26 Oct 2026,
   refs #62). "New conversation" cleared `messages`/`error` but left `disclaimer` untouched, so a
   stale disclaimer from the previous conversation could linger under the input after starting a
