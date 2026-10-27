@@ -16,6 +16,10 @@
 | A6 | #58 / #59 / #69 | Review accessible component states, FTA sourced-answer/no-match UI and test tooling actually wired | Reproducible RTL/Storybook/Playwright/WCAG outputs, not just configuration |
 | A7 | #195, draft PR #486 | Sign off definitions, denominators, provenance and missing-feed behaviour | Client data owners approve proposed metric definitions; **no** finance integration |
 | A8 | #208 | Review and merge upstream agent PR #14 then rebase/merge stacked #15 in order after checks | Verified collector fetch-health and read-only capture; does not establish real SIP run |
+| A9 | #127 / #129, PR #495 | On 409, re-fetch authoritative run state and do not auto-resubmit gated actions; correct run-bound authority ID labels | Review with passing CI; **does not** fix atomic decision/run update |
+| A10 | #127 / #55, design PR #499 | Resolve decision-stream and run-state mismatch, especially Continue's terminal status blocking later distribution | Domain owner must approve transition rules and atomic transaction before runtime work |
+| A11 | #493, PRs #494 → #498 | Accurate crypto-seal badges, then highlight refused agent actions | Lower PR #494 first; rebase/retarget stacked #498 and rerun CI |
+| A12 | #55 / #291, PR #496; #493, PR #497 | Reconcile isolated real-data evidence vs host deployment, single-person QA exceptions, and trust-research limits | Content-owner sign-off; not live-run completion |
 
 ## B. Controlled integration and client gates
 
@@ -41,8 +45,8 @@
 
 ## Review/merge order and proof
 
-1. **Independent branches:** review #486–#490, #492 and #494; wait for current CI and the respective technical or content owner reviews. No administrative branch protection bypass.
-2. **Upstream collector stack:** #14 based on `main` before #15 (which currently bases on #14), then rerun required checks. Never merge an upper stacked PR to a stale base.
+1. **Independent branches:** review #486–#492, #495–#497 and #499; wait for green current CI and the respective technical or content owner reviews. #499 is only a design proposal. No administrative branch protection bypass.
+2. **Dependent stacks:** merge UI PR #494 before #498, which is stacked on #494's branch; merge upstream collector #14 before #15. Rebase/retarget and rerun required checks before any upper-PR merge.
 3. **Runtime integration:** agree and test backend atomic import with independent writers and rollback before enabling any #55 production import.
 4. **Client acceptance:** gather actual evidence in `docs/testing/acceptance-register.md`, controlled SIP run record, and private credential/sign-off custody. Issues only close against explicit acceptance criteria.
 
