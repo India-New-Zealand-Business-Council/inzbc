@@ -7,11 +7,9 @@ The backend must independently enforce these invariants INSIDE its run-lock tran
 from __future__ import annotations
 
 import hashlib
-import re
 import uuid
 from dataclasses import dataclass
 from datetime import datetime
-from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -21,14 +19,14 @@ _MAX_TEXT = 4000
 
 
 class ImportCandidateIn(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="forbid")
 
     headline: str = Field(min_length=1, max_length=500)
     source_id: uuid.UUID
     url: str = Field(min_length=1, max_length=2048)
     summary: str | None = Field(default=None, max_length=_MAX_TEXT)
     published_at: datetime
-    in_coverage_window: bool
+    in_coverage_window: bool = Field(strict=True)
 
     @field_validator("headline")
     @classmethod
@@ -65,13 +63,13 @@ class ImportCandidateIn(BaseModel):
 class ImportBatchIn(BaseModel):
     """Schema ONLY. Not a write API and not proof of SIP-191 authorisation."""
 
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="forbid")
 
     run_id: uuid.UUID
     articles_sha256: str
-    expected_run_version: int = Field(ge=0)
+    expected_run_version: int = Field(ge=0, strict=True)
     candidates: list[ImportCandidateIn] = Field(min_length=1, max_length=_MAX_BATCH)
-    capture_source_count: int = Field(ge=1, le=1000)
+    capture_source_count: int = Field(ge=1, le=1000, strict=True)
 
     @field_validator("articles_sha256")
     @classmethod
