@@ -86,10 +86,7 @@ describe('AgentRehearsalPanel', () => {
     expect(screen.getByText('refused: edited')).toBeInTheDocument()
   })
 
-  it.each([
-    ['unsealed', 'unsealed'],
-    ['key-not-configured', 'uncheckable'],
-  ] as const)('does not claim a %s trail is verified (%s)', async (seal, _scenario) => {
+  it.each(['unsealed', 'key-not-configured'] as const)('does not claim a %s trail is verified', async (seal) => {
     vi.spyOn(runsClient, 'listRehearsals').mockResolvedValue([
       { ...REHEARSAL, verification: { chain_intact: true, seal, replay: 'exact' } },
     ])
