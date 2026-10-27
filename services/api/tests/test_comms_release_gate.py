@@ -1,7 +1,9 @@
 """Exact opt-in safeguard for Comms provider requests."""
 import pytest
 from fastapi import HTTPException
+
 from services.api.comms import require_external_model_release
+
 
 @pytest.mark.parametrize("value", [None, "", "false", "True", "TRUE", "1", " true "])
 def test_comms_disabled_by_default(monkeypatch, value):
