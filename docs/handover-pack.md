@@ -4,7 +4,7 @@ Prepared 16 October 2026 for INZBC / Sunil, the confirmed post-placement owner (
 This assembles the existing material for #291. **The handover walkthrough has not happened**,
 as corrected by the tech lead on 16 October. The pack is not evidence of that session.
 
-The [supplemental readiness register](operations/sunil-handover-readiness.md) indexes unresolved evidence and authorization decisions; this pack remains the canonical handover source.
+The [supplemental readiness register](operations/sunil-handover-readiness.md) indexes unresolved evidence and authorization decisions. The [28 October engineering queue](operations/engineering-backlog-2026-10-28.md) separates reviewable work from client-controlled gates; this pack remains the canonical handover source.
 
 ## Operating material
 
@@ -41,7 +41,7 @@ This is a navigation matrix for delivered controls, not a claim that client UAT 
 | #189 production launch | Executive Sponsor | Cleared per the tech lead, 24 Oct ([launch status](launch-status-2026-10-24.md)); link INZBC's written approval, then close. Distribution still needs a recorded authority per brief |
 | #303 written residual-risk acceptance | Executive Sponsor; tech lead records | Phone approval is reported, but the written condition remains unsatisfied |
 | #133 live acceptance evidence | Tech lead / INZBC | Session and signed acceptance reported received for "everything"; original date, version-specific scope and record location still needed before marking detailed UAT criteria passed. #134 records receipt only |
-| #45 forms routing/store/retention/notice | INZBC; tech lead finalizes contract | No internal receiver or additional personal-data store is authorized yet |
+| #45 forms routing/store/retention/notice | INZBC; tech lead + website owner | Webhook contract, HMAC receiver, persistence and tests exist in code (`schemas/webhooks.md`, `services/api/site_forms.py`); production connection and additional personal-data collection are **not authorized or verified** until policy, retention, notices, Wix producer wiring and deploy evidence are approved |
 | #99 Render service | Tech lead / INZBC account owner | Account ready and preparation approved; no service exists or deployment verified |
 | #291 sponsor walkthrough | Tech lead / Executive Sponsor | Pack ready for review; handover itself incomplete |
 | #39 live calibration; #62–#65 engineering | Tech lead | These remain unfinished capabilities; documentation does not substitute for them |
