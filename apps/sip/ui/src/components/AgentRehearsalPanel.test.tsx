@@ -89,7 +89,7 @@ describe('AgentRehearsalPanel', () => {
   it.each([
     ['unsealed', 'unsealed'],
     ['key-not-configured', 'uncheckable'],
-  ] as const)('does not claim a %s trail is verified (%s)', async (seal) => {
+  ] as const)('does not claim a %s trail is verified (%s)', async (seal, _scenario) => {
     vi.spyOn(runsClient, 'listRehearsals').mockResolvedValue([
       { ...REHEARSAL, verification: { chain_intact: true, seal, replay: 'exact' } },
     ])
