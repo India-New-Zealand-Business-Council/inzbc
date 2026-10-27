@@ -12,7 +12,9 @@ endpoint; see [OPERATOR_IMPORT.md](OPERATOR_IMPORT.md).
   in `india-new-zealand-business-council/daily-india-nz-news-agent`, not an assumed schema.
   `in_coverage_window` is computed from the run's **supplied locked coverage
   interval** when valid timestamps are provided. With no interval or unknown
-  publication time it remains `None` (unknown), never guessed `True` **after PR #482 lands**. Until that fix merges, a timezone-naive ISO timestamp on `main` can raise `TypeError` when compared with an aware run window; see #482's regression coverage.
+  publication time it remains `None` (unknown), never guessed `True`. Since PR #482 (merged
+  28 Oct), a timezone-naive ISO timestamp or a naive/reversed run window is also left unknown
+  rather than raising `TypeError` against an aware window; see #482's regression coverage.
   The news-agent's rolling fetch window is not a substitute for SIP-184's
   fixed 07:00-to-07:00 Pacific/Auckland interval.
 - `ingest.py` — `ingest_articles()`: maps a batch and POSTs each to `/api/candidates` via
@@ -98,8 +100,8 @@ and its output is **not** a live SIP-184 run.
   import remains intentionally disabled: API-side transactionally locked,
   idempotent bulk import plus two-writer testing belongs to the API owner.
 - [PR #480](https://github.com/India-New-Zealand-Business-Council/inzbc/pull/480)
-  proposes accepting the upstream collector's actual comma-separated
-  `sectors` string in the read-only validator; it is not merged.
+  (merged 28 Oct) accepts the upstream collector's comma-separated `sectors`
+  string, as well as the legacy list, in the read-only validator.
 - The [operator import guide](OPERATOR_IMPORT.md) is the source for preflight
   commands/stop rules; [the evidence index](RUN_EVIDENCE_HANDOFF.md) records
   exactly what still has to be attached to close #55. The controlled

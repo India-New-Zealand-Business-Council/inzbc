@@ -57,11 +57,11 @@ by this dated check.
   validator), #473 (DST-boundary tests), and #474 (preflight-only import).
   Their merges do **not** mean a real embedding evaluation or SIP production
   run has occurred.
-- **Open in INZBC:** #476 evidence plan; #477 independently blinded-label
-  tooling (no reviewer has completed the ten human checks); #480 real
-  `sectors` shape validation; #481 collector operational-readiness docs;
-  #482 timezone-naive publication-time fail-closed guard. All remain for
-  Bhanu's review/merger and are not production approvals.
+- **Merged 28 Oct (tech lead):** #476 evidence plan; #477 independently
+  blinded-label tooling (no reviewer has completed the ten human checks); #480
+  real `sectors` shape validation; #481 collector operational-readiness docs;
+  #482 timezone-naive publication-time fail-closed guard. None of these is a
+  production approval. *(Status line updated on merge by Bhanu Gupta, 28 Oct.)*
 - **Open in the separate news-agent repo:** #14 per-run freshness/recovery,
   #15 review-only collector snapshot (stacked on #14). Neither automates
   approval or distribution.
