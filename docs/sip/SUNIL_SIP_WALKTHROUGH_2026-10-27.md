@@ -39,10 +39,12 @@ Record **his words** with date and owner. These questions are deliberately separ
 |---|---|---|
 | What intelligence matters daily? | FTA implementation, market access, bilateral policy, sector opportunities and risks, events/delegations, member issues; which are **in** or **out** | [[Sunil reply]] |
 | What should the output look like? | CEO-only executive summary vs detailed analyst annex; maximum length, urgency levels, actions/owners and sources | [[Sunil reply]] |
-| How frequent and when? | One daily report, only material changes, weekends/public holidays, preferred 07:00 cutoff | [[Sunil reply]] |
-| Who should receive each version? | Named internal recipients, separate member summary, permitted website/public extracts; **no default audience inferred** | [[Sunil reply]] |
-| Who is the analyst, independent QA reviewer and final approver? | Record actual operators / any separation-of-duties exception. Holding multiple roles does not magically create independent review | [[Sunil reply]] |
+| How frequent and when? | Confirm whether to retain the **existing SIP-184 07:00–07:00 Pacific/Auckland window**; any alternate cadence, weekends or cutoff is a proposed controlled-SOP change | [[Sunil reply / change request]] |
+| Who should receive each version? | Review the currently controlled recipient under SIP-191; additional recipients, public extracts and member summaries require new documented approval, not an informal email preference | [[Sunil reply / change request]] |
+| Does INZBC want to revise the recorded single-operator arrangement (#266)? | #266 records **Sunil as the only SIP operator/approver, with no deputy**. Ask whether a separate QA reviewer will be appointed or an explicitly approved, audit-recorded separation-of-duties exception will be used. The latter is **not independent QA** | [[Confirm decision / revised role authority]] |
 | How does he want feedback captured? | Comments on first seeded sample, followed by real sample only after run/QA evidence exists | [[Sunil reply]] |
+
+**Change control:** These are feedback proposals, not operational changes. The SIP-184 07:00 window, SIP-191 launch authority, controlled distribution recipient and reviewer/exception arrangements remain as documented until the relevant sponsor/technical-lead-authorised controlled revisions are recorded. Do not implement a preference from this meeting alone.
 
 **No model output is authorised for member/public publication by completing this table.** The report-specific approval and distribution decision remain separate.
 
@@ -60,6 +62,6 @@ Sunil's 27 October comment **raises an option; it does not approve a platform re
 - **Roshan:** collector mapping/source evidence, offline preview and real-run reconciliation after API readiness; #55 evidence; [FTA evaluation #393](https://github.com/India-New-Zealand-Business-Council/inzbc/issues/393) and [literature review #387](https://github.com/India-New-Zealand-Business-Council/inzbc/issues/387) remain separate coursework.
 - **Bhanu:** reviews and merge sequence, safe batch-import API, platform deployment, authorisation and audit integration, production configuration decisions.
 - **Paras:** UI demonstration, QA/review usability; event/member-site discovery (not replacement implementation without approval).
-- **Sunil / INZBC:** report purpose, intended readers, role assignments, original written approval, actual QA/CEO decisions, new website scope (if any).
+- **Sunil / INZBC:** report purpose, existing single-operator role confirmation or controlled revision, recipient authority, original written approval, actual QA/CEO decisions, new website scope (if any).
 
 **Success criterion for this walkthrough:** Sunil can explain the sample report, identify what he wants changed, and distinguish implemented demo functions from a verified full SIP day. This is **not** the closure criterion for #55.
