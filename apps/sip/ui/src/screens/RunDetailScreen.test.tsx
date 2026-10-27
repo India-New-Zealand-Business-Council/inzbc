@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import * as auditClient from '../api/auditClient'
 import * as candidatesClient from '../api/candidatesClient'
 import { SipApiError } from '../api/httpClient'
 import * as runsClient from '../api/runsClient'
@@ -23,6 +24,7 @@ const RUN = {
 }
 
 function stubCandidates() {
+  vi.spyOn(auditClient, 'listRunAudit').mockResolvedValue({ entries: [], next_before_id: null })
   vi.spyOn(candidatesClient, 'listCandidates').mockResolvedValue([])
   vi.spyOn(runsClient, 'listRehearsals').mockResolvedValue([])
 }
