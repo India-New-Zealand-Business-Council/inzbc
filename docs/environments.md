@@ -67,6 +67,7 @@ carries data worth keeping — which, given the append-only audit trail, is from
 | `PORT` | 8000 | — | Injected by the host |
 | `SIP_DECISION_SIGNING_KEY` | Unset, or a local key | Set by the test that needs it | A server-held key of at least 32 bytes, environment only |
 | `SIP_REQUIRE_SIGNED_DECISIONS` | Unset | Set by the test that needs it | Unset until the tech lead decides to require signatures |
+| `COMMS_EXTERNAL_MODEL_ENABLED` | Unset | Set by the Comms endpoint tests only | Unset until INZBC approves Comms drafting ([release gate](security/comms-release-gate.md), #303); only the exact value `true` enables it |
 
 **`REDACTION_POLICY_PATH` unset means refusal, not permission.** So an environment that has not
 been configured fails closed rather than sending unredacted text to a model. That is the correct
