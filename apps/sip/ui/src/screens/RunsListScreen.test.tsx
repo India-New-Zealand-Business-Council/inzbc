@@ -84,16 +84,21 @@ describe('RunsListScreen', () => {
     expect(startSpy).not.toHaveBeenCalled()
   })
 
-  it('surfaces a 409 conflict from the server as an alert, without reloading', async () => {
-    vi.spyOn(runsClient, 'listRuns').mockResolvedValue([DRAFT_RUN])
+  it('re-fetches the run after a 409 and never retries the stale write', async () => {
+    vi.spyOn(runsClient, 'listRuns')
+      .mockResolvedValueOnce([DRAFT_RUN])
+      .mockResolvedValueOnce([{ ...DRAFT_RUN, state: 'Run Authorised', version: 1 }])
     vi.spyOn(runsClient, 'startRun').mockRejectedValue(new SipApiError('version mismatch', { status: 409 }))
     render(<RunsListScreen onSelectRun={vi.fn()} onWorkRun={vi.fn()} workingRunId={null} />)
     await userEvent.click(await screen.findByRole('button', { name: 'Start' }))
     await userEvent.type(screen.getByLabelText('Reason'), 'go')
     await userEvent.type(screen.getByLabelText(/Approval reference/), 'ref-1')
     await userEvent.click(screen.getByRole('button', { name: 'Confirm Start' }))
-    expect(await screen.findByRole('alert')).toHaveTextContent('version mismatch')
-    expect(runsClient.listRuns).toHaveBeenCalledTimes(1)
+    expect(await screen.findByRole('alert')).toHaveTextContent('run changed')
+    expect(await screen.findByText('Run Authorised')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Start', exact: true })).not.toBeInTheDocument()
+    expect(runsClient.startRun).toHaveBeenCalledTimes(1)
+    expect(runsClient.listRuns).toHaveBeenCalledTimes(2)
   })
 
   it('does not offer an action button for a state with no legal next action', async () => {
