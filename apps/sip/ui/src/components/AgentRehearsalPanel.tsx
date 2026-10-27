@@ -218,7 +218,14 @@ export function AgentRehearsalPanel({ runId, runState }: Props) {
                     </dl>
                     <ol className="space-y-1" aria-label="Agent steps">
                       {r.tool_steps.map((step) => (
-                        <li key={step.sequence} className="rounded bg-slate-50 p-2">
+                        <li
+                          key={step.sequence}
+                          className={`rounded border-l-4 p-2 ${
+                            step.outcome === 'refused'
+                              ? 'border-inzbc-crimson bg-inzbc-crimson/5'
+                              : 'border-transparent bg-slate-50'
+                          }`}
+                        >
                           <div className="flex flex-wrap justify-between gap-2">
                             <code className="text-xs text-inzbc-navy">
                               {step.sequence + 1}. {step.tool}
@@ -227,6 +234,11 @@ export function AgentRehearsalPanel({ runId, runState }: Props) {
                               {step.outcome === 'refused' ? 'Refused' : 'Accepted'}
                             </span>
                           </div>
+                          {step.outcome === 'refused' ? (
+                            <p className="mb-1 text-xs font-semibold text-inzbc-crimson">
+                              Agent action refused — review the stop reason.
+                            </p>
+                          ) : null}
                           <p className="text-xs text-slate-600">{step.reason}</p>
                           <p className="break-words text-xs text-slate-500">
                             {step.state_before} → {step.state_after}: {step.detail}
