@@ -87,6 +87,18 @@ export function RunDetailScreen({ runId, onBack, onSelectCandidate }: Props) {
       setActionOpen(false)
       setActionState({ kind: 'idle' })
     } catch (error) {
+      if (error instanceof SipApiError && error.status === 409) {
+        // The backend rejected an outdated version. Refetch the authoritative state,
+        // close the stale action panel, and never automatically repeat a gated write.
+        setActionOpen(false)
+        setActionState({
+          kind: 'error',
+          message: 'This run changed while you were acting. The latest state has been requested; review it before retrying.',
+        })
+        setState({ kind: 'loading' })
+        fetchRun()
+        return
+      }
       setActionState({
         kind: 'error',
         message: error instanceof SipApiError ? error.message : 'Something went wrong. Please try again.',
@@ -103,6 +115,12 @@ export function RunDetailScreen({ runId, onBack, onSelectCandidate }: Props) {
       >
         ← Back to runs
       </button>
+
+      {actionState.kind === 'error' && !actionOpen ? (
+        <p role="alert" className="rounded-md border border-inzbc-tangerine bg-inzbc-tangerine/10 p-3 text-sm text-inzbc-navy">
+          {actionState.message}
+        </p>
+      ) : null}
 
       {state.kind === 'loading' ? (
         <p role="status" className="text-sm text-slate-600">
