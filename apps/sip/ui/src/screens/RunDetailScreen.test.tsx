@@ -68,6 +68,25 @@ describe('RunDetailScreen', () => {
     expect(await screen.findByText('Run Authorised')).toBeInTheDocument()
   })
 
+  it('re-fetches authoritative state on 409 instead of retrying a stale action', async () => {
+    const get = vi.spyOn(runsClient, 'getRun')
+      .mockResolvedValueOnce(RUN)
+      .mockResolvedValueOnce({ ...RUN, state: 'Run Authorised', version: 1 })
+    stubCandidates()
+    const start = vi.spyOn(runsClient, 'startRun')
+      .mockRejectedValue(new SipApiError('version mismatch', { status: 409 }))
+    render(<RunDetailScreen runId="run-1" onBack={vi.fn()} onSelectCandidate={vi.fn()} />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Start' }))
+    await userEvent.type(screen.getByLabelText('Reason'), 'launch')
+    await userEvent.type(screen.getByLabelText(/Approval reference/), 'authority-1')
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm Start' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('run changed')
+    expect(await screen.findByText('Run Authorised')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Start', exact: true })).not.toBeInTheDocument()
+    expect(get).toHaveBeenCalledTimes(2)
+    expect(start).toHaveBeenCalledTimes(1)
+  })
+
   it('passes candidate selection through to onSelectCandidate', async () => {
     vi.spyOn(runsClient, 'getRun').mockResolvedValue(RUN)
     vi.spyOn(candidatesClient, 'listCandidates').mockResolvedValue([
