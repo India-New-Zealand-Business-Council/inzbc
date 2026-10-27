@@ -1,63 +1,39 @@
-# SIP adversarial security review plan — pre-staff-use gate
+# SIP post-review regression and staff-use sign-off checklist
 
-**Status:** proposed test plan, **not** a performed security review or approval.  
-**Tracks:** #40. Maintainers and INZBC security/production owners must validate role names and sign off; no staff access is authorised by this document.
+**Status (28 October 2026):** supplemental release checklist. The substantial adversarial review is **already complete**, with 18 documented reproduced-and-fixed findings in [sip-review.md](sip-review.md); Executive Sponsor sign-off remains outstanding. This file does **not** redo, supersede, or certify that review.
 
-## Scope and trust boundaries
+**Scope:** supporting evidence/verification for #40 before any staff-facing use. The canonical authorisation matrix and implementation conformance live in [security/README.md](README.md), `services/api/tests/test_router_auth.py` and the detailed [review](sip-review.md). If this checklist conflicts with the current route implementation, raise a finding rather than silently treating either prose version as authoritative.
 
-- Untrusted external news, RSS, scraped source text and attached source metadata enter collection and candidate capture. Treat titles, URLs, excerpts and documents as **data**, never instructions.
-- Authenticated analysts/reviewers use the internal SIP API and UI. Client state must never be treated as authorisation.
-- Model gateway receives only approved, classified and redacted material; output is untrusted until validated.
-- Immutable audit records and separate distribution destinations are protected assets. Development fixtures, synthetic rehearsals and seeded data are not production evidence.
-- Secrets, service credentials, webhook signatures and session cookies must not appear in output, logs, prompts, URLs or screenshots.
+## Focused regression matrix
 
-## Proposed authorisation matrix (confirm exact implemented roles)
+| Abuse case / assertion | Verification evidence required |
+|---|---|
+| External source attempts to change model instructions or disclose data | Run adversarial source/LLM tests against a fixed commit; preserve content-free results and explicit refusal |
+| User omits authentication, CSRF or proper session | Route auth suite and HTTP negative test; no state mutation |
+| Reviewer and candidate author/analyst are the same person across roles | Persistence-level separation-of-duties test using canonical actor ID; deny even with multiple roles |
+| Reviewer can stop a run independently | Route matrix and real HTTP negative/positive tests, with audit readback |
+| Unverified High/Critical candidate attempts inclusion | Routing persistence/quality gate rejects it; observe consistent candidate and audit states |
+| Replay uses expired/forged approval ID or ambiguous authority | Server resolves authority to a real approved record and rejects missing/mismatched references |
+| Disabled production flag or missing launch authority | No collection execution or distribution, even if client posts actions directly |
+| Stale source beyond Auckland 24-hour window | Ineligible in collector and persisted source check; no silent upgrade from unknown |
+| Same idempotency key sent twice or raced | Exactly one authoritative transition/delivery, no duplicate send or changed payload acceptance |
+| Restricted text or secrets in provider request, audit or error response | Confirm boundary refusal, redaction and logs using synthetic adversarial inputs |
+| Audit history modification attempted through SQL | Row-level and statement-level UPDATE/DELETE/TRUNCATE refused after schema restore |
+| Unauthorized cross-role audit read or write | API authorization scopes and append-only writer role tested |
+| Session expiry, sign-out, reactivation after expiry | Old session not revived; creation/sign-out audit gap recorded separately |
+| Malformed state transition and client UI manipulation | API refuses and state persists unchanged across refresh |
 
-| Action | Analyst | Source/QA reviewer | Release approver | Platform administrator | Unauthenticated |
-|---|---|---|---|---|---|
-| View assigned restricted candidates | Scoped | Scoped | Scoped | Operational metadata only by default | Deny |
-| Capture or assess candidate | Permit with audit | Only if explicitly delegated | Deny by default | Deny by default | Deny |
-| Record verification / QA | Cannot self-verify | Permit with audit | Read | Deny by default | Deny |
-| Approve Internal / Member / Public distribution | Deny | Deny | Permit only on validated eligible item and distinct creator/reviewer | Deny | Deny |
-| Change launch configuration | Deny | Deny | Deny | Controlled change with audit and separate launch authorisation | Deny |
-| Send / publish content | Deny | Deny | Separate explicit channel approval, where implemented | Deny | Deny |
-| Read security/audit history | Own permitted scope | Relevant scope | Relevant scope | Approved operational scope | Deny |
+## Evidence collection instructions
 
-This is a **target policy**, not a claim that the current API enforces every cell. Verify routes, token scopes, role mappings, state transitions, and privilege combinations against the implementation; a single person holding multiple roles must not self-approve. Approval of one audience cannot authorise another.
+For each post-review regression: record **fixed commit SHA, environment, synthetic fixture ID, observed API status/state, related audit event ID, reviewer, test output/CI URL, and unresolved deviation**. This checklist makes no new claim that these scenarios passed on 28 October. Use the existing `docs/security/sip-review.md` findings table as the baseline for what was previously reproduced and fixed.
 
-## Adversarial test catalogue
+Do not treat local unit tests as evidence of a real SIP day, a timed production backup restore, client UAT, or approval to publish. No live confidential records, credentials or sensitive screenshots belong in public GitHub evidence.
 
-| ID | Scenario | Expected evidence |
-|---|---|---|
-| S01 | External article says to ignore workflow and publish | Prompt injection ignored; candidate treated as untrusted |
-| S02 | Source URL contains fake instruction or credentials | No follow-on tool action or secret disclosure |
-| S03 | Analyst calls approve endpoint directly, bypassing UI | HTTP refusal, no state mutation, audit/security event |
-| S04 | Creator/reviewer/approver same identity | Self-approval refused at service/database boundary |
-| S05 | Approve public using internal-only approval | Audience-specific denial |
-| S06 | Concurrent approvals and duplicated requests | Idempotent or single authoritative transition; no double publication |
-| S07 | Replay expired/modified auth session and CSRF | Request rejected with no mutation |
-| S08 | Disabled production flag, missing launch approval | No scheduled distribution or publication |
-| S09 | Missing source / stale source beyond 24h Auckland window | Candidate quarantined or marked ineligible, not silently approved |
-| S10 | High/Critical candidate lacks required verification | Release denied until official/two independent-source gate satisfied |
-| S11 | Member/Board/confidential text reaches model path | Refused/redacted as defined, with non-sensitive audit |
-| S12 | API error/retry after approval or import | No partial unaudited transition or silent data loss |
-| S13 | Cross-user or cross-role read of candidate and audit | Scoped authorisation rejection |
-| S14 | Log or trace capture during rejected request | No tokens, private text, provider keys or credential-bearing URLs |
-| S15 | Client tampers with state, actor ID, role or action IDs | Service derives identity from verified session and rejects illegal transition |
+## Outstanding gates (owned decisions)
 
-For each run record: build commit, environment, synthetic test ID, expected policy, request/response with credentials removed, observed audit event, reviewer, date, and pass/fail with an issue link. Do **not** run live adversarial tests against production or real confidential records without an approved test window.
+- **Executive Sponsor:** written signed acceptance of the SIP adversarial review and any residual risk. A reported telephone conversation is not a written record (see `docs/security/sip-review.md` §6).
+- **Technical lead:** verify actual deployment environment, MFA on owned accounts, role matrix and current branch after any security-touching merge. Review session establishment/sign-out audit gaps.
+- **Comms owner and INZBC privacy owner:** separate #303 staff-authored prose risk; an SIP review does not close it. PR #488 is containment only.
+- **SIP production owner and client:** execute the formal launch/UAT/proof steps independently of this document. The `production_enabled` state and release authority must remain governed by the current SOP, not test scripts.
 
-## Audit coverage checklist
-
-Every substantive candidate mutation, verification decision, launch-control change and audience-specific approval should record a trusted actor ID, action, resource ID, state before/after, timestamp, request/correlation ID and immutable evidence reference. Explicitly check for rejected privileged actions and duplicate requests without logging raw restricted text. Confirm the audit store's tamper resistance, retention and export ownership; do not assert immutability solely because a DB row exists.
-
-## Exit criteria (all required)
-
-1. Implementation-versus-matrix traceability completed for all sensitive routes and model paths.
-2. Adversarial suite run against a fixed build with actual observed results, not only proposed scenarios.
-3. Critical/High findings resolved and retested, or release remains blocked.
-4. Named security owner, SIP production owner and INZBC approver record sign-off and known residual risk.
-5. `production_enabled` remains false until **separate** formal launch approval; this test plan never enables publishing.
-6. Comms free-text leakage risk (#303) is reviewed under its own boundary; SIP review cannot be used to claim that gap is closed.
-
-References: `docs/sip/README.md`, `docs/inzbc-ai-operating-system.md` §§3, 7, 9, and issue #40.
+**Resolution rule:** #40 is not completed by creating this checklist. It closes only when the review's required sponsor sign-off and regression evidence are recorded and linked.
