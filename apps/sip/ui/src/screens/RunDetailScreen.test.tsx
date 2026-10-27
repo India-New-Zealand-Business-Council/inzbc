@@ -82,7 +82,7 @@ describe('RunDetailScreen', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Confirm Start' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('run changed')
     expect(await screen.findByText('Run Authorised')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Start', exact: true })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Start' })).not.toBeInTheDocument()
     expect(get).toHaveBeenCalledTimes(2)
     expect(start).toHaveBeenCalledTimes(1)
   })
