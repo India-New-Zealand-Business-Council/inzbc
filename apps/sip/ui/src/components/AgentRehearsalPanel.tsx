@@ -26,8 +26,25 @@ function message(error: unknown): string {
   return error instanceof SipApiError ? error.message : 'Something went wrong. Please try again.'
 }
 
-function trustworthy(r: RehearsalOut): boolean {
-  return r.verification.chain_intact && r.verification.replay === 'exact' && r.verification.seal !== 'invalid'
+type TrailStatus = 'verified' | 'failed' | 'unverified'
+
+function trailStatus(r: RehearsalOut): TrailStatus {
+  if (!r.verification.chain_intact || r.verification.replay !== 'exact' || r.verification.seal === 'invalid') {
+    return 'failed'
+  }
+  return r.verification.seal === 'valid' ? 'verified' : 'unverified'
+}
+
+const TRAIL_LABEL: Record<TrailStatus, string> = {
+  verified: 'Trail verified',
+  failed: 'Trail check failed',
+  unverified: 'Seal not verified',
+}
+
+const TRAIL_BADGE_CLASS: Record<TrailStatus, string> = {
+  verified: 'bg-emerald-100 text-emerald-800',
+  failed: 'bg-inzbc-crimson/10 text-inzbc-crimson',
+  unverified: 'bg-slate-100 text-slate-700',
 }
 
 /**
@@ -165,10 +182,10 @@ export function AgentRehearsalPanel({ runId, runState }: Props) {
                   </span>
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                      trustworthy(r) ? 'bg-emerald-100 text-emerald-800' : 'bg-inzbc-crimson/10 text-inzbc-crimson'
+                      TRAIL_BADGE_CLASS[trailStatus(r)]
                     }`}
                   >
-                    {trustworthy(r) ? 'Trail verified' : 'Trail check failed'}
+                    {TRAIL_LABEL[trailStatus(r)]}
                   </span>
                 </button>
                 {open ? (
