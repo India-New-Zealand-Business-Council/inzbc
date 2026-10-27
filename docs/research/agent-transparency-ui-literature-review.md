@@ -1,0 +1,144 @@
+# Literature review: surfacing agent trust and reasoning in the UI
+
+**Author:** Paras. **Status:** Annotated draft, 28 Oct 2026. Prepared with AI assistance. Every
+source was checked against its arXiv, ACM DL, ACL Anthology, Springer or Zenodo record on 28 Oct
+2026, and claims are limited to what those records state. Studio 6's course requirement to show
+research beyond frontend/backend work, applied directly to `apps/sip/ui`'s two agent surfaces:
+`AgentRehearsalPanel.tsx` (the coordinator agent's rehearsal trail) and `PlatformAssistant.tsx`
+(the read-only chat agent).
+
+This is a different angle on the same underlying system Bhanu's
+[agent-safety-literature-review.md](agent-safety-literature-review.md) covers. His review asks how
+the agent should be *constrained* (guardrails, tool-use limits, human gates built as code). This
+one asks a narrower, UI-level question his doesn't: once the agent has acted, how should the
+*interface* represent what it did and how sure anyone should be about it, to the person reading
+the screen. Neither review repeats the other's sources.
+
+## 1. Introduction: the question
+
+Both components already show a human a record of something an AI did: the rehearsal panel shows a
+sealed, re-verified trail of tool steps and a trust badge ("Trail verified" / "Trail check
+failed"); the assistant shows an answer plus what it looked up and a disclaimer. Four questions
+this review asks, each tied to a specific choice already made in that code:
+
+1. What do general guidelines for human-AI interaction say about explaining what a system did and
+   how confident to be in it?
+2. Does showing a confidence/trust signal next to an AI output actually calibrate a reader's trust
+   correctly, or can it backfire?
+3. What happens to a reader's trust after they see the AI get something wrong, once badges and
+   explanations are already part of the picture?
+4. Is there a more specific precedent for showing a step-by-step audit trail of automated actions,
+   closer to what the rehearsal panel already does?
+
+## 2. Human-AI interaction guidelines
+
+Amershi et al. (2019), "Guidelines for Human-AI Interaction," CHI 2019 (DOI
+[10.1145/3290605.3300233](https://doi.org/10.1145/3290605.3300233)), set out 18 guidelines
+developed and validated through a multi-step process by Microsoft's Aether, Microsoft Research and
+Office teams, grouped into four categories by when they apply: initially, during interaction, when
+the system is wrong, and over time. I could not get the exact wording of all 18 from a public page
+without the paper itself — the project page shows them only as an image — so I'm citing the
+category structure and theme, not inventing specific guideline text I haven't verified.
+
+**What this means for the two components.** Both already have a "when wrong" story: the rehearsal
+panel's trust badge turns red and names which check failed (chain/seal/replay); the assistant
+shows a plain-language 503/422 message rather than a generic failure. Both are weaker on the
+"over time" category — repeated use. Guideline themes in that group are about letting the system
+learn from the person's behaviour and avoid repeating a correction already made. Neither component
+does this today: the rehearsal panel doesn't remember a reviewer dismissed a failed trail, and the
+assistant's disclaimer (now correctly cleared on "New conversation" since yesterday's fix) still
+has no memory of what a reader has already acknowledged in the session before.
+
+## 3. Confidence signals don't guarantee better decisions
+
+Zhang, Liao and Bellamy (2020), "Effect of Confidence and Explanation on Accuracy and Trust
+Calibration in AI-Assisted Decision Making," FAT* 2020 (DOI
+[10.1145/3351095.3372852](https://doi.org/10.1145/3351095.3372852)), ran two experiments on
+AI-assisted decisions where a human and an AI had comparable accuracy. Showing a confidence score
+helped people calibrate *trust* to match the AI's real accuracy. But calibrated trust alone did not
+reliably improve the *decision* — that also depended on whether the human brought knowledge the AI
+lacked. The paper separately flags problems with using local, per-prediction explanations for this
+purpose, without fully resolving them.
+
+**What this means for the two components.** The rehearsal panel's trust badge is closer to a
+confidence score than an explanation — "Trail verified" / "Trail check failed" is a binary summary
+of three real checks (chain intact, seal valid, replay exact), not a model's self-reported
+confidence. That's a meaningfully different, more defensible claim than what this paper studied:
+the badge reflects a mechanical re-verification the server actually performed, not a probability
+the agent is guessing at. The risk this paper flags — a confidence signal that calibrates trust but
+doesn't improve the underlying decision — still applies to the *content* decision (should this
+draft brief be used), which the badge deliberately doesn't claim to answer.
+
+## 4. Explanations can cause the wrong kind of agreement
+
+Naiseh, Al-Thani, Jiang and Ali (2021), "Explainable recommendation: when design meets trust
+calibration," *World Wide Web* 24(5), pp. 1857–1884 (DOI
+[10.1007/s11280-021-00916-0](https://doi.org/10.1007/s11280-021-00916-0)), ran a 16-participant
+think-aloud study and two co-design sessions. They found that engaging with an explanation can
+itself produce miscalibrated agreement or disagreement — a plausible-looking explanation can earn
+trust it hasn't actually demonstrated. Their five design principles: design for engagement,
+challenge habitual actions, guide attention, add friction before acting on an explanation, and
+support training/learning.
+
+**What this means for the two components.** The rehearsal panel's step list (`tool_steps`, each
+with `reason`, `outcome`, `detail`) is exactly the kind of explanation this paper warns about — a
+plausible, readable narrative that could earn trust the underlying trail hasn't actually verified.
+The panel already adds friction in the right place: the trust badge is checked server-side and
+shown *before* the narrative, not computed from the narrative text, so a glib-sounding `reason`
+can't inflate the badge. One real gap against "guide attention": refused steps and accepted steps
+use the same list styling, distinguished only by a small colour-coded word ("Refused" / "Accepted")
+— nothing pulls a reader's eye to the step where the agent actually stopped.
+
+## 5. Trust drops fast after a wrong answer, and recovers slowly
+
+Dhuliawala, Zouhar, El-Assady and Sachan (2023), "A Diachronic Perspective on User Trust in AI
+under Uncertainty," EMNLP 2023, pp. 5567–5580 (ACL Anthology
+[2023.emnlp-main.339](https://aclanthology.org/2023.emnlp-main.339)), used a betting game to show
+that a handful of confidently wrong answers lowers a user's trust and the team's joint performance,
+and that trust recovers slowly afterward. Users trusted the system less after a confidently wrong
+answer than after an unconfidently correct one, even when the payoff was the same.
+
+**What this means for the two components.** Directly relevant to the assistant: it has no
+confidence signal at all today, only a disclaimer line ("AI-generated and advisory."). This paper's
+finding suggests that's probably the safer default for a system that can't yet back a confidence
+number with anything real — a wrong answer presented without false confidence is the better failure
+mode this research describes, not a gap to fix by adding a confidence score the assistant has no
+honest way to compute.
+
+## 6. A closer precedent for the rehearsal panel's step list
+
+Bavoil, Callahan, Crossno, Freire, Scheidegger, Silva and Vo (2005), "VisTrails: Enabling
+Interactive Multiple-View Visualizations," IEEE Visualization 2005, pp. 135–142, describe a
+provenance system that records every change a user (or an automated process) makes to a
+visualization pipeline and presents it as a directed graph, so a past state can be reproduced and
+inspected. It's the oldest and most established precedent I found for showing a step-by-step
+record of automated changes for later verification, rather than just a final result.
+
+Separately, Narayan (2026), "Designing the Action Receipt: Ensuring Transparency and Auditability
+in Autonomous Multi-Agent Workflows," Zenodo, DOI
+[10.5281/zenodo.21305058](https://doi.org/10.5281/zenodo.21305058), proposes a structured "action
+receipt" for what an agent did on a user's behalf, and names open problems: information overload,
+receipts an adversarial agent could falsify, and privacy risk from retaining detailed logs. **Flag,
+not a citation to lean on:** this is a self-deposited Zenodo record with no stated peer review,
+published July 2026 — a lead worth reading, not an authority. I'm naming it because its open-problem
+list (information overload especially) is a real, concrete risk the rehearsal panel's full step
+list already has no mitigation for.
+
+## Findings applied to this week's UI
+
+1. **The trust badge is a verified-fact signal, not a confidence score** (§3) — that's a stronger,
+   more defensible kind of claim than most of this literature studies, and worth stating explicitly
+   in the component's own comment rather than leaving implicit.
+2. **The step a rehearsal refused at doesn't visually stand out** (§4) — same list styling as every
+   accepted step, distinguished only by a small coloured word.
+3. **The assistant's lack of a confidence score is probably correct, not a gap** (§5) — adding one
+   without a real basis for it risks the "confidently wrong" failure mode this research specifically
+   found most damaging to trust.
+4. **Neither component has any memory across a session** (§2) — a reviewer who already dismissed a
+   failed trail, or already saw a disclaimer, sees the exact same unweighted presentation again.
+
+## What this means for Thursday
+
+Finding 2 is the most concrete, smallest, and most defensible to act on: give the step a rehearsal
+actually refused at more visual weight than the steps around it, so a reviewer's attention lands
+there first rather than having to read the whole list in order. That's Thursday's task.
