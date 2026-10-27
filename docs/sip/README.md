@@ -3,6 +3,14 @@
 The full build of the confirmed **Trade Intelligence Digest** module. Executive intelligence +
 institutional-memory app. NOT a news page, NOT a Wix build.
 
+## Client-facing preview and first live-run proof (27 Oct 2026)
+
+- [Sunil's SIP walkthrough and feedback questions](SUNIL_SIP_WALKTHROUGH_2026-10-27.md) — what is built, what has only been demonstrated, and what the client must decide.
+- [Illustrative 13-section Daily Intelligence Brief](ILLUSTRATIVE_DAILY_BRIEF.md) — **synthetic / unapproved / never for distribution**, to get feedback on form and content.
+- [Evidence-first real end-to-end proof plan](LIVE_E2E_PROOF_PLAN_2026-10-27.md) — actual #55 exit criteria, safe backend import blocker, named owners and stop conditions.
+
+None of these substitutes for the SIP-184 procedure or a run-specific SIP-191 decision.
+
 ## Placement decision (why this is not in Wix)
 The spec mandates Postgres, server-side model calls, background workers, MFA, immutable audit,
 and "the browser must never contain model/DB/source keys." Wix (site builder) cannot host that.
