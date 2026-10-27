@@ -138,6 +138,12 @@ class FakeCommsDraftRepository:
         return list(self._drafts.values())
 
 
+@pytest.fixture(autouse=True)
+def _allow_generation_for_existing_endpoint_contract_tests(monkeypatch) -> None:
+    """Only this fake-provider suite opts in; production remains default-deny."""
+    monkeypatch.setenv("COMMS_EXTERNAL_MODEL_ENABLED", "true")
+
+
 @pytest.fixture
 def fake_gateway() -> FakeGateway:
     gateway = FakeGateway()
@@ -542,3 +548,39 @@ def test_a_disconnected_reader_closes_the_body_and_so_the_provider_stream() -> N
 def test_stream_enforces_the_same_brief_limits(client: TestClient) -> None:
     assert _post_stream(client, topic="x" * 201).status_code == 422
     assert _post_stream(client, extra="field").status_code == 422
+
+
+# ---------------------------------------------------------------------------
+# Privacy release gate — both routes must refuse before hitting the provider.
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("endpoint", ["/api/comms/draft", "/api/comms/draft/stream"])
+def test_unreleased_comms_never_invokes_gateway(
+    client: TestClient,
+    fake_gateway: FakeGateway,
+    fake_repo: FakeCommsDraftRepository,
+    monkeypatch,
+    endpoint: str,
+) -> None:
+    monkeypatch.delenv("COMMS_EXTERNAL_MODEL_ENABLED", raising=False)
+    response = client.post(
+        endpoint,
+        json={"content_type": "newsletter", "topic": "Public FTA launch"},
+    )
+    assert response.status_code == 503
+    assert fake_gateway.last_prompt is None
+    assert fake_gateway.last_source is None
+    assert fake_repo.list_all() == []
+
+
+@pytest.mark.parametrize("endpoint", ["/api/comms/draft", "/api/comms/draft/stream"])
+def test_invalid_comms_release_values_remain_disabled(
+    client: TestClient, fake_gateway: FakeGateway, monkeypatch, endpoint: str
+) -> None:
+    monkeypatch.setenv("COMMS_EXTERNAL_MODEL_ENABLED", "TRUE")
+    response = client.post(
+        endpoint,
+        json={"content_type": "newsletter", "topic": "Public FTA launch"},
+    )
+    assert response.status_code == 503
+    assert fake_gateway.last_prompt is None
