@@ -33,8 +33,8 @@ authorised system of record; link to it instead of copying it here.
 - INZBC #472: offline manifest validator. INZBC #473: DST rule ambiguity tests.
   INZBC #474: authenticated **preflight only**; its `--apply` remains disabled.
 - [INZBC #480](https://github.com/India-New-Zealand-Business-Council/inzbc/pull/480):
-  fixes a real producer/consumer `sectors` shape mismatch; until it merges,
-  a normal upstream string can be rejected by the manifest validator.
+  fixed a real producer/consumer `sectors` shape mismatch (merged 28 Oct); the manifest
+  validator now accepts the upstream string form as well as the legacy list.
 - [Launch status, 24 Oct](../../../docs/launch-status-2026-10-24.md):
   tech-lead report of cleared SIP-191 authority/PAT, **not** the primary signed record or a real run outcome.
 - [Operator import guide](OPERATOR_IMPORT.md):
