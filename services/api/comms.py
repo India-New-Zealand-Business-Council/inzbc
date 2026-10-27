@@ -24,6 +24,7 @@ found by the #132 privacy verification pass. A retention *period* is still an IN
 from __future__ import annotations
 
 import json
+import os
 from collections.abc import AsyncIterator
 from typing import Annotated
 
@@ -73,6 +74,15 @@ router = APIRouter(prefix="/api/comms", tags=["Comms Assistant"], responses=AUTH
 # The old free-text `brief` cap. Kept as the ceiling across all the structured fields together, so
 # #303 provably shrank the paste target rather than growing it. See `DraftIn._within_total_budget`.
 TOTAL_BRIEF_BUDGET = 4000
+
+
+def require_external_model_release() -> None:
+    """Keep staff Comms provider calls disabled until explicit release."""
+    if os.getenv("COMMS_EXTERNAL_MODEL_ENABLED") != "true":
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Comms drafting requires an approved deployment release",
+        )
 
 
 def get_model_gateway() -> ModelGateway:
@@ -231,6 +241,7 @@ def draft(
     - `GatewayCallError` -> 502. The provider call itself failed after a retry - genuinely down,
       distinct from "not configured".
     """
+    require_external_model_release()
     brief = body.to_brief()
     try:
         result = generate_draft(gateway, body.content_type, brief)
@@ -287,6 +298,7 @@ def draft_stream(
     is persisted only once the stream completes, as an ordinary `Draft` awaiting a named reviewer;
     a stream the reader abandons stops the provider call and stores nothing.
     """
+    require_external_model_release()
     brief = body.to_brief()
     try:
         deltas = stream_draft(gateway, body.content_type, brief)
