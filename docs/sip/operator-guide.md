@@ -25,15 +25,11 @@ artifacts.
 
 | Role | Person | Does |
 |---|---|---|
-| Analyst | Sunil (Bhanu is backup) | Opens the run, scans sources, captures and assesses candidates, drafts the brief |
-| Quality Reviewer | Paras (Roshan is backup) | Independent QA against SIP-188. **Cannot be the same person who was the analyst for that run** |
-| CEO / SIP Owner | Sunil | Records the daily decision and authorises distribution |
+| Analyst | Sunil, per the client decision recorded in #266 | Runs collection, assesses candidates and drafts the brief |
+| Quality Reviewer | No separate operator currently appointed (#266) | A truly independent QA needs a separate approved reviewer. If Sunil conducts both acts, a **specific pre-approved, recorded separation-of-duties exception** is required under the applicable controls; it must never be labelled independent QA |
+| CEO / SIP Owner | Sunil | Records the decision and separately authorises any manual distribution |
 
-The analyst and reviewer for a run must be two different people. That separation is the point of the
-QA step — it is not a formality. During the controlled launch this is enforced **procedurally**, by
-the reviewer and the QA checklist, because the run is operated on the Intelligence Database workbook.
-The platform schema carries a matching constraint (`analyst_id <> reviewer_id`) for when the
-application takes over, but that database is not yet migrated and is not what the launch runs on.
+**Staffing conflict to resolve before a real run:** #266 records Sunil as the sole SIP operator/approver, with no deputy. Earlier versions of this guide named Bhanu, Paras and Roshan as backup/independent reviewers, but that is not a current client appointment. SIP-188's requirement for independent QA must not be silently weakened by this guide: obtain a formally authorised reviewer or a documented controlled-SOP exception/amendment where the actual policy permits one. The application checks recorded acts and authorised SoD exceptions; role membership alone is not independence. Do not assume a single person can self-approve in the absence of an applicable exception.
 
 ---
 
@@ -159,9 +155,9 @@ Do not pad the brief to make it look busy. Filler is a quality failure, not a co
 ### Step 10 — Draft the brief
 Use the `SIP-186` template. The first version of the day is always `v0.9 Review Draft`.
 
-### Step 11 — Independent QA
-The reviewer (not the analyst) works through `SIP-188`: source coverage complete, verification done,
-relevance sound, brief accurate, database and tracker agreeing.
+### Step 11 — QA and independence evidence
+An authorised reviewer works through `SIP-188`: source coverage complete, verification done,
+relevance sound, brief accurate, database and tracker agreeing. **Record the reviewer identity and its independence from the analyst.** Under the single-operator arrangement recorded in #266, obtain and cite a controlled, approved SoD exception or a formal staffing/SOP change *before* proceeding. A same-person review performed under an approved exception is not independent QA.
 
 **Any Critical failure blocks release.** The run goes back for correction and re-review — it does not
 proceed to the CEO with a known Critical open.
@@ -232,8 +228,7 @@ No. Work the fallback ladder, record each attempt, and mark it Inaccessible if i
 Blank is the only unacceptable answer.
 
 **I am both the analyst and the only person available to review.**
-Then the run cannot pass QA today. The reviewer must be someone other than the run's analyst. Use
-the backup reviewer.
+Do not assume a backup reviewer exists: #266 records Sunil as the only operator. Confirm whether a separate reviewer has been formally appointed; otherwise check the controlled policy and obtain an authorised, run-specific SoD exception or amended procedure **before** attempting QA. Without a valid route, stop. If an exception is authorised and used, document the same-person QA honestly rather than calling it independent.
 
 **The CEO approved the report. Can I send it?**
 Only if distribution was *also* authorised. They are two separate decisions.
