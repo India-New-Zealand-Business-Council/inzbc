@@ -95,6 +95,18 @@ Sections 6 and 7 of the baseline have no reflection in the plan's journal, the P
 the reflective report. These are assessed as Bhanu's own words, so they are his to write, not
 drafted for him. **Owner:** Bhanu.
 
+## 10. CEO ruling and run state (#127)
+
+**Where it stands.** A CEO ruling or distribution authority is recorded as a decision, but
+`runs.state` and `runs.version` are not moved with it, so the run can still read `Awaiting CEO
+Decision` after a refresh. [ADR-0011 (proposed)](decisions/ADR-0011-ceo-run-state-consistency-proposal.md)
+sets out the problem, why a simple "move to Continue" fix would block a later authorised
+distribution, and a transactional design. Nothing is implemented.
+
+**Decide:** the legal transition for each ruling (especially `Continue`, `Continue With
+Correction` and a `Not Authorised` distribution), and whether to adopt the single-transaction
+command. **Owner:** tech lead, with Sunil for any controlled-SOP change.
+
 ## Decided
 
 None yet.
