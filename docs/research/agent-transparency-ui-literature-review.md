@@ -18,8 +18,11 @@ the screen. Neither review repeats the other's sources.
 ## 1. Introduction: the question
 
 Both components already show a human a record of something an AI did: the rehearsal panel shows a
-sealed, re-verified trail of tool steps and a trust badge ("Trail verified" / "Trail check
-failed"); the assistant shows an answer plus what it looked up and a disclaimer. Four questions
+recorded trail of tool steps with hash-chain/replay results and a seal status; the assistant
+shows an answer plus what it looked up and a disclaimer. **As reviewed**, an unsealed or
+key-unavailable trail was also labelled green "Trail verified" by the UI, despite no verified
+signature. [PR #494](https://github.com/India-New-Zealand-Business-Council/inzbc/pull/494)
+proposes a neutral unverified state; until it is merged, the UI claim is stronger than the proof. Four questions
 this review asks, each tied to a specific choice already made in that code:
 
 1. What do general guidelines for human-AI interaction say about explaining what a system did and
@@ -41,14 +44,15 @@ the system is wrong, and over time. I could not get the exact wording of all 18 
 without the paper itself — the project page shows them only as an image — so I'm citing the
 category structure and theme, not inventing specific guideline text I haven't verified.
 
-**What this means for the two components.** Both already have a "when wrong" story: the rehearsal
-panel's trust badge turns red and names which check failed (chain/seal/replay); the assistant
-shows a plain-language 503/422 message rather than a generic failure. Both are weaker on the
-"over time" category — repeated use. Guideline themes in that group are about letting the system
-learn from the person's behaviour and avoid repeating a correction already made. Neither component
-does this today: the rehearsal panel doesn't remember a reviewer dismissed a failed trail, and the
-assistant's disclaimer (now correctly cleared on "New conversation" since yesterday's fix) still
-has no memory of what a reader has already acknowledged in the session before.
+**What this means for the two components.** The rehearsal panel displays server-computed
+chain/seal/replay diagnostics when *provenance or replay* fails. This is distinct from an
+AI answer being **factually false but well-formed**: an intact, signed trail can still contain
+a mistaken claim. Likewise the assistant's 503/422 handling reports **service configuration or
+request-validation failure**, not detection of a plausible but false answer. Neither UI currently
+contains a factual-error acknowledgement/correction workflow. The rehearsal panel offers
+expand/collapse and refresh, **not** a dismiss, acknowledge or remember action; remembered
+acknowledgement is a possible future design requiring its own safety review. An integrity failure
+must remain visible even if someone acknowledges it.
 
 ## 3. Confidence signals don't guarantee better decisions
 
@@ -61,14 +65,16 @@ reliably improve the *decision* — that also depended on whether the human brou
 lacked. The paper separately flags problems with using local, per-prediction explanations for this
 purpose, without fully resolving them.
 
-**What this means for the two components.** The rehearsal panel's trust badge is closer to a
-confidence score than an explanation — "Trail verified" / "Trail check failed" is a binary summary
-of three real checks (chain intact, seal valid, replay exact), not a model's self-reported
-confidence. That's a meaningfully different, more defensible claim than what this paper studied:
-the badge reflects a mechanical re-verification the server actually performed, not a probability
-the agent is guessing at. The risk this paper flags — a confidence signal that calibrates trust but
-doesn't improve the underlying decision — still applies to the *content* decision (should this
-draft brief be used), which the badge deliberately doesn't claim to answer.
+**What this means for the two components.** These indicators are provenance diagnostics, **not
+AI confidence or factual correctness**. The backend returns whether the chain is intact, whether
+replay is exact, and whether a cryptographic seal is `valid`, `invalid`, `unsealed` or
+`key-not-configured`. At the 28 October code-review baseline, the UI showed the green
+"Trail verified" badge for all seal states except `invalid` when chain/replay passed — so green
+**did not** mean all three checks had succeeded. [Issue #493](https://github.com/India-New-Zealand-Business-Council/inzbc/issues/493)
+and [PR #494](https://github.com/India-New-Zealand-Business-Council/inzbc/pull/494)
+track the correction: green only for `valid` seal + exact replay + intact chain, neutral
+for unsealed/key-unavailable, red on failed checks. Even a fully verified trail does not
+prove the *content* of the agent's brief is accurate or suitable to distribute.
 
 ## 4. Explanations can cause the wrong kind of agreement
 
@@ -84,11 +90,12 @@ support training/learning.
 **What this means for the two components.** The rehearsal panel's step list (`tool_steps`, each
 with `reason`, `outcome`, `detail`) is exactly the kind of explanation this paper warns about — a
 plausible, readable narrative that could earn trust the underlying trail hasn't actually verified.
-The panel already adds friction in the right place: the trust badge is checked server-side and
-shown *before* the narrative, not computed from the narrative text, so a glib-sounding `reason`
-can't inflate the badge. One real gap against "guide attention": refused steps and accepted steps
-use the same list styling, distinguished only by a small colour-coded word ("Refused" / "Accepted")
-— nothing pulls a reader's eye to the step where the agent actually stopped.
+The panel uses server-returned verification metadata, rather than deriving verification from
+the narrative text, so a glib-sounding `reason` cannot legitimately establish cryptographic
+provenance. However, the pre-#494 green label overstated that metadata when the seal was absent
+or unverifiable. A further "guide attention" gap remains: refused and accepted steps share
+the same list container styling, distinguished mainly by a small text label ("Refused" /
+"Accepted"), so the point of refusal does not visually stand out.
 
 ## 5. Trust drops fast after a wrong answer, and recovers slowly
 
@@ -128,19 +135,23 @@ list already has no mitigation for.
 
 ## Findings applied to this week's UI
 
-1. **The trust badge is a verified-fact signal, not a confidence score** (§3) — that's a stronger,
-   more defensible kind of claim than most of this literature studies, and worth stating explicitly
-   in the component's own comment rather than leaving implicit.
+1. **The badge is a verification-of-trail signal, not a verified-*fact* signal** (§3).
+   At the 28 October review baseline, green could be shown without a verified cryptographic seal.
+   #493/#494 track the needed three-state correction. Even once corrected, it will not verify
+   the truth of the model's narrative or its recommendations.
 2. **The step a rehearsal refused at doesn't visually stand out** (§4) — same list styling as every
    accepted step, distinguished only by a small coloured word.
 3. **The assistant's lack of a confidence score is probably correct, not a gap** (§5) — adding one
    without a real basis for it risks the "confidently wrong" failure mode this research specifically
    found most damaging to trust.
-4. **Neither component has any memory across a session** (§2) — a reviewer who already dismissed a
-   failed trail, or already saw a disclaimer, sees the exact same unweighted presentation again.
+4. **Neither component has a remembered acknowledgement/correction mechanism** (§2).
+   The rehearsal panel does not offer dismissal of failed trails at all. Any future acknowledgement
+   must preserve failure visibility and cannot imply that a false answer or invalid seal was fixed.
 
 ## What this means for Thursday
 
-Finding 2 is the most concrete, smallest, and most defensible to act on: give the step a rehearsal
-actually refused at more visual weight than the steps around it, so a reviewer's attention lands
-there first rather than having to read the whole list in order. That's Thursday's task.
+The seal-status correction (#493/#494) is the immediate prerequisite for trust communication:
+the UI must not claim a verified signature where none was checked. An independent subsequent UI
+improvement is to give refused steps more visual weight without changing their audit content.
+Neither task is a substitute for independently reviewing generated factual claims or a human
+release decision.
