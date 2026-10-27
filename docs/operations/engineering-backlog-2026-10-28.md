@@ -11,7 +11,7 @@
 | A1 | #303, draft PR #488 | Verify both Comms routes default-deny external model calls and fake-provider tests; review staff-input policy and UI | Green CI plus security/privacy owner review; **not** accepted prose risk |
 | A2 | #40, draft PR #487; `docs/security/sip-review.md` exists | Maintain post-review regression checks and audit traceability | Sponsor's written review sign-off remains separate |
 | A3 | #393, draft PR #489 | Audit committed lexical/BM25 metrics and held-out overlap; propose lexical retention | Decide retrieval policy only from verified evidence, no model upgrade without approval |
-| A4 | #127 / #128 / #129, draft PR #490 | Verify UI transition/refusal, audit read and browser refresh; run real DB/browser exercise later | API prevents illegal actions; browser evidence against real DB to finish #129 |
+| A4 | #127 / #128 / #129, draft PRs #490 (#129 browser regression) and #492 (#128 audit history) | Verify UI transition/refusal, audit read and browser refresh; run real DB/browser exercise later | API prevents illegal actions; browser evidence against real DB to finish #129 |
 | A5 | #387 | Finish annotation/original-paper verification and technical review | Literature bibliography verified, with claims matched to originals |
 | A6 | #58 / #59 / #69 | Review accessible component states, FTA sourced-answer/no-match UI and test tooling actually wired | Reproducible RTL/Storybook/Playwright/WCAG outputs, not just configuration |
 | A7 | #195, draft PR #486 | Sign off definitions, denominators, provenance and missing-feed behaviour | Client data owners approve proposed metric definitions; **no** finance integration |
@@ -41,7 +41,7 @@
 
 ## Review/merge order and proof
 
-1. **Independent branches:** review #486–#490; wait for current CI and the respective technical or content owner reviews. No administrative branch protection bypass.
+1. **Independent branches:** review #486–#490, #492 and #494; wait for current CI and the respective technical or content owner reviews. No administrative branch protection bypass.
 2. **Upstream collector stack:** #14 based on `main` before #15 (which currently bases on #14), then rerun required checks. Never merge an upper stacked PR to a stale base.
 3. **Runtime integration:** agree and test backend atomic import with independent writers and rollback before enabling any #55 production import.
 4. **Client acceptance:** gather actual evidence in `docs/testing/acceptance-register.md`, controlled SIP run record, and private credential/sign-off custody. Issues only close against explicit acceptance criteria.
