@@ -1,5 +1,4 @@
 """No write path is enabled by the batch contract tests."""
-from datetime import datetime, timezone
 import uuid
 
 import pytest
