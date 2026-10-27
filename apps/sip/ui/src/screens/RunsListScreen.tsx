@@ -24,6 +24,7 @@ export function RunsListScreen({ onSelectRun, onWorkRun, workingRunId }: Props) 
   const [reason, setReason] = useState('')
   const [approvalRef, setApprovalRef] = useState('')
   const [actionState, setActionState] = useState<ActionState>({ kind: 'idle' })
+  const [conflictNotice, setConflictNotice] = useState(false)
   const formId = useId()
 
   // Split from `reload` below so the mount effect never calls setState synchronously within its
@@ -57,6 +58,7 @@ export function RunsListScreen({ onSelectRun, onWorkRun, workingRunId }: Props) 
   }
 
   function openAction(runId: string) {
+    setConflictNotice(false)
     setOpenRunId(openRunId === runId ? null : runId)
     setReason('')
     setApprovalRef('')
@@ -84,6 +86,15 @@ export function RunsListScreen({ onSelectRun, onWorkRun, workingRunId }: Props) 
       setActionState({ kind: 'idle' })
       reload()
     } catch (error) {
+      if (error instanceof SipApiError && error.status === 409) {
+        // A different operator already changed this run. Never allow an action against the
+        // stale version shown in the list, and never silently retry the original write.
+        setOpenRunId(null)
+        setActionState({ kind: 'idle' })
+        setConflictNotice(true)
+        reload()
+        return
+      }
       setActionState({
         kind: 'error',
         message: error instanceof SipApiError ? error.message : 'Something went wrong. Please try again.',
@@ -106,12 +117,18 @@ export function RunsListScreen({ onSelectRun, onWorkRun, workingRunId }: Props) 
         </div>
         <button
           type="button"
-          onClick={reload}
+          onClick={() => { setConflictNotice(false); reload() }}
           className="min-h-11 rounded-md border border-inzbc-navy/20 px-3 py-2 text-sm font-medium text-inzbc-navy transition-colors hover:border-inzbc-navy/40"
         >
           Refresh
         </button>
       </div>
+
+      {conflictNotice ? (
+        <p role="alert" className="rounded-md border border-inzbc-tangerine bg-inzbc-tangerine/10 p-3 text-sm text-inzbc-navy">
+          This run changed while you were acting. The latest state has been requested; review it before retrying.
+        </p>
+      ) : null}
 
       {state.kind === 'loading' ? (
         <p role="status" className="text-sm text-slate-600">
