@@ -9,13 +9,13 @@ export const RUN_ACTION_LABEL: Record<RunAction, string> = {
   complete: 'Complete',
 }
 
-/** `pause` (Awaiting CEO Decision -> Paused) is the one transition RunRepository actually
- * verifies `approval_ref` against a real `decision_records` row; `start`/`resume` only check it
- * is non-empty (#227, run-level gates with no report_version to attach a decision to yet).
- * `complete` is not human-gated at all, so it carries no label here. */
+/** All three human-gated actions verify a persisted, run-bound authority.
+ * Start/resume check a matching run_authorisations record and gate kind;
+ * pause requires an existing decision_records row. Complete is mechanical.
+ * Text input is the ID of an EXISTING record, not a free-form approval note. */
 export const RUN_APPROVAL_REF_LABEL: Record<Exclude<RunAction, 'complete'>, string> = {
-  start: 'Approval reference (required — not yet verified against a record, #227)',
-  resume: 'Approval reference (required — not yet verified against a record, #227)',
+  start: 'Approval reference (existing launch authorisation ID for this run)',
+  resume: 'Approval reference (existing resumption authorisation ID for this run)',
   pause: 'Decision record ID (required — must match an existing decision_records row)',
 }
 
