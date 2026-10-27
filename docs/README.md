@@ -23,6 +23,7 @@ Two conventions hold across this tree:
 - [`research/agent-safety-solution-domain.md`](research/agent-safety-solution-domain.md) — the techniques used in #62 to #65 and why.
 - [`research/agent-transparency-ui-literature-review.md`](research/agent-transparency-ui-literature-review.md) — surfacing agent trust and reasoning in the UI, applied to the rehearsal panel and platform assistant (Paras).
 - [`decisions/ADR-0010-signed-human-decisions.md`](decisions/ADR-0010-signed-human-decisions.md) — why the W6 change uses server-held HMAC signatures (four options compared).
+- [`decisions/ADR-0011-ceo-run-state-consistency-proposal.md`](decisions/ADR-0011-ceo-run-state-consistency-proposal.md) — **proposed**, not adopted: keeping CEO rulings and run state consistent (#127).
 - [`workstreams/bhanu-pdr-worksheet.md`](workstreams/bhanu-pdr-worksheet.md) and [`workstreams/bhanu-reflective-report.md`](workstreams/bhanu-reflective-report.md) — Bhanu's practice PDR worksheet and reflective report scaffold.
 
 ## I am new to the project
