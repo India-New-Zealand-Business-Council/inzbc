@@ -3,6 +3,7 @@ import { getRun, nextAction, type RunOut, SipApiError } from '../api/runsClient'
 import { RUN_ACTION_LABEL as ACTION_LABEL, RUN_APPROVAL_REF_LABEL as APPROVAL_REF_LABEL, submitRunAction } from '../lib/runActions'
 import { stateBadgeClass } from '../lib/runState'
 import { AgentRehearsalPanel } from '../components/AgentRehearsalPanel'
+import { RunAuditHistory } from '../components/RunAuditHistory'
 import { CandidatesListScreen } from './CandidatesListScreen'
 
 interface Props {
@@ -230,6 +231,7 @@ export function RunDetailScreen({ runId, onBack, onSelectCandidate }: Props) {
           </div>
 
           <AgentRehearsalPanel runId={state.run.id} runState={state.run.state} />
+          <RunAuditHistory runId={state.run.id} />
 
           <CandidatesListScreen runId={state.run.id} onSelectCandidate={onSelectCandidate} />
         </>
