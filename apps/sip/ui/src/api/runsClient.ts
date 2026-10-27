@@ -59,7 +59,7 @@ async function transitionRun(
   })
 }
 
-/** Draft -> Run Authorised. Human-gated; `approval_ref` only checked for presence (#227). */
+/** Draft -> Run Authorised. Human-gated; server verifies a run-bound launch authorisation. */
 export const startRun = (runId: string, body: TransitionIn, options: RequestOptions = {}): Promise<RunOut> =>
   transitionRun('start', runId, body, options)
 
@@ -67,7 +67,7 @@ export const startRun = (runId: string, body: TransitionIn, options: RequestOpti
 export const pauseRun = (runId: string, body: TransitionIn, options: RequestOptions = {}): Promise<RunOut> =>
   transitionRun('pause', runId, body, options)
 
-/** Paused -> Coverage Locked. Human-gated; `approval_ref` only checked for presence (#227). */
+/** Paused -> Coverage Locked. Human-gated; server verifies a run-bound resumption authorisation. */
 export const resumeRun = (runId: string, body: TransitionIn, options: RequestOptions = {}): Promise<RunOut> =>
   transitionRun('resume', runId, body, options)
 
