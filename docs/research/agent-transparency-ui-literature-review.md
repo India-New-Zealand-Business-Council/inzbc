@@ -1,8 +1,9 @@
 # Literature review: surfacing agent trust and reasoning in the UI
 
-**Author:** Paras. **Status:** Annotated draft, 28 Oct 2026. Prepared with AI assistance. Every
-source was checked against its arXiv, ACM DL, ACL Anthology, Springer or Zenodo record on 28 Oct
-2026, and claims are limited to what those records state. Studio 6's course requirement to show
+**Author:** Paras (one DOI added by Bhanu Gupta, noted below). **Status:** Annotated draft, 28 Oct 2026. Prepared with AI assistance. Every
+source was checked against its arXiv, ACM DL, ACL Anthology, Springer, IEEE or Zenodo record on 28
+Oct 2026, and claims are limited to what those records state. VisTrails DOI added and its record
+checked by Bhanu Gupta, 28 Oct 2026. Studio 6's course requirement to show
 research beyond frontend/backend work, applied directly to `apps/sip/ui`'s two agent surfaces:
 `AgentRehearsalPanel.tsx` (the coordinator agent's rehearsal trail) and `PlatformAssistant.tsx`
 (the read-only chat agent).
@@ -108,7 +109,8 @@ honest way to compute.
 ## 6. A closer precedent for the rehearsal panel's step list
 
 Bavoil, Callahan, Crossno, Freire, Scheidegger, Silva and Vo (2005), "VisTrails: Enabling
-Interactive Multiple-View Visualizations," IEEE Visualization 2005, pp. 135–142, describe a
+Interactive Multiple-View Visualizations," IEEE Visualization 2005, pp. 135–142 (DOI
+[10.1109/VISUAL.2005.1532788](https://doi.org/10.1109/VISUAL.2005.1532788)), describe a
 provenance system that records every change a user (or an automated process) makes to a
 visualization pipeline and presents it as a directed graph, so a past state can be reproduced and
 inspected. It's the oldest and most established precedent I found for showing a step-by-step
