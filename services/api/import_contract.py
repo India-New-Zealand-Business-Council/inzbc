@@ -10,7 +10,7 @@ import hashlib
 import re
 import uuid
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -115,6 +115,8 @@ class ImportOutcome:
 def require_consistent_batch(
     batch: ImportBatchIn, *, run_id: uuid.UUID, run_version: int,
     state: str, existing_count: int, capture_digest: str,
+    locked_window_start: datetime, locked_window_end: datetime,
+    captured_articles: dict[str, tuple[uuid.UUID, datetime]],
 ) -> None:
     """Snapshot precondition used in tests/design. NOT a substitute for a row lock."""
     if batch.run_id != run_id:
@@ -127,3 +129,27 @@ def require_consistent_batch(
         raise ValueError("run has existing candidates; reconcile before import")
     if batch.articles_sha256 != capture_digest:
         raise ValueError("canonical capture digest mismatch")
+
+    # Request assertions are never authority. Read these values from the locked
+    # run and the original server-held capture within the same transaction.
+    for bound in (locked_window_start, locked_window_end):
+        if bound.tzinfo is None or bound.utcoffset() is None:
+            raise ValueError("locked run window must be timezone-aware")
+    start = locked_window_start.astimezone(timezone.utc)
+    end = locked_window_end.astimezone(timezone.utc)
+    if start >= end:
+        raise ValueError("locked run window is invalid")
+    if not captured_articles:
+        raise ValueError("server-held capture evidence missing")
+    for candidate in batch.candidates:
+        timestamp = candidate.published_at.astimezone(timezone.utc)
+        if not (start <= timestamp < end):
+            raise ValueError("candidate publication outside locked run window")
+        original = captured_articles.get(candidate.url)
+        if original is None:
+            raise ValueError("candidate URL not in server-held capture")
+        source_id, published_at = original
+        if published_at.tzinfo is None or published_at.utcoffset() is None:
+            raise ValueError("capture publication timestamp lacks timezone")
+        if source_id != candidate.source_id or published_at.astimezone(timezone.utc) != timestamp:
+            raise ValueError("candidate does not match server-held capture")
