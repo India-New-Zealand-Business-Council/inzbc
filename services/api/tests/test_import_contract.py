@@ -97,7 +97,7 @@ def test_matching_snapshot_only_validates_and_does_not_write():
      "invalid"),
     ({"locked_window_end": datetime(2026, 10, 27, 1, tzinfo=UTC)},
      "outside locked"),
-    ({"locked_window_start": datetime(2026, 10, 27, 0, 0)},
+    ({"locked_window_start": datetime(2026, 10, 27, 0, 0, tzinfo=UTC).replace(tzinfo=None)},
      "timezone-aware"),
     ({"captured_articles": {}}, "evidence missing"),
     ({"captured_articles": {"https://example.org/one": (
