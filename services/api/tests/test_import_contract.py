@@ -1,6 +1,6 @@
 """No write path is enabled by the batch contract tests."""
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from pydantic import ValidationError
@@ -11,10 +11,10 @@ RUN_ID = uuid.UUID("11111111-1111-1111-1111-111111111111")
 SOURCE = uuid.UUID("22222222-2222-2222-2222-222222222222")
 DIGEST = "a" * 64
 
-WINDOW_START = datetime(2026, 10, 27, 0, 0, tzinfo=timezone.utc)
-WINDOW_END = datetime(2026, 10, 28, 0, 0, tzinfo=timezone.utc)
+WINDOW_START = datetime(2026, 10, 27, 0, 0, tzinfo=UTC)
+WINDOW_END = datetime(2026, 10, 28, 0, 0, tzinfo=UTC)
 CAPTURED = {"https://example.org/one": (
-    SOURCE, datetime(2026, 10, 27, 2, 0, tzinfo=timezone.utc),
+    SOURCE, datetime(2026, 10, 27, 2, 0, tzinfo=UTC),
 )}
 
 
@@ -93,15 +93,15 @@ def test_matching_snapshot_only_validates_and_does_not_write():
 
 
 @pytest.mark.parametrize(("change", "message"), [
-    ({"locked_window_start": datetime(2026, 10, 29, tzinfo=timezone.utc)},
+    ({"locked_window_start": datetime(2026, 10, 29, tzinfo=UTC)},
      "invalid"),
-    ({"locked_window_end": datetime(2026, 10, 27, 1, tzinfo=timezone.utc)},
+    ({"locked_window_end": datetime(2026, 10, 27, 1, tzinfo=UTC)},
      "outside locked"),
     ({"locked_window_start": datetime(2026, 10, 27, 0, 0)},
      "timezone-aware"),
     ({"captured_articles": {}}, "evidence missing"),
     ({"captured_articles": {"https://example.org/one": (
-        uuid.uuid4(), datetime(2026, 10, 27, 2, tzinfo=timezone.utc))}},
+        uuid.uuid4(), datetime(2026, 10, 27, 2, tzinfo=UTC))}},
      "does not match"),
 ])
 def test_server_held_window_and_capture_are_required(change, message):
