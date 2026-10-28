@@ -10,7 +10,7 @@ import hashlib
 import re
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -135,14 +135,14 @@ def require_consistent_batch(
     for bound in (locked_window_start, locked_window_end):
         if bound.tzinfo is None or bound.utcoffset() is None:
             raise ValueError("locked run window must be timezone-aware")
-    start = locked_window_start.astimezone(timezone.utc)
-    end = locked_window_end.astimezone(timezone.utc)
+    start = locked_window_start.astimezone(UTC)
+    end = locked_window_end.astimezone(UTC)
     if start >= end:
         raise ValueError("locked run window is invalid")
     if not captured_articles:
         raise ValueError("server-held capture evidence missing")
     for candidate in batch.candidates:
-        timestamp = candidate.published_at.astimezone(timezone.utc)
+        timestamp = candidate.published_at.astimezone(UTC)
         if not (start <= timestamp < end):
             raise ValueError("candidate publication outside locked run window")
         original = captured_articles.get(candidate.url)
@@ -151,5 +151,5 @@ def require_consistent_batch(
         source_id, published_at = original
         if published_at.tzinfo is None or published_at.utcoffset() is None:
             raise ValueError("capture publication timestamp lacks timezone")
-        if source_id != candidate.source_id or published_at.astimezone(timezone.utc) != timestamp:
+        if source_id != candidate.source_id or published_at.astimezone(UTC) != timestamp:
             raise ValueError("candidate does not match server-held capture")
