@@ -1,6 +1,6 @@
 # Literature review: surfacing agent trust and reasoning in the UI
 
-**Author:** Paras (one DOI added by Bhanu Gupta, noted below). **Status:** Annotated draft, 28 Oct 2026. Prepared with AI assistance. Every
+**Author:** Paras (one DOI added by Bhanu Gupta, noted below; trail-verification claims in §§1–4 and the findings corrected by Roshan after #493, 28 Oct 2026). **Status:** Annotated draft, 28 Oct 2026. Prepared with AI assistance. Every
 source was checked against its arXiv, ACM DL, ACL Anthology, Springer, IEEE or Zenodo record on 28
 Oct 2026, and claims are limited to what those records state. VisTrails DOI added and its record
 checked by Bhanu Gupta, 28 Oct 2026. Studio 6's course requirement to show
@@ -22,7 +22,7 @@ recorded trail of tool steps with hash-chain/replay results and a seal status; t
 shows an answer plus what it looked up and a disclaimer. **As reviewed**, an unsealed or
 key-unavailable trail was also labelled green "Trail verified" by the UI, despite no verified
 signature. [PR #494](https://github.com/India-New-Zealand-Business-Council/inzbc/pull/494)
-proposes a neutral unverified state; until it is merged, the UI claim is stronger than the proof. Four questions
+(merged 28 Oct) replaced that with a neutral "Seal not verified" state. Four questions
 this review asks, each tied to a specific choice already made in that code:
 
 1. What do general guidelines for human-AI interaction say about explaining what a system did and
@@ -72,7 +72,7 @@ replay is exact, and whether a cryptographic seal is `valid`, `invalid`, `unseal
 "Trail verified" badge for all seal states except `invalid` when chain/replay passed — so green
 **did not** mean all three checks had succeeded. [Issue #493](https://github.com/India-New-Zealand-Business-Council/inzbc/issues/493)
 and [PR #494](https://github.com/India-New-Zealand-Business-Council/inzbc/pull/494)
-track the correction: green only for `valid` seal + exact replay + intact chain, neutral
+(merged 28 Oct) made the correction: green only for `valid` seal + exact replay + intact chain, neutral
 for unsealed/key-unavailable, red on failed checks. Even a fully verified trail does not
 prove the *content* of the agent's brief is accurate or suitable to distribute.
 
@@ -137,7 +137,7 @@ list already has no mitigation for.
 
 1. **The badge is a verification-of-trail signal, not a verified-*fact* signal** (§3).
    At the 28 October review baseline, green could be shown without a verified cryptographic seal.
-   #493/#494 track the needed three-state correction. Even once corrected, it will not verify
+   #494 (merged 28 Oct) made the three-state correction. Even so, it does not verify
    the truth of the model's narrative or its recommendations.
 2. **The step a rehearsal refused at doesn't visually stand out** (§4) — same list styling as every
    accepted step, distinguished only by a small coloured word.
@@ -150,8 +150,8 @@ list already has no mitigation for.
 
 ## What this means for Thursday
 
-The seal-status correction (#493/#494) is the immediate prerequisite for trust communication:
-the UI must not claim a verified signature where none was checked. An independent subsequent UI
+The seal-status correction (#493/#494, merged 28 Oct) was the prerequisite for trust communication:
+the UI no longer claims a verified signature where none was checked. An independent subsequent UI
 improvement is to give refused steps more visual weight without changing their audit content.
 Neither task is a substitute for independently reviewing generated factual claims or a human
 release decision.
