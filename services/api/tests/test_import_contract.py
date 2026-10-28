@@ -1,5 +1,6 @@
 """No write path is enabled by the batch contract tests."""
 import uuid
+from datetime import datetime, timezone
 
 import pytest
 from pydantic import ValidationError
@@ -9,6 +10,23 @@ from services.api.import_contract import ImportBatchIn, require_consistent_batch
 RUN_ID = uuid.UUID("11111111-1111-1111-1111-111111111111")
 SOURCE = uuid.UUID("22222222-2222-2222-2222-222222222222")
 DIGEST = "a" * 64
+
+WINDOW_START = datetime(2026, 10, 27, 0, 0, tzinfo=timezone.utc)
+WINDOW_END = datetime(2026, 10, 28, 0, 0, tzinfo=timezone.utc)
+CAPTURED = {"https://example.org/one": (
+    SOURCE, datetime(2026, 10, 27, 2, 0, tzinfo=timezone.utc),
+)}
+
+
+def snapshot_args():
+    return {
+        "run_id": RUN_ID, "run_version": 4, "state": "Scanning",
+        "existing_count": 0, "capture_digest": DIGEST,
+        "locked_window_start": WINDOW_START,
+        "locked_window_end": WINDOW_END,
+        "captured_articles": CAPTURED,
+    }
+
 
 
 def payload():
@@ -44,7 +62,7 @@ def test_digest_claim_is_stable_and_run_bound():
     lambda x: x["candidates"][0].update(published_at="2026-10-27T02:00:00"),
     lambda x: x["candidates"][0].update(url="http://localhost/secret"),
     lambda x: x["candidates"][0].update(headline=" "),
-    lambda x: x["candidates"].append(dict(x["candidates"][0])),
+    lambda x: x["candidates"].append({**x["candidates"][0]}),
     lambda x: x.update(unknown_role_override=True),
 ])
 def test_malformed_and_unsafe_envelopes_refused(mutate):
@@ -63,8 +81,7 @@ def test_malformed_and_unsafe_envelopes_refused(mutate):
 ])
 def test_snapshot_guard_refuses_unreconciled_import(update, message):
     batch = ImportBatchIn.model_validate(payload())
-    args = {"run_id": RUN_ID, "run_version": 4, "state": "Scanning",
-            "existing_count": 0, "capture_digest": DIGEST}
+    args = snapshot_args()
     args.update(update)
     with pytest.raises(ValueError, match=message):
         require_consistent_batch(batch, **args)
@@ -72,5 +89,40 @@ def test_snapshot_guard_refuses_unreconciled_import(update, message):
 
 def test_matching_snapshot_only_validates_and_does_not_write():
     batch = ImportBatchIn.model_validate(payload())
-    assert require_consistent_batch(batch, run_id=RUN_ID, run_version=4,
-        state="Scanning", existing_count=0, capture_digest=DIGEST) is None
+    assert require_consistent_batch(batch, **snapshot_args()) is None
+
+
+@pytest.mark.parametrize(("change", "message"), [
+    ({"locked_window_start": datetime(2026, 10, 29, tzinfo=timezone.utc)},
+     "invalid"),
+    ({"locked_window_end": datetime(2026, 10, 27, 1, tzinfo=timezone.utc)},
+     "outside locked"),
+    ({"locked_window_start": datetime(2026, 10, 27, 0, 0)},
+     "timezone-aware"),
+    ({"captured_articles": {}}, "evidence missing"),
+    ({"captured_articles": {"https://example.org/one": (
+        uuid.uuid4(), datetime(2026, 10, 27, 2, tzinfo=timezone.utc))}},
+     "does not match"),
+])
+def test_server_held_window_and_capture_are_required(change, message):
+    batch = ImportBatchIn.model_validate(payload())
+    args = snapshot_args()
+    args.update(change)
+    with pytest.raises(ValueError, match=message):
+        require_consistent_batch(batch, **args)
+
+
+def test_caller_true_flag_cannot_override_out_of_window_publication():
+    data = payload()
+    data["candidates"][0]["published_at"] = "2026-10-29T02:00:00+00:00"
+    batch = ImportBatchIn.model_validate(data)
+    with pytest.raises(ValueError, match="outside locked run window"):
+        require_consistent_batch(batch, **snapshot_args())
+
+
+def test_server_capture_timestamp_mismatch_fails_closed():
+    data = payload()
+    data["candidates"][0]["published_at"] = "2026-10-27T03:00:00+00:00"
+    batch = ImportBatchIn.model_validate(data)
+    with pytest.raises(ValueError, match="does not match"):
+        require_consistent_batch(batch, **snapshot_args())
