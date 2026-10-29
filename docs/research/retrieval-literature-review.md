@@ -71,7 +71,7 @@ zero-shot, which is exactly the setting where BEIR found dense retrieval least r
 
 Hybrid retrieval runs a lexical and a dense retriever and fuses the two rankings. Reciprocal Rank
 Fusion (Cormack et al., 2009) combines lists using rank alone, so the two score scales do not
-need calibrating. Bruch et al. (2023) compared fusion functions and found that a convex
+need calibrating. Bruch et al. (2024) compared fusion functions and found that a convex
 combination of normalised scores can beat RRF when some tuning data exists.
 
 For INZBC the attraction is that exact-wording questions keep their lexical match, which scores
@@ -211,7 +211,7 @@ INZBC. The check of each source against its original is in section 6.
 | 3 | Karpukhin et al. (2020) | Peer-reviewed | 14 Oct 2026, citation and abstract | 23 Oct 2026 |
 | 4 | Thakur et al. (2021) | Peer-reviewed | 14 Oct 2026, citation and abstract | 23 Oct 2026 |
 | 5 | Cormack, Clarke & Büttcher (2009) | Peer-reviewed | 14 Oct 2026, citation | 23 Oct 2026 |
-| 6 | Bruch, Gai & Ingber (2023) | Peer-reviewed | 14 Oct 2026, citation and abstract | 23 Oct 2026 |
+| 6 | Bruch, Gai & Ingber (2024) | Peer-reviewed | 14 Oct 2026, citation and abstract | 23 Oct 2026 |
 | 7 | Lewis et al. (2020) | Peer-reviewed | 14 Oct 2026, citation and abstract | 23 Oct 2026 |
 | 8 | Gao et al. (2023) | Preprint survey | 14 Oct 2026, citation and section headings | 23 Oct 2026 |
 | 9 | Es et al. (2024) | Peer-reviewed conference demo (EACL 2024) | 14 Oct arXiv; 26 Oct ACL Anthology bibliographic record and abstract | 23 Oct 2026; corrected 26 Oct |
@@ -294,9 +294,9 @@ under #393, since their scores are on different scales. Fusion alone does not st
 ranking first. Any hybrid also needs a similarity cut-off, or the ten no-match questions start
 returning answers.
 
-**6. Bruch, Gai & Ingber (2023).**
-*Reference.* Bruch, S., Gai, S., & Ingber, A. (2023). An analysis of fusion functions for hybrid
-retrieval. *ACM Transactions on Information Systems, 42*(1), 1-35.
+**6. Bruch, Gai & Ingber (2024).**
+*Reference.* Bruch, S., Gai, S., & Ingber, A. (2024). An analysis of fusion functions for hybrid
+retrieval. *ACM Transactions on Information Systems, 42*(1), Article 20 (35 pp.).
 https://doi.org/10.1145/3596512
 *Summary.* The paper compares ways of fusing lexical and dense results. The abstract reports that
 a convex combination of normalised scores outperforms RRF in and out of domain, and that RRF is
@@ -382,7 +382,7 @@ reliable.
 
 **12. Carpineto & Romano (2012).**
 *Reference.* Carpineto, C., & Romano, G. (2012). A survey of automatic query expansion in
-information retrieval. *ACM Computing Surveys, 44*(1), 1-50. https://doi.org/10.1145/2071389.2071390
+information retrieval. *ACM Computing Surveys, 44*(1), Article 1 (50 pp.). https://doi.org/10.1145/2071389.2071390
 *Summary.* The survey reviews automatic query expansion. Its abstract describes a short keyword
 query as a poor model of the user's need, and expansion as adding terms with a similar meaning.
 *Evaluation.* It is a broad, peer-reviewed survey and the standard reference for the method.
@@ -395,11 +395,11 @@ the map. Leaving out "log", "baby" and "travel" and scoring expanded terms at ha
 
 ## References
 
-Bruch, S., Gai, S., & Ingber, A. (2023). An analysis of fusion functions for hybrid retrieval.
-*ACM Transactions on Information Systems, 42*(1), 1-35. https://doi.org/10.1145/3596512
+Bruch, S., Gai, S., & Ingber, A. (2024). An analysis of fusion functions for hybrid retrieval.
+*ACM Transactions on Information Systems, 42*(1), Article 20 (35 pp.). https://doi.org/10.1145/3596512
 
 Carpineto, C., & Romano, G. (2012). A survey of automatic query expansion in information
-retrieval. *ACM Computing Surveys, 44*(1), 1-50. https://doi.org/10.1145/2071389.2071390
+retrieval. *ACM Computing Surveys, 44*(1), Article 1 (50 pp.). https://doi.org/10.1145/2071389.2071390
 
 Cormack, G. V., Clarke, C. L. A., & Büttcher, S. (2009). Reciprocal rank fusion outperforms
 Condorcet and individual rank learning methods. In *Proceedings of the 32nd International ACM
@@ -456,7 +456,7 @@ in the note was compared with that text.
 | 3 | Crossref `10.18653/v1/2020.emnlp-main.550`. ar5iv HTML of arXiv:2004.04906. | EMNLP 2020, pages 6769-6781, authors as cited. Abstract: the dense retriever outperforms Lucene-BM25 by 9 to 19 percentage points absolute on top-20 passage retrieval accuracy. | No discrepancy recorded. The paper body was not re-read. |
 | 4 | arXiv:2104.08663 PDF and abstract. NeurIPS 2021 Datasets and Benchmarks abstract. | 18 datasets. Abstract: BM25 is a robust baseline, and dense models often underperform other approaches zero-shot. PDF title spelling is "Heterogeneous". | The arXiv landing title spells it "Heterogenous". The reference follows the PDF. |
 | 5 | Crossref `10.1145/1571941.1572114`. | SIGIR 2009, pages 758-759. Authors Cormack, Clarke and Büttcher. The title states the comparison with Condorcet fusion. | The paper body was not re-read. Crossref had no abstract. |
-| 6 | Crossref `10.1145/3596512`, including the abstract. | *ACM Transactions on Information Systems*, 42(1), 1-35, 2023. Authors Bruch, Gai and Ingber. Abstract: a convex combination outperforms RRF in in-domain and out-of-domain settings, and RRF is sensitive to its parameters. | No discrepancy recorded. The paper body was not re-read. |
+| 6 | Crossref `10.1145/3596512`, including the abstract. | *ACM Transactions on Information Systems*, 42(1), Article 20 (35 pp.). Final issue January 2024; some online-first records list 2023. Authors Bruch, Gai and Ingber. Abstract: a convex combination outperforms RRF in in-domain and out-of-domain settings, and RRF is sensitive to its parameters. | No discrepancy recorded. The paper body was not re-read. |
 | 7 | NeurIPS 2020 proceedings abstract and the 16-page proceedings PDF. | Authors, title, NeurIPS 2020. Abstract: on generation tasks, RAG produces more specific, diverse and factual language than a parametric-only baseline. | An earlier draft gave pages 9459-9474. Neither the abstract page nor the proceedings PDF prints that span, so the pages were removed. |
 | 8 | arXiv:2312.10997 HTML, DataCite DOI `10.48550/arXiv.2312.10997`. | Authors and title match. Headings: Naive RAG, Advanced RAG, Modular RAG. Advanced RAG describes pre-retrieval and post-retrieval steps aimed at retrieval quality. | "Retrieval quality is the main lever on answer quality" was not in the text that was opened. It is removed from section 2.4 and note 8. |
 | 9 | **26 Oct follow-up:** ACL Anthology https://aclanthology.org/2024.eacl-demo.16/ bibliographic record and abstract; previous 14 Oct arXiv metadata retained as history. | Peer-reviewed EACL 2024 System Demonstrations paper, pp. 150–158, DOI `10.18653/v1/2024.eacl-demo.16`, by the four named authors. The abstract supports a reference-free framework assessing retrieval/context and generation quality. | The older draft treated only the 2023 arXiv preprint as the final venue. Corrected the source and in-text year to 2024. Full proceedings paper not re-read on 26 Oct; claims beyond the abstract remain bounded. |
@@ -482,7 +482,7 @@ retained as a preprint survey rather than misrepresented as a peer-reviewed jour
 | Karpukhin et al. (2020) | https://aclanthology.org/2020.emnlp-main.550/ | ACL Anthology confirms authors, EMNLP venue, pp. 6769–6781 and abstract's 9–19 percentage-point top-20 retrieval advantage *on tested QA datasets*, not on INZBC |
 | Thakur et al. (2021) | https://datasets-benchmarks-proceedings.neurips.cc/paper_files/paper/2021/hash/65b9eea6e1cc6bb9f0cd2a47751a186f-Abstract-round2.html | NeurIPS abstract confirms 18 datasets, BM25 as a robust general baseline, and many zero-shot dense models underperforming; no assertion this transfers to INZBC |
 | Cormack et al. (2009) | https://dl.acm.org/doi/10.1145/1571941.1572114 | ACM confirms SIGIR 2009, pp. 758–759 and ranking-fusion claim; no fresh full-paper review or claim of an optimal k on INZBC |
-| Bruch et al. (2023) | https://arxiv.org/abs/2210.11934 | Abstract corroborates the comparison of convex score fusion and RRF, including RRF parameter sensitivity and the small labelled sample needed for score-fusion tuning; the cited *journal* is still the authoritative venue |
+| Bruch et al. (2024) | https://arxiv.org/abs/2210.11934 | Abstract corroborates the comparison of convex score fusion and RRF, including RRF parameter sensitivity and the small labelled sample needed for score-fusion tuning; the cited *journal* is still the authoritative venue |
 | Gao et al. (2023) | https://arxiv.org/abs/2312.10997 | Abstract confirms naive, advanced and modular RAG taxonomy; no attribution of unsupported 'main lever' claim |
 | Es et al. (2024) | https://aclanthology.org/2024.eacl-demo.16/ | **Correction:** peer-reviewed EACL 2024 demonstration, pp. 150–158; original 2023 arXiv record was not the final paper citation |
 | W3C PROV-DM (2013) | https://www.w3.org/TR/prov-dm/ | Official Recommendation names entities, activities and agents; this does not mean INZBC has implemented full PROV-DM lineage |
@@ -511,6 +511,17 @@ limitations in section 6 remain intact.
 |---|---|---|
 | Robertson & Zaragoza (2009), https://www.staff.city.ac.uk/~sbrp622/papers/foundations_bm25_review.pdf | Author-hosted monograph, section 3.4.2 p. 356 and section 3.4.5 p. 359 | Section 3.4.2 explicitly describes diminishing term-frequency contribution as *saturation*. Section 3.4.5 derives document-length soft normalisation relative to the average length and the parameter `b`. This verifies the **mechanism** described in section 2.1, not BM25's performance on INZBC's corpus. The original front matter prints *Foundations and Trends in Information Retrieval* 3(4), 333–389; the Emerald reissue presents 4(1–2), 1–174 under the same DOI. |
 | Cormack, Clarke & Büttcher (2009), https://cormack.uwaterloo.ca/cormack/cormacksigir09-rrf.pdf | Authors' two-page SIGIR paper, pp. 758–759 | Section 1 defines `RRFscore(d) = sum(1 / (k + rank(d)))`, with `k=60` fixed after pilot selection. It combines rankings, not comparable raw scores. The paper compares RRF on TREC and LETOR 3; results are **not** evidence that RRF improves this project's 23-entry FTA corpus. In its TREC comparisons there are exceptions (e.g., CombMNZ on TREC 3), so do not claim universal dominance. |
+
+Additional bibliographic reconciliation (30 Oct): DBLP's journal-volume record
+and the IR Anthology list Bruch, Gai and Ingber as *42*(1), Article 20,
+35 pages, in the **January 2024 issue**; the 2023 online-first
+version is preserved here as a date distinction, not silently treated
+as a different paper (DOI `10.1145/3596512`). The journal-issue year
+**2024** is used consistently for the final-issue APA-style reference.
+For Carpineto and Romano the original ACM reference format says
+*44*(1), **Article 1**, 50 pages (DOI `10.1145/2071389.2071390`).
+Neither record check proves an additional scientific claim from the
+unread full paper.
 
 The Stanford textbook chapter body, other full papers, and any additional passages
 not explicitly named above **were not verified in this follow-up**. The original
