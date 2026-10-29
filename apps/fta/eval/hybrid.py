@@ -10,6 +10,7 @@ import argparse
 import hashlib
 import json
 import math
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -83,6 +84,17 @@ def _text(value: object, name: str) -> str:
     return value
 
 
+def _validate_capture_timestamp(value: object) -> None:
+    """Require an actual timezone-aware capture instant, never a free-text label."""
+    raw = _text(value, "captured_at")
+    try:
+        captured = datetime.fromisoformat(raw)
+    except ValueError as error:
+        raise ValueError("captured_at must be an ISO8601 timestamp with timezone") from error
+    if captured.utcoffset() is None:
+        raise ValueError("captured_at must be an ISO8601 timestamp with timezone")
+
+
 def _ranked_dense(
     snapshot: dict[str, Any], questions: list[Question]
 ) -> tuple[dict[str, list[str]], float]:
@@ -93,7 +105,7 @@ def _ranked_dense(
         raise ValueError("snapshot corpus must be fta_corpus")
     _text(snapshot.get("model"), "model")
     _text(snapshot.get("snapshot_id"), "snapshot_id")
-    _text(snapshot.get("captured_at"), "captured_at")
+    _validate_capture_timestamp(snapshot.get("captured_at"))
     if snapshot.get("source") != "ModelGateway.embed":
         raise ValueError("source must identify the approved ModelGateway.embed path")
     if snapshot.get("corpus_sha256") != corpus_fingerprint():
