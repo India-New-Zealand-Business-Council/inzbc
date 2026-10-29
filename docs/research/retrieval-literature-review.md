@@ -296,7 +296,7 @@ returning answers.
 
 **6. Bruch, Gai & Ingber (2024).**
 *Reference.* Bruch, S., Gai, S., & Ingber, A. (2024). An analysis of fusion functions for hybrid
-retrieval. *ACM Transactions on Information Systems, 42*(1), Article 20 (35 pp.).
+retrieval. *ACM Transactions on Information Systems, 42*(1), Article 20.
 https://doi.org/10.1145/3596512
 *Summary.* The paper compares ways of fusing lexical and dense results. The abstract reports that
 a convex combination of normalised scores outperforms RRF in and out of domain, and that RRF is
@@ -382,7 +382,7 @@ reliable.
 
 **12. Carpineto & Romano (2012).**
 *Reference.* Carpineto, C., & Romano, G. (2012). A survey of automatic query expansion in
-information retrieval. *ACM Computing Surveys, 44*(1), Article 1 (50 pp.). https://doi.org/10.1145/2071389.2071390
+information retrieval. *ACM Computing Surveys, 44*(1), Article 1. https://doi.org/10.1145/2071389.2071390
 *Summary.* The survey reviews automatic query expansion. Its abstract describes a short keyword
 query as a poor model of the user's need, and expansion as adding terms with a similar meaning.
 *Evaluation.* It is a broad, peer-reviewed survey and the standard reference for the method.
@@ -396,10 +396,10 @@ the map. Leaving out "log", "baby" and "travel" and scoring expanded terms at ha
 ## References
 
 Bruch, S., Gai, S., & Ingber, A. (2024). An analysis of fusion functions for hybrid retrieval.
-*ACM Transactions on Information Systems, 42*(1), Article 20 (35 pp.). https://doi.org/10.1145/3596512
+*ACM Transactions on Information Systems, 42*(1), Article 20. https://doi.org/10.1145/3596512
 
 Carpineto, C., & Romano, G. (2012). A survey of automatic query expansion in information
-retrieval. *ACM Computing Surveys, 44*(1), Article 1 (50 pp.). https://doi.org/10.1145/2071389.2071390
+retrieval. *ACM Computing Surveys, 44*(1), Article 1. https://doi.org/10.1145/2071389.2071390
 
 Cormack, G. V., Clarke, C. L. A., & Büttcher, S. (2009). Reciprocal rank fusion outperforms
 Condorcet and individual rank learning methods. In *Proceedings of the 32nd International ACM
@@ -456,7 +456,7 @@ in the note was compared with that text.
 | 3 | Crossref `10.18653/v1/2020.emnlp-main.550`. ar5iv HTML of arXiv:2004.04906. | EMNLP 2020, pages 6769-6781, authors as cited. Abstract: the dense retriever outperforms Lucene-BM25 by 9 to 19 percentage points absolute on top-20 passage retrieval accuracy. | No discrepancy recorded. The paper body was not re-read. |
 | 4 | arXiv:2104.08663 PDF and abstract. NeurIPS 2021 Datasets and Benchmarks abstract. | 18 datasets. Abstract: BM25 is a robust baseline, and dense models often underperform other approaches zero-shot. PDF title spelling is "Heterogeneous". | The arXiv landing title spells it "Heterogenous". The reference follows the PDF. |
 | 5 | Crossref `10.1145/1571941.1572114`. | SIGIR 2009, pages 758-759. Authors Cormack, Clarke and Büttcher. The title states the comparison with Condorcet fusion. | The paper body was not re-read. Crossref had no abstract. |
-| 6 | Crossref `10.1145/3596512`, including the abstract. | *ACM Transactions on Information Systems*, 42(1), Article 20 (35 pp.). Final issue January 2024; some online-first records list 2023. Authors Bruch, Gai and Ingber. Abstract: a convex combination outperforms RRF in in-domain and out-of-domain settings, and RRF is sensitive to its parameters. | No discrepancy recorded. The paper body was not re-read. |
+| 6 | Crossref `10.1145/3596512`, including the abstract. | *ACM Transactions on Information Systems*, 42(1), Article 20 (35 pp.). Final issue January 2024; some online-first records list 2023. Authors Bruch, Gai and Ingber. Abstract: a convex combination outperforms RRF in in-domain and out-of-domain settings, and RRF is sensitive to its parameters. | The 2023 online-first date and January 2024 final-issue date differ; final issue year used in the reference after 30 Oct reconciliation. Full paper body was not re-read. |
 | 7 | NeurIPS 2020 proceedings abstract and the 16-page proceedings PDF. | Authors, title, NeurIPS 2020. Abstract: on generation tasks, RAG produces more specific, diverse and factual language than a parametric-only baseline. | An earlier draft gave pages 9459-9474. Neither the abstract page nor the proceedings PDF prints that span, so the pages were removed. |
 | 8 | arXiv:2312.10997 HTML, DataCite DOI `10.48550/arXiv.2312.10997`. | Authors and title match. Headings: Naive RAG, Advanced RAG, Modular RAG. Advanced RAG describes pre-retrieval and post-retrieval steps aimed at retrieval quality. | "Retrieval quality is the main lever on answer quality" was not in the text that was opened. It is removed from section 2.4 and note 8. |
 | 9 | **26 Oct follow-up:** ACL Anthology https://aclanthology.org/2024.eacl-demo.16/ bibliographic record and abstract; previous 14 Oct arXiv metadata retained as history. | Peer-reviewed EACL 2024 System Demonstrations paper, pp. 150–158, DOI `10.18653/v1/2024.eacl-demo.16`, by the four named authors. The abstract supports a reference-free framework assessing retrieval/context and generation quality. | The older draft treated only the 2023 arXiv preprint as the final venue. Corrected the source and in-text year to 2024. Full proceedings paper not re-read on 26 Oct; claims beyond the abstract remain bounded. |
