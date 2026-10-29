@@ -126,3 +126,17 @@ def test_server_capture_timestamp_mismatch_fails_closed():
     batch = ImportBatchIn.model_validate(data)
     with pytest.raises(ValueError, match="does not match"):
         require_consistent_batch(batch, **snapshot_args())
+
+def test_partial_batch_cannot_skip_server_held_capture_article():
+    # An omitted captured article must be rejected even if all submitted ones
+    # are individually valid and the request supplies the original digest.
+    batch = ImportBatchIn.model_validate(payload())
+    args = snapshot_args()
+    args["captured_articles"] = {
+        **CAPTURED,
+        "https://example.org/two": (
+            SOURCE, datetime(2026, 10, 27, 3, 0, tzinfo=UTC),
+        ),
+    }
+    with pytest.raises(ValueError, match="full server-held capture"):
+        require_consistent_batch(batch, **args)
