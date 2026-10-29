@@ -93,6 +93,9 @@ export function AgentRehearsalPanel({ runId, runState }: Props) {
     setStart({ kind: 'running' })
     try {
       const created = await startRehearsal(runId)
+      // A Refresh click still in flight when this resolves must not win and overwrite the
+      // rehearsal we just created with a GET snapshot taken before it existed.
+      inFlight.current?.abort()
       setList((current) => ({
         kind: 'loaded',
         items: [created, ...(current.kind === 'loaded' ? current.items : [])],

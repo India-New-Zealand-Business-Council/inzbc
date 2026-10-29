@@ -33,10 +33,24 @@ export function PlatformAssistant() {
   const [error, setError] = useState<string | null>(null)
   const [disclaimer, setDisclaimer] = useState<string | null>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  // Bumped on every "New conversation". A reply that lands after a reset checks this before
+  // touching state, so a stale in-flight answer can never resurrect a conversation the user left.
+  const generation = useRef(0)
+
+  const resetConversation = () => {
+    generation.current += 1
+    setMessages([])
+    setError(null)
+    setDisclaimer(null)
+    // A pending request's `finally` will see the bumped generation and skip `setBusy(false)`,
+    // so this reset has to release busy itself or the UI stays stuck on "Looking that up...".
+    setBusy(false)
+  }
 
   const send = async (question: string) => {
     const text = question.trim()
     if (!text || busy) return
+    const gen = generation.current
     const next: Message[] = [...messages, { role: 'user', content: text }]
     setMessages(next)
     setDraft('')
@@ -46,13 +60,17 @@ export function PlatformAssistant() {
       const reply = await askAssistant(
         trimForServer(next.map(({ role, content }) => ({ role, content }))),
       )
+      if (generation.current !== gen) return
       setMessages([...next, { role: 'assistant', content: reply.answer, steps: reply.steps }])
       setDisclaimer(reply.disclaimer)
     } catch (cause) {
+      if (generation.current !== gen) return
       setError(errorText(cause))
     } finally {
-      setBusy(false)
-      inputRef.current?.focus()
+      if (generation.current === gen) {
+        setBusy(false)
+        inputRef.current?.focus()
+      }
     }
   }
 
@@ -80,11 +98,7 @@ export function PlatformAssistant() {
         {messages.length ? (
           <button
             type="button"
-            onClick={() => {
-              setMessages([])
-              setError(null)
-              setDisclaimer(null)
-            }}
+            onClick={resetConversation}
             className="min-h-11 px-2 text-sm font-medium text-inzbc-blue underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
           >
             New conversation
@@ -164,11 +178,12 @@ export function PlatformAssistant() {
           Ask
         </button>
       </form>
-      {disclaimer ? (
-        <p role="status" className="mt-2 text-xs text-slate-500">
-          {disclaimer}
-        </p>
-      ) : null}
+      {/* Kept mounted always, text only: assistive tech announces a change inside an
+          already-registered live region, but is not guaranteed to announce one that appears
+          already populated (MDN ARIA live-region guidance). */}
+      <p role="status" className="mt-2 text-xs text-slate-500">
+        {disclaimer ?? ''}
+      </p>
     </section>
   )
 }
