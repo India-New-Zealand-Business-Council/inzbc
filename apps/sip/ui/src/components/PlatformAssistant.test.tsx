@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as assistantClient from '../api/assistantClient'
+import type { ChatOut } from '../api/assistantClient'
 import { SipApiError } from '../api/httpClient'
 import { trimForServer } from '../lib/assistantHistory'
 import { PlatformAssistant } from './PlatformAssistant'
@@ -63,6 +64,27 @@ describe('PlatformAssistant', () => {
     await userEvent.click(screen.getByRole('button', { name: 'New conversation' }))
 
     expect(screen.queryByText('AI-generated and advisory.')).not.toBeInTheDocument()
+  })
+
+  // Bhanu's review on #467: a reply arriving after "New conversation" must not resurrect the
+  // conversation the user just left.
+  it('does not resurrect a stale reply if New conversation is clicked before it arrives', async () => {
+    let resolveAsk: (value: ChatOut) => void = () => {}
+    vi.spyOn(assistantClient, 'askAssistant').mockImplementationOnce(
+      () => new Promise((resolve) => { resolveAsk = resolve }),
+    )
+    render(<PlatformAssistant />)
+
+    await userEvent.type(screen.getByLabelText('Your question'), 'Hello{Enter}')
+    expect(await screen.findByText('Hello')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'New conversation' }))
+    resolveAsk({ answer: 'Stale answer', steps: [], disclaimer: 'Stale disclaimer.' })
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(screen.queryByText('Stale answer')).not.toBeInTheDocument()
+    expect(screen.queryByText('Stale disclaimer.')).not.toBeInTheDocument()
+    expect(screen.queryByText('Hello')).not.toBeInTheDocument()
   })
 })
 

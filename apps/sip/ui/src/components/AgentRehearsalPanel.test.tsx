@@ -145,4 +145,25 @@ describe('AgentRehearsalPanel', () => {
     expect(await screen.findByText('Stopped at the QA gate · QA In Progress')).toBeInTheDocument()
     expect(list).toHaveBeenCalledTimes(2)
   })
+
+  // Bhanu's review on #478: a Refresh GET started before "Run the agent" must not win and
+  // overwrite the rehearsal just created with a pre-creation snapshot.
+  it('keeps a newly created rehearsal even if an in-flight Refresh resolves after it', async () => {
+    const list = vi.spyOn(runsClient, 'listRehearsals').mockResolvedValueOnce([])
+    render(<AgentRehearsalPanel runId="run-1" runState="Run Authorised" />)
+    expect(await screen.findByText('No rehearsals yet.')).toBeInTheDocument()
+
+    let resolveList: (items: RehearsalOut[]) => void = () => {}
+    list.mockImplementationOnce(() => new Promise((resolve) => { resolveList = resolve }))
+    await userEvent.click(screen.getByRole('button', { name: 'Refresh' }))
+
+    vi.spyOn(runsClient, 'startRehearsal').mockResolvedValueOnce(REHEARSAL)
+    await userEvent.click(screen.getByRole('button', { name: 'Run the agent' }))
+    expect(await screen.findByText('Stopped at the QA gate · QA In Progress')).toBeInTheDocument()
+
+    resolveList([])
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(screen.getByText('Stopped at the QA gate · QA In Progress')).toBeInTheDocument()
+  })
 })
