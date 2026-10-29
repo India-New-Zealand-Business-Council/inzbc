@@ -51,6 +51,8 @@ The report includes per-question results and by-type metrics for three rankers: 
 
 The 55 development questions helped tune the lexical synonym map, so even perfect development scores do not establish generalization. The 10 held-out questions are synonym-only; 2 repeat development queries (H03 and H04). They do not provide independent no-match or product-framing validation. We still need an independent reviewed no-match/product-framing test set, a documented threshold choice and authorization from the technical lead before production ranker changes.
 
+The validator requires `captured_at` to be a parseable, timezone-aware ISO8601 instant; a free-text or timezone-naive label is refused. This guards malformed provenance metadata, but **does not authenticate when the capture occurred**. Verify the actual time against the authorised gateway/store logs.
+
 Snapshot metadata is **declared by the exporter, not authenticated by this script**. Fingerprints catch stale inputs but cannot prove the scores came from the gateway; the reviewer must corroborate against the authorized service and its content-free usage logs.
 
 All tests in test_hybrid.py use clearly labelled synthetic values. This PR makes the comparison **possible** but makes **no claim** about real dense/hybrid accuracy.
