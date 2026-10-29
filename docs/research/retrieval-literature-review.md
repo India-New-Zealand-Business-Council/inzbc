@@ -443,22 +443,6 @@ heterogeneous benchmark for zero-shot evaluation of information retrieval models
 *Proceedings of the Neural Information Processing Systems Track on Datasets and Benchmarks*.
 https://arxiv.org/abs/2104.08663
 
-## 6A. Original-text spot verification, 30 Oct 2026
-
-These checks add **passage-level evidence**, not a claim that all twelve full texts
-were reread or that a new retrieval experiment occurred. Historic checks and
-limitations in section 6 remain intact.
-
-| Source | Original text checked today | Supported claim and boundary |
-|---|---|---|
-| Robertson & Zaragoza (2009), https://www.staff.city.ac.uk/~sbrp622/papers/foundations_bm25_review.pdf | Author-hosted monograph, section 3.4.2 p. 356 and section 3.4.5 p. 359 | Section 3.4.2 explicitly describes diminishing term-frequency contribution as *saturation*. Section 3.4.5 derives document-length soft normalisation relative to the average length and the parameter `b`. This verifies the **mechanism** described in section 2.1, not BM25's performance on INZBC's corpus. The original front matter prints *Foundations and Trends in Information Retrieval* 3(4), 333–389; the Emerald reissue presents 4(1–2), 1–174 under the same DOI. |
-| Cormack, Clarke & Büttcher (2009), https://cormack.uwaterloo.ca/cormack/cormacksigir09-rrf.pdf | Authors' two-page SIGIR paper, pp. 758–759 | Section 1 defines `RRFscore(d) = sum(1 / (k + rank(d)))`, with `k=60` fixed after pilot selection. It combines rankings, not comparable raw scores. The paper compares RRF on TREC and LETOR 3; results are **not** evidence that RRF improves this project's 23-entry FTA corpus. In its TREC comparisons there are exceptions (e.g., CombMNZ on TREC 3), so do not claim universal dominance. |
-
-The Stanford textbook chapter body, other full papers, and any additional passages
-not explicitly named above **were not verified in this follow-up**. The original
-12-source citation/abstract checks and the existing issue #387 acceptance review
-remain separately documented; no new client or human evaluation was performed.
-
 ## 6. Check against the originals, 14 Oct 2026
 
 Each row was compared with a page or API record opened that day. "Citation" means title,
@@ -516,3 +500,19 @@ quietly choosing a new one. Lewis et al. (2020) and NIST (2023) retain the earli
 valid measured dense/hybrid accuracy figure or a score threshold for our
 22 confirmed FTA entries (out of 23 total). Those must come from #393's controlled experiments,
 independently checked labels and the tech lead's subsequent decision.
+
+## 6A. Original-text spot verification, 30 Oct 2026
+
+These checks add **passage-level evidence**, not a claim that all twelve full texts
+were reread or that a new retrieval experiment occurred. Historic checks and
+limitations in section 6 remain intact.
+
+| Source | Original text checked today | Supported claim and boundary |
+|---|---|---|
+| Robertson & Zaragoza (2009), https://www.staff.city.ac.uk/~sbrp622/papers/foundations_bm25_review.pdf | Author-hosted monograph, section 3.4.2 p. 356 and section 3.4.5 p. 359 | Section 3.4.2 explicitly describes diminishing term-frequency contribution as *saturation*. Section 3.4.5 derives document-length soft normalisation relative to the average length and the parameter `b`. This verifies the **mechanism** described in section 2.1, not BM25's performance on INZBC's corpus. The original front matter prints *Foundations and Trends in Information Retrieval* 3(4), 333–389; the Emerald reissue presents 4(1–2), 1–174 under the same DOI. |
+| Cormack, Clarke & Büttcher (2009), https://cormack.uwaterloo.ca/cormack/cormacksigir09-rrf.pdf | Authors' two-page SIGIR paper, pp. 758–759 | Section 1 defines `RRFscore(d) = sum(1 / (k + rank(d)))`, with `k=60` fixed after pilot selection. It combines rankings, not comparable raw scores. The paper compares RRF on TREC and LETOR 3; results are **not** evidence that RRF improves this project's 23-entry FTA corpus. In its TREC comparisons there are exceptions (e.g., CombMNZ on TREC 3), so do not claim universal dominance. |
+
+The Stanford textbook chapter body, other full papers, and any additional passages
+not explicitly named above **were not verified in this follow-up**. The original
+12-source citation/abstract checks and the existing issue #387 acceptance review
+remain separately documented; no new client or human evaluation was performed.
