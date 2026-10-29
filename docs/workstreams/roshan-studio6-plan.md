@@ -27,6 +27,81 @@ copy of the personal plan and Gantt. Every log below is kept here so git dates e
 | W8, 23 Nov | Final PDR | Rehearse. Final PDR. Moodle upload. Log comments |
 | W9, 30 Nov | Handover | Hand over open items. Close or reassign issues |
 
+## Short-horizon execution addendum — 30 Oct to 6 Nov 2026
+
+**Purpose:** Personal task sequencing and delivery evidence for already approved work
+in the Roshan intelligence/FTA/SIP collector lane. **Not** a change to the
+project charter, issue priority, work allocation, the W5–W9 academic deadlines,
+the tech lead's weekly review cadence, or INZBC's launch authority. Progress
+means evidence and acceptance checks, **not** an issue/PR count. No additional
+team ceremony, approval deadline, peer review or client obligation is created.
+
+**Baseline (checked 30 Oct):** INZBC #387, #393 and #55 remain open;
+the collection engine #208 remains open, with news-agent PRs #14 (on main)
+and #15 (stacked on #14) unmerged. In INZBC, my PR #498 (refusal
+highlight), #500 (batch-import schema/guard; importer still disabled),
+#497 (research correction) and #504 (two original-source passages)
+are open. A green CI result is a code check, not review approval, user
+acceptance, authorisation, or live-run proof. See the PR links below.
+
+### Day-by-day personal sequence and evidence gates
+
+| Local date | Work already in my scope | Minimum verifiable output | If blocked |
+|---|---|---|---|
+| Fri 30 Oct | #387 final source and APA-7 audit; #55 current evidence reconciliation | Bibliography check matrix with **source-level verification scope**; submitted documentation diff and passing CI. Record which claims were checked from full text versus abstract/metadata | Keep unchecked claims explicitly qualified; do not invent full-text access or personal review |
+| Mon 2 Nov | #208 news-agent #14 self-check; #387 corrections; #498/#500 own-PR findings | Source-health and fail-closed tests run with recorded commands/results; fix only reproducible issues in my own branches | If lead review is pending, continue #393 independently; do not merge, bypass review or change another contributor's branch |
+| Tue 3 Nov | #208 news-agent #15 review-only export integration into existing offline verifier; #55 dry-run preflight | Valid checksum/shape/URL/status tests; failure tests for missing health, incomplete coverage, duplicate URLs, wrong timestamps and no-write gate | If #14 not merged, keep #15 stacked and do not claim on-main integration |
+| Wed 4 Nov | #393 matched lexical/dense/hybrid experiment preparation and evaluation | Frozen corpus/query IDs, metric definitions, independent-label status and no-match threshold policy **before** examining held-out scores. If authorised scores unavailable, report lexical results and an explicit gap | Never fabricate gateway scores, verified labels or a winning model; retain production lexical ranker |
+| Thu 5 Nov | #55 technical preflight and evidence collection, only after authorised inputs exist; rehearse handover | A reproducible read-only preflight against the approved environment or a clearly labelled synthetic rehearsal, with run ID, source-coverage status and exact missing gates | API owner's row-locked/idempotent importer, real written authority and 112 analyst-confirmed outcomes are separate dependencies; leave production write disabled |
+| Fri 6 Nov | Final personal evidence pack, reconciliation and handover of completed artefacts | Per-task PR/commit/CI link, result (done / pending approval / externally blocked), remaining owner and evidence location. No open defects silently labelled fixed | Hand over blockers honestly; do not close #55, approve, publish or distribute without real run-bound authority and evidence |
+
+### Definition of done and non-negotiable stops
+
+- **#387 bibliography:** at least 12 credible entries, appropriate peer-review
+  mix, APA 7 references, source-by-source check scope and no claims stronger
+  than the inspected material. PR #504 supports only two original-text checks;
+  it is not itself full completion. Existing annotations by Bhanu remain
+  attributed to their author.
+- **#393 retrieval:** equivalent inputs and per-type metrics, no-match
+  accuracy, development/held-out separation (including H03/H04 overlaps),
+  frozen threshold and real scored evidence. An unauthorised provider
+  call or unverified human label must not be substituted for a result.
+- **#208 collector:** correctly distinguish quiet from failed/partial sources;
+  bounded retries/timeouts, a refusal-safe distribution flag, exporter
+  provenance and no-clobber checksum-backed manifests. The ~40 collector
+  source health statuses are **not** the 112 SIP-185 human outcomes.
+- **#55 SIP:** use the existing [live E2E evidence plan](../sip/LIVE_E2E_PROOF_PLAN_2026-10-27.md).
+  A real run requires original written SIP-191 authority, approved isolated
+  environment, correct local 07:00 coverage, actual 112 SIP-185 source outcomes,
+  safe **server-owned** atomic import, scored and verified candidates,
+  versioned brief, authorised QA/SoD decision, CEO approval, distribution
+  authority and run-bound audit/receipt evidence. Missing one remains a
+  named gate; a synthetic rehearsal never satisfies it.
+- **Ownership and controls:** Bhanu owns API transaction/role/signing design,
+  security sign-off and merging; Paras owns the UI; Sunil/INZBC own client scope,
+  authorised operators, recipients and acceptance decisions. My existing
+  approved lane is collection, mapping, FTA service/evaluation and evidence
+  preparation. Do not self-assign their work, publish sensitive materials,
+  change live configurations or request unscheduled review/comment without
+  explicit authorisation under `AGENTS.md`.
+
+### Evidence inventory to assemble, not pre-fill
+
+| Track | Current checkable link | End-state evidence still needed |
+|---|---|---|
+| Literature #387 | [#504](https://github.com/India-New-Zealand-Business-Council/inzbc/pull/504), [research review](../research/retrieval-literature-review.md) | Completion of outstanding original-source checks, APA 7 audit, lead review |
+| Collection #208 | [news-agent #14](https://github.com/India-New-Zealand-Business-Council/daily-india-nz-news-agent/pull/14), [#15](https://github.com/India-New-Zealand-Business-Council/daily-india-nz-news-agent/pull/15) | Final CI on each landed base, review, operator-verified fetch evidence |
+| Batch import #55 | [#500](https://github.com/India-New-Zealand-Business-Council/inzbc/pull/500), [preflight guidance](../../apps/sip/collector/OPERATOR_IMPORT.md) | Reviewed **actual** transactional endpoint and two-writer tests, API handoff, no premature `--apply` |
+| SIP presentation | [#498](https://github.com/India-New-Zealand-Business-Council/inzbc/pull/498), [#497](https://github.com/India-New-Zealand-Business-Council/inzbc/pull/497) | Lead acceptance and integration if approved; not real SIP run proof |
+| Ranker #393 | [offline harness](../../apps/fta/eval/), [review](../research/retrieval-literature-review.md) | Pre-specified threshold, actual approved dense vectors, independent labels/held-out no-match evidence |
+| Live run #55 | [E2E proof gates](../sip/LIVE_E2E_PROOF_PLAN_2026-10-27.md) | Real run/decision/distribution evidence and allowed operators; NOT YET PROVEN |
+
+**Exit test on 6 Nov:** every deliverable in my approved scope is either
+(a) tested and linked, awaiting permitted review/merge, or
+(b) explicitly stopped with a reproducible blocker and named decision owner.
+This does **not** assert every organisation backlog issue or SIP production
+rollout is complete, and does not replace the 20 Nov academic evidence date.
+
 ## Issues
 
 Status checked against repository issues and main on **26 Oct 2026**. This is a
