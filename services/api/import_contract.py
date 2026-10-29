@@ -141,6 +141,11 @@ def require_consistent_batch(
         raise ValueError("locked run window is invalid")
     if not captured_articles:
         raise ValueError("server-held capture evidence missing")
+    # Import must represent the complete immutable capture, not a caller-chosen
+    # subset. Alongside URL uniqueness and original-membership checks below,
+    # equal cardinality prevents both skipped and extra candidate entries.
+    if len(batch.candidates) != len(captured_articles):
+        raise ValueError("candidate batch does not match full server-held capture")
     for candidate in batch.candidates:
         timestamp = candidate.published_at.astimezone(UTC)
         if not (start <= timestamp < end):
