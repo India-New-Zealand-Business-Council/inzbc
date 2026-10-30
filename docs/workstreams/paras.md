@@ -103,6 +103,17 @@ items below, which are paused, not abandoned.
   re-open them.
 
 ## Done
+- **Friday a11y/keyboard pass on both agent surfaces** (PR #507, 30 Oct 2026, refs #62).
+  Reviewed `AgentRehearsalPanel.tsx` and `PlatformAssistant.tsx` against keyboard operability,
+  live-region usage and color-only signalling. Real gap found and fixed: the rehearsal list's
+  expand/collapse button had `aria-expanded` but no `aria-controls`, so a screen reader
+  announced the toggle state with no programmatic link to the region it opens — fixed with a
+  stable id per rehearsal's detail region, the standard WAI-ARIA disclosure pattern, one new
+  test. Nothing else real found: every interactive control in both files is already a native
+  `<button>`, loading/error states already use `role="status"`/`role="alert"`, and every status
+  distinction pairs a text label with color. Not claiming a clean bill beyond what this pass
+  actually checked (no axe run, no live screen-reader pass — see `docs/accessibility-audit.md`
+  for what that would still take).
 - **Lane pivot, 26 Oct 2026: off `inzview`, onto polishing the agent-facing UI in this repo.**
   The client doesn't want the live public site touched further right now (risk of breaking a
   production site someone else owns the fallout for). Remaining work shifts to `apps/sip/ui`'s
