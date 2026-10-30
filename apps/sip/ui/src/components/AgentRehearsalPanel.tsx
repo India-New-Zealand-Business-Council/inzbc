@@ -171,6 +171,7 @@ export function AgentRehearsalPanel({ runId, runState }: Props) {
                 <button
                   type="button"
                   aria-expanded={open}
+                  aria-controls={`rehearsal-detail-${r.id}`}
                   onClick={() => setOpenId(open ? null : r.id)}
                   className="flex min-h-11 w-full flex-wrap items-center justify-between gap-2 p-3 text-left text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-inzbc-blue"
                 >
@@ -189,7 +190,7 @@ export function AgentRehearsalPanel({ runId, runState }: Props) {
                   </span>
                 </button>
                 {open ? (
-                  <div className="space-y-3 border-t border-inzbc-navy/10 p-3 text-sm">
+                  <div id={`rehearsal-detail-${r.id}`} className="space-y-3 border-t border-inzbc-navy/10 p-3 text-sm">
                     {r.stop_reason ? (
                       <p>
                         <span className="font-medium text-inzbc-navy">Why it stopped: </span>
