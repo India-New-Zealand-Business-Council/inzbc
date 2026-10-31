@@ -103,6 +103,22 @@ items below, which are paused, not abandoned.
   re-open them.
 
 ## Done
+- **Cleared all 6 open Dependabot alerts** (PR #511, 31 Oct 2026, refs #62). Saturday buffer
+  day — nothing was broken, so picked the one real outstanding housekeeping item instead of
+  inventing UI work. Repo-wide, not just my lane: `undici` 7.29.1 → 7.30.1 and a new `zod`
+  4.4.3 → 4.6.7 override in `pnpm-workspace.yaml` (same floor-pinning pattern already used
+  there), `@vitest/mocker` 4.1.11 → 4.1.12 via bumping `vitest`/`@vitest/coverage-v8` in all
+  five apps rather than overriding the sub-dependency directly. `pnpm install` regenerated the
+  lockfile; typecheck, lint and the full test suite pass clean across all five apps (460
+  tests). Flagged for both Bhanu and Roshan to review, not just my usual lane reviewer, since
+  it touches every app.
+- Also updated the project board (31 Oct 2026): added issue #510 ("Agent UI polish & review
+  follow-through, week of 26-31 Oct") so this week's actual shipped/in-review work has its own
+  visible story instead of riding silently on the closed #62 epic. Checked all 22 items
+  assigned to me against real GitHub issue state — all accurate. Found and flagged, not
+  touched: #127/#128/#129/#195 are assigned to me on the board but every PR that actually
+  landed against them this week (#486, #490, #492, #495) was Roshan's — a standup question,
+  not something to silently reassign myself.
 - **Lane pivot, 26 Oct 2026: off `inzview`, onto polishing the agent-facing UI in this repo.**
   The client doesn't want the live public site touched further right now (risk of breaking a
   production site someone else owns the fallout for). Remaining work shifts to `apps/sip/ui`'s
