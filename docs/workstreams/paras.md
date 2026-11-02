@@ -103,6 +103,15 @@ items below, which are paused, not abandoned.
   re-open them.
 
 ## Done
+- **Week 5, Monday: announced the platform assistant's disclaimer to screen readers** (PR
+  #513, 2 Nov 2026, refs #62). Re-read both agent surfaces end to end before picking a task,
+  since my own 6 PRs from last week (#501/#502/#507/#508/#511/#512) were still open and
+  awaiting review — none of them had landed over the weekend, and the four board-item
+  assignment mismatches (#127/#128/#129/#195) are still unresolved, raised again at standup
+  rather than touched myself. Real gap found, distinct from anything already pending: the
+  conversation list announces a new answer (`aria-live="polite"`), but the disclaimer
+  underneath it changes on every reply with no live region at all — a screen reader user got
+  no signal it had appeared. Fixed with `role="status"`, one new test (265/265 passing after).
 - **Lane pivot, 26 Oct 2026: off `inzview`, onto polishing the agent-facing UI in this repo.**
   The client doesn't want the live public site touched further right now (risk of breaking a
   production site someone else owns the fallout for). Remaining work shifts to `apps/sip/ui`'s
