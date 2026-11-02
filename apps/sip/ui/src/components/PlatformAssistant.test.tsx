@@ -64,6 +64,22 @@ describe('PlatformAssistant', () => {
 
     expect(screen.queryByText('AI-generated and advisory.')).not.toBeInTheDocument()
   })
+
+  // The disclaimer changes after every reply but sat outside any live region, so a screen
+  // reader user got no signal it had appeared -- unlike the conversation list itself.
+  it('announces the disclaimer to a screen reader', async () => {
+    vi.spyOn(assistantClient, 'askAssistant').mockResolvedValue({
+      answer: 'Ok.',
+      steps: [],
+      disclaimer: 'AI-generated and advisory.',
+    })
+    render(<PlatformAssistant />)
+
+    await userEvent.type(screen.getByLabelText('Your question'), 'Hello{Enter}')
+
+    const disclaimerText = await screen.findByText('AI-generated and advisory.')
+    expect(disclaimerText.closest('[role="status"]')).not.toBeNull()
+  })
 })
 
 describe('trimForServer', () => {
