@@ -83,6 +83,8 @@ def test_rrf_deduplicates_and_is_stable_on_ties() -> None:
     (lambda d: d["results"].update(Q3={}), "exactly every question"),
     (lambda d: d["results"]["Q1"].update(query="lamb"), "query text"),
     (lambda d: d.update(source="unknown"), "approved"),
+    (lambda d: d.update(captured_at="yesterday"), "captured_at must be an ISO8601"),
+    (lambda d: d.update(captured_at="2026-10-26T10:00:00"), "with timezone"),
     (lambda d: d.update(min_score=None), "finite cosine score"),
     (lambda d: d.update(min_score=float("nan")), "finite cosine score"),
     (lambda d: d["results"]["Q1"]["hits"].append(dict(d["results"]["Q1"]["hits"][0])), "truncated"),
