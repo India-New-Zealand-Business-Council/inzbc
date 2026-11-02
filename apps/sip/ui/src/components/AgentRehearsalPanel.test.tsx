@@ -58,6 +58,19 @@ describe('AgentRehearsalPanel', () => {
     expect(screen.getByText('Trail verified')).toBeInTheDocument()
   })
 
+  it('wires the disclosure button to the region it controls for screen readers', async () => {
+    vi.spyOn(runsClient, 'listRehearsals').mockResolvedValue([REHEARSAL])
+    render(<AgentRehearsalPanel runId="run-1" runState="Run Authorised" />)
+
+    const toggle = await screen.findByRole('button', { name: /Stopped at the QA gate/ })
+    const controlsId = toggle.getAttribute('aria-controls')
+    expect(controlsId).toBeTruthy()
+    expect(document.getElementById(controlsId as string)).toBeNull()
+
+    await userEvent.click(toggle)
+    expect(document.getElementById(controlsId as string)).toBe(screen.getByText('Draft brief:').closest('div'))
+  })
+
   it('runs the agent and opens the new trail, including refused steps', async () => {
     vi.spyOn(runsClient, 'listRehearsals').mockResolvedValue([])
     const start = vi.spyOn(runsClient, 'startRehearsal').mockResolvedValue(REHEARSAL)
