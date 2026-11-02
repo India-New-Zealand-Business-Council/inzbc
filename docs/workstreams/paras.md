@@ -114,6 +114,21 @@ items below, which are paused, not abandoned.
   distinction pairs a text label with color. Not claiming a clean bill beyond what this pass
   actually checked (no axe run, no live screen-reader pass — see `docs/accessibility-audit.md`
   for what that would still take).
+- **Week 5, Monday: proposed a disclaimer live region for the platform assistant, not yet
+  verified end to end** (PR #513, merged 2 Nov 2026; follow-up in PR #501, refs #62). Re-read
+  both agent surfaces end to end before picking a task, since my own 6 PRs from last week
+  (#501/#502/#507/#508/#511/#512) were open with Bhanu's `COMMENTED` reviews already on all six
+  (29–31 Oct) — reviewed with findings, not unreviewed, and none had merged over the weekend.
+  The four board-item assignment mismatches (#127/#128/#129/#195) are still unresolved, raised
+  again at standup rather than touched myself. Real gap found, distinct from anything already
+  pending: the conversation list announces a new answer (`aria-live="polite"`), but the
+  disclaimer underneath it changes on every reply with no live region at all. Shipped with
+  `role="status"` wrapping the disclaimer conditionally — **Bhanu's review of #513 then found
+  this doesn't reliably work**: a `role="status"` element created together with its first text
+  is not guaranteed to be announced (assistive tech expects a change inside an *already
+  registered* live region). Test only checked DOM ancestry, not announcement. Fixed properly in
+  #501 — the element is now mounted at all times with just the text toggling — rather than
+  claiming this entry's original "announced to screen readers" as verified when it wasn't.
 - **Lane pivot, 26 Oct 2026: off `inzview`, onto polishing the agent-facing UI in this repo.**
   The client doesn't want the live public site touched further right now (risk of breaking a
   production site someone else owns the fallout for). Remaining work shifts to `apps/sip/ui`'s
