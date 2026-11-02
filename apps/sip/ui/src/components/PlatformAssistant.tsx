@@ -164,7 +164,11 @@ export function PlatformAssistant() {
           Ask
         </button>
       </form>
-      {disclaimer ? <p className="mt-2 text-xs text-slate-500">{disclaimer}</p> : null}
+      {disclaimer ? (
+        <p role="status" className="mt-2 text-xs text-slate-500">
+          {disclaimer}
+        </p>
+      ) : null}
     </section>
   )
 }
