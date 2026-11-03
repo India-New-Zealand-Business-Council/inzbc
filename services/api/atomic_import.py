@@ -17,7 +17,11 @@ import psycopg
 from psycopg.rows import dict_row
 
 from services.api.audit import record_audit
-from services.api.import_contract import ImportBatchIn, ImportOutcome, require_consistent_batch
+from services.api.import_contract import (
+    ImportBatchIn,
+    ImportOutcome,
+    require_consistent_batch,
+)
 
 
 class ImportBlockedError(ValueError):
