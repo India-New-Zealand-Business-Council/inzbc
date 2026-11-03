@@ -1,5 +1,9 @@
 # INZBC platform handover pack
 
+**Closed out 4 November 2026:** see the [final handover record](final-handover-2026-11-04.md) for
+client acceptance, the verification run at handover and what remains open. Where it differs from
+the tables below, it is the newer record.
+
 Prepared 16 October 2026 for INZBC / Sunil, the confirmed post-placement owner (#97).
 This assembles the existing material for #291. **The handover walkthrough has not happened**,
 as corrected by the tech lead on 16 October. The pack is not evidence of that session.
