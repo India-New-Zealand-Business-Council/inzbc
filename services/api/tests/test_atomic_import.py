@@ -86,8 +86,7 @@ def seed_case(
                 "(%s, %s, 'No Qualifying Item', %s)",
                 (
                     run_id, source_id,
-                    "Analyst-confirmed evidence: synthetic test record\n"
-                    "Fallback trail: Direct website",
+                    "Analyst-confirmed evidence: synthetic test record\nFallback trail: Direct website",
                 ),
             )
         conn.commit()
