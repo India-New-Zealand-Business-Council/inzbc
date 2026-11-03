@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 
 from apps.sip.collector.verification import UnverifiedHighSignalError
 from apps.sip.pipeline.models import VerificationState
-from services.api.candidate_persistence import CandidateRecord
+from services.api.candidate_persistence import BatchImportRequiredError, CandidateRecord
 from services.api.candidates import get_candidate_repository
 from services.api.main import app
 
@@ -28,6 +28,7 @@ class FakeCandidateRepository:
         self.next_error: Exception | None = None
 
     def capture(self, **kwargs) -> CandidateRecord:
+        self._consume_error()
         candidate = CandidateRecord(
             id=str(uuid.uuid4()),
             run_id=kwargs["run_id"],
@@ -150,6 +151,31 @@ def test_capture_returns_unverified_candidate(client: TestClient) -> None:
     body = _capture(client)
     assert body["verification"] == "Unverified"
     assert body["headline"] == "Test headline"
+
+
+def test_production_legacy_capture_conflict_is_http_409(
+    client: TestClient, fake_repo: FakeCandidateRepository
+) -> None:
+    fake_repo.next_error = BatchImportRequiredError("atomic batch import required")
+    response = client.post(
+        "/api/candidates",
+        json={"run_id": str(uuid.uuid4()), "headline": "Blocked"},
+    )
+    assert response.status_code == 409
+    assert "atomic batch import" in response.json()["detail"]
+    assert not fake_repo._candidates
+
+
+def test_capture_unknown_run_is_http_404(
+    client: TestClient, fake_repo: FakeCandidateRepository
+) -> None:
+    fake_repo.next_error = KeyError("no run")
+    response = client.post(
+        "/api/candidates",
+        json={"run_id": str(uuid.uuid4()), "headline": "Missing run"},
+    )
+    assert response.status_code == 404
+    assert not fake_repo._candidates
 
 
 def test_get_candidate_returns_404_for_unknown_id(client: TestClient) -> None:
