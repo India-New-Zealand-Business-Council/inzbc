@@ -19,6 +19,7 @@ from psycopg.rows import dict_row
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 from apps.sip.collector.capture_manifest import _source_url
+from apps.sip.collector.import_capture import _require_confirmed_source_note
 from apps.sip.collector.source_register import MANDATORY_SOURCES
 from services.api.audit import record_audit
 from services.api.import_contract import (
@@ -103,6 +104,13 @@ class ImportRepository:
                 (run_id,),
             ).fetchone()
             if committed is not None:
+                stored = conn.execute(
+                    "select batch_payload, articles_sha256 from sip_import_evidence "
+                    "where run_id = %s", (run_id,),
+                ).fetchone()
+                if (stored is None or stored["articles_sha256"] != batch.articles_sha256
+                        or ImportBatchIn.model_validate(stored["batch_payload"]) != batch):
+                    raise ImportBlockedError("replayed request differs from immutable capture")
                 count = conn.execute(
                     "select count(*) as n from candidates where run_id = %s",
                     (run_id,),
@@ -167,15 +175,17 @@ class ImportRepository:
                 ):
                     raise ImportBlockedError("112 analyst-confirmed source outcomes are missing")
                 try:
-                    RecordSourceCheckIn.model_validate({
+                    fields = {
                         "source_id": str(source["id"]),
                         "outcome": check["outcome"],
                         "method": check["method"],
                         "fallback_used": check["fallback_used"],
                         "access_error": check["access_error"],
                         "notes": check["notes"],
-                    })
-                except ValidationError as exc:
+                    }
+                    RecordSourceCheckIn.model_validate(fields)
+                    _require_confirmed_source_note(fields, source["sip185_code"])
+                except (ValidationError, ValueError) as exc:
                     raise ImportBlockedError("invalid recorded source outcome evidence") from exc
 
             existing_count = conn.execute(
@@ -238,6 +248,13 @@ class ImportRepository:
                     run_id, batch.claim_key, batch.articles_sha256,
                     len(batch.candidates), actor,
                 ),
+            )
+            record_audit(
+                conn, user_id=str(actor), action="sip.import.commit",
+                record_type="runs", record_id=run_id,
+                new_value=batch.claim_key,
+                reason=f"{len(batch.candidates)} reviewed candidates; "
+                       f"capture reference: {evidence['evidence_ref']}",
             )
             # Exit commits candidates, audit records, analyst assignment and
             # claim together; any exception rolls all of them back.
