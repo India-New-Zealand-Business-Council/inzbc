@@ -31,6 +31,15 @@ claim. Consequently `--apply` now **fails before API access**; even a direct
 repeating a client-side GET or adding a local file lock would not fix concurrency
 between different operator machines.
 
+**Production legacy-capture isolation (#526):** the API repository takes a
+`runs ... FOR UPDATE` lock before any per-item candidate INSERT and refuses
+`POST /api/candidates` for runs marked `production_enabled=true` with HTTP
+409. This closes the direct per-item race/bypass for production runs; it does
+**not** make the batch import functional. Non-production/manual rehearsal
+capture remains available with its existing audit records. Do not set
+`production_enabled` merely to attempt a run while the authorised batch path
+is absent.
+
 **Backend owner follow-up:** implement and review a server-side transactional
 batch import that locks the run, verifies its state/authority and the candidate
 absence within the **same transaction**, enforces an idempotency key derived from
