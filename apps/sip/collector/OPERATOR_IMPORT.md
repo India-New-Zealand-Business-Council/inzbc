@@ -31,6 +31,15 @@ claim. Consequently `--apply` now **fails before API access**; even a direct
 repeating a client-side GET or adding a local file lock would not fix concurrency
 between different operator machines.
 
+**Production legacy-capture isolation (#526):** the API repository takes a
+`runs ... FOR UPDATE` lock before any per-item candidate INSERT and refuses
+`POST /api/candidates` for runs marked `production_enabled=true` with HTTP
+409. This closes the direct per-item race/bypass for production runs; it does
+**not** make the batch import functional. Non-production/manual rehearsal
+capture remains available with its existing audit records. Do not set
+`production_enabled` merely to attempt a run while the authorised batch path
+is absent.
+
 **Backend owner follow-up:** implement and review a server-side transactional
 batch import that locks the run, verifies its state/authority and the candidate
 absence within the **same transaction**, enforces an idempotency key derived from
@@ -48,30 +57,3 @@ brief, complete independent QA, CEO decision and manual distribution when allowe
 ## Tests
 
 Run `uv run python -m pytest apps/sip/collector/tests/test_capture_manifest.py apps/sip/collector/tests/test_import_capture.py -q` and `uv run ruff check apps/sip/collector`. Tests use local synthetic data, a fake API and fake source checks — they are **not** a substitute for the real end-to-end launch evidence in issue #55. They also assert that writes remain disabled until the API's atomic-import contract exists.
-
-## Internal transactional import preparation (#528, not callable by operators)
-
-The `services.api.atomic_import.ImportRepository` module now contains an
-**unregistered internal service** for a reviewed import batch. In a single
-PostgreSQL transaction it locks `runs ... FOR UPDATE`, verifies the caller's
-active Analyst/SIP Owner role, run state/version/production flag, recorded
-Launch authorisation, complete mandatory source checks and **server-held,
-append-only** capture evidence; it then writes candidates, individual audit
-records, analyst claim and deterministic import claim together. An exact replay
-returns the committed count; a conflicting digest or incomplete run is refused.
-
-The append-only `sip_import_evidence` row must be populated by a **separately
-reviewed and authorised evidence-staging path**, binding original collector
-bytes and independently resolved source IDs to the proposed candidate batch.
-That staging path does **not** exist yet. A direct SQL insert, a test fixture,
-the request body's SHA-256, or an analyst typing a reference is **not** proof
-that the original collector manifest or its licence/source outcome trail was
-checked. Therefore no HTTP importer or CLI `--apply` is registered or
-enabled. Do not call the internal repository in production.
-
-Before enabling, the API owner must merge/reconcile the legacy-production
-per-item exclusion in #526, verify migrations, build the controlled evidence
-staging interface, run the full concurrent-writer and negative auth/CSRF
-tests against a disposable Postgres, and obtain SIP-191/source authority.
-Successful synthetic CI demonstrates transaction mechanics only; it does not
-complete the authorised run or any approval/distribution gate.
