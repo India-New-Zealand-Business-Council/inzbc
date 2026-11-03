@@ -12,20 +12,47 @@ from __future__ import annotations
 
 import os
 import uuid
+from datetime import datetime
 
 import psycopg
 from psycopg.rows import dict_row
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
+from apps.sip.collector.capture_manifest import _source_url
+from apps.sip.collector.source_register import MANDATORY_SOURCES
 from services.api.audit import record_audit
 from services.api.import_contract import (
     ImportBatchIn,
     ImportOutcome,
     require_consistent_batch,
 )
+from services.api.source_checks import RecordSourceCheckIn
 
 
 class ImportBlockedError(ValueError):
     """The requested import cannot pass immutable evidence or authority checks."""
+
+
+class CapturedArticleEvidence(BaseModel):
+    """Original URL, source and publication time independent of the candidate batch."""
+
+    model_config = ConfigDict(extra="forbid")
+    url: str = Field(min_length=1, max_length=2048)
+    source_id: uuid.UUID
+    published_at: datetime
+
+    @field_validator("url")
+    @classmethod
+    def require_public_url(cls, value: str) -> str:
+        _source_url(value)
+        return value
+
+    @field_validator("published_at")
+    @classmethod
+    def require_timezone(cls, value: datetime) -> datetime:
+        if value.tzinfo is None or value.utcoffset() is None:
+            raise ValueError("original capture publication time requires a timezone")
+        return value
 
 
 class ImportRepository:
@@ -67,6 +94,9 @@ class ImportRepository:
             if authorised_actor is None:
                 raise PermissionError("import actor has no active SIP analyst/owner role")
 
+            if run["production_enabled"] is not True:
+                raise ImportBlockedError("production SIP import is not enabled on this run")
+
             committed = conn.execute(
                 "select claim_key, articles_sha256, candidate_count "
                 "from sip_import_claims where run_id = %s",
@@ -89,8 +119,6 @@ class ImportRepository:
                     replay=True,
                 )
 
-            if run["production_enabled"] is not True:
-                raise ImportBlockedError("production SIP import is not enabled on this run")
             launch = conn.execute(
                 "select 1 from run_authorisations "
                 "where run_id = %s and kind = 'Launch' limit 1",
@@ -100,7 +128,8 @@ class ImportRepository:
                 raise ImportBlockedError("recorded run launch authority is missing")
 
             evidence = conn.execute(
-                "select articles_sha256, batch_payload, source_count, evidence_ref "
+                "select articles_sha256, batch_payload, captured_articles, "
+                "source_count, evidence_ref "
                 "from sip_import_evidence where run_id = %s",
                 (run_id,),
             ).fetchone()
@@ -114,37 +143,59 @@ class ImportRepository:
                 raise ImportBlockedError("SIP-185 requires all 112 mandatory sources")
 
             mandatory = conn.execute(
-                "select id, active from source_library where mandatory = true",
+                "select id, sip185_code, active from source_library "
+                "where mandatory = true",
             ).fetchall()
-            if len(mandatory) != 112 or any(row["active"] is not True for row in mandatory):
+            required_codes = {entry.source_id for entry in MANDATORY_SOURCES}
+            if (
+                len(required_codes) != 112
+                or len(mandatory) != 112
+                or {row["sip185_code"] for row in mandatory} != required_codes
+                or any(row["active"] is not True for row in mandatory)
+            ):
                 raise ImportBlockedError("mandatory SIP-185 source register is not complete")
             recorded = conn.execute(
-                "select source_id, notes from source_checks where run_id = %s for share",
+                "select source_id, outcome, method, fallback_used, "
+                "access_error, notes from source_checks where run_id = %s for share",
                 (run_id,),
             ).fetchall()
             by_source = {row["source_id"]: row for row in recorded}
-            if any(
-                row["id"] not in by_source
-                or not isinstance(by_source[row["id"]]["notes"], str)
-                or not by_source[row["id"]]["notes"].startswith(
+            for source in mandatory:
+                check = by_source.get(source["id"])
+                if check is None or not isinstance(check["notes"], str) or not check["notes"].startswith(
                     "Analyst-confirmed evidence: "
-                )
-                or "Fallback trail: " not in by_source[row["id"]]["notes"]
-                for row in mandatory
-            ):
-                raise ImportBlockedError("112 independently recorded source outcomes are missing")
+                ):
+                    raise ImportBlockedError("112 analyst-confirmed source outcomes are missing")
+                try:
+                    RecordSourceCheckIn.model_validate({
+                        "source_id": str(source["id"]),
+                        "outcome": check["outcome"],
+                        "method": check["method"],
+                        "fallback_used": check["fallback_used"],
+                        "access_error": check["access_error"],
+                        "notes": check["notes"],
+                    })
+                except ValidationError as exc:
+                    raise ImportBlockedError("invalid recorded source outcome evidence") from exc
 
             existing_count = conn.execute(
                 "select count(*) as n from candidates where run_id = %s",
                 (run_id,),
             ).fetchone()["n"]
-            # This validation is performed under the run lock, not on a prior
-            # client-supplied snapshot. The staged server-side batch supplies
-            # the exact source IDs and timestamps for reconciliation.
-            original = {
-                c.url: (c.source_id, c.published_at)
-                for c in staged.candidates
-            }
+            # Compare proposed candidates with separately staged original capture
+            # observations, not with a copy of the candidate batch itself.
+            raw_original = evidence["captured_articles"]
+            if not isinstance(raw_original, list) or not raw_original:
+                raise ImportBlockedError("original capture evidence must be nonempty")
+            original = {}
+            for raw in raw_original:
+                try:
+                    captured = CapturedArticleEvidence.model_validate(raw)
+                except (ValidationError, ValueError, TypeError) as exc:
+                    raise ImportBlockedError("invalid original captured-article evidence") from exc
+                if captured.url in original:
+                    raise ImportBlockedError("original captured URLs must be unique")
+                original[captured.url] = (captured.source_id, captured.published_at)
             require_consistent_batch(
                 batch,
                 run_id=run["id"],
