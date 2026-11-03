@@ -17,6 +17,7 @@ import pytest
 from apps.sip.collector.verification import UnverifiedHighSignalError
 from apps.sip.pipeline.models import SignalStrength, SourceConfidence, VerificationState
 from services.api.candidate_persistence import (
+    BatchImportRequiredError,
     CandidateRepository,
     SelfVerificationError,
 )
@@ -98,6 +99,45 @@ def test_capture_creates_an_unverified_candidate(
     )
     assert candidate.verification == VerificationState.UNVERIFIED
     assert candidate.run_id == run_id
+
+
+def test_production_run_refuses_legacy_capture_before_candidate_or_audit(
+    repo: CandidateRepository, run_id: str, user_id: str
+) -> None:
+    with psycopg.connect(DATABASE_URL) as conn:
+        conn.execute(
+            "update runs set production_enabled = true where id = %s",
+            (run_id,),
+        )
+    with pytest.raises(BatchImportRequiredError, match="atomic batch import"):
+        repo.capture(
+            run_id=run_id, headline="Blocked legacy write",
+            source_id=None, url="https://example.org/blocked", summary=None,
+            published_at=None, in_coverage_window=True, actor_id=user_id,
+        )
+    with psycopg.connect(DATABASE_URL) as conn:
+        assert conn.execute(
+            "select count(*) from candidates where run_id = %s", (run_id,)
+        ).fetchone()[0] == 0
+        assert conn.execute(
+            "select count(*) from audit_log where action = 'candidate.capture' "
+            "and record_id in (select id::text from candidates where run_id = %s)",
+            (run_id,),
+        ).fetchone()[0] == 0
+        assert conn.execute(
+            "select analyst_id from runs where id = %s", (run_id,)
+        ).fetchone()[0] is None
+
+
+def test_legacy_capture_refuses_unknown_run(
+    repo: CandidateRepository, user_id: str
+) -> None:
+    with pytest.raises(KeyError, match="no run"):
+        repo.capture(
+            run_id=str(uuid.uuid4()), headline="No run",
+            source_id=None, url=None, summary=None, published_at=None,
+            in_coverage_window=None, actor_id=user_id,
+        )
 
 
 def test_get_raises_key_error_for_unknown_id(repo: CandidateRepository) -> None:
