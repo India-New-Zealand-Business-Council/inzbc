@@ -164,6 +164,12 @@ def test_single_commit_and_idempotent_replay(mandatory_sources):
     assert first.claim_key == second.claim_key == batch.claim_key
     assert first.candidate_count == second.candidate_count == 1
     assert counts(batch.run_id) == (1, 1, 1)
+    with psycopg.connect(DATABASE_URL) as conn:
+        total = conn.execute(
+            "select count(*) from audit_log where action = 'sip.import.commit' "
+            "and record_id = %s", (str(batch.run_id),),
+        ).fetchone()[0]
+    assert total == 1  # A replay must not create a second commit event.
 
 
 def test_concurrent_separate_connections_are_serialised(mandatory_sources):
@@ -229,5 +235,51 @@ def test_stale_run_version_refused(mandatory_sources):
             "update runs set version = 17 where id = %s", (str(batch.run_id),)
         )
     with pytest.raises(ValueError, match="version changed"):
+        ImportRepository(DATABASE_URL).import_reviewed(batch, actor_id=actor)
+    assert counts(batch.run_id) == (0, 0, 0)
+
+
+def test_replay_cannot_change_stored_candidate_with_same_digest(mandatory_sources):
+    batch, actor = seed_case(mandatory_sources)
+    repo = ImportRepository(DATABASE_URL)
+    repo.import_reviewed(batch, actor_id=actor)
+    tampered = batch.model_dump(mode="json")
+    tampered["candidates"][0]["headline"] = "Tampered candidate with same digest"
+    forged = ImportBatchIn.model_validate(tampered)
+    assert forged.claim_key == batch.claim_key
+    with pytest.raises(ImportBlockedError, match="replayed request"):
+        repo.import_reviewed(forged, actor_id=actor)
+    assert counts(batch.run_id) == (1, 1, 1)
+
+
+def test_source_check_with_empty_evidence_cannot_pass_import(mandatory_sources):
+    batch, actor = seed_case(mandatory_sources)
+    with psycopg.connect(DATABASE_URL) as conn:
+        conn.execute(
+            "update source_checks set notes = %s where run_id = %s and source_id = %s",
+            ("Analyst-confirmed evidence:  \nFallback trail: Direct access",
+             str(batch.run_id), mandatory_sources[0]),
+        )
+    with pytest.raises(ImportBlockedError, match="invalid recorded source"):
+        ImportRepository(DATABASE_URL).import_reviewed(batch, actor_id=actor)
+    assert counts(batch.run_id) == (0, 0, 0)
+
+
+def test_unrecognised_actor_is_refused_before_any_import(mandatory_sources):
+    batch, _actor = seed_case(mandatory_sources)
+    with pytest.raises(PermissionError, match="active SIP"):
+        ImportRepository(DATABASE_URL).import_reviewed(
+            batch, actor_id=str(uuid.uuid4()),
+        )
+    assert counts(batch.run_id) == (0, 0, 0)
+
+
+def test_run_without_production_enablement_refuses_import(mandatory_sources):
+    batch, actor = seed_case(mandatory_sources)
+    with psycopg.connect(DATABASE_URL) as conn:
+        conn.execute(
+            "update runs set production_enabled=false where id = %s", (str(batch.run_id),)
+        )
+    with pytest.raises(ImportBlockedError, match="not enabled"):
         ImportRepository(DATABASE_URL).import_reviewed(batch, actor_id=actor)
     assert counts(batch.run_id) == (0, 0, 0)
