@@ -60,6 +60,14 @@ class _Unset:
 UNSET = _Unset()
 
 
+class BatchImportRequiredError(RuntimeError):
+    """Production SIP runs must use a separately reviewed atomic batch import.
+
+    A legacy POST must never race a bulk import, even when a caller has
+    authenticated as an Analyst. This is a conflict, not permission to retry.
+    """
+
+
 class SelfVerificationError(RuntimeError):
     """The actor is verifying a candidate they captured or assessed.
 
@@ -143,6 +151,20 @@ class CandidateRepository:
         actor_id: str,
     ) -> CandidateRecord:
         with psycopg.connect(self._database_url, row_factory=dict_row) as conn:
+            # Take the same per-run row lock that the future atomic batch import
+            # must use. Otherwise a legacy POST can pass a separate empty-run
+            # check while the bulk transaction is preparing its insert.
+            run = conn.execute(
+                "select production_enabled from runs where id = %s for update",
+                (run_id,),
+            ).fetchone()
+            if run is None:
+                raise KeyError(f"no run {run_id!r}")
+            if run["production_enabled"]:
+                raise BatchImportRequiredError(
+                    "production SIP runs refuse legacy per-item capture; "
+                    "use a reviewed atomic batch import"
+                )
             row = conn.execute(
                 "insert into candidates (run_id, headline, source_id, url, summary, "
                 "published_at, in_coverage_window, captured_by) "
