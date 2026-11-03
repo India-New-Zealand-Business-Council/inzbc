@@ -186,7 +186,7 @@ def test_missing_run_authorisation_fails_without_side_effects(mandatory_sources)
 
 def test_incomplete_mandatory_source_checks_fail_closed(mandatory_sources):
     batch, actor = seed_case(mandatory_sources, checks=111)
-    with pytest.raises(ImportBlockedError, match="112 independently"):
+    with pytest.raises(ImportBlockedError, match="112 analyst-confirmed"):
         ImportRepository(DATABASE_URL).import_reviewed(batch, actor_id=actor)
     assert counts(batch.run_id) == (0, 0, 0)
 
