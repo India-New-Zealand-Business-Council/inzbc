@@ -48,3 +48,24 @@ brief, complete independent QA, CEO decision and manual distribution when allowe
 ## Tests
 
 Run `uv run python -m pytest apps/sip/collector/tests/test_capture_manifest.py apps/sip/collector/tests/test_import_capture.py -q` and `uv run ruff check apps/sip/collector`. Tests use local synthetic data, a fake API and fake source checks — they are **not** a substitute for the real end-to-end launch evidence in issue #55. They also assert that writes remain disabled until the API's atomic-import contract exists.
+
+## Review-only capture-to-batch packet (#530)
+
+After `prepare_capture` passes against an authorised existing run, the pure
+`apps.sip.collector.review_packet.review_packet` function prepares an
+**in-memory, local operator-review packet** from the very same original capture
+file, a validated `CapturePlan` and the run version fetched from the API.
+It revalidates the raw manifest, binds its file SHA-256 and canonical article
+checksum, checks every proposed candidate against the manifest's original
+headline, URL, summary and publication timestamp, and requires a resolved UUID
+source. It emits the reviewed `ImportBatchIn` envelope plus original
+URL/source/time rows for independent staging review. It **does not** stage or
+import anything; never store raw packets in Git, PRs or unprotected issues.
+
+The packet's source UUIDs are **proposals from preflight source-name mapping**,
+not a publisher-identity guarantee. The server-side capture-staging owner must
+independently check those mappings against the original SIP-185 register,
+verify the actual manifest bytes and checksum, establish permitted provenance
+and named launch authority, and maintain protected custody of the file before
+any stored immutable evidence is accepted. Run version and source count are
+also assertions, not new permissions. `--apply` continues to refuse.
