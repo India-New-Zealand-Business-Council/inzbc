@@ -62,3 +62,25 @@ To avoid accidental overclaiming, classify each item separately:
 - [ ] The tech lead owns any merge; INZBC / Sunil controls live deployment, source/retention policy and SIP operation.
 
 For canonical scope and sign-off, read [final handover](../final-handover-2026-11-04.md), [handover pack](../handover-pack.md), [October engineering queue](engineering-backlog-2026-10-28.md), [SIP evidence plan](../sip/LIVE_E2E_PROOF_PLAN_2026-10-27.md) and [client decision update](../meetings/client/2026-10-16-decision-update.md).
+
+## 4–8 November focused completion sprint (proposed targets, not client authority)
+
+**Target date:** Sunday, 8 November 2026, as requested by the project team. The scope below distinguishes work we can get ready for technical review from work only the INZBC account/decision owner can perform. It **does not** promise all proposed modules or 26 historic open issues will become live by Sunday.
+
+| By | Deliverable | Accountable next action / proof |
+|---|---|---|
+| 4 Nov | Collector source-health fixes ready for review | News agent [#19](https://github.com/India-New-Zealand-Business-Council/daily-india-nz-news-agent/pull/19), [#20](https://github.com/India-New-Zealand-Business-Council/daily-india-nz-news-agent/pull/20) and [#22](https://github.com/India-New-Zealand-Business-Council/daily-india-nz-news-agent/pull/22) contain regression changes; verify current head CI and obtain independent code review. **Do not merge these directly to main ahead of upstream #16.** |
+| 5 Nov | Resolve code review of legacy capture pipeline | Tech lead reviews [news-agent #14](https://github.com/India-New-Zealand-Business-Council/daily-india-nz-news-agent/pull/14), then the stacked [#15](https://github.com/India-New-Zealand-Business-Council/daily-india-nz-news-agent/pull/15). If changes are required, the owner addresses each comment and reruns CI; preserve manual distribution controls. |
+| 5–6 Nov | Review the two hourly approaches and source register | Technical lead and source owner resolve #14/#15 vs #16 status schema, official source list, GDELT error semantics, source-rights decisions [#17](https://github.com/India-New-Zealand-Business-Council/daily-india-nz-news-agent/issues/17). No automatic schedule while [#509](https://github.com/India-New-Zealand-Business-Council/inzbc/issues/509) is unsigned. |
+| 5–6 Nov | Design and test the SIP write safety boundary | Tech lead/backend owner reviews [#500](https://github.com/India-New-Zealand-Business-Council/inzbc/pull/500), then plans immutable server-held capture, row-lock transaction, audited idempotent insert and two-writer Postgres test. No unilateral API-write activation. |
+| 6–7 Nov | Complete reviewable operator evidence/checklists | INZBC owner assigns hosting, restore, alert and source rights owners, privately tracks original acceptance/retention authority and prepares an isolated real-backup recovery demonstration. Documentation or CI alone never substitutes for that proof. |
+| By 8 Nov | Close only evidenced work, publish an open-blocker handoff | Tech lead records merged PRs, CI results, original decision links and unresolved #99/#55/#39/#45/#303 items. **A real SIP run or deployment is only marked complete after authorised, observed production evidence.** |
+
+### Work accomplished in the first pass on 4 November
+
+- Main [#522](https://github.com/India-New-Zealand-Business-Council/inzbc/pull/522) documents the queue; CI passed, open for technical-lead review, not merged.
+- News agent [#19](https://github.com/India-New-Zealand-Business-Council/daily-india-nz-news-agent/pull/19) corrects false-success operator source health when evidence is missing or malformed.
+- News agent [#20](https://github.com/India-New-Zealand-Business-Council/daily-india-nz-news-agent/pull/20) corrects GDELT HTTP-200 malformed/error results misclassified as empty news.
+- News agent [#22](https://github.com/India-New-Zealand-Business-Council/daily-india-nz-news-agent/pull/22) blocks persistence of unknown source-check outcomes, duplicates and invalid counters.
+- As checked on 4 Nov, the offline CI and hourly preflight workflows for **#19, #20 and #22 passed**; these three PRs are still unmerged, with tech-lead review requested.
+- Do not interpret these code review passes as a source licence, owner sign-off, full 112-source SIP-185 run, collection activation or completed client UAT.
