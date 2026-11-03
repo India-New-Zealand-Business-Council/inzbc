@@ -20,11 +20,15 @@ create table if not exists sip_import_claims (
   actor_id           uuid not null references users(id),
   committed_at       timestamptz not null default now()
 );
+drop trigger if exists sip_import_evidence_append_only on sip_import_evidence;
 create trigger sip_import_evidence_append_only before update or delete on sip_import_evidence
   for each row execute function reject_evidence_change();
+drop trigger if exists sip_import_evidence_no_wipe on sip_import_evidence;
 create trigger sip_import_evidence_no_wipe before truncate on sip_import_evidence
   for each statement execute function reject_evidence_change();
+drop trigger if exists sip_import_claims_append_only on sip_import_claims;
 create trigger sip_import_claims_append_only before update or delete on sip_import_claims
   for each row execute function reject_evidence_change();
+drop trigger if exists sip_import_claims_no_wipe on sip_import_claims;
 create trigger sip_import_claims_no_wipe before truncate on sip_import_claims
   for each statement execute function reject_evidence_change();
