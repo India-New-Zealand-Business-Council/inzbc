@@ -130,6 +130,7 @@ review findings instead (see Done, PR #501) covered Thursday's daily-commit in i
   own PR text says it doesn't close #60; #60 was closed anyway, same second #317 merged,
   with no "Closes #60" anywhere in the history). No code changed; this is a tracking
   correction, flagged for standup rather than decided solo or silently reopened.
+- **Friday a11y/keyboard pass on both agent surfaces** (PR #507, 30 Oct 2026, refs #62).
   Reviewed `AgentRehearsalPanel.tsx` and `PlatformAssistant.tsx` against keyboard operability,
   live-region usage and color-only signalling. Real gap found and fixed: the rehearsal list's
   expand/collapse button had `aria-expanded` but no `aria-controls`, so a screen reader
