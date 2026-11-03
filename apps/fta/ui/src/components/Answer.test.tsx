@@ -16,7 +16,7 @@ describe('Answer', () => {
     expect(screen.getByRole('heading', { name: 'Wool' })).toBeInTheDocument()
     expect(screen.getByText(/MFAT National Interest Analysis/)).toBeInTheDocument()
     expect(screen.getByText('2026-07-22')).toBeInTheDocument()
-    expect(screen.getByText(/not yet in force/i)).toBeInTheDocument()
+    expect(screen.getByText(/in force from 20 october 2026/i)).toBeInTheDocument()
   })
 
   it('renders optional notes when present and omits the element when not', () => {

@@ -14,9 +14,8 @@ from datetime import date
 from enum import Enum
 
 FTA_STATUS_LINE = (
-    "NZ-India FTA signed 27 April 2026 (negotiations concluded 22 Dec 2025). Not yet in force - "
-    "awaiting domestic ratification in both countries. Benefits are agreed, applying once the "
-    "FTA enters into force, not current access."
+    "NZ-India FTA signed 27 April 2026 (negotiations concluded 22 Dec 2025). In force from "
+    "20 October 2026. Staged reductions apply on the agreed schedule from that date."
 )
 
 # Settled 9 Aug 2026 (#219, docs/client-answers-relayed-2026-08-09.md "FTA sectors: goods first,

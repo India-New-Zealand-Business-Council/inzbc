@@ -10,6 +10,8 @@ every substantive claim traces to an official document below.
 - Implication for the tool: it must state this status plainly. Benefits are described as
   "agreed, applying once the FTA enters into force", not as current access. A single status
   line should appear on every answer.
+- **Update, 4 Nov 2026:** the agreement entered into force on 20 October 2026. `FTA_STATUS_LINE`
+  in `apps/fta/corpus.py` now says so, matching inzbc.org.
 
 ## Source tiers
 
