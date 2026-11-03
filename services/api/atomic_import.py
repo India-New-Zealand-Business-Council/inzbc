@@ -32,6 +32,9 @@ from services.api.import_contract import (
 from services.api.source_checks import RecordSourceCheckIn
 
 
+_MAX_ORIGINAL_EXPORT_BYTES = 10 * 1024 * 1024
+
+
 class ImportBlockedError(ValueError):
     """The requested import cannot pass immutable evidence or authority checks."""
 
@@ -71,10 +74,12 @@ def verify_exporter_originals(
     if not isinstance(exported_articles, list) or len(exported_articles) != len(batch.candidates):
         raise ImportBlockedError("original exported article count differs from batch")
     try:
-        digest = hashlib.sha256(_canonical_bytes(exported_articles)).hexdigest()
+        serialized = _canonical_bytes(exported_articles)
     except (TypeError, ValueError, OverflowError) as exc:
         raise ImportBlockedError("invalid original exported article JSON") from exc
-    if digest != batch.articles_sha256:
+    if len(serialized) > _MAX_ORIGINAL_EXPORT_BYTES:
+        raise ImportBlockedError("original export exceeds 10 MiB safety limit")
+    if hashlib.sha256(serialized).hexdigest() != batch.articles_sha256:
         raise ImportBlockedError("original exported article checksum differs from batch")
 
     by_url = {item.url: item for item in batch.candidates}
