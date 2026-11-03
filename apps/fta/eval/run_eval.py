@@ -27,6 +27,7 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
+from apps.fta.corpus import CORPUS
 from apps.fta.explainer import answer_query
 
 _HERE = Path(__file__).resolve().parent
@@ -51,17 +52,51 @@ class Question:
         return bool(self.expected_ids)
 
 
+QUESTION_FIELDS = ("qid", "query", "expected_ids", "type", "checked_by")
+QUESTION_TYPES = frozenset({
+    "exact", "multi_term", "synonym", "no_match", "product_framing"
+})
+
+
 def load_questions(path: Path = QUESTIONS_CSV) -> list[Question]:
+    """Load a complete, internally consistent evaluation dataset, or fail closed.
+
+    A blank answer label on an answerable row must not silently become a
+    no-match example, and unknown/unconfirmed IDs cannot score as misses.
+    Leave the review metadata untouched; no independent review is implied.
+    """
+    confirmed_ids = {entry.id for entry in CORPUS if entry.confirmed}
+    seen_qids: set[str] = set()
+    seen_queries: set[str] = set()
+    questions: list[Question] = []
     with path.open(newline="", encoding="utf-8") as handle:
-        return [
-            Question(
-                qid=row["qid"],
-                query=row["query"],
-                expected_ids=frozenset(i for i in row["expected_ids"].split(";") if i),
-                type=row["type"],
-            )
-            for row in csv.DictReader(handle)
-        ]
+        reader = csv.DictReader(handle)
+        if reader.fieldnames != list(QUESTION_FIELDS):
+            raise ValueError(f"{path}: invalid evaluation CSV header")
+        for line_no, row in enumerate(reader, start=2):
+            if None in row or any(not isinstance(row.get(name), str) for name in QUESTION_FIELDS):
+                raise ValueError(f"{path}:{line_no}: malformed CSV row")
+            qid, query, kind = row["qid"], row["query"], row["type"]
+            if not qid.strip() or not query.strip() or kind not in QUESTION_TYPES:
+                raise ValueError(f"{path}:{line_no}: missing QID/query or invalid question type")
+            normalized_query = " ".join(query.casefold().split())
+            if qid in seen_qids or normalized_query in seen_queries:
+                raise ValueError(f"{path}:{line_no}: duplicate QID or query")
+            labels = row["expected_ids"]
+            parts = [part.strip() for part in labels.split(";")] if labels else []
+            if any(not part for part in parts) or len(parts) != len(set(parts)):
+                raise ValueError(f"{path}:{line_no}: blank or duplicate answer ID")
+            expected = frozenset(parts)
+            if not expected <= confirmed_ids:
+                raise ValueError(f"{path}:{line_no}: unknown or unconfirmed answer ID")
+            if (kind == "no_match") != (not expected):
+                raise ValueError(f"{path}:{line_no}: no-match type and expected IDs disagree")
+            seen_qids.add(qid)
+            seen_queries.add(normalized_query)
+            questions.append(Question(qid=qid, query=query, expected_ids=expected, type=kind))
+    if not questions:
+        raise ValueError(f"{path}: evaluation CSV has no questions")
+    return questions
 
 
 def first_relevant_rank(returned: list[str], expected: frozenset[str]) -> int | None:
