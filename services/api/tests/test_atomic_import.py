@@ -15,8 +15,8 @@ import psycopg
 import pytest
 from psycopg.types.json import Jsonb
 
-from apps.sip.collector.source_register import MANDATORY_SOURCES
 from apps.sip.collector.capture_manifest import _canonical_bytes
+from apps.sip.collector.source_register import MANDATORY_SOURCES
 from services.api.atomic_import import ImportBlockedError, ImportRepository
 from services.api.import_contract import ImportBatchIn
 from services.api.tests.role_seed import authorise_run, grant
