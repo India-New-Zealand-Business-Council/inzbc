@@ -122,6 +122,10 @@ def review_packet(
         "claim_key": batch.claim_key,
         "batch_payload": batch.model_dump(mode="json"),
         "captured_articles": originals,
+        # Same validated original article objects, not a reconstructed
+        # candidate projection. Protected handoff only: source licenses,
+        # collector provenance and permission to stage remain independent.
+        "raw_articles": articles,
         "operator_notice": (
             "Not SIP-191 authority, not a source-rights or SIP-185 certification, "
             "not a server-held capture, and not a production import."
