@@ -56,27 +56,25 @@ def test_0009_upgrades_already_applied_0008_without_rewriting_legacy_evidence():
         ).fetchone()
         assert legacy == (None,)  # no fabricated backfill of earlier evidence
 
-        with pytest.raises(psycopg.errors.CheckViolation):
-            with conn.transaction():
+        with pytest.raises(psycopg.errors.CheckViolation), conn.transaction():
+            conn.execute(
+                "insert into sip_import_evidence "
+                "(run_id, articles_sha256, batch_payload, captured_articles, "
+                "source_count, evidence_ref, staged_by) "
+                "values (%s, %s, %s, %s, %s, %s, %s)",
+                (uuid.uuid4(), "b" * 64, Jsonb({}), Jsonb([{"url": "https://a.org"}]),
+                 112, "new missing evidence", uuid.uuid4()),
+            )
+        for invalid in ([], {"not": "an array"}):
+            with pytest.raises(psycopg.errors.CheckViolation), conn.transaction():
                 conn.execute(
                     "insert into sip_import_evidence "
                     "(run_id, articles_sha256, batch_payload, captured_articles, "
-                    "source_count, evidence_ref, staged_by) "
-                    "values (%s, %s, %s, %s, %s, %s, %s)",
+                    "raw_articles, source_count, evidence_ref, staged_by) "
+                    "values (%s, %s, %s, %s, %s, %s, %s, %s)",
                     (uuid.uuid4(), "b" * 64, Jsonb({}), Jsonb([{"url": "https://a.org"}]),
-                     112, "new missing evidence", uuid.uuid4()),
+                     Jsonb(invalid), 112, "invalid synthetic evidence", uuid.uuid4()),
                 )
-        for invalid in ([], {"not": "an array"}):
-            with pytest.raises(psycopg.errors.CheckViolation):
-                with conn.transaction():
-                    conn.execute(
-                        "insert into sip_import_evidence "
-                        "(run_id, articles_sha256, batch_payload, captured_articles, "
-                        "raw_articles, source_count, evidence_ref, staged_by) "
-                        "values (%s, %s, %s, %s, %s, %s, %s, %s)",
-                        (uuid.uuid4(), "b" * 64, Jsonb({}), Jsonb([{"url": "https://a.org"}]),
-                         Jsonb(invalid), 112, "invalid synthetic evidence", uuid.uuid4()),
-                    )
         original = [{"title": "Unchanged synthetic article", "url": "https://example.org"}]
         conn.execute(
             "insert into sip_import_evidence "
