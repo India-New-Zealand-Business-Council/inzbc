@@ -900,6 +900,9 @@ create table if not exists sip_import_evidence (
   run_id             uuid primary key references runs(id),
   articles_sha256    text not null check (articles_sha256 ~ '^[0-9a-f]{64}$'),
   batch_payload      jsonb not null check (jsonb_typeof(batch_payload) = 'object'),
+  -- Original captured URL/source/time rows, separate from proposed candidates.
+  captured_articles  jsonb not null check (jsonb_typeof(captured_articles) = 'array'
+                       and jsonb_array_length(captured_articles) between 1 and 5000),
   source_count       integer not null check (source_count = 112),
   evidence_ref       text not null check (btrim(evidence_ref) <> ''),
   staged_by          uuid not null references users(id),
