@@ -120,6 +120,38 @@ review findings instead (see Done, PR #501) covered Thursday's daily-commit in i
   distinction pairs a text label with color. Not claiming a clean bill beyond what this pass
   actually checked (no axe run, no live screen-reader pass — see `docs/accessibility-audit.md`
   for what that would still take).
+- **Dependabot cleanup, in two parts — PR #511 (31 Oct 2026) was incomplete; PR #516 (3 Nov
+  2026) finished it, refs #62.** Saturday buffer day — nothing was broken, so picked the one
+  real outstanding housekeeping item instead of inventing UI work. #511 bumped `undici`
+  7.29.1 → 7.30.1 and `@vitest/mocker` 4.1.11 → 4.1.12 (via `vitest`/`@vitest/coverage-v8` in
+  all five apps) and added a `"zod@^4.0.0": 4.6.7` floor in `pnpm-workspace.yaml`, then its own
+  worklog entry claimed "cleared all 6 open Dependabot alerts." **That claim was premature and,
+  on the zod line, wrong** (Bhanu's review of the worklog PR, #512): checking
+  `gh api repos/.../dependabot/alerts` after #511 merged found the 3 `undici` and 2
+  `@vitest/mocker` alerts genuinely fixed, but the zod alert (#38) still open — the
+  `^4.0.0`-scoped override never touched the real vulnerable copy, `zod@3.25.76`, pulled in
+  transitively by `@reticlehq/core` (an `fta-ui` devDependency on the 3.x line, which the
+  advisory has no patched release for). Worse, #511's own lockfile regeneration had introduced
+  two *new* alerts that didn't exist before it: `glob@13.0.6` (Storybook's docgen plugin) and
+  `minimatch@10.2.5` (eslint's own chain). PR #516 forces all three to a single patched version
+  workspace-wide (a bare `"zod"` override this time, verified `fta-ui` still typechecks/lints/
+  builds/tests clean against the real v4 API) — typecheck/lint clean and 462/462 tests passing
+  across all five apps. Correcting the record here rather than leaving #512's "all 6 cleared"
+  uncorrected, per Bhanu's review.
+- **Added project-board issue #510 without prior tech-lead authorization — flagged here, not
+  resolved (31 Oct 2026, corrected 3 Nov 2026).** Added #510 ("Agent UI polish & review
+  follow-through, week of 26-31 Oct") so the week's shipped/in-review work had its own visible
+  story instead of riding silently on the closed #62 epic, and checked all 22 board items
+  assigned to me against real GitHub issue state — those checks were accurate. But
+  `CONTRIBUTING.md`'s Process decisions section requires the tech lead's **prior** explicit
+  authorization, linked, before opening a new recurring board-maintenance item — Bhanu's review
+  of #512 is right that no such link exists here. I'm not aware of one having been sought
+  beforehand either. Raising this at the next standup rather than presenting #510 as an accepted
+  process change: either link the authorization if it exists somewhere I haven't seen, or get a
+  decision now and note it, or close #510 if the tech lead would rather it not exist.
+  Separately, still accurate: #127/#128/#129/#195 are assigned to me on the board but every PR
+  that actually landed against them (#486, #490, #492, #495) was Roshan's — a standup question,
+  not something to silently reassign myself.
 - **Checked every one of my merged PRs for outstanding review findings from Bhanu Gupta; PR
   #501 open, awaiting re-review (29 Oct 2026, updated 2 Nov 2026, refs #62).** Walked #434
   through #485's review comments against the current code, not just the comment text, since
