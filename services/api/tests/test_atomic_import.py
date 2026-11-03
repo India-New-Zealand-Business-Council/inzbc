@@ -95,7 +95,10 @@ def seed_case(
     rows = [
         {
             "headline": f"Synthetic event {index}",
-            "source_id": str(candidate_source or source_ids[0]),
+            "source_id": str(
+                candidate_source if candidate_source is not None and index == 1
+                else source_ids[0]
+            ),
             "url": f"https://example.org/test-{uuid.uuid4()}",
             "summary": "synthetic only",
             "published_at": "2026-10-27T02:00:00+00:00",
@@ -208,13 +211,12 @@ def test_conflicting_digest_cannot_replay_committed_batch(mandatory_sources):
 
 def test_stale_run_version_refused(mandatory_sources):
     batch, actor = seed_case(mandatory_sources)
-    stale = batch.model_copy(update={"expected_run_version": 17})
+    # The immutable request still asks for version 0; the DB run has moved
+    # and must refuse even though all original capture data still agrees.
     with psycopg.connect(DATABASE_URL) as conn:
-        # Keep server-held immutable evidence matching the stale request only
-        # so the version guard, rather than the equality guard, is exercised.
-        # New test evidence is append-only, therefore seed a distinct staged
-        # run instead of attempting to mutate the stored record.
-        pass
-    with pytest.raises(ImportBlockedError, match="immutable reviewed"):
-        ImportRepository(DATABASE_URL).import_reviewed(stale, actor_id=actor)
+        conn.execute(
+            "update runs set version = 17 where id = %s", (str(batch.run_id),)
+        )
+    with pytest.raises(ValueError, match="version changed"):
+        ImportRepository(DATABASE_URL).import_reviewed(batch, actor_id=actor)
     assert counts(batch.run_id) == (0, 0, 0)
