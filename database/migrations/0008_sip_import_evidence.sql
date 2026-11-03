@@ -11,37 +11,11 @@ create table if not exists sip_import_evidence (
   -- batch. Comparing a proposed batch with itself cannot prove completeness.
   captured_articles  jsonb not null check (jsonb_typeof(captured_articles) = 'array'
                        and jsonb_array_length(captured_articles) between 1 and 5000),
-  -- The exact approved collector article list, for independent digest and
-  -- candidate-text reconciliation. Staging must validate the whole manifest.
-  raw_articles       jsonb not null check (jsonb_typeof(raw_articles) = 'array'
-                       and jsonb_array_length(raw_articles) between 1 and 5000),
   source_count       integer not null check (source_count = 112),
   evidence_ref       text not null check (btrim(evidence_ref) <> ''),
   staged_by          uuid not null references users(id),
   staged_at          timestamptz not null default now()
 );
--- An earlier, unmerged version of #528 created this table without the raw
--- article payload. Upgrading an empty staging database is safe; rewriting
--- already-staged append-only evidence is not. Reject nonempty legacy state
--- rather than fabricating a previously unrecorded original capture.
-do $
-begin
-  if not exists (
-    select 1 from information_schema.columns
-    where table_schema = current_schema()
-      and table_name = 'sip_import_evidence'
-      and column_name = 'raw_articles'
-  ) then
-    if exists (select 1 from sip_import_evidence limit 1) then
-      raise exception 'Cannot add original raw articles: review existing SIP import evidence';
-    end if;
-    alter table sip_import_evidence add column raw_articles jsonb not null
-      check (jsonb_typeof(raw_articles) = 'array'
-             and jsonb_array_length(raw_articles) between 1 and 5000);
-  end if;
-end
-$;
-
 create table if not exists sip_import_claims (
   run_id             uuid primary key references runs(id),
   claim_key          text not null check (claim_key ~ '^[0-9a-f]{64}$'),
