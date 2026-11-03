@@ -17,6 +17,7 @@ from psycopg.types.json import Jsonb
 
 from apps.sip.collector.capture_manifest import _canonical_bytes
 from apps.sip.collector.source_register import MANDATORY_SOURCES
+from services.api import atomic_import
 from services.api.atomic_import import ImportBlockedError, ImportRepository
 from services.api.import_contract import ImportBatchIn
 from services.api.tests.role_seed import authorise_run, grant
@@ -318,5 +319,15 @@ def test_exporter_originals_cannot_be_replaced_before_import(
     # The original exported bytes are independent of the candidate rows.
     batch, actor = seed_case(mandatory_sources, **changes)
     with pytest.raises(ImportBlockedError, match=error):
+        ImportRepository(DATABASE_URL).import_reviewed(batch, actor_id=actor)
+    assert counts(batch.run_id) == (0, 0, 0)
+
+
+def test_original_export_payload_limit_blocks_import(mandatory_sources, monkeypatch):
+    batch, actor = seed_case(mandatory_sources)
+    # A small test ceiling exercises the production 10 MiB boundary without
+    # allocating megabytes of synthetic licensed-source-looking material.
+    monkeypatch.setattr(atomic_import, "_MAX_ORIGINAL_EXPORT_BYTES", 64)
+    with pytest.raises(ImportBlockedError, match="10 MiB safety limit"):
         ImportRepository(DATABASE_URL).import_reviewed(batch, actor_id=actor)
     assert counts(batch.run_id) == (0, 0, 0)
