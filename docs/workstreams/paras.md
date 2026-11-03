@@ -121,6 +121,18 @@ review findings instead (see Done, PR #501) covered Thursday's daily-commit in i
   re-open them.
 
 ## Done
+- **Week 5, Wednesday: research — reviewer-approval UI for AI-drafted content** (4 Nov 2026, refs
+  #60). This week's research thread, pointed directly at Tuesday's confirmed gap rather than a
+  generic topic: `docs/research/review-approval-ui-literature-review.md`, four sources checked
+  against their arXiv/publisher record on 4 Nov 2026 (a 2026 ESEM SEIP submission on reviewing
+  LLM-generated multi-file changes as a trust-calibration problem, not a diffing one; a 2025
+  preprint on local in-place conflict review over whole-version rollback; a 2026 IUI workshop
+  paper on oversight-as-downstream-check; two Manning books on the four-eyes principle). One
+  search came back genuinely empty — peer-reviewed evidence for "approval fatigue" degrading a
+  review gate into rubber-stamping — recorded as not found rather than citing the unsourced "93%"
+  figure repeated across practitioner blogs. Concrete finding for whenever #60 is actually picked
+  up: build the screen around trust-calibration and visible, specific approval, not a bare diff
+  with a generic Approve button.
 - **Week 5, Tuesday: scope-checked the Comms Assistant review UI rather than assuming #60's
   closure meant it existed** (3 Nov 2026, refs #60). Per the Must-do plan, Tuesday is a polish
   day on the two agent surfaces, but both had just been covered (Monday's #513 and its #501
