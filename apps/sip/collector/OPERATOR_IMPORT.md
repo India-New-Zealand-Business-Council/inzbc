@@ -68,6 +68,17 @@ compares raw headline, summary and publication timestamp with the candidate
 mapping. A matching URL or request-supplied digest **alone** is no longer
 sufficient to change a news headline under an unchanged capture claim.
 
+**Forward migration safety:** `0008_sip_import_evidence.sql` remains
+byte-for-byte unchanged for databases that already applied it. The separate
+`0009_sip_original_articles_forward.sql` adds `raw_articles` and rejects any
+*new* staged evidence without a bounded original article list. A pre-0009 row
+cannot be retroactively treated as source-authenticated: it remains unmodified
+and ineligible for import because the importer refuses missing original bytes.
+No SQL backfill of an append-only evidence record is authorised; produce a new,
+independently approved run and re-stage the verified source capture instead.
+The upgrade is exercised against a temporary PostgreSQL table with the old
+0008 layout, including legacy-row preservation and new-row rejection.
+
 The append-only `sip_import_evidence` row must be populated by a **separately
 reviewed and authorised evidence-staging path**, binding original collector
 bytes and independently resolved source IDs to the proposed candidate batch.
