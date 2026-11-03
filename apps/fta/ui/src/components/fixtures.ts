@@ -10,7 +10,7 @@ export const woolAnswer: Answer = {
   citation: 'MFAT National Interest Analysis, key tariff outcomes table',
   verified_at: '2026-07-22',
   status_line:
-    'NZ-India FTA signed 27 April 2026 (negotiations concluded 22 Dec 2025). Not yet in force - awaiting domestic ratification in both countries. Benefits are agreed, applying once the FTA enters into force, not current access.',
+    'NZ-India FTA signed 27 April 2026 (negotiations concluded 22 Dec 2025). In force from 20 October 2026. Staged reductions apply on the agreed schedule from that date.',
   jurisdiction: 'New Zealand-India',
   next_step:
     "Confirm the exact tariff line in the FTA's Annex 2A schedule, or contact INZBC for product-specific guidance.",

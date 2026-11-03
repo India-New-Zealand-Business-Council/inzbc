@@ -132,7 +132,7 @@ def test_unconfirmed_entry_is_suppressed_from_member_answers() -> None:
 
 def test_every_answer_carries_status_line_and_approved_disclaimer() -> None:
     for answer in answer_query("wine"):
-        assert "not yet in force" in answer.status_line.lower()
+        assert "in force from 20 october 2026" in answer.status_line.lower()
         assert answer.disclaimer == DISCLAIMER == AI_INFORMATION_STANDARD
         assert "[[" not in answer.disclaimer  # approved wording, no placeholder residue
         assert "indicate this rather than speculate" in answer.disclaimer
@@ -179,7 +179,7 @@ def test_no_match_is_structurally_not_an_answer() -> None:
 
 def test_no_match_carries_status_line_and_approved_disclaimer() -> None:
     result = no_match("anything unmatched")
-    assert "not yet in force" in result.status_line.lower()
+    assert "in force from 20 october 2026" in result.status_line.lower()
     assert result.disclaimer == DISCLAIMER == AI_INFORMATION_STANDARD
     assert "[[" not in result.disclaimer
     assert result.jurisdiction == "New Zealand-India"
@@ -309,7 +309,7 @@ def test_public_answer_excludes_internal_only_fields() -> None:
 def test_public_answer_carries_status_line_and_disclaimer() -> None:
     for answer in answer_query_at_depth("wine", Depth.PUBLIC):
         assert answer.disclaimer == DISCLAIMER == AI_INFORMATION_STANDARD
-        assert "not yet in force" in answer.status_line.lower()
+        assert "in force from 20 october 2026" in answer.status_line.lower()
 
 
 def test_internal_depth_returns_internal_answer_shape() -> None:
