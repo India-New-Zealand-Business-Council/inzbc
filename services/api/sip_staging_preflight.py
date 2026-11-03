@@ -115,7 +115,7 @@ def verify_handoff(
     original_by_url = {}
     for article, resolved in zip(originals, captured, strict=True):
         if not isinstance(resolved, dict):
-            raise ValueError("malformed captured article projection")
+            raise TypeError("malformed captured article projection")
         source_name = article["source"].strip()
         db_id = name_lookup.get(source_name)
         if db_id is None:
