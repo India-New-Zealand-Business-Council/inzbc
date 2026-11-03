@@ -110,7 +110,7 @@ class ImportRepository:
                 ).fetchone()
                 if (stored is None or stored["articles_sha256"] != batch.articles_sha256
                         or ImportBatchIn.model_validate(stored["batch_payload"]) != batch):
-                    raise ImportBlockedError("replayed request differs from immutable capture")
+                    raise ImportBlockedError("conflicting replay: request differs from immutable capture")
                 count = conn.execute(
                     "select count(*) as n from candidates where run_id = %s",
                     (run_id,),
