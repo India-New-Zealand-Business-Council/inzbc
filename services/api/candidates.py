@@ -26,6 +26,7 @@ from apps.sip.collector.verification import UnverifiedHighSignalError
 from apps.sip.pipeline.models import SignalStrength, SourceConfidence, VerificationState
 from services.api.auth import ANALYST, REVIEWER, SIP_OWNER, STAFF_READ, Principal
 from services.api.candidate_persistence import (
+    BatchImportRequiredError,
     CandidateRecord,
     CandidateRepository,
     SelfVerificationError,
@@ -149,16 +150,21 @@ def capture_candidate(
     principal: Principal = Depends(write_access(ANALYST, SIP_OWNER)),
     repo: CandidateRepository = Depends(get_candidate_repository),
 ) -> CandidateOut:
-    candidate = repo.capture(
-        run_id=body.run_id,
-        headline=body.headline,
-        source_id=body.source_id,
-        url=body.url,
-        summary=body.summary,
-        published_at=body.published_at,
-        in_coverage_window=body.in_coverage_window,
-        actor_id=principal.user_id,
-    )
+    try:
+        candidate = repo.capture(
+            run_id=body.run_id,
+            headline=body.headline,
+            source_id=body.source_id,
+            url=body.url,
+            summary=body.summary,
+            published_at=body.published_at,
+            in_coverage_window=body.in_coverage_window,
+            actor_id=principal.user_id,
+        )
+    except KeyError as error:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail=str(error)) from error
+    except BatchImportRequiredError as error:
+        raise HTTPException(status.HTTP_409_CONFLICT, detail=str(error)) from error
     return _candidate_out(candidate)
 
 
