@@ -14,6 +14,7 @@ import psycopg
 import pytest
 from psycopg.types.json import Jsonb
 
+from apps.sip.collector.source_register import MANDATORY_SOURCES
 from services.api.atomic_import import ImportBlockedError, ImportRepository
 from services.api.import_contract import ImportBatchIn
 from services.api.tests.role_seed import authorise_run, grant
@@ -29,20 +30,26 @@ END = datetime(2026, 10, 28, tzinfo=UTC)
 
 @pytest.fixture(scope="module")
 def mandatory_sources():
+    required = list(MANDATORY_SOURCES)
+    assert len(required) == 112
     created = []
     with psycopg.connect(DATABASE_URL) as conn:
-        existing = conn.execute(
-            "select id from source_library where mandatory = true and active = true"
-        ).fetchall()
-        assert len(existing) <= 112
-        ids = [row[0] for row in existing]
-        for index in range(112 - len(ids)):
-            key = uuid.uuid4().hex
+        existing = {
+            row[1]: row[0]
+            for row in conn.execute(
+                "select id, sip185_code from source_library where mandatory = true"
+            ).fetchall()
+        }
+        ids = []
+        for entry in required:
+            if entry.source_id in existing:
+                ids.append(existing[entry.source_id])
+                continue
             row = conn.execute(
                 "insert into source_library "
                 "(sip185_code, name, layer, mandatory, active) "
-                "values (%s, %s, 1, true, true) returning id",
-                (f"TEST-{key}", f"Synthetic source {index}"),
+                "values (%s, %s, %s, true, true) returning id",
+                (entry.source_id, entry.name, entry.layer),
             ).fetchone()
             created.append(row[0])
             ids.append(row[0])
@@ -53,7 +60,6 @@ def mandatory_sources():
                 "update source_library set mandatory = false where id = any(%s)",
                 (created,),
             )
-
 
 def seed_case(
     source_ids, *, launch=True, checks=112, candidate_source=None, candidates=1
@@ -82,11 +88,11 @@ def seed_case(
         for source_id in source_ids[:checks]:
             conn.execute(
                 "insert into source_checks "
-                "(run_id, source_id, outcome, notes) values "
-                "(%s, %s, 'No Qualifying Item', %s)",
+                "(run_id, source_id, outcome, method, notes) values "
+                "(%s, %s, 'No Qualifying Item', 'Direct access', %s)",
                 (
                     run_id, source_id,
-                    "Analyst-confirmed evidence: synthetic test record\nFallback trail: Direct website",
+                    "Analyst-confirmed evidence: synthetic test record\nFallback trail: Direct access",
                 ),
             )
         conn.commit()
@@ -116,10 +122,16 @@ def seed_case(
     with psycopg.connect(DATABASE_URL) as conn:
         conn.execute(
             "insert into sip_import_evidence "
-            "(run_id, articles_sha256, batch_payload, source_count, evidence_ref, staged_by) "
-            "values (%s,%s,%s,%s,%s,%s)",
+            "(run_id, articles_sha256, batch_payload, captured_articles, "
+            "source_count, evidence_ref, staged_by) "
+            "values (%s,%s,%s,%s,%s,%s,%s)",
             (
                 run_id, batch.articles_sha256, Jsonb(batch.model_dump(mode="json")),
+                Jsonb([
+                    {"url": row["url"], "source_id": row["source_id"],
+                     "published_at": row["published_at"]}
+                    for row in rows
+                ]),
                 112, "SYNTHETIC-ONLY-REVIEW-EVIDENCE", person,
             ),
         )
