@@ -5,6 +5,7 @@ is a fixture shortcut, NOT authority for a live SIP-184 run.
 """
 from __future__ import annotations
 
+import hashlib
 import os
 import uuid
 from concurrent.futures import ThreadPoolExecutor
@@ -15,6 +16,7 @@ import pytest
 from psycopg.types.json import Jsonb
 
 from apps.sip.collector.source_register import MANDATORY_SOURCES
+from apps.sip.collector.capture_manifest import _canonical_bytes
 from services.api.atomic_import import ImportBlockedError, ImportRepository
 from services.api.import_contract import ImportBatchIn
 from services.api.tests.role_seed import authorise_run, grant
@@ -62,7 +64,8 @@ def mandatory_sources():
             )
 
 def seed_case(
-    source_ids, *, launch=True, checks=112, candidate_source=None, candidates=1
+    source_ids, *, launch=True, checks=112, candidate_source=None, candidates=1,
+    raw_title=None, raw_digest_override=None
 ):
     person = uuid.uuid4()
     run_id = uuid.uuid4()
@@ -111,9 +114,21 @@ def seed_case(
         }
         for index in range(candidates)
     ]
+    raw_articles = [
+        {
+            "title": raw_title if raw_title is not None and index == 0
+                     else row["headline"],
+            "description": row["summary"],
+            "url": row["url"],
+            "source": "Synthetic Feed",
+            "published": row["published_at"],
+        }
+        for index, row in enumerate(rows)
+    ]
+    digest = hashlib.sha256(_canonical_bytes(raw_articles)).hexdigest()
     payload = {
         "run_id": str(run_id),
-        "articles_sha256": "a" * 64,
+        "articles_sha256": raw_digest_override or digest,
         "expected_run_version": 0,
         "capture_source_count": 112,
         "candidates": rows,
@@ -122,9 +137,9 @@ def seed_case(
     with psycopg.connect(DATABASE_URL) as conn:
         conn.execute(
             "insert into sip_import_evidence "
-            "(run_id, articles_sha256, batch_payload, captured_articles, "
+            "(run_id, articles_sha256, batch_payload, captured_articles, raw_articles, "
             "source_count, evidence_ref, staged_by) "
-            "values (%s,%s,%s,%s,%s,%s,%s)",
+            "values (%s,%s,%s,%s,%s,%s,%s,%s)",
             (
                 run_id, batch.articles_sha256, Jsonb(batch.model_dump(mode="json")),
                 Jsonb([
@@ -132,6 +147,7 @@ def seed_case(
                      "published_at": row["published_at"]}
                     for row in rows
                 ]),
+                Jsonb(raw_articles),
                 112, "SYNTHETIC-ONLY-REVIEW-EVIDENCE", person,
             ),
         )
@@ -218,6 +234,20 @@ def test_conflicting_digest_cannot_replay_committed_batch(mandatory_sources):
     with pytest.raises(ImportBlockedError, match="conflicting"):
         repo.import_reviewed(conflicting, actor_id=actor)
     assert counts(batch.run_id) == (1, 1, 1)
+
+
+def test_original_article_headline_substitution_is_blocked(mandatory_sources):
+    batch, actor = seed_case(mandatory_sources, raw_title="Changed original title")
+    with pytest.raises(ImportBlockedError, match="candidate text differs"):
+        ImportRepository(DATABASE_URL).import_reviewed(batch, actor_id=actor)
+    assert counts(batch.run_id) == (0, 0, 0)
+
+
+def test_original_article_checksum_mismatch_is_blocked(mandatory_sources):
+    batch, actor = seed_case(mandatory_sources, raw_digest_override="a" * 64)
+    with pytest.raises(ImportBlockedError, match="original article checksum mismatch"):
+        ImportRepository(DATABASE_URL).import_reviewed(batch, actor_id=actor)
+    assert counts(batch.run_id) == (0, 0, 0)
 
 
 def test_stale_run_version_refused(mandatory_sources):
