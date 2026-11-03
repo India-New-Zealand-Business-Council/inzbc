@@ -42,6 +42,12 @@ fixes/polish on `apps/sip/ui`'s two agent surfaces (the coordinator-agent rehear
 platform assistant), plus one research thread a week for the course's own requirement — not the
 items below, which are paused, not abandoned.
 
+**Thursday's task changed (29 Oct 2026):** the plan was to give a rehearsal's refused step more
+visual weight (the research doc's own finding). Roshan's PR #498 (open, unmerged as of this
+check) already does exactly that on the same file. Checking merged/open PRs for outstanding
+review findings instead (see Done, PR #501) covered Thursday's daily-commit in its place; revisit
+#498's status before picking the next item so nothing collides with it again.
+
 **Paused, not abandoned — client asked not to touch the live public site further (26 Oct 2026):**
 - `inzview` work of any kind, including the two items below.
 - The 320px reflow Playwright case and the `inzview` gap list are both done (see Done); nothing
@@ -146,6 +152,29 @@ items below, which are paused, not abandoned.
   Separately, still accurate: #127/#128/#129/#195 are assigned to me on the board but every PR
   that actually landed against them (#486, #490, #492, #495) was Roshan's — a standup question,
   not something to silently reassign myself.
+- **Checked every one of my merged PRs for outstanding review findings from Bhanu Gupta; PR
+  #501 open, awaiting re-review (29 Oct 2026, updated 2 Nov 2026, refs #62).** Walked #434
+  through #485's review comments against the current code, not just the comment text, since
+  several were already overtaken by later commits:
+  - **Found real, proposed a fix, not yet merged:** `PlatformAssistant.tsx`'s "New conversation"
+    didn't cancel an in-flight ask (#467 review) — a reply landing after the reset could
+    resurrect the old answer and disclaimer. `AgentRehearsalPanel.tsx`'s Refresh could resolve
+    after a just-started rehearsal and overwrite it with a pre-creation snapshot (#478 review).
+    Bhanu's review of that fix then found a regression it introduced — resetting mid-request
+    left the UI stuck on "Looking that up..." forever — now also fixed, plus his #513
+    follow-up (the disclaimer's live region should stay mounted, not appear already populated).
+    269/269 passing; PR #501 awaiting re-review, status not yet "fixed" until it merges.
+  - **Already fixed, nothing to do:** the #484 research-review finding that the trust badge
+    called an unsealed/unconfigured-key trail "verified" — confirmed the current
+    `trailStatus()`/`it.each(['unsealed', 'key-not-configured'])` test already covers this; not
+    mine or Roshan's commit, landed on `main` sometime after #484 was opened.
+  - **Already correctly caveated, nothing to do:** the #464/#465/#466/#468 findings about
+    overstating the manual WCAG audit and the forms-notification/hosting status — the current
+    text below already splits automated-vs-manual and implemented-vs-delivered correctly.
+  - **Found, not mine to fix:** Roshan's PR #498 (open, unmerged) already does the exact
+    Thursday task the research doc flagged — visually distinguishing a refused rehearsal step
+    (`border-inzbc-crimson` + a callout line). Dropped it from my Thursday plan below rather
+    than duplicate his work; see Next up.
 - **Lane pivot, 26 Oct 2026: off `inzview`, onto polishing the agent-facing UI in this repo.**
   The client doesn't want the live public site touched further right now (risk of breaking a
   production site someone else owns the fallout for). Remaining work shifts to `apps/sip/ui`'s
