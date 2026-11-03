@@ -75,3 +75,22 @@ staging interface, run the full concurrent-writer and negative auth/CSRF
 tests against a disposable Postgres, and obtain SIP-191/source authority.
 Successful synthetic CI demonstrates transaction mechanics only; it does not
 complete the authorised run or any approval/distribution gate.
+
+## Original-export text integrity at the importer boundary (#535)
+
+The disabled internal batch importer now requires a stored immutable copy of
+the **news agent's original cleaned article objects**, not just a projection
+of their URL/source/time or a copy of the proposed candidate batch. Before any
+candidate write it checks the exporter's canonical articles SHA-256, unique
+URLs, every original title, description and parsed publication time against
+the stored source-UUID mapping and candidate envelope. A changed headline or
+summary must fail even when the proposed batch has a consistent claim key.
+
+These are *clean export objects*, **not publisher full-text originals**.
+The checksum proves consistency with the staged objects, not that they came
+from the publisher or were licensed for retention. The staging endpoint
+remains **unimplemented** and must not be enabled until INZBC approves
+source-specific retention rights, protected storage, encryption/access,
+deletion periods and original-manifest provenance. Never paste real article
+text, identifiers or tokens into public issues, PRs, logs or CI fixtures.
+No live importer endpoint is registered by this work.

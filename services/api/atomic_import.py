@@ -10,6 +10,7 @@ production writes (#526) before this code can be considered for activation.
 """
 from __future__ import annotations
 
+import hashlib
 import os
 import uuid
 from datetime import datetime
@@ -18,8 +19,9 @@ import psycopg
 from psycopg.rows import dict_row
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
-from apps.sip.collector.capture_manifest import _source_url
+from apps.sip.collector.capture_manifest import _article, _canonical_bytes, _source_url
 from apps.sip.collector.import_capture import _require_confirmed_source_note
+from apps.sip.collector.mapping import parse_published_at
 from apps.sip.collector.source_register import MANDATORY_SOURCES
 from services.api.audit import record_audit
 from services.api.import_contract import (
@@ -28,6 +30,9 @@ from services.api.import_contract import (
     require_consistent_batch,
 )
 from services.api.source_checks import RecordSourceCheckIn
+
+
+_MAX_ORIGINAL_EXPORT_BYTES = 10 * 1024 * 1024
 
 
 class ImportBlockedError(ValueError):
@@ -54,6 +59,56 @@ class CapturedArticleEvidence(BaseModel):
         if value.tzinfo is None or value.utcoffset() is None:
             raise ValueError("original capture publication time requires a timezone")
         return value
+
+
+def verify_exporter_originals(
+    batch: ImportBatchIn,
+    exported_articles: object,
+    captured_articles: dict[str, tuple[uuid.UUID, datetime]],
+) -> None:
+    """Verify the *exporter's clean-article objects*, not just candidate projections.
+
+    This is a content-integrity check, not publisher authenticity, source-use
+    rights or permission to retain actual article text. No HTTP route exposes it.
+    """
+    if not isinstance(exported_articles, list) or len(exported_articles) != len(batch.candidates):
+        raise ImportBlockedError("original exported article count differs from batch")
+    try:
+        serialized = _canonical_bytes(exported_articles)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ImportBlockedError("invalid original exported article JSON") from exc
+    if len(serialized) > _MAX_ORIGINAL_EXPORT_BYTES:
+        raise ImportBlockedError("original export exceeds 10 MiB safety limit")
+    if hashlib.sha256(serialized).hexdigest() != batch.articles_sha256:
+        raise ImportBlockedError("original exported article checksum differs from batch")
+
+    by_url = {item.url: item for item in batch.candidates}
+    if len(by_url) != len(batch.candidates):
+        raise ImportBlockedError("duplicate candidate URL in original comparison")
+    seen: set[str] = set()
+    for index, raw in enumerate(exported_articles):
+        try:
+            _article(raw)
+        except (TypeError, ValueError) as exc:
+            raise ImportBlockedError(f"invalid original exported article {index}") from exc
+        url = raw["url"]
+        if url in seen or url not in captured_articles or url not in by_url:
+            raise ImportBlockedError("original exported article URL is duplicated or unmatched")
+        seen.add(url)
+        published = parse_published_at(raw.get("published"))
+        if published is None:
+            raise ImportBlockedError("original exported publication time is unavailable")
+        published_at = datetime.fromisoformat(published)
+        source_id, original_time = captured_articles[url]
+        candidate = by_url[url]
+        if (candidate.headline != raw["title"]
+                or candidate.summary != (raw.get("description") or None)
+                or candidate.source_id != source_id
+                or candidate.published_at != published_at
+                or original_time != published_at):
+            raise ImportBlockedError("original article text or source/time differs from candidate")
+    if seen != set(captured_articles):
+        raise ImportBlockedError("original exporter articles omit captured URLs")
 
 
 class ImportRepository:
@@ -137,7 +192,7 @@ class ImportRepository:
 
             evidence = conn.execute(
                 "select articles_sha256, batch_payload, captured_articles, "
-                "source_count, evidence_ref "
+                "exported_articles, source_count, evidence_ref "
                 "from sip_import_evidence where run_id = %s",
                 (run_id,),
             ).fetchone()
@@ -206,6 +261,7 @@ class ImportRepository:
                 if captured.url in original:
                     raise ImportBlockedError("original captured URLs must be unique")
                 original[captured.url] = (captured.source_id, captured.published_at)
+            verify_exporter_originals(batch, evidence["exported_articles"], original)
             require_consistent_batch(
                 batch,
                 run_id=run["id"],

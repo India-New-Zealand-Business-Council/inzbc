@@ -5,6 +5,7 @@ is a fixture shortcut, NOT authority for a live SIP-184 run.
 """
 from __future__ import annotations
 
+import hashlib
 import os
 import uuid
 from concurrent.futures import ThreadPoolExecutor
@@ -14,7 +15,9 @@ import psycopg
 import pytest
 from psycopg.types.json import Jsonb
 
+from apps.sip.collector.capture_manifest import _canonical_bytes
 from apps.sip.collector.source_register import MANDATORY_SOURCES
+from services.api import atomic_import
 from services.api.atomic_import import ImportBlockedError, ImportRepository
 from services.api.import_contract import ImportBatchIn
 from services.api.tests.role_seed import authorise_run, grant
@@ -62,7 +65,8 @@ def mandatory_sources():
             )
 
 def seed_case(
-    source_ids, *, launch=True, checks=112, candidate_source=None, candidates=1
+    source_ids, *, launch=True, checks=112, candidate_source=None, candidates=1,
+    exporter_text_override=False, exporter_summary_override=False, bad_digest=False,
 ):
     person = uuid.uuid4()
     run_id = uuid.uuid4()
@@ -111,9 +115,24 @@ def seed_case(
         }
         for index in range(candidates)
     ]
+    exported = [
+        {
+            "title": row["headline"],
+            "description": row["summary"],
+            "url": row["url"],
+            "source": "Synthetic Test Publisher",
+            "published": row["published_at"],
+        }
+        for row in rows
+    ]
+    if exporter_text_override:
+        exported[0]["title"] = "Original publisher export has a different headline"
+    if exporter_summary_override:
+        exported[0]["description"] = "Original publisher export has a different summary"
+    digest = hashlib.sha256(_canonical_bytes(exported)).hexdigest()
     payload = {
         "run_id": str(run_id),
-        "articles_sha256": "a" * 64,
+        "articles_sha256": "a" * 64 if bad_digest else digest,
         "expected_run_version": 0,
         "capture_source_count": 112,
         "candidates": rows,
@@ -123,8 +142,8 @@ def seed_case(
         conn.execute(
             "insert into sip_import_evidence "
             "(run_id, articles_sha256, batch_payload, captured_articles, "
-            "source_count, evidence_ref, staged_by) "
-            "values (%s,%s,%s,%s,%s,%s,%s)",
+            "exported_articles, source_count, evidence_ref, staged_by) "
+            "values (%s,%s,%s,%s,%s,%s,%s,%s)",
             (
                 run_id, batch.articles_sha256, Jsonb(batch.model_dump(mode="json")),
                 Jsonb([
@@ -132,6 +151,7 @@ def seed_case(
                      "published_at": row["published_at"]}
                     for row in rows
                 ]),
+                Jsonb(exported),
                 112, "SYNTHETIC-ONLY-REVIEW-EVIDENCE", person,
             ),
         )
@@ -281,5 +301,33 @@ def test_run_without_production_enablement_refuses_import(mandatory_sources):
             "update runs set production_enabled=false where id = %s", (str(batch.run_id),)
         )
     with pytest.raises(ImportBlockedError, match="not enabled"):
+        ImportRepository(DATABASE_URL).import_reviewed(batch, actor_id=actor)
+    assert counts(batch.run_id) == (0, 0, 0)
+
+
+@pytest.mark.parametrize(
+    ("changes", "error"),
+    [
+        ({"exporter_text_override": True}, "original article text"),
+        ({"exporter_summary_override": True}, "original article text"),
+        ({"bad_digest": True}, "original exported article checksum"),
+    ],
+)
+def test_exporter_originals_cannot_be_replaced_before_import(
+    mandatory_sources, changes, error
+):
+    # The original exported bytes are independent of the candidate rows.
+    batch, actor = seed_case(mandatory_sources, **changes)
+    with pytest.raises(ImportBlockedError, match=error):
+        ImportRepository(DATABASE_URL).import_reviewed(batch, actor_id=actor)
+    assert counts(batch.run_id) == (0, 0, 0)
+
+
+def test_original_export_payload_limit_blocks_import(mandatory_sources, monkeypatch):
+    batch, actor = seed_case(mandatory_sources)
+    # A small test ceiling exercises the production 10 MiB boundary without
+    # allocating megabytes of synthetic licensed-source-looking material.
+    monkeypatch.setattr(atomic_import, "_MAX_ORIGINAL_EXPORT_BYTES", 64)
+    with pytest.raises(ImportBlockedError, match="10 MiB safety limit"):
         ImportRepository(DATABASE_URL).import_reviewed(batch, actor_id=actor)
     assert counts(batch.run_id) == (0, 0, 0)
