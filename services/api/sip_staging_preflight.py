@@ -133,17 +133,22 @@ def verify_handoff(
             projected_time = datetime.fromisoformat(resolved["published_at"])
         except (ValueError, KeyError, TypeError) as exc:
             raise ValueError("invalid original publication projection") from exc
+        if (
+            original_time.tzinfo is None
+            or original_time.utcoffset() is None
+            or projected_time.tzinfo is None
+            or projected_time.utcoffset() is None
+        ):
+            raise ValueError("original publication projection requires timezone")
         if original_time.astimezone(UTC) != projected_time.astimezone(UTC):
             raise ValueError("original publication time changed in review packet")
         if article["url"] in original_by_url:
             raise ValueError("duplicate original URL")
         original_by_url[article["url"]] = (uuid.UUID(str(db_id)), original_time)
 
+    article_by_url = {article["url"]: article for article in originals}
     for candidate in batch.candidates:
-        source_article = next(
-            (article for article in originals if article["url"] == candidate.url),
-            None,
-        )
+        source_article = article_by_url.get(candidate.url)
         if source_article is None or (
             candidate.headline != source_article["title"]
             or candidate.summary != (source_article.get("description") or None)
