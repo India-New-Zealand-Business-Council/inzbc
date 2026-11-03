@@ -42,6 +42,12 @@ fixes/polish on `apps/sip/ui`'s two agent surfaces (the coordinator-agent rehear
 platform assistant), plus one research thread a week for the course's own requirement — not the
 items below, which are paused, not abandoned.
 
+**Thursday's task changed (29 Oct 2026):** the plan was to give a rehearsal's refused step more
+visual weight (the research doc's own finding). Roshan's PR #498 (open, unmerged as of this
+check) already does exactly that on the same file. Checking merged/open PRs for outstanding
+review findings instead (see Done, PR #501) covered Thursday's daily-commit in its place; revisit
+#498's status before picking the next item so nothing collides with it again.
+
 **Paused, not abandoned — client asked not to touch the live public site further (26 Oct 2026):**
 - `inzview` work of any kind, including the two items below.
 - The 320px reflow Playwright case and the `inzview` gap list are both done (see Done); nothing
@@ -129,6 +135,61 @@ items below, which are paused, not abandoned.
   registered* live region). Test only checked DOM ancestry, not announcement. Fixed properly in
   #501 — the element is now mounted at all times with just the text toggling — rather than
   claiming this entry's original "announced to screen readers" as verified when it wasn't.
+- **Dependabot cleanup, in two parts — PR #511 (31 Oct 2026) was incomplete; PR #516 (3 Nov
+  2026) finished it, refs #62.** Saturday buffer day — nothing was broken, so picked the one
+  real outstanding housekeeping item instead of inventing UI work. #511 bumped `undici`
+  7.29.1 → 7.30.1 and `@vitest/mocker` 4.1.11 → 4.1.12 (via `vitest`/`@vitest/coverage-v8` in
+  all five apps) and added a `"zod@^4.0.0": 4.6.7` floor in `pnpm-workspace.yaml`, then its own
+  worklog entry claimed "cleared all 6 open Dependabot alerts." **That claim was premature and,
+  on the zod line, wrong** (Bhanu's review of the worklog PR, #512): checking
+  `gh api repos/.../dependabot/alerts` after #511 merged found the 3 `undici` and 2
+  `@vitest/mocker` alerts genuinely fixed, but the zod alert (#38) still open — the
+  `^4.0.0`-scoped override never touched the real vulnerable copy, `zod@3.25.76`, pulled in
+  transitively by `@reticlehq/core` (an `fta-ui` devDependency on the 3.x line, which the
+  advisory has no patched release for). Worse, #511's own lockfile regeneration had introduced
+  two *new* alerts that didn't exist before it: `glob@13.0.6` (Storybook's docgen plugin) and
+  `minimatch@10.2.5` (eslint's own chain). PR #516 forces all three to a single patched version
+  workspace-wide (a bare `"zod"` override this time, verified `fta-ui` still typechecks/lints/
+  builds/tests clean against the real v4 API) — typecheck/lint clean and 462/462 tests passing
+  across all five apps. Correcting the record here rather than leaving #512's "all 6 cleared"
+  uncorrected, per Bhanu's review.
+- **Added project-board issue #510 without prior tech-lead authorization — flagged here, not
+  resolved (31 Oct 2026, corrected 3 Nov 2026).** Added #510 ("Agent UI polish & review
+  follow-through, week of 26-31 Oct") so the week's shipped/in-review work had its own visible
+  story instead of riding silently on the closed #62 epic, and checked all 22 board items
+  assigned to me against real GitHub issue state — those checks were accurate. But
+  `CONTRIBUTING.md`'s Process decisions section requires the tech lead's **prior** explicit
+  authorization, linked, before opening a new recurring board-maintenance item — Bhanu's review
+  of #512 is right that no such link exists here. I'm not aware of one having been sought
+  beforehand either. Raising this at the next standup rather than presenting #510 as an accepted
+  process change: either link the authorization if it exists somewhere I haven't seen, or get a
+  decision now and note it, or close #510 if the tech lead would rather it not exist.
+  Separately, still accurate: #127/#128/#129/#195 are assigned to me on the board but every PR
+  that actually landed against them (#486, #490, #492, #495) was Roshan's — a standup question,
+  not something to silently reassign myself.
+- **Checked every one of my merged PRs for outstanding review findings from Bhanu Gupta; PR
+  #501 open, awaiting re-review (29 Oct 2026, updated 2 Nov 2026, refs #62).** Walked #434
+  through #485's review comments against the current code, not just the comment text, since
+  several were already overtaken by later commits:
+  - **Found real, proposed a fix, not yet merged:** `PlatformAssistant.tsx`'s "New conversation"
+    didn't cancel an in-flight ask (#467 review) — a reply landing after the reset could
+    resurrect the old answer and disclaimer. `AgentRehearsalPanel.tsx`'s Refresh could resolve
+    after a just-started rehearsal and overwrite it with a pre-creation snapshot (#478 review).
+    Bhanu's review of that fix then found a regression it introduced — resetting mid-request
+    left the UI stuck on "Looking that up..." forever — now also fixed, plus his #513
+    follow-up (the disclaimer's live region should stay mounted, not appear already populated).
+    269/269 passing; PR #501 awaiting re-review, status not yet "fixed" until it merges.
+  - **Already fixed, nothing to do:** the #484 research-review finding that the trust badge
+    called an unsealed/unconfigured-key trail "verified" — confirmed the current
+    `trailStatus()`/`it.each(['unsealed', 'key-not-configured'])` test already covers this; not
+    mine or Roshan's commit, landed on `main` sometime after #484 was opened.
+  - **Already correctly caveated, nothing to do:** the #464/#465/#466/#468 findings about
+    overstating the manual WCAG audit and the forms-notification/hosting status — the current
+    text below already splits automated-vs-manual and implemented-vs-delivered correctly.
+  - **Found, not mine to fix:** Roshan's PR #498 (open, unmerged) already does the exact
+    Thursday task the research doc flagged — visually distinguishing a refused rehearsal step
+    (`border-inzbc-crimson` + a callout line). Dropped it from my Thursday plan below rather
+    than duplicate his work; see Next up.
 - **Lane pivot, 26 Oct 2026: off `inzview`, onto polishing the agent-facing UI in this repo.**
   The client doesn't want the live public site touched further right now (risk of breaking a
   production site someone else owns the fallout for). Remaining work shifts to `apps/sip/ui`'s

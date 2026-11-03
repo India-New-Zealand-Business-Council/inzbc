@@ -10,4 +10,9 @@ overrides:
   "undici@^7.0.0": 7.30.1
   "nanoid@^3.0.0": 3.3.18
   "source-map-js@^1.0.0": 1.2.2
-  "zod@^4.0.0": 4.6.7
+  # zod, glob and minimatch: the advisory's only patched version crosses a major bump (no
+  # patched release exists on the older major), so these are forced across every requesting
+  # range rather than scoped to one, unlike the floors above.
+  "zod": 4.6.7
+  "glob": 14.0.2
+  "minimatch@^10.0.0": 11.0.1
