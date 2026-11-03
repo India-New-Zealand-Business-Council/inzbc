@@ -61,11 +61,23 @@ review findings instead (see Done, PR #501) covered Thursday's daily-commit in i
 - **FTA Explorer embed, deployed** — blocked on embedding into `inzview`, which is paused.
 
 **Still active, not `inzview`-dependent:**
-- [ ] **Comms Assistant review UI.** #60 is closed in GitHub, but check what it actually shipped
-      against before assuming the reviewer-approval screen exists — the service side
-      (`services/api/comms.py`, draft + approve + delete endpoints) is real and live; confirm
-      whether a UI was ever built against it or whether #60 was closed for a narrower reason.
-      Drafting UI (`apps/comms/ui`) and the delete-draft flow are both Done, below.
+- [ ] **Comms Assistant review UI — confirmed missing, #60 closed in error (3 Nov 2026).**
+      Checked rather than assumed: `services/api/comms.py` has a real, live `POST
+      /drafts/{id}/approve` (added in PR #317) alongside draft/get/list/delete, but
+      `apps/comms/ui` has no component that calls it, shows a diff-against-previous, or lets
+      anyone record a named-reviewer approval — `grep` across `CommsAssistant.tsx` finds only a
+      disclaimer sentence saying a human must approve, never a control that does it. #317's own
+      PR body says this explicitly: *"This PR does not close #60 or #65 themselves... it
+      unblocks both."* Yet #60 was closed the same second #317 merged (18 Aug 2026,
+      09:14:36Z/37Z) — not via a "Closes #60" in any merged commit (none exists; #317 only ever
+      said "Refs #60"), so this was a manual close that contradicts the PR's own text. The
+      acceptance criterion #60 names ("the publish action is disabled until a reviewer is
+      recorded") still has no UI to apply it to. Raising at standup rather than reopening #60
+      myself — this is a scope/tracking correction, not something to decide solo. If agreed,
+      it's sized like the Weeks 6–8 items below (a real screen: draft view, diff view, approval
+      gate), not a daily-commit task.
+- [ ] Drafting UI (`apps/comms/ui`) and the delete-draft flow are both Done, below — not
+      affected by the above; they're a separate, already-shipped slice of #60's scope.
 - [ ] **#129/#127/#128 — the rest of the Playwright E2E suite,** once #100's 320px case (above)
       has landed and set the pattern. Client-side state-survives-a-refresh and
       illegal-action-rejected cases matter more now there's a real backend to test against, not
@@ -109,6 +121,15 @@ review findings instead (see Done, PR #501) covered Thursday's daily-commit in i
   re-open them.
 
 ## Done
+- **Week 5, Tuesday: scope-checked the Comms Assistant review UI rather than assuming #60's
+  closure meant it existed** (3 Nov 2026, refs #60). Per the Must-do plan, Tuesday is a polish
+  day on the two agent surfaces, but both had just been covered (Monday's #513 and its #501
+  follow-up); the Next-up list's own flag on #60 was the real outstanding item, so checked it
+  properly instead of inventing UI work elsewhere. Finding: the reviewer-approval screen #60
+  asked for was never built — see the corrected Next-up entry above for the evidence (#317's
+  own PR text says it doesn't close #60; #60 was closed anyway, same second #317 merged,
+  with no "Closes #60" anywhere in the history). No code changed; this is a tracking
+  correction, flagged for standup rather than decided solo or silently reopened.
 - **Friday a11y/keyboard pass on both agent surfaces** (PR #507, 30 Oct 2026, refs #62).
   Reviewed `AgentRehearsalPanel.tsx` and `PlatformAssistant.tsx` against keyboard operability,
   live-region usage and color-only signalling. Real gap found and fixed: the rehearsal list's
