@@ -5,6 +5,7 @@ import hashlib
 import json
 import uuid
 from dataclasses import replace
+from datetime import UTC, datetime
 
 import pytest
 
@@ -12,6 +13,7 @@ from apps.sip.collector import capture_manifest
 from apps.sip.collector.import_capture import CapturePlan
 from apps.sip.collector.review_packet import review_packet
 from apps.sip.pipeline.models import Candidate, SignalStrength
+from services.api.import_contract import ImportBatchIn, require_consistent_batch
 
 
 @pytest.fixture
@@ -78,6 +80,54 @@ def test_review_packet_is_reconciled_serializable_and_read_only(prepared):
     assert "not a production import" in packet["operator_notice"]
     json.dumps(packet)
     assert path.read_bytes() == before
+
+
+def test_packet_plus_original_manifest_matches_atomic_evidence_contract(prepared):
+    # This tests whether the review packet carries enough data to construct
+    # the immutable server evidence requested in #533. It does not stage it.
+    path, plan = prepared
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    packet = review_packet(plan, path, expected_run_version=4)
+    assert packet["raw_articles"] == manifest["articles"]
+    assert hashlib.sha256(
+        capture_manifest._canonical_bytes(packet["raw_articles"])
+    ).hexdigest() == packet["articles_sha256"]
+
+    batch = ImportBatchIn.model_validate(packet["batch_payload"])
+    original = {
+        row["url"]: (
+            uuid.UUID(row["source_id"]),
+            datetime.fromisoformat(row["published_at"]),
+        )
+        for row in packet["captured_articles"]
+    }
+    require_consistent_batch(
+        batch,
+        run_id=uuid.UUID(plan.run_id),
+        run_version=4,
+        state="Scanning",
+        existing_count=0,
+        capture_digest=packet["articles_sha256"],
+        locked_window_start=datetime(2026, 10, 27, tzinfo=UTC),
+        locked_window_end=datetime(2026, 10, 28, tzinfo=UTC),
+        captured_articles=original,
+    )
+    assert batch.candidates[0].headline == packet["raw_articles"][0]["title"]
+    assert batch.candidates[0].summary == packet["raw_articles"][0]["description"]
+
+
+def test_packet_cannot_replace_original_article_without_changing_checksum(prepared):
+    path, plan = prepared
+    packet = review_packet(plan, path, expected_run_version=4)
+    copied = json.loads(json.dumps(packet))
+    copied["raw_articles"][0]["title"] = "Replacement headline"
+    changed_digest = hashlib.sha256(
+        capture_manifest._canonical_bytes(copied["raw_articles"])
+    ).hexdigest()
+    assert changed_digest != copied["articles_sha256"]
+    assert copied["batch_payload"]["candidates"][0]["headline"] != copied[
+        "raw_articles"
+    ][0]["title"]
 
 
 @pytest.mark.parametrize(("mutation", "message"), [
