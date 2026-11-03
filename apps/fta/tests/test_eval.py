@@ -56,6 +56,56 @@ def test_held_out_set_is_blind_synonym_coverage_distinct_from_the_main_set() -> 
     assert {q.qid for q in held_out}.isdisjoint(main_qids)
 
 
+@pytest.mark.parametrize(
+    ("rows", "message"),
+    [
+        ("", "no questions"),
+        ("Q01,,FTA-005,exact,\\n", "missing QID/query"),
+        (" ,wool,FTA-005,exact,\\n", "missing QID/query"),
+        ("Q01,wool,FTA-005,unknown,\\n", "invalid question type"),
+        ("Q01,wool,,exact,\\n", "no-match type and expected IDs disagree"),
+        ("Q01,wool,FTA-005,no_match,\\n", "no-match type and expected IDs disagree"),
+        ("Q01,wool,FTA-999,exact,\\n", "unknown or unconfirmed answer ID"),
+        ("Q01,wool,FTA-005;FTA-005,exact,\\n", "duplicate answer ID"),
+        ("Q01,wool,FTA-005;,exact,\\n", "blank or duplicate answer ID"),
+        ("Q01,wool,FTA-005,exact,\\nQ01,sheepmeat,FTA-006,exact,\\n", "duplicate QID"),
+        ("Q01,wool,FTA-005,exact,\\nQ02, WOOL ,FTA-005,exact,\\n", "duplicate QID or query"),
+        ("Q01,wool,FTA-005,exact,,unexpected\\n", "malformed CSV row"),
+    ],
+)
+def test_invalid_eval_rows_fail_closed(tmp_path, rows: str, message: str) -> None:
+    question_file = tmp_path / "questions.csv"
+    question_file.write_text(
+        "qid,query,expected_ids,type,checked_by\\n" + rows.replace("\\\\n", "\\n"),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match=message):
+        load_questions(question_file)
+
+
+def test_eval_loader_rejects_modified_header(tmp_path) -> None:
+    question_file = tmp_path / "questions.csv"
+    question_file.write_text("qid,query,type\\nQ01,wool,exact\\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="invalid evaluation CSV header"):
+        load_questions(question_file)
+
+
+def test_eval_loader_accepts_valid_multi_id_and_no_match_labels(tmp_path) -> None:
+    question_file = tmp_path / "questions.csv"
+    question_file.write_text(
+        "qid,query,expected_ids,type,checked_by\\n"
+        "Q50,dairy exports,FTA-013;FTA-014;FTA-015;FTA-016,product_framing,\\n"
+        "Q45,log in to the member portal,,no_match,\\n",
+        encoding="utf-8",
+    )
+    questions = load_questions(question_file)
+    assert questions[0].expected_ids == frozenset(
+        {"FTA-013", "FTA-014", "FTA-015", "FTA-016"}
+    )
+    assert questions[1].type == "no_match"
+    assert not questions[1].answerable
+
+
 def test_first_relevant_rank_is_one_based_and_none_when_absent() -> None:
     assert first_relevant_rank(["A", "B"], frozenset({"B"})) == 2
     assert first_relevant_rank(["A"], frozenset({"B"})) is None
