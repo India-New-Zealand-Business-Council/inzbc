@@ -60,6 +60,14 @@ append-only** capture evidence; it then writes candidates, individual audit
 records, analyst claim and deterministic import claim together. An exact replay
 returns the committed count; a conflicting digest or incomplete run is refused.
 
+The import-reconciliation boundary additionally stores the original exporter
+`raw_articles` list alongside the proposed candidates and resolved
+URL/source/timestamp records. Before inserting, it recalculates
+`articles_sha256` from the exporter's exact canonical article list and
+compares raw headline, summary and publication timestamp with the candidate
+mapping. A matching URL or request-supplied digest **alone** is no longer
+sufficient to change a news headline under an unchanged capture claim.
+
 The append-only `sip_import_evidence` row must be populated by a **separately
 reviewed and authorised evidence-staging path**, binding original collector
 bytes and independently resolved source IDs to the proposed candidate batch.

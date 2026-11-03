@@ -11,6 +11,10 @@ create table if not exists sip_import_evidence (
   -- batch. Comparing a proposed batch with itself cannot prove completeness.
   captured_articles  jsonb not null check (jsonb_typeof(captured_articles) = 'array'
                        and jsonb_array_length(captured_articles) between 1 and 5000),
+  -- The exact approved collector article list, for independent digest and
+  -- candidate-text reconciliation. Staging must validate the whole manifest.
+  raw_articles       jsonb not null check (jsonb_typeof(raw_articles) = 'array'
+                       and jsonb_array_length(raw_articles) between 1 and 5000),
   source_count       integer not null check (source_count = 112),
   evidence_ref       text not null check (btrim(evidence_ref) <> ''),
   staged_by          uuid not null references users(id),
