@@ -59,7 +59,13 @@ It revalidates the raw manifest, binds its file SHA-256 and canonical article
 checksum, checks every proposed candidate against the manifest's original
 headline, URL, summary and publication timestamp, and requires a resolved UUID
 source. It emits the reviewed `ImportBatchIn` envelope plus original
-URL/source/time rows for independent staging review. It **does not** stage or
+URL/source/time rows **and the unmodified, validated original `raw_articles`**
+for independent staging review. Keeping raw articles is necessary for the
+server-held evidence contract in PR #533 to recompute the canonical exporter
+checksum and compare source text; a proposed candidate payload alone is
+insufficient. These are potentially licensed third-party materials: do not
+put the packet in an issue, PR, source-control history or an unprotected
+shared drive. It **does not** stage or
 import anything; never store raw packets in Git, PRs or unprotected issues.
 
 The packet's source UUIDs are **proposals from preflight source-name mapping**,
