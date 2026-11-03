@@ -162,7 +162,8 @@ def test_production_legacy_capture_conflict_is_http_409(
         json={"run_id": str(uuid.uuid4()), "headline": "Blocked"},
     )
     assert response.status_code == 409
-    assert "atomic batch import" in response.json()["detail"]
+    assert response.json()["error"]["status"] == 409
+    assert "atomic batch import" in response.json()["error"]["message"]
     assert not fake_repo._candidates
 
 
