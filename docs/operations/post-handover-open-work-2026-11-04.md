@@ -65,7 +65,7 @@ For canonical scope and sign-off, read [final handover](../final-handover-2026-1
 
 ## 4–8 November focused completion sprint (proposed targets, not client authority)
 
-**Target date:** Sunday, 8 November 2026, as requested by the project team. The scope below distinguishes work we can get ready for technical review from work only the INZBC account/decision owner can perform. It **does not** promise all proposed modules or 26 historic open issues will become live by Sunday.
+**Target date:** Sunday, 8 November 2026 (proposed engineering triage targets; requires explicit tech-lead authorization before treating any row as a binding assignment or deadline). The scope below distinguishes work we can get ready for technical review from work only the INZBC account/decision owner can perform. It **does not** promise all proposed modules or 26 historic open issues will become live by Sunday.
 
 | By | Deliverable | Accountable next action / proof |
 |---|---|---|
