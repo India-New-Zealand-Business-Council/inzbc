@@ -1,0 +1,596 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/nid43ytk",
+    "id": "nid43ytk",
+    "slide": 19,
+    "layoutId": "/ppt/slideLayouts/slideLayout1.xml",
+    "layoutName": "Title Slide",
+    "layoutType": "title",
+    "masterLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+    "masterLayoutName": "Master",
+    "backgroundColor": "#080A0F",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "Cinematic Motion",
+    "colors": {
+      "accent1": "#285CFF",
+      "accent2": "#FF6B5F",
+      "accent3": "#B8F3DC",
+      "accent4": "#1536A8",
+      "accent5": "#D7463D",
+      "accent6": "#DDE4F4",
+      "dk1": "#080A0F",
+      "lt1": "#FFFFFF",
+      "dk2": "#232A35",
+      "lt2": "#F6F2EC",
+      "hlink": "#285CFF",
+      "folHlink": "#FF6B5F"
+    },
+    "fontScheme": {
+      "name": "Office",
+      "majorFont": {
+        "latinTypeface": "Calibri Light",
+        "eastAsianTypeface": "Calibri Light",
+        "complexScriptTypeface": "Calibri Light"
+      },
+      "minorFont": {
+        "latinTypeface": "Calibri",
+        "eastAsianTypeface": "Calibri",
+        "complexScriptTypeface": "Calibri"
+      }
+    },
+    "typefaces": [
+      "Aptos",
+      "Aptos Display",
+      "Calibri",
+      "Calibri Light"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "/ppt/slideLayouts/slideLayout1.xml",
+      "name": "Title Slide",
+      "type": "title",
+      "parentLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "/ppt/slideMasters/slideMaster1.xml",
+      "name": "Master",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/mt07mlsr",
+      "id": "1",
+      "name": "background-gradient",
+      "bbox": [
+        0,
+        0,
+        1280,
+        720
+      ],
+      "geometry": "rect",
+      "lineWidth": 0
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/9gb6xgbi",
+      "id": "2",
+      "name": "!!scene-blue",
+      "bbox": [
+        190,
+        520,
+        82,
+        82
+      ],
+      "geometry": "ellipse",
+      "fillColor": "rgba(40, 92, 255, 0.72)",
+      "lineWidth": 0
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/8v2pobax",
+      "id": "3",
+      "name": "!!scene-coral",
+      "bbox": [
+        1100,
+        520,
+        114,
+        114
+      ],
+      "geometry": "ellipse",
+      "fillColor": "rgba(255, 107, 95, 0.78)",
+      "lineWidth": 0
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/vitozqt8",
+      "id": "4",
+      "name": "!!scene-outline",
+      "bbox": [
+        62,
+        82,
+        1156,
+        548
+      ],
+      "geometry": "roundRect",
+      "lineColor": "rgba(255, 255, 255, 0.22)",
+      "lineWidth": 1.25
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ahk7qls3",
+      "id": "5",
+      "name": "scene-progress-track",
+      "bbox": [
+        72,
+        690,
+        1136,
+        2
+      ],
+      "geometry": "rect",
+      "fillColor": "rgba(255, 255, 255, 0.16)",
+      "lineWidth": 0
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/xkbq10be",
+      "id": "6",
+      "name": "!!scene-progress",
+      "bbox": [
+        72,
+        690,
+        1079.2,
+        4
+      ],
+      "geometry": "rect",
+      "fillColor": "#FF6B5F",
+      "lineWidth": 0
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/wj2psvat",
+      "id": "7",
+      "name": "!!scene-label",
+      "bbox": [
+        72,
+        36,
+        240,
+        22
+      ],
+      "geometry": "rect",
+      "text": "MOTION SYSTEM",
+      "textPreview": "MOTION SYSTEM",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "none",
+        "autoFit": "none",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "MOTION SYSTEM"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "MOTION SYSTEM",
+          "lineSpacingPercent": 100000,
+          "resolvedTextStyle": {
+            "fontSize": 14,
+            "typeface": "Aptos",
+            "color": "rgba(255, 255, 255, 0.68)",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "MOTION SYSTEM",
+              "fontSize": 14,
+              "typeface": "Aptos",
+              "color": "rgba(255, 255, 255, 0.68)",
+              "bold": true
+            }
+          ],
+          "bulletCharacter": "",
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/jmd83atk",
+      "id": "8",
+      "name": "!!scene-counter",
+      "bbox": [
+        1108,
+        36,
+        100,
+        22
+      ],
+      "geometry": "rect",
+      "text": "19 / 20",
+      "textPreview": "19 / 20",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "none",
+        "autoFit": "none",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "19 / 20"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "19 / 20",
+          "lineSpacingPercent": 100000,
+          "resolvedTextStyle": {
+            "fontSize": 14,
+            "typeface": "Aptos",
+            "color": "rgba(255, 255, 255, 0.68)",
+            "bold": true,
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "19 / 20",
+              "fontSize": 14,
+              "typeface": "Aptos",
+              "color": "rgba(255, 255, 255, 0.68)",
+              "bold": true
+            }
+          ],
+          "bulletCharacter": "",
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/il47u5sz",
+      "id": "9",
+      "name": "!!actor-kicker",
+      "bbox": [
+        174,
+        124,
+        270,
+        28
+      ],
+      "geometry": "rect",
+      "text": "OPEN THE ROOM",
+      "textPreview": "OPEN THE ROOM",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "none",
+        "autoFit": "none",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "OPEN THE ROOM"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "OPEN THE ROOM",
+          "lineSpacingPercent": 100000,
+          "resolvedTextStyle": {
+            "fontSize": 17,
+            "typeface": "Aptos",
+            "color": "#FF6B5F",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "OPEN THE ROOM",
+              "fontSize": 17,
+              "typeface": "Aptos",
+              "color": "#FF6B5F",
+              "bold": true
+            }
+          ],
+          "bulletCharacter": "",
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 10,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/cri1gnql",
+      "id": "10",
+      "name": "!!actor-title",
+      "bbox": [
+        160,
+        228,
+        910,
+        132
+      ],
+      "geometry": "rect",
+      "text": "QUESTIONS?",
+      "textPreview": "QUESTIONS?",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "none",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "QUESTIONS?"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "QUESTIONS?",
+          "lineSpacingPercent": 90000,
+          "resolvedTextStyle": {
+            "fontSize": 108,
+            "typeface": "Aptos Display",
+            "color": "#FFFFFF",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "QUESTIONS?",
+              "fontSize": 108,
+              "typeface": "Aptos Display",
+              "color": "#FFFFFF",
+              "bold": true
+            }
+          ],
+          "bulletCharacter": "",
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 11,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/dsri9sr6",
+      "id": "11",
+      "name": "!!actor-subtitle",
+      "bbox": [
+        650,
+        438,
+        430,
+        70
+      ],
+      "geometry": "rect",
+      "text": "Use the discussion to define the next scene.",
+      "textPreview": "Use the discussion to define the next scene.",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "none",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Use the discussion to define the next scene."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Use the discussion to define the next scene.",
+          "lineSpacingPercent": 110000,
+          "resolvedTextStyle": {
+            "fontSize": 24,
+            "typeface": "Aptos",
+            "color": "rgba(255, 255, 255, 0.68)",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Use the discussion to define the next scene.",
+              "fontSize": 24,
+              "typeface": "Aptos",
+              "color": "rgba(255, 255, 255, 0.68)"
+            }
+          ],
+          "bulletCharacter": "",
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 12,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/qpgjex8f",
+      "id": "12",
+      "name": "qa-mark",
+      "bbox": [
+        930,
+        100,
+        230,
+        390
+      ],
+      "geometry": "rect",
+      "text": "?",
+      "textPreview": "?",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "none",
+        "autoFit": "none",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "?"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "?",
+          "lineSpacingPercent": 100000,
+          "resolvedTextStyle": {
+            "fontSize": 4.27,
+            "typeface": "Aptos Display",
+            "color": "rgba(255, 255, 255, 0.04)",
+            "bold": true,
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "?",
+              "fontSize": 4.27,
+              "typeface": "Aptos Display",
+              "color": "rgba(255, 255, 255, 0.04)",
+              "bold": true
+            }
+          ],
+          "bulletCharacter": "",
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    }
+  ],
+  "composeRuns": []
+}

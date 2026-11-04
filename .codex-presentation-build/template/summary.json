@@ -1,0 +1,23 @@
+{
+  "source": "C:/Users/brett/Downloads/Ultimate_Morph_Presentation_Template.pptx",
+  "slideCount": 20,
+  "masters": [
+    {
+      "id": "/ppt/slideMasters/slideMaster1.xml",
+      "name": "Master",
+      "placeholderSummary": []
+    }
+  ],
+  "layouts": [
+    {
+      "id": "/ppt/slideMasters/slideMaster1.xml",
+      "name": "Master",
+      "placeholderSummary": []
+    },
+    {
+      "id": "/ppt/slideLayouts/slideLayout1.xml",
+      "name": "Title Slide",
+      "placeholderSummary": []
+    }
+  ]
+}
