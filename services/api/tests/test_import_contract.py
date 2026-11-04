@@ -140,3 +140,8 @@ def test_partial_batch_cannot_skip_server_held_capture_article():
     }
     with pytest.raises(ValueError, match="full server-held capture"):
         require_consistent_batch(batch, **args)
+
+
+def test_blank_claim_key_rejected() -> None:
+    with pytest.raises(ValidationError):
+        ImportBatchIn(**{**_valid_payload(), "claim_key": "   "})
