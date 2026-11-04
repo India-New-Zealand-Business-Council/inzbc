@@ -12,6 +12,8 @@ Two conventions hold across this tree:
 ---
 
 ## I am preparing a client handover
+- [`final-handover-2026-11-04.md`](final-handover-2026-11-04.md) — the latest reported acceptance and the outstanding operational limits, as of 4 November.
+- [`operations/post-handover-open-work-2026-11-04.md`](operations/post-handover-open-work-2026-11-04.md) — dated P0/P1 evidence queue and owner approvals; triage only, not production authority.
 - [`handover-pack.md`](handover-pack.md) — canonical delivery evidence, limitations and recipient walkthrough.
 - [`operations/sunil-handover-readiness.md`](operations/sunil-handover-readiness.md) — supplemental evidence/decision index; not a separate approval authority.
 - [`testing/acceptance-register.md`](testing/acceptance-register.md) — recorded client acceptance evidence and remaining traceability.
