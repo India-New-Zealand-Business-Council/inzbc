@@ -121,7 +121,7 @@ review findings instead (see Done, PR #501) covered Thursday's daily-commit in i
   re-open them.
 
 ## Done
-- **Week 5, Wednesday: research — reviewer-approval UI for AI-drafted content** (4 Nov 2026, refs
+- **Week 5, Wednesday: research — reviewer-approval UI for AI-drafted content** (PR #525, 4 Nov 2026, refs
   #60). This week's research thread, pointed directly at Tuesday's confirmed gap rather than a
   generic topic: `docs/research/review-approval-ui-literature-review.md`, five works discussed
   (three arXiv papers and two Manning books), checked against their records on 4 Nov 2026
