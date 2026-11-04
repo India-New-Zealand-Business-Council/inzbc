@@ -1,0 +1,420 @@
+{
+  "source": "C:/Users/brett/Downloads/New folder/FINAL/INZBC_Final_Presentation.pptx",
+  "slideCount": 12,
+  "masters": [
+    {
+      "id": "/ppt/slideMasters/slideMaster1.xml",
+      "name": "",
+      "placeholderSummary": [
+        {
+          "name": "title",
+          "type": "title",
+          "text": "Click to edit Master title style"
+        },
+        {
+          "name": "body",
+          "type": "body",
+          "text": "Click to edit Master text styles\nSecond level\nThird level\nFourth level\nFifth level"
+        },
+        {
+          "name": "dateTime",
+          "type": "dateTime",
+          "text": "1/27/13"
+        },
+        {
+          "name": "footer",
+          "type": "footer",
+          "text": ""
+        },
+        {
+          "name": "slideNumber",
+          "type": "slideNumber",
+          "text": "‹#›"
+        }
+      ]
+    }
+  ],
+  "layouts": [
+    {
+      "id": "/ppt/slideMasters/slideMaster1.xml",
+      "name": "",
+      "placeholderSummary": [
+        {
+          "name": "title",
+          "type": "title",
+          "text": "Click to edit Master title style"
+        },
+        {
+          "name": "body",
+          "type": "body",
+          "text": "Click to edit Master text styles\nSecond level\nThird level\nFourth level\nFifth level"
+        },
+        {
+          "name": "dateTime",
+          "type": "dateTime",
+          "text": "1/27/13"
+        },
+        {
+          "name": "footer",
+          "type": "footer",
+          "text": ""
+        },
+        {
+          "name": "slideNumber",
+          "type": "slideNumber",
+          "text": "‹#›"
+        }
+      ]
+    },
+    {
+      "id": "/ppt/slideLayouts/slideLayout1.xml",
+      "name": "Title Slide",
+      "placeholderSummary": [
+        {
+          "name": "title",
+          "type": "title",
+          "text": "Click to edit Master title style"
+        },
+        {
+          "name": "subtitle",
+          "type": "subtitle",
+          "text": "Click to edit Master subtitle style"
+        },
+        {
+          "name": "dateTime",
+          "type": "dateTime",
+          "text": "1/27/13"
+        },
+        {
+          "name": "footer",
+          "type": "footer",
+          "text": ""
+        },
+        {
+          "name": "slideNumber",
+          "type": "slideNumber",
+          "text": "‹#›"
+        }
+      ]
+    },
+    {
+      "id": "/ppt/slideLayouts/slideLayout2.xml",
+      "name": "Title and Content",
+      "placeholderSummary": [
+        {
+          "name": "title",
+          "type": "title",
+          "text": "Click to edit Master title style"
+        },
+        {
+          "name": "content placeholder 2",
+          "text": "Click to edit Master text styles\nSecond level\nThird level\nFourth level\nFifth level"
+        },
+        {
+          "name": "dateTime",
+          "type": "dateTime",
+          "text": "1/27/13"
+        },
+        {
+          "name": "footer",
+          "type": "footer",
+          "text": ""
+        },
+        {
+          "name": "slideNumber",
+          "type": "slideNumber",
+          "text": "‹#›"
+        }
+      ]
+    },
+    {
+      "id": "/ppt/slideLayouts/slideLayout3.xml",
+      "name": "Section Header",
+      "placeholderSummary": [
+        {
+          "name": "title",
+          "type": "title",
+          "text": "Click to edit Master title style"
+        },
+        {
+          "name": "body",
+          "type": "body",
+          "text": "Click to edit Master text styles"
+        },
+        {
+          "name": "dateTime",
+          "type": "dateTime",
+          "text": "1/27/13"
+        },
+        {
+          "name": "footer",
+          "type": "footer",
+          "text": ""
+        },
+        {
+          "name": "slideNumber",
+          "type": "slideNumber",
+          "text": "‹#›"
+        }
+      ]
+    },
+    {
+      "id": "/ppt/slideLayouts/slideLayout4.xml",
+      "name": "Two Content",
+      "placeholderSummary": [
+        {
+          "name": "title",
+          "type": "title",
+          "text": "Click to edit Master title style"
+        },
+        {
+          "name": "content placeholder 2",
+          "text": "Click to edit Master text styles\nSecond level\nThird level\nFourth level\nFifth level"
+        },
+        {
+          "name": "content placeholder 3",
+          "text": "Click to edit Master text styles\nSecond level\nThird level\nFourth level\nFifth level"
+        },
+        {
+          "name": "dateTime",
+          "type": "dateTime",
+          "text": "1/27/13"
+        },
+        {
+          "name": "footer",
+          "type": "footer",
+          "text": ""
+        },
+        {
+          "name": "slideNumber",
+          "type": "slideNumber",
+          "text": "‹#›"
+        }
+      ]
+    },
+    {
+      "id": "/ppt/slideLayouts/slideLayout5.xml",
+      "name": "Comparison",
+      "placeholderSummary": [
+        {
+          "name": "title",
+          "type": "title",
+          "text": "Click to edit Master title style"
+        },
+        {
+          "name": "body",
+          "type": "body",
+          "text": "Click to edit Master text styles"
+        },
+        {
+          "name": "content placeholder 3",
+          "text": "Click to edit Master text styles\nSecond level\nThird level\nFourth level\nFifth level"
+        },
+        {
+          "name": "body",
+          "type": "body",
+          "text": "Click to edit Master text styles"
+        },
+        {
+          "name": "content placeholder 5",
+          "text": "Click to edit Master text styles\nSecond level\nThird level\nFourth level\nFifth level"
+        },
+        {
+          "name": "dateTime",
+          "type": "dateTime",
+          "text": "1/27/13"
+        },
+        {
+          "name": "footer",
+          "type": "footer",
+          "text": ""
+        },
+        {
+          "name": "slideNumber",
+          "type": "slideNumber",
+          "text": "‹#›"
+        }
+      ]
+    },
+    {
+      "id": "/ppt/slideLayouts/slideLayout6.xml",
+      "name": "Title Only",
+      "placeholderSummary": [
+        {
+          "name": "title",
+          "type": "title",
+          "text": "Click to edit Master title style"
+        },
+        {
+          "name": "dateTime",
+          "type": "dateTime",
+          "text": "1/27/13"
+        },
+        {
+          "name": "footer",
+          "type": "footer",
+          "text": ""
+        },
+        {
+          "name": "slideNumber",
+          "type": "slideNumber",
+          "text": "‹#›"
+        }
+      ]
+    },
+    {
+      "id": "/ppt/slideLayouts/slideLayout7.xml",
+      "name": "Blank",
+      "placeholderSummary": [
+        {
+          "name": "dateTime",
+          "type": "dateTime",
+          "text": "1/27/13"
+        },
+        {
+          "name": "footer",
+          "type": "footer",
+          "text": ""
+        },
+        {
+          "name": "slideNumber",
+          "type": "slideNumber",
+          "text": "‹#›"
+        }
+      ]
+    },
+    {
+      "id": "/ppt/slideLayouts/slideLayout8.xml",
+      "name": "Content with Caption",
+      "placeholderSummary": [
+        {
+          "name": "title",
+          "type": "title",
+          "text": "Click to edit Master title style"
+        },
+        {
+          "name": "content placeholder 2",
+          "text": "Click to edit Master text styles\nSecond level\nThird level\nFourth level\nFifth level"
+        },
+        {
+          "name": "body",
+          "type": "body",
+          "text": "Click to edit Master text styles"
+        },
+        {
+          "name": "dateTime",
+          "type": "dateTime",
+          "text": "1/27/13"
+        },
+        {
+          "name": "footer",
+          "type": "footer",
+          "text": ""
+        },
+        {
+          "name": "slideNumber",
+          "type": "slideNumber",
+          "text": "‹#›"
+        }
+      ]
+    },
+    {
+      "id": "/ppt/slideLayouts/slideLayout9.xml",
+      "name": "Picture with Caption",
+      "placeholderSummary": [
+        {
+          "name": "title",
+          "type": "title",
+          "text": "Click to edit Master title style"
+        },
+        {
+          "name": "picture",
+          "type": "picture",
+          "text": ""
+        },
+        {
+          "name": "body",
+          "type": "body",
+          "text": "Click to edit Master text styles"
+        },
+        {
+          "name": "dateTime",
+          "type": "dateTime",
+          "text": "1/27/13"
+        },
+        {
+          "name": "footer",
+          "type": "footer",
+          "text": ""
+        },
+        {
+          "name": "slideNumber",
+          "type": "slideNumber",
+          "text": "‹#›"
+        }
+      ]
+    },
+    {
+      "id": "/ppt/slideLayouts/slideLayout10.xml",
+      "name": "Title and Vertical Text",
+      "placeholderSummary": [
+        {
+          "name": "title",
+          "type": "title",
+          "text": "Click to edit Master title style"
+        },
+        {
+          "name": "body",
+          "type": "body",
+          "text": "Click to edit Master text styles\nSecond level\nThird level\nFourth level\nFifth level"
+        },
+        {
+          "name": "dateTime",
+          "type": "dateTime",
+          "text": "1/27/13"
+        },
+        {
+          "name": "footer",
+          "type": "footer",
+          "text": ""
+        },
+        {
+          "name": "slideNumber",
+          "type": "slideNumber",
+          "text": "‹#›"
+        }
+      ]
+    },
+    {
+      "id": "/ppt/slideLayouts/slideLayout11.xml",
+      "name": "Vertical Title and Text",
+      "placeholderSummary": [
+        {
+          "name": "title",
+          "type": "title",
+          "text": "Click to edit Master title style"
+        },
+        {
+          "name": "body",
+          "type": "body",
+          "text": "Click to edit Master text styles\nSecond level\nThird level\nFourth level\nFifth level"
+        },
+        {
+          "name": "dateTime",
+          "type": "dateTime",
+          "text": "1/27/13"
+        },
+        {
+          "name": "footer",
+          "type": "footer",
+          "text": ""
+        },
+        {
+          "name": "slideNumber",
+          "type": "slideNumber",
+          "text": "‹#›"
+        }
+      ]
+    }
+  ]
+}

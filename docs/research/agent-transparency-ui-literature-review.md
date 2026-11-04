@@ -19,7 +19,7 @@ the screen. Neither review repeats the other's sources.
 
 Both components already show a human a record of something an AI did: the rehearsal panel shows a
 recorded trail of tool steps with hash-chain/replay results and a seal status; the assistant
-shows an answer plus what it looked up and a disclaimer. **As reviewed**, an unsealed or
+shows an answer plus what it looked up and a disclaimer. Before PR #494, an unsealed or
 key-unavailable trail was also labelled green "Trail verified" by the UI, despite no verified
 signature. [PR #494](https://github.com/India-New-Zealand-Business-Council/inzbc/pull/494)
 (merged 28 Oct) replaced that with a neutral "Seal not verified" state. Four questions
