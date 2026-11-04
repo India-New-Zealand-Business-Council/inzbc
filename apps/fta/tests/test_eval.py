@@ -94,7 +94,7 @@ def test_eval_loader_accepts_valid_multi_id_and_no_match_labels(tmp_path) -> Non
     question_file = tmp_path / "questions.csv"
     question_file.write_text(
         "qid,query,expected_ids,type,checked_by\n"
-        "Q50,dairy exports,FTA-013;FTA-014;FTA-015;FTA-016,product_framing,\n"
+        "Q50,dairy exports, FTA-013 ; FTA-014 ;FTA-015;FTA-016 ,product_framing,\n"
         "Q45,log in to the member portal,,no_match,\n",
         encoding="utf-8",
     )
