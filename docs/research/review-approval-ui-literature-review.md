@@ -1,7 +1,7 @@
 # Literature review: reviewer-approval UI for AI-drafted content
 
 **Author:** Paras. **Status:** Annotated draft, 4 Nov 2026. Prepared with AI assistance. Every
-source was checked against its arXiv record or publisher page on 4 Nov 2026, and claims are
+work (three arXiv papers and two Manning books across four topic sections) was checked against its arXiv record or publisher page on 4 Nov 2026, and claims are
 limited to what those records state. Studio 6's course requirement to show research beyond
 frontend/backend work, applied directly to a real, confirmed gap: #60 ("Comms Assistant review UI
 with the named-reviewer approval gate") was closed on GitHub on 18 Aug 2026, but no reviewer
