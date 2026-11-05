@@ -4,6 +4,38 @@
 here is being built until it is decided. Record the outcome, date and who decided in the
 item, then move it to the bottom.
 
+## SIP operational decisions — Sunil / INZBC (requested 6 Nov 2026)
+
+The following four questions belong to **Sunil Kaushal as CEO / SIP Owner and INZBC
+account/operational authority**. Bhanu is responsible for technical design, review, and
+implementation once the relevant client decision is documented. This section is a
+**request for decisions, not evidence that Sunil has approved anything**. See
+[SIP walkthrough](sip/SUNIL_SIP_WALKTHROUGH_2026-10-27.md),
+[first-run plan](sip/LIVE_E2E_PROOF_PLAN_2026-10-27.md) and
+[post-handover blockers](operations/post-handover-open-work-2026-11-04.md).
+
+| Decision for Sunil | What needs an explicit answer | Status / evidence |
+|---|---|---|
+| **1. Hosting and operating account** ([#99](https://github.com/India-New-Zealand-Business-Council/inzbc/issues/99)) | Confirm the INZBC-owned account, permitted provider/plan and cost, database location, named operations/backup owner, and whether a non-production deployment may be provisioned. ADR-0004's amended zero-cost staging design remains the engineering baseline unless a controlled revision is approved. | **Pending Sunil's written decision** — date, scope, approver and source link: `[[not yet supplied]]` |
+| **2. First agent-to-API connection** ([#62](https://github.com/India-New-Zealand-Business-Council/inzbc/issues/62), [#55](https://github.com/India-New-Zealand-Business-Council/inzbc/issues/55)) | Authorise or decline connecting the Coordinator to a real authenticated, audited backend route for the first time; specify isolated staging/local versus production, allowed data and approved operator. A rehearsal is not a real run. This does **not** waive human QA, CEO, source, security, redaction, or separate distribution gates. | **Pending Sunil's written approval** — environment, boundaries, date and source link: `[[not yet supplied]]` |
+| **3. Signed decisions and enforceability** ([#448](https://github.com/India-New-Zealand-Business-Council/inzbc/pull/448)) | Decide INZBC's operational signing requirement, accountable key custodian, legacy unsigned-run policy, and conditions for enforcing `SIP_REQUIRE_SIGNED_DECISIONS`. Distinguish server-held signatures from the optional per-approver proof in ADR-0010. Bhanu tests and implements the approved staged rollout; no keys or signatures are to be supplied in GitHub text. | **Pending Sunil's written policy decision** — date, scope and source link: `[[not yet supplied]]` |
+| **4. Who records source-verification evidence** ([#55](https://github.com/India-New-Zealand-Business-Council/inzbc/issues/55)) | Resolve the draft's **Analyst** label versus the implementation's **Quality Reviewer / SIP Owner** permission. Name the recorder, who independently checks the evidence, and any formally approved separation-of-duties exception. Confirm the controlled SIP-184/SIP-185 procedure before changing role permissions or claiming independent QA. | **Pending Sunil's documented role decision** — people/roles, date and controlled-procedure reference: `[[not yet supplied]]` |
+
+**Until Sunil's answers are recorded:** do not provision a client service based on this
+table; do not wire the agent to a live route, require signatures in a deployed
+environment, or change who may record verification evidence. Keep
+`production_enabled=false`, and do not schedule collection, publish, distribute or
+attribute a decision/signature to Sunil from an unconfirmed conversation.
+
+**Delivery split (not additional approvals):** Bhanu can design and review the
+missing run-state routes and the SIP-185-code planner prompt correction; the UI
+owner can address seed-note incompatibility and Comms reviewer UI in an approved
+lane. Technical fixes still need reproducible tests and the normal PR review.
+A proposed 27 November demonstration may show an isolated, authorised path
+through CEO decision, with agent wiring *designed but disabled* unless Sunil
+separately approves its first connection. This target is not a new SIP-191
+launch or distribution authority.
+
 ## 1. Platform assistant (chatbot)
 
 **Where it stands.** Built and merged in #458: `POST /api/assistant/chat`, a read-only agent with
@@ -42,8 +74,9 @@ wording; the app's heading and intro text still need a named reviewer.
 Postgres have none, so the staff platform (Trade Intelligence, Comms Assistant, Member Portal,
 Executive Dashboard, onboarding) runs nowhere yet. The first production SIP run (#55) needs it.
 
-**Decide:** which host and plan, who owns the account, and where the database lives. **Owner:**
-tech lead with INZBC as account owner.
+**Decide:** which host and plan, who owns the account, and where the database lives.
+**Decision authority:** Sunil / INZBC for hosting account, cost, operating responsibility and deployment go-ahead.
+**Engineering owner:** Bhanu for architecture, implementation and verification after the recorded decision.
 
 ## 4. Signed-decision enforcement
 
@@ -52,7 +85,8 @@ tech lead with INZBC as account owner.
 **Decide:** when to set `SIP_DECISION_SIGNING_KEY` in each deployed environment and when to turn
 on `SIP_REQUIRE_SIGNED_DECISIONS`, after runs recorded before #448 are closed. Follow the
 prerequisites in the [secrets register](secrets-register.md#decision-signing-key-rollout-and-rotation-prerequisites).
-**Owner:** tech lead.
+**Decision authority:** Sunil / INZBC for the signing policy, key custody and deployment go-ahead.
+**Engineering owner:** Bhanu for staging checks, safe rollout and evidence after that approval.
 
 ## 5. Per-approver signatures
 
