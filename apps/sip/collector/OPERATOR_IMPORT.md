@@ -57,3 +57,5 @@ brief, complete independent QA, CEO decision and manual distribution when allowe
 ## Tests
 
 Run `uv run python -m pytest apps/sip/collector/tests/test_capture_manifest.py apps/sip/collector/tests/test_import_capture.py -q` and `uv run ruff check apps/sip/collector`. Tests use local synthetic data, a fake API and fake source checks — they are **not** a substitute for the real end-to-end launch evidence in issue #55. They also assert that writes remain disabled until the API's atomic-import contract exists.
+
+Both legacy per-item capture and the disabled batch importer serialize on `SELECT ... FROM runs WHERE id = ... FOR UPDATE` before any candidate row is written.
