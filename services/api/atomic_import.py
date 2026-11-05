@@ -31,6 +31,9 @@ from services.api.import_contract import (
 from services.api.source_checks import RecordSourceCheckIn
 
 
+_MAX_ORIGINAL_EXPORT_BYTES = 10 * 1024 * 1024
+
+
 class ImportBlockedError(ValueError):
     """The requested import cannot pass immutable evidence or authority checks."""
 
@@ -205,7 +208,10 @@ class ImportRepository:
             if not isinstance(raw_articles, list) or len(raw_articles) != len(raw_original):
                 raise ImportBlockedError("original article list is incomplete")
             try:
-                raw_digest = hashlib.sha256(_canonical_bytes(raw_articles)).hexdigest()
+                serialized_raw = _canonical_bytes(raw_articles)
+                if len(serialized_raw) > _MAX_ORIGINAL_EXPORT_BYTES:
+                    raise ImportBlockedError("original export exceeds 10 MiB safety limit")
+                raw_digest = hashlib.sha256(serialized_raw).hexdigest()
             except (ValueError, TypeError) as exc:
                 raise ImportBlockedError("original article payload is invalid") from exc
             if raw_digest != evidence["articles_sha256"]:
