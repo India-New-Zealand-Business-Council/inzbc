@@ -75,3 +75,4 @@ staging interface, run the full concurrent-writer and negative auth/CSRF
 tests against a disposable Postgres, and obtain SIP-191/source authority.
 Successful synthetic CI demonstrates transaction mechanics only; it does not
 complete the authorised run or any approval/distribution gate.
+- Legacy per-item capture and atomic batch import share the `runs` row lock (#526, #528).
