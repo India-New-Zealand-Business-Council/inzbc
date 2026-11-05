@@ -121,6 +121,16 @@ review findings instead (see Done, PR #501) covered Thursday's daily-commit in i
   re-open them.
 
 ## Done
+- **Week 5, Thursday: surfaced the real reviewer-approval status on Comms drafts** (PR #541, 5
+  Nov 2026, refs #60). Applies the concrete finding from Wednesday's research (PR #525, open):
+  `comms_drafts` already carries a real, enforced approval state server-side, and every draft
+  response already returns it, but the UI's history list dropped it, showing only content type
+  and text. Threaded `status` through `DraftState`/`HistoryEntry` and added a small badge per
+  entry ("Draft — no reviewer recorded" / "Approved"). Deliberately not the full #60 reviewer
+  screen — no diff view, no approve action added here, since that's sized for weeks 6–8, not a
+  daily commit. `approved_by` is a raw user id with no name-resolution route available, so this
+  shows "Approved" rather than inventing a name it cannot display. 87/87 comms-ui tests passing
+  after, including a new regression test for both badge states.
 - **Week 5, Tuesday: scope-checked the Comms Assistant review UI rather than assuming #60's
   closure meant it existed** (3 Nov 2026, refs #60). Per the Must-do plan, Tuesday is a polish
   day on the two agent surfaces, but both had just been covered (Monday's #513 and its #501
