@@ -261,3 +261,49 @@ def test_stale_run_version_refused(mandatory_sources):
     with pytest.raises(ValueError, match="version changed"):
         ImportRepository(DATABASE_URL).import_reviewed(batch, actor_id=actor)
     assert counts(batch.run_id) == (0, 0, 0)
+
+
+def test_preflight_cannot_authorise_later_write(mandatory_sources):
+    """A valid read-only snapshot cannot override newly committed DB state."""
+    from services.api.import_contract import require_consistent_batch
+
+    batch, actor = seed_case(mandatory_sources)
+    candidate = batch.candidates[0]
+
+    # What an earlier read-only verification can establish, before any write.
+    require_consistent_batch(
+        batch,
+        run_id=batch.run_id,
+        run_version=batch.expected_run_version,
+        state="Scanning",
+        existing_count=0,
+        capture_digest=batch.articles_sha256,
+        locked_window_start=START,
+        locked_window_end=END,
+        captured_articles={
+            candidate.url: (candidate.source_id, candidate.published_at)
+        },
+    )
+
+    # An independently committed capture arrives after that valid preview.
+    # Use a direct synthetic fixture insert rather than enabling the legacy
+    # production route, which must remain unavailable.
+    with psycopg.connect(DATABASE_URL) as conn:
+        conn.execute(
+            "insert into candidates "
+            "(run_id, headline, source_id, url, summary, published_at, "
+            "in_coverage_window, captured_by) "
+            "values (%s, %s, %s, %s, %s, %s, %s, %s)",
+            (
+                batch.run_id, "Synthetic interleaving capture",
+                candidate.source_id, "https://example.org/interleaving-" + str(uuid.uuid4()),
+                "Synthetic race fixture", candidate.published_at,
+                True, uuid.UUID(actor),
+            ),
+        )
+
+    # The importer must independently obtain the current count under the
+    # run lock and refuse; the earlier preflight grants no write permission.
+    with pytest.raises(ValueError, match="existing candidates"):
+        ImportRepository(DATABASE_URL).import_reviewed(batch, actor_id=actor)
+    assert counts(batch.run_id) == (1, 0, 0)
