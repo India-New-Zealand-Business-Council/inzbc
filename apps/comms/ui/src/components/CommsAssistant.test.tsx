@@ -16,9 +16,9 @@ let draftIdCounter = 0
 /** `id`/`status` are additive on `DraftOut` (services/api/comms.py) — every draft response in
  * this file needs them now that the delete control reads `draftState.id`, so this is the one
  * place that shape lives rather than repeating it at every call site. */
-function draftBody(draft: string) {
+function draftBody(draft: string, status = 'Draft') {
   draftIdCounter += 1
-  return { draft, id: `draft-${draftIdCounter}`, status: 'Draft' }
+  return { draft, id: `draft-${draftIdCounter}`, status }
 }
 
 function stubClipboard(writeText: ReturnType<typeof vi.fn>) {
@@ -303,6 +303,46 @@ describe('CommsAssistant', () => {
     const historyRegion = within(heading.parentElement as HTMLElement)
     expect(historyRegion.getByText('Newsletter')).toBeInTheDocument()
     expect(historyRegion.getByText('newsletter draft')).toBeInTheDocument()
+  })
+
+  // The persisted reviewer-approval state is real and enforced server-side (services/api/comms.py's
+  // approve endpoint) but was invisible here, since this screen has no approve action -- #60.
+  it('shows each history entry\'s reviewer-approval status, not just its content', async () => {
+    const spy = vi.fn()
+    let nextStatus = 'Draft'
+    vi.stubGlobal(
+      'fetch',
+      spy.mockImplementation(async (_url: string, init: RequestInit) => {
+        const { content_type: contentType } = JSON.parse(init.body as string) as { content_type: string }
+        return { ok: true, status: 200, json: async () => draftBody(`${contentType} draft`, nextStatus) }
+      }),
+    )
+    render(<CommsAssistant />)
+
+    await userEvent.type(screen.getByLabelText(/topic/i), 'First brief')
+    await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
+    await screen.findByText('newsletter draft')
+
+    // Draft 1 (status Draft) is only pushed into history once superseded by draft 2.
+    nextStatus = 'Approved'
+    await userEvent.selectOptions(screen.getByLabelText(/content type/i), 'LinkedIn Post')
+    await userEvent.clear(screen.getByLabelText(/topic/i))
+    await userEvent.type(screen.getByLabelText(/topic/i), 'Second brief')
+    await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
+    await screen.findByText('linkedin_post draft')
+
+    // Draft 2 (status Approved) is only pushed into history once superseded by draft 3. A third,
+    // distinct content type avoids colliding with draft 1's "newsletter draft" history text.
+    await userEvent.selectOptions(screen.getByLabelText(/content type/i), 'Event Announcement')
+    await userEvent.clear(screen.getByLabelText(/topic/i))
+    await userEvent.type(screen.getByLabelText(/topic/i), 'Third brief')
+    await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
+    await screen.findByText('event_announcement draft')
+
+    const heading = await screen.findByRole('heading', { name: /recent drafts/i })
+    const historyRegion = within(heading.parentElement as HTMLElement)
+    expect(historyRegion.getByText('Draft — no reviewer recorded')).toBeInTheDocument()
+    expect(historyRegion.getByText('Approved')).toBeInTheDocument()
   })
 
   it('clears history when the draft is cleared', async () => {
