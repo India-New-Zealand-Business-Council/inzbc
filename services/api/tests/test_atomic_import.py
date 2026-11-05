@@ -20,8 +20,8 @@ from psycopg.types.json import Jsonb
 from apps.sip.collector.capture_manifest import _canonical_bytes
 from apps.sip.collector.import_capture import CapturePlan
 from apps.sip.collector.review_packet import review_packet
-from apps.sip.pipeline.models import Candidate
 from apps.sip.collector.source_register import MANDATORY_SOURCES
+from apps.sip.pipeline.models import Candidate
 from services.api.atomic_import import ImportBlockedError, ImportRepository
 from services.api.import_contract import ImportBatchIn
 from services.api.sip_staging_preflight import verify_handoff
