@@ -77,13 +77,33 @@ put the packet in an issue, PR, source-control history or an unprotected
 shared drive. It **does not** stage or
 import anything; never store raw packets in Git, PRs or unprotected issues.
 
-The packet's source UUIDs are **proposals from preflight source-name mapping**,
-not a publisher-identity guarantee. The server-side capture-staging owner must
-independently check those mappings against the original SIP-185 register,
-verify the actual manifest bytes and checksum, establish permitted provenance
-and named launch authority, and maintain protected custody of the file before
-any stored immutable evidence is accepted. Run version and source count are
-also assertions, not new permissions. `--apply` continues to refuse.
+The import-reconciliation boundary additionally stores the original exporter
+`raw_articles` list alongside the proposed candidates and resolved
+URL/source/timestamp records. Before inserting, it recalculates
+`articles_sha256` from the exporter's exact canonical article list and
+compares raw headline, summary and publication timestamp with the candidate
+mapping. A matching URL or request-supplied digest **alone** is no longer
+sufficient to change a news headline under an unchanged capture claim.
+
+**Forward migration safety:** `0008_sip_import_evidence.sql` remains
+byte-for-byte unchanged for databases that already applied it. The separate
+`0009_sip_original_articles_forward.sql` adds `raw_articles` and rejects any
+*new* staged evidence without a bounded original article list. A pre-0009 row
+cannot be retroactively treated as source-authenticated: it remains unmodified
+and ineligible for import because the importer refuses missing original bytes.
+No SQL backfill of an append-only evidence record is authorised; produce a new,
+independently approved run and re-stage the verified source capture instead.
+The upgrade is exercised against a temporary PostgreSQL table with the old
+0008 layout, including legacy-row preservation and new-row rejection.
+
+The append-only `sip_import_evidence` row must be populated by a **separately
+reviewed and authorised evidence-staging path**, binding original collector
+bytes and independently resolved source IDs to the proposed candidate batch.
+That staging path does **not** exist yet. A direct SQL insert, a test fixture,
+the request body's SHA-256, or an analyst typing a reference is **not** proof
+that the original collector manifest or its licence/source outcome trail was
+checked. Therefore no HTTP importer or CLI `--apply` is registered or
+enabled. Do not call the internal repository in production.
 
 
 ## Independent staging handoff preflight (#536 — no writes)

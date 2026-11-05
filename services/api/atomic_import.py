@@ -10,16 +10,17 @@ production writes (#526) before this code can be considered for activation.
 """
 from __future__ import annotations
 
+import hashlib
 import os
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 import psycopg
 from psycopg.rows import dict_row
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
-from apps.sip.collector.capture_manifest import _source_url
-from apps.sip.collector.import_capture import _require_confirmed_source_note
+from apps.sip.collector.capture_manifest import _article, _canonical_bytes, _source_url
+from apps.sip.collector.mapping import parse_published_at
 from apps.sip.collector.source_register import MANDATORY_SOURCES
 from services.api.audit import record_audit
 from services.api.import_contract import (
@@ -136,7 +137,7 @@ class ImportRepository:
                 raise ImportBlockedError("recorded run launch authority is missing")
 
             evidence = conn.execute(
-                "select articles_sha256, batch_payload, captured_articles, "
+                "select articles_sha256, batch_payload, captured_articles, raw_articles, "
                 "source_count, evidence_ref "
                 "from sip_import_evidence where run_id = %s",
                 (run_id,),
@@ -197,6 +198,28 @@ class ImportRepository:
             raw_original = evidence["captured_articles"]
             if not isinstance(raw_original, list) or not raw_original:
                 raise ImportBlockedError("original capture evidence must be nonempty")
+            # Independent second verification of the original *article payload*.
+            # The SHA is over the same canonical bytes as the news-agent exporter,
+            # not over the server's candidate projection or a user-supplied digest.
+            raw_articles = evidence["raw_articles"]
+            if not isinstance(raw_articles, list) or len(raw_articles) != len(raw_original):
+                raise ImportBlockedError("original article list is incomplete")
+            try:
+                raw_digest = hashlib.sha256(_canonical_bytes(raw_articles)).hexdigest()
+            except (ValueError, TypeError) as exc:
+                raise ImportBlockedError("original article payload is invalid") from exc
+            if raw_digest != evidence["articles_sha256"]:
+                raise ImportBlockedError("original article checksum mismatch")
+            by_url = {}
+            for raw_article in raw_articles:
+                try:
+                    _article(raw_article)
+                except (ValueError, TypeError) as exc:
+                    raise ImportBlockedError("invalid original collector article") from exc
+                url = raw_article["url"]
+                if url in by_url:
+                    raise ImportBlockedError("duplicate original collector URL")
+                by_url[url] = raw_article
             original = {}
             for raw in raw_original:
                 try:
@@ -205,7 +228,25 @@ class ImportRepository:
                     raise ImportBlockedError("invalid original captured-article evidence") from exc
                 if captured.url in original:
                     raise ImportBlockedError("original captured URLs must be unique")
+                article = by_url.get(captured.url)
+                if article is None:
+                    raise ImportBlockedError("captured URL absent from original collector articles")
+                published = parse_published_at(article.get("published"))
+                if published is None or (
+                    datetime.fromisoformat(published).astimezone(UTC)
+                    != captured.published_at.astimezone(UTC)
+                ):
+                    raise ImportBlockedError("captured publication time changed from original")
                 original[captured.url] = (captured.source_id, captured.published_at)
+            if set(original) != set(by_url):
+                raise ImportBlockedError("original collector URLs do not match staged capture")
+            for candidate in batch.candidates:
+                original_article = by_url[candidate.url]
+                if (
+                    candidate.headline != original_article["title"]
+                    or candidate.summary != (original_article.get("description") or None)
+                ):
+                    raise ImportBlockedError("candidate text differs from original collector")
             require_consistent_batch(
                 batch,
                 run_id=run["id"],
