@@ -31,6 +31,15 @@ claim. Consequently `--apply` now **fails before API access**; even a direct
 repeating a client-side GET or adding a local file lock would not fix concurrency
 between different operator machines.
 
+**Production legacy-capture isolation (#526):** the API repository takes a
+`runs ... FOR UPDATE` lock before any per-item candidate INSERT and refuses
+`POST /api/candidates` for runs marked `production_enabled=true` with HTTP
+409. This closes the direct per-item race/bypass for production runs; it does
+**not** make the batch import functional. Non-production/manual rehearsal
+capture remains available with its existing audit records. Do not set
+`production_enabled` merely to attempt a run while the authorised batch path
+is absent.
+
 **Backend owner follow-up:** implement and review a server-side transactional
 batch import that locks the run, verifies its state/authority and the candidate
 absence within the **same transaction**, enforces an idempotency key derived from
@@ -48,3 +57,5 @@ brief, complete independent QA, CEO decision and manual distribution when allowe
 ## Tests
 
 Run `uv run python -m pytest apps/sip/collector/tests/test_capture_manifest.py apps/sip/collector/tests/test_import_capture.py -q` and `uv run ruff check apps/sip/collector`. Tests use local synthetic data, a fake API and fake source checks — they are **not** a substitute for the real end-to-end launch evidence in issue #55. They also assert that writes remain disabled until the API's atomic-import contract exists.
+
+Both legacy per-item capture and the disabled batch importer serialize on `SELECT ... FROM runs WHERE id = ... FOR UPDATE` before any candidate row is written.
