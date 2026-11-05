@@ -9,6 +9,7 @@ import os
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
+from threading import Barrier
 
 import psycopg
 import pytest
@@ -16,6 +17,10 @@ from psycopg.types.json import Jsonb
 
 from apps.sip.collector.source_register import MANDATORY_SOURCES
 from services.api.atomic_import import ImportBlockedError, ImportRepository
+from services.api.candidate_persistence import (
+    BatchImportRequiredError,
+    CandidateRepository,
+)
 from services.api.import_contract import ImportBatchIn
 from services.api.tests.role_seed import authorise_run, grant
 
@@ -283,3 +288,33 @@ def test_run_without_production_enablement_refuses_import(mandatory_sources):
     with pytest.raises(ImportBlockedError, match="not enabled"):
         ImportRepository(DATABASE_URL).import_reviewed(batch, actor_id=actor)
     assert counts(batch.run_id) == (0, 0, 0)
+
+
+def test_legacy_per_item_capture_cannot_race_atomic_import(mandatory_sources):
+    # Both paths open independent PostgreSQL connections and lock the same
+    # runs row. The legacy request must be rejected whichever wins the lock.
+    batch, actor = seed_case(mandatory_sources)
+    barrier = Barrier(2)
+
+    def bulk():
+        barrier.wait(timeout=10)
+        return ImportRepository(DATABASE_URL).import_reviewed(batch, actor_id=actor)
+
+    def legacy():
+        barrier.wait(timeout=10)
+        return CandidateRepository(DATABASE_URL).capture(
+            run_id=str(batch.run_id),
+            headline="Forbidden per-item write",
+            source_id=str(mandatory_sources[0]),
+            url="https://example.org/legacy-interleave",
+            summary=None, published_at="2026-10-27T02:00:00+00:00",
+            in_coverage_window=True, actor_id=actor,
+        )
+
+    with ThreadPoolExecutor(max_workers=2) as workers:
+        bulk_task = workers.submit(bulk)
+        legacy_task = workers.submit(legacy)
+        assert bulk_task.result(timeout=25).replay is False
+        with pytest.raises(BatchImportRequiredError, match="atomic batch import"):
+            legacy_task.result(timeout=25)
+    assert counts(batch.run_id) == (1, 1, 1)
