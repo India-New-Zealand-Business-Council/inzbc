@@ -84,3 +84,26 @@ verify the actual manifest bytes and checksum, establish permitted provenance
 and named launch authority, and maintain protected custody of the file before
 any stored immutable evidence is accepted. Run version and source count are
 also assertions, not new permissions. `--apply` continues to refuse.
+
+
+## Independent staging handoff preflight (#536 — no writes)
+
+The pure `services.api.sip_staging_preflight.verify_handoff` function
+re-checks a review packet against **separately obtained original manifest
+bytes**, the actual server-side run snapshot and server `source_library`
+rows. It requires the exact original file SHA-256, original article checksum,
+verified source-name-to-UUID mapping, 112 registered mandatory source codes,
+complete candidate URL/title/summary/time reconciliation, and true coverage
+against the locked 07:00 Auckland run window. It rejects missing, ambiguous
+or altered evidence and returns **metadata only**, with every authorisation
+and import flag false.
+
+The caller must fetch the run and source library independently from its
+own authenticated, permission-checked backend. Values supplied in a client
+packet must never substitute for those server records. This preflight does
+not authenticate the collector, sign an archive, verify publisher licensing
+or record 112 human source outcomes. It **never inserts**
+`sip_import_evidence`, creates an import claim or calls the HTTP API.
+The independently authorised evidence-custody and staging transaction,
+run-row lock, launch window, secret handling and reviewed import endpoint
+are separate future work. A green preflight is not permission to run SIP.
