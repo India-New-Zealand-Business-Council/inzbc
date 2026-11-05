@@ -35,6 +35,30 @@ without that guard and review of *all* other candidate-write paths.
 5. CI must pass all Python, Postgres, frontend, Docker, lint, security, SAST and
    link checks at the **integration head**, not only individual source PR heads.
 
+## 6 November integration regression and schema handoff
+
+- The integration head adds
+  `test_preflight_cannot_authorise_later_write` in
+  `services/api/tests/test_atomic_import.py`. It first proves the pure
+  precondition accepts a synthetic empty Scanning run, then commits another
+  candidate before the write. The real-PostgreSQL importer must read the
+  new count under its run lock and refuse the import, leaving zero
+  `candidate.import` audit events and zero import claims. The preflight
+  result is **not** a transferable authorisation token.
+- The **current integration branch** consistently uses `raw_articles` in
+  `database/schema.sql`, forward migration
+  `0009_sip_original_articles_forward.sql`, `atomic_import.py`,
+  `review_packet.py`, and its PostgreSQL migration/transaction tests.
+  The separately proposed #537 branch has been described in tech-lead
+  review as using `exported_articles`. These are **alternative schema
+  contracts**, not fields to mix. Do not merge or cherry-pick that sibling
+  migration/importer without first choosing one name across schema,
+  migrations, evidence staging and importer, then re-running the
+  real-PostgreSQL migration, concurrency and original-text tests.
+- This remains a **synthetic integration proof only**. The CI status must be
+  taken from the *latest* head SHA, not a green result on an older parent
+  branch or an unrelated PR.
+
 ## Production hard stops
 
 - There is **no authenticated, permission-checked custody/staging service**
