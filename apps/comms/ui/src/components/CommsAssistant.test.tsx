@@ -300,7 +300,7 @@ describe('CommsAssistant', () => {
     const heading = await screen.findByRole('heading', { name: /recent drafts/i })
     // Scoped to the history region: bare getByText('Newsletter') also matches the still-present
     // <option> in the content-type select, so it found two nodes and threw.
-    const historyRegion = within(heading.parentElement as HTMLElement)
+    const historyRegion = within(heading.parentElement?.parentElement as HTMLElement)
     expect(historyRegion.getByText('Newsletter')).toBeInTheDocument()
     expect(historyRegion.getByText('newsletter draft')).toBeInTheDocument()
   })
@@ -371,7 +371,13 @@ describe('CommsAssistant', () => {
     let counter = 0
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockImplementation(async () => {
+      vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
+        if (init?.method === 'GET') {
+          const id = url.split('/').at(-1)
+          return { ok: true, status: 200, json: async () => ({
+            id, status: 'Draft', approved_by: null, approved_at: null,
+          }) }
+        }
         counter += 1
         return { ok: true, status: 200, json: async () => draftBody(`draft ${counter}`) }
       }),
@@ -397,7 +403,13 @@ describe('CommsAssistant', () => {
     let counter = 0
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockImplementation(async () => {
+      vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
+        if (init?.method === 'GET') {
+          const id = url.split('/').at(-1)
+          return { ok: true, status: 200, json: async () => ({
+            id, status: 'Draft', approved_by: null, approved_at: null,
+          }) }
+        }
         counter += 1
         return { ok: true, status: 200, json: async () => draftBody(`draft ${counter}`) }
       }),
