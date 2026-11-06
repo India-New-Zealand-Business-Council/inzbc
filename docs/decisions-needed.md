@@ -9,21 +9,27 @@ item, then move it to the bottom.
 The following four questions belong to **Sunil Kaushal as CEO / SIP Owner and INZBC
 account/operational authority**. Bhanu is responsible for technical design, review, and
 implementation once the relevant client decision is documented. This section is a
-**request for decisions, not evidence that Sunil has approved anything**. See
+**request for decisions, not evidence that Sunil has approved anything**.
+
+**Separate deployment scopes:** [#99](https://github.com/India-New-Zealand-Business-Council/inzbc/issues/99) is the previously scoped public FTA-only demo: Render API plus same-origin FTA UI, **without Postgres, member data or SIP operations**. Its issue discussion records earlier tech-lead approval for deployment preparation and an INZBC-owned account, but no created Render service or verified live endpoint. The pending decision below applies to the **full staff/SIP platform** (authenticated API, Postgres, operations and backups). It does not itself revoke the prior FTA preparation approval or authorise a new public go-live. If INZBC intends to supersede the FTA scope, record the explicit dated decision separately.
+
+See
 [SIP walkthrough](sip/SUNIL_SIP_WALKTHROUGH_2026-10-27.md),
 [first-run plan](sip/LIVE_E2E_PROOF_PLAN_2026-10-27.md) and
 [post-handover blockers](operations/post-handover-open-work-2026-11-04.md).
 
 | Decision for Sunil | What needs an explicit answer | Status / evidence |
 |---|---|---|
-| **1. Hosting and operating account** ([#99](https://github.com/India-New-Zealand-Business-Council/inzbc/issues/99)) | Confirm the INZBC-owned account, permitted provider/plan and cost, database location, named operations/backup owner, and whether a non-production deployment may be provisioned. ADR-0004's amended zero-cost staging design remains the engineering baseline unless a controlled revision is approved. | **Pending Sunil's written decision** — date, scope, approver and source link: `[[not yet supplied]]` |
+| **1. Staff/SIP platform hosting and operating account** (separate from the FTA-only scope of [#99](https://github.com/India-New-Zealand-Business-Council/inzbc/issues/99)) | Confirm the INZBC-owned staff-platform account, provider/plan and cost, Postgres location, named operations/backup owner, and whether isolated staff/SIP staging may be provisioned. Preserve ADR-0004's zero-cost FTA baseline unless INZBC formally revises it. | **Pending Sunil's written staff/SIP decision** — date, environment, scope, approver and source link: `[[not yet supplied]]` |
 | **2. First agent-to-API connection** ([#62](https://github.com/India-New-Zealand-Business-Council/inzbc/issues/62), [#55](https://github.com/India-New-Zealand-Business-Council/inzbc/issues/55)) | Authorise or decline connecting the Coordinator to a real authenticated, audited backend route for the first time; specify isolated staging/local versus production, allowed data and approved operator. A rehearsal is not a real run. This does **not** waive human QA, CEO, source, security, redaction, or separate distribution gates. | **Pending Sunil's written approval** — environment, boundaries, date and source link: `[[not yet supplied]]` |
 | **3. Signed decisions and enforceability** ([#448](https://github.com/India-New-Zealand-Business-Council/inzbc/pull/448)) | Decide INZBC's operational signing requirement, accountable key custodian, legacy unsigned-run policy, and conditions for enforcing `SIP_REQUIRE_SIGNED_DECISIONS`. Distinguish server-held signatures from the optional per-approver proof in ADR-0010. Bhanu tests and implements the approved staged rollout; no keys or signatures are to be supplied in GitHub text. | **Pending Sunil's written policy decision** — date, scope and source link: `[[not yet supplied]]` |
 | **4. Who records source-verification evidence** ([#55](https://github.com/India-New-Zealand-Business-Council/inzbc/issues/55)) | Resolve the draft's **Analyst** label versus the implementation's **Quality Reviewer / SIP Owner** permission. Name the recorder, who independently checks the evidence, and any formally approved separation-of-duties exception. Confirm the controlled SIP-184/SIP-185 procedure before changing role permissions or claiming independent QA. | **Pending Sunil's documented role decision** — people/roles, date and controlled-procedure reference: `[[not yet supplied]]` |
 
-**Until Sunil's answers are recorded:** do not provision a client service based on this
-table; do not wire the agent to a live route, require signatures in a deployed
-environment, or change who may record verification evidence. Keep
+**Until Sunil's answers are recorded:** do not provision a staff/SIP platform service on the
+strength of this table; do not wire the agent to a live route, require signatures in a deployed
+environment, or change who may record verification evidence. The earlier FTA-only
+demonstration scope remains separate and subject to its own documented deployment and
+public-site publication controls. Keep
 `production_enabled=false`, and do not schedule collection, publish, distribute or
 attribute a decision/signature to Sunil from an unconfirmed conversation.
 
@@ -70,8 +76,10 @@ wording; the app's heading and intro text still need a named reviewer.
 
 ## 3. Platform hosting
 
-**Where it stands.** Only the FTA slice has a host configuration. The platform shell, the API and
-Postgres have none, so the staff platform (Trade Intelligence, Comms Assistant, Member Portal,
+**Where it stands.** Only the database-free public FTA slice has a host configuration
+([#99](https://github.com/India-New-Zealand-Business-Council/inzbc/issues/99)); no live
+Render endpoint has been verified. The staff-platform shell, its authenticated API and
+Postgres have no deployed environment, so the staff platform (Trade Intelligence, Comms Assistant, Member Portal,
 Executive Dashboard, onboarding) runs nowhere yet. The first production SIP run (#55) needs it.
 
 **Decide:** which host and plan, who owns the account, and where the database lives.
