@@ -300,49 +300,69 @@ describe('CommsAssistant', () => {
     const heading = await screen.findByRole('heading', { name: /recent drafts/i })
     // Scoped to the history region: bare getByText('Newsletter') also matches the still-present
     // <option> in the content-type select, so it found two nodes and threw.
-    const historyRegion = within(heading.parentElement as HTMLElement)
+    const historyRegion = within(heading.parentElement?.parentElement as HTMLElement)
     expect(historyRegion.getByText('Newsletter')).toBeInTheDocument()
     expect(historyRegion.getByText('newsletter draft')).toBeInTheDocument()
   })
 
-  // The persisted reviewer-approval state is real and enforced server-side (services/api/comms.py's
-  // approve endpoint) but was invisible here, since this screen has no approve action -- #60.
-  it('shows each history entry\'s reviewer-approval status, not just its content', async () => {
-    const spy = vi.fn()
-    let nextStatus = 'Draft'
-    vi.stubGlobal(
-      'fetch',
-      spy.mockImplementation(async (_url: string, init: RequestInit) => {
-        const { content_type: contentType } = JSON.parse(init.body as string) as { content_type: string }
-        return { ok: true, status: 200, json: async () => draftBody(`${contentType} draft`, nextStatus) }
-      }),
-    )
+  it('refreshes a real Draft-to-Approved transition by persisted ID', async () => {
+    const serverStatus = new Map<string, 'Draft' | 'Approved'>()
+    const spy = vi.fn(async (url: string, init?: RequestInit) => {
+      if (init?.method === 'GET') {
+        const id = url.split('/').at(-1) || ''
+        const status = serverStatus.get(id) ?? 'Draft'
+        return {
+          ok: true, status: 200,
+          json: async () => ({
+            id, status,
+            approved_by: status === 'Approved' ? 'reviewer-2' : null,
+            approved_at: status === 'Approved' ? '2026-11-06T00:00:00Z' : null,
+          }),
+        }
+      }
+      const contentType = JSON.parse(init?.body as string).content_type as string
+      return { ok: true, status: 200, json: async () => draftBody(`${contentType} draft`, 'Draft') }
+    })
+    vi.stubGlobal('fetch', spy)
     render(<CommsAssistant />)
 
     await userEvent.type(screen.getByLabelText(/topic/i), 'First brief')
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
     await screen.findByText('newsletter draft')
-
-    // Draft 1 (status Draft) is only pushed into history once superseded by draft 2.
-    nextStatus = 'Approved'
     await userEvent.selectOptions(screen.getByLabelText(/content type/i), 'LinkedIn Post')
     await userEvent.clear(screen.getByLabelText(/topic/i))
     await userEvent.type(screen.getByLabelText(/topic/i), 'Second brief')
     await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
     await screen.findByText('linkedin_post draft')
 
-    // Draft 2 (status Approved) is only pushed into history once superseded by draft 3. A third,
-    // distinct content type avoids colliding with draft 1's "newsletter draft" history text.
-    await userEvent.selectOptions(screen.getByLabelText(/content type/i), 'Event Announcement')
-    await userEvent.clear(screen.getByLabelText(/topic/i))
-    await userEvent.type(screen.getByLabelText(/topic/i), 'Third brief')
-    await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
-    await screen.findByText('event_announcement draft')
+    const region = within((await screen.findByRole('heading', { name: /recent drafts/i })).parentElement?.parentElement as HTMLElement)
+    expect(await region.findByText('Draft — no reviewer recorded')).toBeInTheDocument()
+    const getCalls = spy.mock.calls.filter((call) => call[1]?.method === 'GET')
+    expect(getCalls.length).toBeGreaterThan(0)
+    const id = String(getCalls[0]?.[0]).split('/').at(-1)
+    expect(id).toBeTruthy()
+    serverStatus.set(id as string, 'Approved')
+    await userEvent.click(screen.getByRole('button', { name: /refresh approval statuses/i }))
+    expect(await region.findByText('Approved')).toBeInTheDocument()
+  })
 
-    const heading = await screen.findByRole('heading', { name: /recent drafts/i })
-    const historyRegion = within(heading.parentElement as HTMLElement)
-    expect(historyRegion.getByText('Draft — no reviewer recorded')).toBeInTheDocument()
-    expect(historyRegion.getByText('Approved')).toBeInTheDocument()
+  it('fails closed when status evidence is missing or mismatches the draft ID', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => {
+      if (init?.method === 'GET') {
+        return { ok: true, status: 200, json: async () => ({ id: 'other-draft', status: 'Approved' }) }
+      }
+      return { ok: true, status: 200, json: async () => draftBody('Test draft') }
+    }))
+    render(<CommsAssistant />)
+    await userEvent.type(screen.getByLabelText(/topic/i), 'First brief')
+    await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
+    await screen.findByText('Test draft')
+    await userEvent.clear(screen.getByLabelText(/topic/i))
+    await userEvent.type(screen.getByLabelText(/topic/i), 'Second brief')
+    await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
+    await screen.findByRole('heading', { name: /recent drafts/i })
+    expect(await screen.findByText('Approval status unavailable — refresh')).toBeInTheDocument()
+    expect(screen.queryByText('Approved')).not.toBeInTheDocument()
   })
 
   it('clears history when the draft is cleared', async () => {
@@ -351,7 +371,13 @@ describe('CommsAssistant', () => {
     let counter = 0
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockImplementation(async () => {
+      vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
+        if (init?.method === 'GET') {
+          const id = url.split('/').at(-1)
+          return { ok: true, status: 200, json: async () => ({
+            id, status: 'Draft', approved_by: null, approved_at: null,
+          }) }
+        }
         counter += 1
         return { ok: true, status: 200, json: async () => draftBody(`draft ${counter}`) }
       }),
@@ -377,7 +403,13 @@ describe('CommsAssistant', () => {
     let counter = 0
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockImplementation(async () => {
+      vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
+        if (init?.method === 'GET') {
+          const id = url.split('/').at(-1)
+          return { ok: true, status: 200, json: async () => ({
+            id, status: 'Draft', approved_by: null, approved_at: null,
+          }) }
+        }
         counter += 1
         return { ok: true, status: 200, json: async () => draftBody(`draft ${counter}`) }
       }),
@@ -669,6 +701,22 @@ describe('CommsAssistant', () => {
     const deleteCall = spy.mock.calls.find((call) => (call[1] as RequestInit | undefined)?.method === 'DELETE')
     if (!deleteCall) throw new Error('DELETE was not sent')
     expect(JSON.parse((deleteCall[1] as RequestInit).body as string)).toEqual({ reason: 'Superseded' })
+  })
+
+  it('routes deletion to the same supplied API base URL as drafting', async () => {
+    const spy = mockFetchWithDelete({ ok: true, status: 204 })
+    render(<CommsAssistant baseUrl="/staff-platform" />)
+    await generateADraft()
+    await userEvent.click(screen.getByRole('button', { name: /^delete$/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Superseded' }))
+    await userEvent.click(screen.getByRole('button', { name: /confirm delete/i }))
+    await waitFor(() => {
+      const urls = spy.mock.calls
+        .filter((call) => (call[1] as RequestInit | undefined)?.method === 'DELETE')
+        .map((call) => call[0])
+      expect(urls).toHaveLength(1)
+      expect(String(urls[0])).toMatch(/^\/staff-platform\/api\/comms\/drafts\/draft-/)
+    })
   })
 
   it('a 403 shows an inline error on the control itself, not the page-level alert', async () => {
