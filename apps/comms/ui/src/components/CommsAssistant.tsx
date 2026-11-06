@@ -48,12 +48,16 @@ function countWords(text: string): number {
 // what went wrong alongside it.
 type DraftState =
   | { kind: 'idle' }
-  | { kind: 'result'; id: string; draft: string; contentType: ContentType }
+  | { kind: 'result'; id: string; draft: string; contentType: ContentType; status: string }
 
 interface HistoryEntry {
   id: string
   contentType: ContentType
   draft: string
+  // Carried straight from the persisted record (services/api/comms.py's DraftOut) rather than
+  // guessed: this UI has no approve action, so the backend's own reviewer-approval state -- real,
+  // enforced, and otherwise invisible here -- is at least shown rather than hidden (#60).
+  status: string
 }
 
 const DELETE_REASON_PRESETS = [
@@ -260,14 +264,14 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
       if (inFlight.current !== controller) return
       if (outgoing) {
         setHistory((prev) =>
-          [{ id: outgoing.id, contentType: outgoing.contentType, draft: outgoing.draft }, ...prev].slice(
-            0,
-            HISTORY_LIMIT,
-          ),
+          [
+            { id: outgoing.id, contentType: outgoing.contentType, draft: outgoing.draft, status: outgoing.status },
+            ...prev,
+          ].slice(0, HISTORY_LIMIT),
         )
       }
       setFeedback(null)
-      setDraftState({ kind: 'result', id: result.id, draft: result.draft, contentType })
+      setDraftState({ kind: 'result', id: result.id, draft: result.draft, contentType, status: result.status })
       setIsGenerating(false)
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return
@@ -629,9 +633,23 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
             {history.map((entry) => (
               <li key={entry.id} className="space-y-2 rounded-md border border-slate-200 bg-slate-50 p-4 shadow-sm">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    {CONTENT_TYPE_LABELS[entry.contentType]}
-                  </p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      {CONTENT_TYPE_LABELS[entry.contentType]}
+                    </p>
+                    {/* Surfaces the persisted reviewer-approval state (services/api/comms.py's
+                        DraftOut.status) -- real and enforced server-side, otherwise invisible
+                        here since this screen has no approve action yet (#60). */}
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                        entry.status === 'Approved'
+                          ? 'bg-inzbc-forest/10 text-inzbc-forest'
+                          : 'bg-slate-200 text-slate-600'
+                      }`}
+                    >
+                      {entry.status === 'Approved' ? 'Approved' : 'Draft — no reviewer recorded'}
+                    </span>
+                  </div>
                   <DeleteDraftControl
                     draftId={entry.id}
                     onDeleted={() => setHistory((prev) => prev.filter((item) => item.id !== entry.id))}
