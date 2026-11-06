@@ -123,8 +123,9 @@ review findings instead (see Done, PR #501) covered Thursday's daily-commit in i
 ## Done
 - **Week 5, Wednesday: research — reviewer-approval UI for AI-drafted content** (4 Nov 2026, refs
   #60). This week's research thread, pointed directly at Tuesday's confirmed gap rather than a
-  generic topic: `docs/research/review-approval-ui-literature-review.md`, four sources checked
-  against their arXiv/publisher record on 4 Nov 2026 (a 2026 ESEM SEIP submission on reviewing
+  generic topic: `docs/research/review-approval-ui-literature-review.md`, five works discussed
+  (three arXiv papers and two Manning books), checked against their records on 4 Nov 2026
+  (a 2026 ESEM SEIP submission on reviewing
   LLM-generated multi-file changes as a trust-calibration problem, not a diffing one; a 2025
   preprint on local in-place conflict review over whole-version rollback; a 2026 IUI workshop
   paper on oversight-as-downstream-check; two Manning books on the four-eyes principle). One
