@@ -182,3 +182,40 @@ export async function deleteCommsDraft(
     throw new CommsDraftError(`Comms Assistant service returned ${response.status}.`)
   }
 }
+
+/** Read the current persisted reviewer decision; a generation response is only a snapshot. */
+export async function getCommsDraftStatus(
+  draftId: string,
+  options: { signal?: AbortSignal; baseUrl?: string } = {},
+): Promise<'Draft' | 'Approved'> {
+  const { signal, baseUrl = '' } = options
+  let response: Response
+  try {
+    response = await fetch(`${baseUrl}/api/comms/drafts/${encodeURIComponent(draftId)}`, {
+      method: 'GET', signal, credentials: 'same-origin', headers: { Accept: 'application/json' },
+    })
+  } catch (cause) {
+    if (cause instanceof DOMException && cause.name === 'AbortError') throw cause
+    throw new CommsDraftError('Could not refresh draft approval status.', { cause })
+  }
+  if (!response.ok) throw new CommsDraftError(`Draft status request returned ${response.status}.`)
+  let body: unknown
+  try {
+    body = await response.json()
+  } catch (cause) {
+    throw new CommsDraftError('Draft status response was unreadable.', { cause })
+  }
+  if (typeof body !== 'object' || body === null) {
+    throw new CommsDraftError('Draft status response was invalid.')
+  }
+  const record = body as Record<string, unknown>
+  if (record.id !== draftId || (record.status !== 'Draft' && record.status !== 'Approved')) {
+    throw new CommsDraftError('Draft status response did not match the requested draft.')
+  }
+  if (record.status === 'Approved' &&
+      (typeof record.approved_by !== 'string' || !record.approved_by.trim() ||
+       typeof record.approved_at !== 'string' || !record.approved_at.trim())) {
+    throw new CommsDraftError('Draft approval lacked reviewer evidence.')
+  }
+  return record.status
+}

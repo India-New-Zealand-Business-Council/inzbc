@@ -7,6 +7,7 @@ import {
   TOPIC_MAX_LENGTH,
   TOTAL_BRIEF_BUDGET,
   deleteCommsDraft,
+  getCommsDraftStatus,
   requestCommsDraft,
   type ContentType,
   type Tone,
@@ -48,16 +49,12 @@ function countWords(text: string): number {
 // what went wrong alongside it.
 type DraftState =
   | { kind: 'idle' }
-  | { kind: 'result'; id: string; draft: string; contentType: ContentType; status: string }
+  | { kind: 'result'; id: string; draft: string; contentType: ContentType }
 
 interface HistoryEntry {
   id: string
   contentType: ContentType
   draft: string
-  // Carried straight from the persisted record (services/api/comms.py's DraftOut) rather than
-  // guessed: this UI has no approve action, so the backend's own reviewer-approval state -- real,
-  // enforced, and otherwise invisible here -- is at least shown rather than hidden (#60).
-  status: string
 }
 
 const DELETE_REASON_PRESETS = [
@@ -80,7 +77,7 @@ const DELETE_REASON_PRESETS = [
  * `submitError`'s existing `role="alert"` above is for the drafting form's own failures; a delete
  * refusal belongs next to the thing that was refused.
  */
-function DeleteDraftControl({ draftId, onDeleted }: { draftId: string; onDeleted: () => void }) {
+function DeleteDraftControl({ draftId, onDeleted, baseUrl }: { draftId: string; onDeleted: () => void; baseUrl: string }) {
   const [confirming, setConfirming] = useState(false)
   const [reason, setReason] = useState('')
   const [state, setState] = useState<{ kind: 'idle' } | { kind: 'loading' } | { kind: 'error'; message: string }>({
@@ -93,7 +90,7 @@ function DeleteDraftControl({ draftId, onDeleted }: { draftId: string; onDeleted
     if (!trimmed) return
     setState({ kind: 'loading' })
     try {
-      await deleteCommsDraft(draftId, trimmed)
+      await deleteCommsDraft(draftId, trimmed, { baseUrl })
       onDeleted()
     } catch (error) {
       setState({
@@ -182,6 +179,46 @@ function DeleteDraftControl({ draftId, onDeleted }: { draftId: string; onDeleted
   )
 }
 
+
+/** A history item's approval is verified from the server, never inferred from draft creation. */
+function DraftApprovalBadge({ draftId, baseUrl, refreshKey }: { draftId: string; baseUrl: string; refreshKey: number }) {
+  const [state, setState] = useState<
+    { kind: 'loading' } | { kind: 'ready'; status: 'Draft' | 'Approved' } | { kind: 'error' }
+  >({ kind: 'loading' })
+
+  useEffect(() => {
+    const controller = new AbortController()
+    setState({ kind: 'loading' })
+    void getCommsDraftStatus(draftId, { baseUrl, signal: controller.signal })
+      .then((status) => {
+        if (!controller.signal.aborted) setState({ kind: 'ready', status })
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setState({ kind: 'error' })
+      })
+    return () => controller.abort()
+  }, [draftId, baseUrl, refreshKey])
+
+  const approved = state.kind === 'ready' && state.status === 'Approved'
+  const label = state.kind === 'loading'
+    ? 'Checking approval…'
+    : state.kind === 'error'
+      ? 'Approval status unavailable — refresh'
+      : approved
+        ? 'Approved'
+        : 'Draft — no reviewer recorded'
+  return (
+    <span
+      role="status"
+      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+        approved ? 'bg-inzbc-forest/10 text-inzbc-forest' : 'bg-slate-200 text-slate-600'
+      }`}
+    >
+      {label}
+    </span>
+  )
+}
+
 export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
   const [contentType, setContentType] = useState<ContentType>('newsletter')
   // #303: the single 4,000-character brief became named fields. Key points and links are held as
@@ -195,6 +232,7 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [history, setHistory] = useState<HistoryEntry[]>([])
+  const [approvalRefreshKey, setApprovalRefreshKey] = useState(0)
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'failed'>('idle')
   const [feedback, setFeedback] = useState<'up' | 'down' | null>(null)
   const inFlight = useRef<AbortController | null>(null)
@@ -249,6 +287,7 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
 
     inFlight.current?.abort()
     const controller = new AbortController()
+    setState({ kind: 'loading' })
     inFlight.current = controller
     setCopyStatus('idle')
     setSubmitError(null)
@@ -265,13 +304,13 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
       if (outgoing) {
         setHistory((prev) =>
           [
-            { id: outgoing.id, contentType: outgoing.contentType, draft: outgoing.draft, status: outgoing.status },
+            { id: outgoing.id, contentType: outgoing.contentType, draft: outgoing.draft },
             ...prev,
           ].slice(0, HISTORY_LIMIT),
         )
       }
       setFeedback(null)
-      setDraftState({ kind: 'result', id: result.id, draft: result.draft, contentType, status: result.status })
+      setDraftState({ kind: 'result', id: result.id, draft: result.draft, contentType })
       setIsGenerating(false)
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return
@@ -578,6 +617,7 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
                   Export as PDF
                 </button>
                 <DeleteDraftControl
+                  baseUrl={baseUrl}
                   draftId={draftState.id}
                   onDeleted={() => setDraftState({ kind: 'idle' })}
                 />
@@ -628,7 +668,16 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
 
       {history.length > 0 ? (
         <div className="space-y-2">
-          <h2 className="text-base text-inzbc-navy sm:text-lg">Recent drafts</h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-base text-inzbc-navy sm:text-lg">Recent drafts</h2>
+            <button
+              type="button"
+              onClick={() => setApprovalRefreshKey((value) => value + 1)}
+              className="rounded-md border border-slate-300 px-3 py-1 text-sm font-medium text-inzbc-navy"
+            >
+              Refresh approval statuses
+            </button>
+          </div>
           <ul className="space-y-2">
             {history.map((entry) => (
               <li key={entry.id} className="space-y-2 rounded-md border border-slate-200 bg-slate-50 p-4 shadow-sm">
@@ -637,20 +686,10 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
                     <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                       {CONTENT_TYPE_LABELS[entry.contentType]}
                     </p>
-                    {/* Surfaces the persisted reviewer-approval state (services/api/comms.py's
-                        DraftOut.status) -- real and enforced server-side, otherwise invisible
-                        here since this screen has no approve action yet (#60). */}
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                        entry.status === 'Approved'
-                          ? 'bg-inzbc-forest/10 text-inzbc-forest'
-                          : 'bg-slate-200 text-slate-600'
-                      }`}
-                    >
-                      {entry.status === 'Approved' ? 'Approved' : 'Draft — no reviewer recorded'}
-                    </span>
+                    <DraftApprovalBadge key={`${entry.id}-${approvalRefreshKey}`} draftId={entry.id} baseUrl={baseUrl} refreshKey={approvalRefreshKey} />
                   </div>
                   <DeleteDraftControl
+                    baseUrl={baseUrl}
                     draftId={entry.id}
                     onDeleted={() => setHistory((prev) => prev.filter((item) => item.id !== entry.id))}
                   />
