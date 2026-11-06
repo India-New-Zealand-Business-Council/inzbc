@@ -188,7 +188,6 @@ function DraftApprovalBadge({ draftId, baseUrl, refreshKey }: { draftId: string;
 
   useEffect(() => {
     const controller = new AbortController()
-    setState({ kind: 'loading' })
     void getCommsDraftStatus(draftId, { baseUrl, signal: controller.signal })
       .then((status) => {
         if (!controller.signal.aborted) setState({ kind: 'ready', status })
@@ -685,7 +684,7 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
                     <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                       {CONTENT_TYPE_LABELS[entry.contentType]}
                     </p>
-                    <DraftApprovalBadge draftId={entry.id} baseUrl={baseUrl} refreshKey={approvalRefreshKey} />
+                    <DraftApprovalBadge key={`${entry.id}-${approvalRefreshKey}`} draftId={entry.id} baseUrl={baseUrl} refreshKey={approvalRefreshKey} />
                   </div>
                   <DeleteDraftControl
                     baseUrl={baseUrl}
