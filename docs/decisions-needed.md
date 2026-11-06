@@ -29,7 +29,7 @@ See
 strength of this table; do not wire the agent to a live route, require signatures in a deployed
 environment, or change who may record verification evidence. The earlier FTA-only
 demonstration scope remains separate and subject to its own documented deployment and
-public-publication controls. Keep
+public-site publication controls. Keep
 `production_enabled=false`, and do not schedule collection, publish, distribute or
 attribute a decision/signature to Sunil from an unconfirmed conversation.
 
