@@ -121,6 +121,15 @@ review findings instead (see Done, PR #501) covered Thursday's daily-commit in i
   re-open them.
 
 ## Done
+- **Week 5, Saturday: buffer — sent focus somewhere after New conversation instead of to
+  `<body>`** (PR #549, 7 Nov 2026, refs #62). Nothing was broken and nothing was waiting on a
+  fix this week (checked: Roshan's three real review findings on Thursday's/Wednesday's work —
+  #545, #547, #548 — all confirmed correct and commented on, no further action needed from me),
+  so re-read both agent surfaces for a real remaining gap instead of inventing one. Found: `New
+  conversation` unmounts itself the instant it's clicked (only rendered while `messages.length`
+  is truthy), and nothing redirected focus afterward — a keyboard/screen-reader user's focus
+  silently dropped to `<body>` with no indication of where it went. Fixed by moving focus to the
+  question field, the same place a reply already returns it to. One new test, 270/270 passing.
 - **Week 5, Tuesday: scope-checked the Comms Assistant review UI rather than assuming #60's
   closure meant it existed** (3 Nov 2026, refs #60). Per the Must-do plan, Tuesday is a polish
   day on the two agent surfaces, but both had just been covered (Monday's #513 and its #501
