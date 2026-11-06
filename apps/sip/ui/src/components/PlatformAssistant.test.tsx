@@ -66,6 +66,20 @@ describe('PlatformAssistant', () => {
     expect(screen.queryByText('AI-generated and advisory.')).not.toBeInTheDocument()
   })
 
+  // "New conversation" removes itself from the DOM as soon as it's clicked (messages.length goes
+  // to 0), which would otherwise drop focus to <body> with no indication of where it went.
+  it('moves focus to the question field after New conversation, not to <body>', async () => {
+    vi.spyOn(assistantClient, 'askAssistant').mockResolvedValue({ answer: 'Ok.', steps: [], disclaimer: 'd' })
+    render(<PlatformAssistant />)
+
+    await userEvent.type(screen.getByLabelText('Your question'), 'Hello{Enter}')
+    await screen.findByText('Ok.')
+
+    await userEvent.click(screen.getByRole('button', { name: 'New conversation' }))
+
+    expect(screen.getByLabelText('Your question')).toHaveFocus()
+  })
+
   // The disclaimer changes after every reply but sat outside any live region, so a screen
   // reader user got no signal it had appeared -- unlike the conversation list itself.
   it('announces the disclaimer to a screen reader', async () => {
