@@ -121,16 +121,16 @@ review findings instead (see Done, PR #501) covered Thursday's daily-commit in i
   re-open them.
 
 ## Done
-- **Week 5, Thursday: surfaced the real reviewer-approval status on Comms drafts** (PR #541, 5
-  Nov 2026, refs #60). Applies the concrete finding from Wednesday's research (PR #525, open):
-  `comms_drafts` already carries a real, enforced approval state server-side, and every draft
-  response already returns it, but the UI's history list dropped it, showing only content type
-  and text. Threaded `status` through `DraftState`/`HistoryEntry` and added a small badge per
-  entry ("Draft ΓÇö no reviewer recorded" / "Approved"). Deliberately not the full #60 reviewer
-  screen ΓÇö no diff view, no approve action added here, since that's sized for weeks 6ΓÇô8, not a
-  daily commit. `approved_by` is a raw user id with no name-resolution route available, so this
-  shows "Approved" rather than inventing a name it cannot display. 87/87 comms-ui tests passing
-  after, including a new regression test for both badge states.
+- **Week 5, Thursday: added a generation-time status snapshot to Comms history** (PR #541,
+  5 Nov 2026, refs #60). The backend persists review status, but this UI version only stores
+  `POST /api/comms/draft`'s initial `Draft` status and copies it into client-only history. It
+  does **not** refetch a later `POST /drafts/{id}/approve` decision and must not be described
+  as the current server approval status. The synthetic "Approved" response test verifies badge
+  rendering only, not a real Draft ΓåÆ Approved transition. The status-refresh and transition
+  regression are proposed separately in [PR #545](https://github.com/India-New-Zealand-Business-Council/inzbc/pull/545),
+  stacked on #541, and verified against GET /api/comms/drafts/{id}. No full #60 reviewer screen or publish
+  action exists. The 87/87 UI test result on #541 is a check of that snapshot behaviour, not
+  evidence that cross-session approval updates work.
 - **Week 5, Wednesday: research — reviewer-approval UI for AI-drafted content** (PR #525, 4 Nov 2026, refs
   #60). This week's research thread, pointed directly at Tuesday's confirmed gap rather than a
   generic topic: `docs/research/review-approval-ui-literature-review.md`, five works discussed
