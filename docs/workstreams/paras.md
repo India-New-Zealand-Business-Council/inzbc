@@ -121,6 +121,30 @@ review findings instead (see Done, PR #501) covered Thursday's daily-commit in i
   re-open them.
 
 ## Done
+- **Week 5, Sunday: sync + report — nothing fixed, status checked against the tracker instead
+  of assumed** (8 Nov 2026, refs #62, #60, #127, #128, #129, #195). Per the Must-do plan, Sunday
+  is sync-and-report, not a coding day, so pulled `main` and checked every open item against
+  GitHub rather than against memory of what was asked for earlier in the week:
+  - Merged to `main` this week: #501, #507, #508, #511, #513, #515, #516, #517, #518, #519.
+  - Still open, awaiting the tech lead's review: #525 (Wednesday's research), #541/#542
+    (Thursday's Comms status fix + worklog), #549/#550 (Saturday's focus-management fix +
+    worklog) — none blocked on me, nothing further to do until reviewed.
+  - Roshan's three cross-reviews of my Wednesday/Thursday work (#545, #547, #548) are still
+    open too; my confirmation comments are already on all three (posted Friday/Saturday), so
+    likewise nothing pending from my side.
+  - The four board-assignment mismatches (#127/#128/#129/#195) are still open and still
+    unresolved a week later — re-raised again rather than touched solo, since whose lane they
+    belong in is a standup decision, not mine to make unilaterally.
+  - Checked, not previously flagged: issue #62 (the agentic SIP-184 orchestrator this whole
+    week's daily plan cites `refs #62` against) is itself closed on GitHub, while the actual
+    orchestrator gaps this session's own gap-analysis found (missing state-machine routes,
+    `POST /api/reports` never calling `apply_transition`, the planner prompt never sending the
+    missing source list) are all still open in the code. Flagging the #62/reality mismatch for
+    standup rather than guessing which is stale.
+  - Dependabot: 0 open alerts on the repo right now — the Week 5 Saturday-week-1 cleanup
+    (#511/#516) held.
+  No code changed; this is a status check, not a fix, so there's nothing to test beyond
+  confirming the numbers above against `gh pr list`/`gh issue view` directly.
 - **Week 5, Tuesday: scope-checked the Comms Assistant review UI rather than assuming #60's
   closure meant it existed** (3 Nov 2026, refs #60). Per the Must-do plan, Tuesday is a polish
   day on the two agent surfaces, but both had just been covered (Monday's #513 and its #501
