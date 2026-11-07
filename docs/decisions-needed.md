@@ -11,7 +11,7 @@ account/operational authority**. Bhanu is responsible for technical design, revi
 implementation once the relevant client decision is documented. This section is a
 **request for decisions, not evidence that Sunil has approved anything**.
 
-**Separate deployment scopes:** [#99](https://github.com/India-New-Zealand-Business-Council/inzbc/issues/99) is the previously scoped public FTA-only demo: Render API plus same-origin FTA UI, **without Postgres, member data or SIP operations**. Its issue discussion records earlier tech-lead approval for deployment preparation and an INZBC-owned account, but no created Render service or verified live endpoint. The pending decision below applies to the **full staff/SIP platform** (authenticated API, Postgres, operations and backups). It does not itself revoke the prior FTA preparation approval or authorise a new public go-live. If INZBC intends to supersede the FTA scope, record the explicit dated decision separately.
+**Separate deployment scopes:** [#99](https://github.com/India-New-Zealand-Business-Council/inzbc/issues/99) is the previously scoped public FTA-only demo: Render API plus same-origin FTA UI, **without Postgres, member data or SIP operations**. Its issue discussion records earlier tech-lead approval for deployment preparation and an INZBC-owned account, but no created Render service or verified live endpoint. The pending decision below applies to the **full staff/SIP platform** (authenticated API, Postgres, operations and backups). It does not itself revoke the prior FTA preparation approval or authorise a new public go-live. If INZBC intends to supersede the FTA scope, record the explicit dated decision separately in this register.
 
 See
 [SIP walkthrough](sip/SUNIL_SIP_WALKTHROUGH_2026-10-27.md),
