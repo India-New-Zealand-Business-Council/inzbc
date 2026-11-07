@@ -128,7 +128,7 @@ review findings instead (see Done, PR #501) covered Thursday's daily-commit in i
   as the current server approval status. The synthetic "Approved" response test verifies badge
   rendering only, not a real Draft → Approved transition. The status-refresh and transition
   regression are proposed separately in [PR #545](https://github.com/India-New-Zealand-Business-Council/inzbc/pull/545),
-  stacked on #541, and remain unmerged until reviewed. No full #60 reviewer screen or publish
+  stacked on #541, and verified against GET /api/comms/drafts/{id}. No full #60 reviewer screen or publish
   action exists. The 87/87 UI test result on #541 is a check of that snapshot behaviour, not
   evidence that cross-session approval updates work.
 - **Week 5, Tuesday: scope-checked the Comms Assistant review UI rather than assuming #60's
