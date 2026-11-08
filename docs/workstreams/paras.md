@@ -121,6 +121,45 @@ review findings instead (see Done, PR #501) covered Thursday's daily-commit in i
   re-open them.
 
 ## Done
+- **Week 5, Sunday: sync + report ΓÇö nothing fixed, status checked against the tracker instead
+  of assumed** (8 Nov 2026, refs #62, #60, #127, #128, #129, #195; corrected 9 Nov after
+  Bhanu's review of PR #551 ΓÇö see note at the end). Per the Must-do plan, Sunday is
+  sync-and-report, not a coding day, so pulled `main` and checked every open item against
+  GitHub rather than against memory of what was asked for earlier in the week:
+  - Merged to `main` this week: #501, #507, #508, #511, #513, #515, #516, #517, #518, #519.
+  - Still open, awaiting the tech lead's review: #525 (Wednesday's research), #541/#542
+    (Thursday's Comms status fix + worklog), #549/#550 (Saturday's focus-management fix +
+    worklog). None of the lane's remaining Must-do work depends on any of these merging first,
+    so this isn't a blanket blocker per `CONTRIBUTING.md` ΓÇö continued with the next day's
+    independent approved work rather than treating the open-PR backlog as idle time (see
+    the Week 6 task on #553).
+  - Roshan's three cross-reviews of my Wednesday/Thursday work (#545, #547, #548) are still
+    open; my confirmation comments are posted on all three (Friday/Saturday) ΓÇö nothing further
+    needed from me on those specific PRs.
+  - The four board-assignment mismatches (#127/#128/#129/#195) are still open and still
+    unresolved a week later ΓÇö re-raised again rather than touched solo, since whose lane they
+    belong in is a standup decision, not mine to make unilaterally.
+  - Checked, not previously flagged: issue #62 (the agentic SIP-184 orchestrator this whole
+    week's daily plan cites `refs #62` against) is itself closed on GitHub, while the actual
+    orchestrator gaps this session's own gap-analysis found (missing state-machine routes,
+    `POST /api/reports` never calling `apply_transition`, the planner prompt never sending the
+    missing source list) are all still open in the code. Flagging the #62/reality mismatch for
+    standup rather than guessing which is stale.
+  - Dependabot: `gh api repos/.../dependabot/alerts` queried 8 Nov 2026 returned 0 entries with
+    `state=open` ΓÇö a point-in-time observation from that one query, not independently
+    re-verified beyond it.
+
+  **Correction note (9 Nov 2026):** the original version of this entry, PR #551, drew three
+  real findings from Bhanu's review ΓÇö the "nothing further to do"/"nothing pending from my
+  side" wording in #551 read as a blanket blocker contrary to `CONTRIBUTING.md`; the branch was
+  named `docs/paras/08-nov-sunday-sync-report`, not one of the permitted `feat/`/`fix`/`chore/`
+  prefixes; and the PR description carried an AI-attribution footer `PROJECT-RULES.md`
+  prohibits. While testing a fix for the branch-name issue, renaming the branch via the GitHub
+  API closed PR #551 outright (its head ref no longer resolved) rather than updating it in
+  place ΓÇö an avoidable mistake, not an intended action. This entry (PR #552, branch
+  `chore/paras/09-nov-sunday-report-corrections`) supersedes #551 with the wording and branch
+  name fixed and the attribution footer removed; #551 stays closed rather than being
+  force-reopened.
 - **Week 5, Saturday: buffer ΓÇö sent focus somewhere after New conversation instead of to
   `<body>`** (PR #549, 7 Nov 2026, refs #62). Nothing was broken and nothing was waiting on a
   fix this week (checked: Roshan's three real review findings on Thursday's/Wednesday's work ΓÇö
