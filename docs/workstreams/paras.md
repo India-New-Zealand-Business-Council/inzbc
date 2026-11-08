@@ -121,6 +121,17 @@ review findings instead (see Done, PR #501) covered Thursday's daily-commit in i
   re-open them.
 
 ## Done
+- **Week 5, Saturday: buffer ΓÇö sent focus somewhere after New conversation instead of to
+  `<body>`** (PR #549, 7 Nov 2026, refs #62). Nothing was broken and nothing was waiting on a
+  fix this week (checked: Roshan's three real review findings on Thursday's/Wednesday's work ΓÇö
+  #545, #547, #548 ΓÇö all confirmed correct and commented on, no further action needed from me),
+  so re-read both agent surfaces for a real remaining gap instead of inventing one. Found: `New
+  conversation` unmounts itself the instant it's clicked (only rendered while `messages.length`
+  is truthy), and nothing redirected focus afterward ΓÇö a keyboard/screen-reader user's focus
+  silently dropped to `<body>` with no indication of where it went. Implemented in PR #549 ΓÇö
+  pending review/merge, not yet in `main` ΓÇö by moving focus to the question field, the same
+  place a reply already returns it to, plus one new regression test; 270/270 passing on that
+  branch (CI: see PR #549's checks).
 - **Week 5, Thursday: added a generation-time status snapshot to Comms history** (PR #541,
   5 Nov 2026, refs #60). The backend persists review status, but this UI version only stores
   `POST /api/comms/draft`'s initial `Draft` status and copies it into client-only history. It
