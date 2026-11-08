@@ -130,6 +130,9 @@ describe('PlatformAssistant', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'New conversation' }))
     expect(screen.queryByText('Looking that up…')).not.toBeInTheDocument()
+    // Bhanu's review on #549: the focus fix must also hold when New conversation is clicked
+    // while a request is still pending, not just after a completed reply.
+    expect(screen.getByLabelText('Your question')).toHaveFocus()
 
     vi.spyOn(assistantClient, 'askAssistant').mockResolvedValueOnce({
       answer: 'Fresh answer',
@@ -144,6 +147,8 @@ describe('PlatformAssistant', () => {
 
     expect(screen.getByText('Fresh answer')).toBeInTheDocument()
     expect(screen.queryByText('Stale answer')).not.toBeInTheDocument()
+    // The old request's own `finally` block must not steal focus back after it resolves.
+    expect(screen.getByLabelText('Your question')).toHaveFocus()
   })
 })
 
