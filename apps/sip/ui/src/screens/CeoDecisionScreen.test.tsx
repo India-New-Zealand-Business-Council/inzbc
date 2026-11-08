@@ -66,8 +66,8 @@ describe('CeoDecisionScreen', () => {
 
   it('renders the CEO action list', () => {
     render(<CeoDecisionScreen report={reportAwaitingDecision()} onChange={vi.fn()} />)
-    expect(screen.getByText(/placeholder ceo action item/i)).toBeInTheDocument()
-    expect(screen.getByText(/owner: \[fixture\] owner tbd/i)).toBeInTheDocument()
+    expect(screen.getByText(/awaiting a recommended ceo action item/i)).toBeInTheDocument()
+    expect(screen.getByText(/owner: not yet assigned/i)).toBeInTheDocument()
   })
 
   it('offers exactly one selected report decision at a time, never two combined', async () => {
