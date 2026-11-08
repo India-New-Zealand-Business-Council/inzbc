@@ -132,7 +132,7 @@ review findings instead (see Done, PR #501) covered Thursday's daily-commit in i
     worklog). None of the lane's remaining Must-do work depends on any of these merging first,
     so this isn't a blanket blocker per `CONTRIBUTING.md` — continued with the next day's
     independent approved work rather than treating the open-PR backlog as idle time (see
-    Monday 9 Nov's entry, below).
+    the Week 6 task on #553).
   - Roshan's three cross-reviews of my Wednesday/Thursday work (#545, #547, #548) are still
     open; my confirmation comments are posted on all three (Friday/Saturday) — nothing further
     needed from me on those specific PRs.
@@ -151,7 +151,7 @@ review findings instead (see Done, PR #501) covered Thursday's daily-commit in i
 
   **Correction note (9 Nov 2026):** the original version of this entry, PR #551, drew three
   real findings from Bhanu's review — the "nothing further to do"/"nothing pending from my
-  side" wording above read as a blanket blocker contrary to `CONTRIBUTING.md`; the branch was
+  side" wording in #551 read as a blanket blocker contrary to `CONTRIBUTING.md`; the branch was
   named `docs/paras/08-nov-sunday-sync-report`, not one of the permitted `feat/`/`fix`/`chore/`
   prefixes; and the PR description carried an AI-attribution footer `PROJECT-RULES.md`
   prohibits. While testing a fix for the branch-name issue, renaming the branch via the GitHub
