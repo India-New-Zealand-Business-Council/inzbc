@@ -45,6 +45,11 @@ export function PlatformAssistant() {
     // A pending request's `finally` will see the bumped generation and skip `setBusy(false)`,
     // so this reset has to release busy itself or the UI stays stuck on "Looking that up...".
     setBusy(false)
+    // "New conversation" removes itself from the DOM as soon as messages clears (it's only
+    // rendered while messages.length is truthy), which would otherwise drop focus to <body> with
+    // no indication of where it went. Send the focus someplace a keyboard/screen-reader user can
+    // actually continue from, the same place a reply already returns it to.
+    inputRef.current?.focus()
   }
 
   const send = async (question: string) => {
