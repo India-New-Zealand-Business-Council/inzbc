@@ -156,7 +156,7 @@ review findings instead (see Done, PR #501) covered Thursday's daily-commit in i
   prefixes; and the PR description carried an AI-attribution footer `PROJECT-RULES.md`
   prohibits. While testing a fix for the branch-name issue, renaming the branch via the GitHub
   API closed PR #551 outright (its head ref no longer resolved) rather than updating it in
-  place — an avoidable mistake, not an intended action. This entry (PR #554, branch
+  place — an avoidable mistake, not an intended action. This entry (PR #552, branch
   `chore/paras/09-nov-sunday-report-corrections`) supersedes #551 with the wording and branch
   name fixed and the attribution footer removed; #551 stays closed rather than being
   force-reopened.
