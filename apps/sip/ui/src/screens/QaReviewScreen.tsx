@@ -128,7 +128,7 @@ export function QaReviewScreen({ report, onChange }: Props) {
       // Editing is what makes this real, reviewed content rather than auto-generated digest
       // text -- clears `pending` so submitQaResult (reportsStore.ts) will accept it.
       sections: report.sections.map((section) =>
-        section.id === sectionId ? { ...section, content, pending: false } : section,
+        section.id === sectionId ? { ...section, content, pending: section.pending ? (content.trim() === '' || content.trim() === section.content.trim()) : false } : section,
       ),
     })
   }
