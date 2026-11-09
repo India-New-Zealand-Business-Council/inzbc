@@ -161,6 +161,9 @@ function toDomainCandidate(
     signalStrength: (candidate.signal ?? 'Low') as Candidate['signalStrength'],
     sourceConfidence: candidate.confidence ?? 'Unrated',
     verificationStatus: candidate.verification as Candidate['verificationStatus'],
+    // Previously dropped here, which is why generatedDigestContent (lib/fixtures.ts) had to
+    // invent a fake https://example.test/fixture-source-N citation instead of using the real one.
+    sourceUrl: candidate.url ?? null,
   }
 }
 

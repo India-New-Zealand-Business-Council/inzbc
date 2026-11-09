@@ -168,6 +168,7 @@ export function candidatesFixture(): Candidate[] {
       signalStrength: 'High',
       sourceConfidence: 'Official',
       verificationStatus: 'Verified',
+      sourceUrl: null,
     },
     {
       id: 'cand-2',
@@ -178,6 +179,7 @@ export function candidatesFixture(): Candidate[] {
       signalStrength: 'Critical',
       sourceConfidence: 'Official',
       verificationStatus: 'Verified',
+      sourceUrl: null,
     },
     {
       id: 'cand-3',
@@ -188,6 +190,7 @@ export function candidatesFixture(): Candidate[] {
       signalStrength: 'Medium',
       sourceConfidence: 'Media',
       verificationStatus: 'Unverified',
+      sourceUrl: null,
     },
     {
       id: 'cand-4',
@@ -198,6 +201,7 @@ export function candidatesFixture(): Candidate[] {
       signalStrength: 'High',
       sourceConfidence: 'Official',
       verificationStatus: 'Pending',
+      sourceUrl: null,
     },
   ]
 }
@@ -349,37 +353,51 @@ export function qaChecklistFixture(): QaChecklistGroup[] {
 
 /**
  * Stand-in for what the real pipeline (Roshan's side) would generate from the selected
- * candidates once a brief is submitted. Every value is invented placeholder text for UI
- * development — `[FIXTURE]`-prefixed so it can never be mistaken for a real digest — used so the
- * QA review screen has representative content to render, edit and score against.
+ * candidates once a brief is submitted. `submitReportForQa` (reportsStore.ts) spreads this
+ * straight into a real run's report, so it reaches the QA Review, CEO Decision and Distribution
+ * screens for every real submission, not just a fixture-only screen — the free-text fields
+ * read as a plain "not yet written" state ("Not yet written — awaiting an analyst's ...") rather
+ * than a `[FIXTURE]`-tagged dev placeholder, so a real reviewer sees an honest pending state
+ * instead of what looks like a leaked internal note. It is still not real content: a real
+ * pipeline would write connected narrative prose across candidates, which isn't something to
+ * fake a per-candidate mapping for here.
+ *
+ * Every section carries `pending: true` — `submitQaResult` (reportsStore.ts) refuses to record a
+ * QA result while any section is still pending, and QaReviewScreen's "Edit" control clears it the
+ * moment a reviewer actually writes real content. Structured fields that have no honest fallback
+ * are never invented either: `primarySourceUrl` is the candidate's real `sourceUrl` or `''`, never
+ * a fabricated `example.test` link, and `ceoActionList`'s `priority`/`dueDate` stay `null`/`''`
+ * rather than a hardcoded `'High'`/date. Bhanu's review on #553 found all three reaching a real
+ * run's report looking like genuine evidence.
  *
  * `criticalHighSignals` and `sourceMix` are derived from `selectedCandidates` — an earlier
  * version of this function ignored its caller entirely and always returned the same two
  * hardcoded signals (a ministerial statement and a tariff update), regardless of what the analyst
  * actually selected in BriefBuilderScreen. Selecting only a Medium/Unverified candidate produced
- * unrelated Critical/High signals in the QA review. Free-text sections (executive judgement,
- * summary, etc.) stay as generic placeholders — a real pipeline would write connected narrative
- * prose across candidates, which isn't something to fake a per-candidate mapping for here.
+ * unrelated Critical/High signals in the QA review.
  */
 export function generatedDigestContent(
   selectedCandidates: Candidate[],
 ): Pick<DailyBriefReport, 'sections' | 'criticalHighSignals' | 'ceoActionList' | 'sourceConfidenceSummary' | 'sourceMix'> {
   const criticalHighSignals = selectedCandidates
     .filter((candidate) => candidate.signalStrength === 'Critical' || candidate.signalStrength === 'High')
-    .map((candidate, index) => ({
+    .map((candidate) => ({
       id: `signal-${candidate.id}`,
       headline: candidate.headline,
-      whatHappened: `[FIXTURE] Placeholder description of what happened, from ${candidate.sourceName}.`,
-      whyItMatters: '[FIXTURE] Placeholder reasoning for NZ relevance.',
-      memberImpact: '[FIXTURE] Placeholder member impact assessment.',
+      whatHappened: `Not yet written — awaiting an analyst's account of what happened, from ${candidate.sourceName}.`,
+      whyItMatters: 'Not yet written — awaiting an analyst’s assessment of NZ relevance.',
+      memberImpact: 'Not yet written — awaiting an analyst’s member-impact assessment.',
       signalStrength: candidate.signalStrength,
       sourceConfidence: candidate.sourceConfidence,
       verificationStatus: candidate.verificationStatus,
-      recommendedCeoAction: '[FIXTURE] Placeholder recommended CEO action.',
-      recommendedMemberAction: '[FIXTURE] Placeholder recommended member action.',
-      primarySourceUrl: `https://example.test/fixture-source-${index + 1}`,
+      recommendedCeoAction: 'Not yet written — awaiting a recommended CEO action.',
+      recommendedMemberAction: 'Not yet written — awaiting a recommended member action.',
+      // The candidate's real captured URL, never invented — Bhanu's review on #553 caught
+      // `https://example.test/fixture-source-N` reaching a real run's report as if it were a
+      // genuine citation. '' (not null) to match every other "not yet set" field on this object.
+      primarySourceUrl: candidate.sourceUrl ?? '',
       registerRouting: 'Action Register',
-      nextTriggerDate: '2026-08-06',
+      nextTriggerDate: '',
     }))
 
   const officialCount = selectedCandidates.filter((c) => c.sourceConfidence === 'Official').length
@@ -388,66 +406,72 @@ export function generatedDigestContent(
   return {
     sourceConfidenceSummary:
       criticalHighSignals.length > 0
-        ? '[FIXTURE] Mixed official and media confidence across today\'s selection.'
-        : '[FIXTURE] No Critical/High signal in today\'s selection.',
-    sourceMix: `[FIXTURE] Official ${officialCount} · Institutional 0 · Sector 0 · Media ${mediaCount}`,
+        ? 'Not yet written — awaiting a source-confidence summary for today’s selection.'
+        : 'Not yet written — awaiting confirmation of no Critical/High signal today.',
+    sourceMix: `Not yet written — awaiting a source-mix count (Official ${officialCount} · Institutional 0 · Sector 0 · Media ${mediaCount} selected so far).`,
     sections: [
       {
         id: 'sec-1',
         title: '1. Executive judgement',
-        content:
-          '[FIXTURE] Placeholder executive judgement for UI development — not a real INZBC assessment.',
+        content: 'Not yet written — awaiting an analyst’s executive judgement for this run.',
         reviewStatus: 'pending',
+        pending: true,
         flagReason: '',
       },
       {
         id: 'sec-2',
         title: '2. Executive summary',
-        content:
-          '[FIXTURE] - Placeholder bullet one.\n[FIXTURE] - Placeholder bullet two.\n[FIXTURE] - Placeholder bullet three.',
+        content: 'Not yet written — awaiting an analyst’s executive summary for this run.',
         reviewStatus: 'pending',
+        pending: true,
         flagReason: '',
       },
       {
         id: 'sec-4',
         title: '4. Key bilateral developments',
-        content: '[FIXTURE] Placeholder bilateral development text.',
+        content: 'Not yet written — awaiting an analyst’s account of bilateral developments.',
         reviewStatus: 'pending',
+        pending: true,
         flagReason: '',
       },
       {
         id: 'sec-5',
         title: '5. Opportunities',
-        content: '[FIXTURE] Placeholder opportunity text.',
+        content: 'Not yet written — awaiting an analyst’s account of opportunities.',
         reviewStatus: 'pending',
+        pending: true,
         flagReason: '',
       },
       {
         id: 'sec-6',
         title: '6. Threats and risks',
-        content: '[FIXTURE] Placeholder threat/risk text.',
+        content: 'Not yet written — awaiting an analyst’s account of threats and risks.',
         reviewStatus: 'pending',
+        pending: true,
         flagReason: '',
       },
       {
         id: 'sec-8',
         title: '8. Member actions',
-        content: '[FIXTURE] Placeholder member action text.',
+        content: 'Not yet written — awaiting recommended member actions.',
         reviewStatus: 'pending',
+        pending: true,
         flagReason: '',
       },
       {
         id: 'sec-9',
         title: '9. Watch-list updates',
-        content: '[FIXTURE] ACT-009: no change. WL-006: no verified NZ-specific trigger.',
+        content: 'Not yet written — awaiting a watch-list update for this run.',
         reviewStatus: 'pending',
+        pending: true,
         flagReason: '',
       },
       {
         id: 'sec-10',
         title: '10. Active Carry-Forward',
-        content: '[FIXTURE] No items carried forward in this placeholder run.',
+        content: 'Not yet written — awaiting a carry-forward check for this run.',
         reviewStatus: 'pending',
+        pending: true,
         flagReason: '',
       },
     ],
@@ -457,11 +481,14 @@ export function generatedDigestContent(
         ? [
             {
               id: 'action-1',
-              action: '[FIXTURE] Placeholder CEO action item.',
-              owner: '[FIXTURE] Owner TBD',
-              priority: 'High',
-              dueDate: '2026-08-06',
-              evidenceRequirement: '[FIXTURE] Placeholder evidence requirement.',
+              action: 'Not yet written — awaiting a recommended CEO action item.',
+              owner: 'Not yet assigned',
+              // Never invent a priority or due date — Bhanu's review on #553 caught a
+              // hardcoded 'High'/2026-08-06 reaching a real run's report as if a reviewer had
+              // actually set them.
+              priority: null,
+              dueDate: '',
+              evidenceRequirement: 'Not yet written — awaiting the evidence requirement.',
             },
           ]
         : [],
@@ -491,24 +518,26 @@ export function newDraftReportFixture(): DailyBriefReport {
     focusNote: '',
     selectedCandidateIds: [],
     sections: [
-      { id: 'sec-1', title: '1. Executive judgement', content: '', reviewStatus: 'pending', flagReason: '' },
-      { id: 'sec-2', title: '2. Executive summary', content: '', reviewStatus: 'pending', flagReason: '' },
+      { id: 'sec-1', title: '1. Executive judgement', content: '', reviewStatus: 'pending', flagReason: '', pending: true },
+      { id: 'sec-2', title: '2. Executive summary', content: '', reviewStatus: 'pending', flagReason: '', pending: true },
       {
         id: 'sec-4',
         title: '4. Key bilateral developments',
         content: '',
         reviewStatus: 'pending',
+        pending: true,
         flagReason: '',
       },
-      { id: 'sec-5', title: '5. Opportunities', content: '', reviewStatus: 'pending', flagReason: '' },
-      { id: 'sec-6', title: '6. Threats and risks', content: '', reviewStatus: 'pending', flagReason: '' },
-      { id: 'sec-8', title: '8. Member actions', content: '', reviewStatus: 'pending', flagReason: '' },
-      { id: 'sec-9', title: '9. Watch-list updates', content: '', reviewStatus: 'pending', flagReason: '' },
+      { id: 'sec-5', title: '5. Opportunities', content: '', reviewStatus: 'pending', flagReason: '', pending: true },
+      { id: 'sec-6', title: '6. Threats and risks', content: '', reviewStatus: 'pending', flagReason: '', pending: true },
+      { id: 'sec-8', title: '8. Member actions', content: '', reviewStatus: 'pending', flagReason: '', pending: true },
+      { id: 'sec-9', title: '9. Watch-list updates', content: '', reviewStatus: 'pending', flagReason: '', pending: true },
       {
         id: 'sec-10',
         title: '10. Active Carry-Forward',
         content: '',
         reviewStatus: 'pending',
+        pending: true,
         flagReason: '',
       },
     ],

@@ -294,7 +294,7 @@ describe('BriefBuilderScreen', () => {
         correctionsRequired: 'See flagged Critical items above.',
       },
       sections: [
-        { id: 'sec-1', title: '1. Executive judgement', content: 'x', reviewStatus: 'flagged', flagReason: 'Numbers need a source check' },
+        { id: 'sec-1', title: '1. Executive judgement', content: 'x', reviewStatus: 'flagged', flagReason: 'Numbers need a source check', pending: false },
       ],
     }
     render(<BriefBuilderScreen report={report} onChange={vi.fn()} />)

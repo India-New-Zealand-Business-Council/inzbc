@@ -247,6 +247,18 @@ export async function submitQaResult(
   if (!report.reportVersionId) {
     throw new ReportsApiError('This report has not been submitted yet — nothing to record QA against.')
   }
+  // Bhanu's review on #553: a reviewer clicking Approve on unedited, auto-generated digest text
+  // (generatedDigestContent, lib/fixtures.ts) is not the same as reviewing real content. Fail
+  // closed rather than let a QA result get recorded over sections nobody has actually written —
+  // QaReviewScreen's "Edit" control is what clears `pending` once a reviewer replaces the text.
+  const stillPending = report.sections.filter((section) => section.pending)
+  if (stillPending.length > 0) {
+    throw new ReportsApiError(
+      `Cannot record a QA result: ${stillPending.length} section(s) still contain auto-generated ` +
+        `content that has not been reviewed yet (${stillPending.map((section) => section.title).join(', ')}). ` +
+        'Edit each one to real content before recording a result.',
+    )
+  }
 
   const isCriticalFailure = (item: QaChecklistGroup['items'][number]) =>
     item.critical && (item.answer === 'fail' || item.answer === 'na')

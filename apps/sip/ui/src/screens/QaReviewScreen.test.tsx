@@ -29,10 +29,15 @@ async function answerEveryItem(outcome: 'Pass' | 'N/A' = 'Pass') {
 // All fixture candidates "selected" — this report is already past brief-building in these tests;
 // generatedDigestContent derives its Critical/High signals from whatever's passed in (see its
 // docstring), so a non-empty selection here keeps "ministerial statement" / "Critical" etc. real.
+// Sections default to already-reviewed (`pending: false`): most of these tests are about the
+// checklist/decision flow, not content review — see the dedicated pending-content tests below for
+// that gate.
 function reportInQa() {
+  const digest = generatedDigestContent(candidatesFixture())
   return {
     ...newDraftReportFixture(),
-    ...generatedDigestContent(candidatesFixture()),
+    ...digest,
+    sections: digest.sections.map((section) => ({ ...section, pending: false })),
     state: 'QA In Progress' as const,
     // submitQaResult now records against a specific report_version_id — a fixture built directly,
     // without going through submitReportForQa first, stands one in for it.
@@ -192,6 +197,39 @@ describe('QaReviewScreen', () => {
 
   it('records a clean pass and advances the report past this screen toward the CEO decision screen', async () => {
     render(<ControlledQaReview initial={reportInQa()} />)
+    await answerEveryItem('Pass')
+    await userEvent.type(notesField(), 'Checked all sections against SIP-188.')
+
+    await userEvent.click(screen.getByRole('button', { name: /record qa result/i }))
+    expect(await screen.findByRole('status')).toHaveTextContent(/awaiting ceo decision/i)
+  })
+
+  // Bhanu's review on #553: a reviewer clicking Approve on unedited, auto-generated digest text
+  // must not be able to record a QA result — only actually editing a section (the "Edit" control
+  // above) counts as real content review.
+  it('refuses to record a result while any section is still unedited auto-generated content', async () => {
+    const pending = reportInQa()
+    pending.sections = pending.sections.map((section) => ({ ...section, pending: true }))
+    render(<ControlledQaReview initial={pending} />)
+    await answerEveryItem('Pass')
+    await userEvent.type(notesField(), 'Checked all sections.')
+
+    await userEvent.click(screen.getByRole('button', { name: /record qa result/i }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/still contain auto-generated/i)
+    expect(screen.queryByText(/awaiting ceo decision/i)).not.toBeInTheDocument()
+  })
+
+  it('accepts the result once every section has actually been edited', async () => {
+    const pending = reportInQa()
+    pending.sections = pending.sections.map((section) => ({ ...section, pending: true }))
+    render(<ControlledQaReview initial={pending} />)
+
+    for (const editButton of screen.getAllByRole('button', { name: 'Edit' })) {
+      await userEvent.click(editButton)
+      await userEvent.type(sectionTextbox(), ' reviewed')
+      await userEvent.click(screen.getByRole('button', { name: 'Done' }))
+    }
     await answerEveryItem('Pass')
     await userEvent.type(notesField(), 'Checked all sections against SIP-188.')
 
