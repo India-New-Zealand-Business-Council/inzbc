@@ -128,14 +128,14 @@ review findings instead (see Done, PR #501) covered Thursday's daily-commit in i
   real run's report on the live `/api/reports` path, so Monday's wording fix alone wasn't
   enough — Bhanu's review of it found two deeper issues the same day. Fixed both: `BriefSection`
   now carries an explicit `pending: boolean`, set by `generatedDigestContent` and cleared only
-  when a reviewer actually edits a section via QaReviewScreen's existing "Edit" control;
+  when a reviewer makes a non-empty edit that changes the auto-generated text via QaReviewScreen's existing "Edit" control;
   `submitQaResult` now refuses to record a QA result while any section is still pending, so a
   report of entirely unwritten sections can no longer pass. Separately, traced why
   `criticalHighSignals.primarySourceUrl` had to be invented as a fake `example.test` link at
   all: `BriefBuilderScreen.toDomainCandidate` was dropping the real `CandidateOut.url` on the
   floor when mapping to the UI's `Candidate` type. Threaded it through; `nextTriggerDate`/
   `dueDate` are now `''` and `priority` is `null` rather than a hardcoded value, same
-  "not yet set" convention already used for `owner`. Four new end-to-end regressions (two in
+  "not yet set" convention already used for `owner`. Four new unit and component regressions (two in
   `reportsStore.test.ts`, two in `QaReviewScreen.test.tsx`) cover both the reject-while-pending
   and accept-once-edited paths through the real UI, not just the string replacement. 273/273
   passing.
