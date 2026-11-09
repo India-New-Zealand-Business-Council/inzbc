@@ -121,6 +121,24 @@ review findings instead (see Done, PR #501) covered Thursday's daily-commit in i
   re-open them.
 
 ## Done
+- **Week 6, Tuesday: closed the QA fail-open gap and stopped inventing source URLs/dates/
+  priority on real reports** (PR #553, 10 Nov 2026, refs #62). A user-reported "internal notes
+  leaking into the UI" issue turned out to be real, live-path content, not a cosmetic string:
+  `submitReportForQa` spreads `generatedDigestContent`'s auto-generated digest straight into a
+  real run's report on the live `/api/reports` path, so Monday's wording fix alone wasn't
+  enough ΓÇö Bhanu's review of it found two deeper issues the same day. Fixed both: `BriefSection`
+  now carries an explicit `pending: boolean`, set by `generatedDigestContent` and cleared only
+  when a reviewer makes a non-empty edit that changes the auto-generated text via QaReviewScreen's existing "Edit" control;
+  `submitQaResult` now refuses to record a QA result while any section is still pending, so a
+  report of entirely unwritten sections can no longer pass. Separately, traced why
+  `criticalHighSignals.primarySourceUrl` had to be invented as a fake `example.test` link at
+  all: `BriefBuilderScreen.toDomainCandidate` was dropping the real `CandidateOut.url` on the
+  floor when mapping to the UI's `Candidate` type. Threaded it through; `nextTriggerDate`/
+  `dueDate` are now `''` and `priority` is `null` rather than a hardcoded value, same
+  "not yet set" convention already used for `owner`. Four new unit and component regressions (two in
+  `reportsStore.test.ts`, two in `QaReviewScreen.test.tsx`) cover both the reject-while-pending
+  and accept-once-edited paths through the real UI, not just the string replacement. 273/273
+  passing.
 - **Week 5, Sunday: sync + report ΓÇö nothing fixed, status checked against the tracker instead
   of assumed** (8 Nov 2026, refs #62, #60, #127, #128, #129, #195; corrected 9 Nov after
   Bhanu's review of PR #551 ΓÇö see note at the end). Per the Must-do plan, Sunday is
