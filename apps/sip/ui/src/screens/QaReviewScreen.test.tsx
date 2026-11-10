@@ -220,6 +220,29 @@ describe('QaReviewScreen', () => {
     expect(screen.queryByText(/awaiting ceo decision/i)).not.toBeInTheDocument()
   })
 
+  // Bhanu's fix on main (#62): opening Edit and saving without changing anything -- or clearing
+  // it to blank -- must not be mistaken for a real review.
+  it('leaving a section unchanged (or blank) through Edit/Done keeps it pending', async () => {
+    const pending = reportInQa()
+    pending.sections = pending.sections.map((section) => ({ ...section, pending: true }))
+    render(<ControlledQaReview initial={pending} />)
+
+    const editButtons = screen.getAllByRole('button', { name: 'Edit' })
+    // First section: open and close without typing anything.
+    await userEvent.click(editButtons[0]!)
+    await userEvent.click(screen.getByRole('button', { name: 'Done' }))
+    // Second section: clear it to blank.
+    await userEvent.click(screen.getAllByRole('button', { name: 'Edit' })[1]!)
+    await userEvent.clear(sectionTextbox())
+    await userEvent.click(screen.getByRole('button', { name: 'Done' }))
+
+    await answerEveryItem('Pass')
+    await userEvent.type(notesField(), 'Checked all sections.')
+    await userEvent.click(screen.getByRole('button', { name: /record qa result/i }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/still contain auto-generated/i)
+  })
+
   it('accepts the result once every section has actually been edited', async () => {
     const pending = reportInQa()
     pending.sections = pending.sections.map((section) => ({ ...section, pending: true }))
