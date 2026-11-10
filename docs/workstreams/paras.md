@@ -121,41 +121,83 @@ review findings instead (see Done, PR #501) covered Thursday's daily-commit in i
   re-open them.
 
 ## Done
-- **Week 6, Tuesday: closed the QA fail-open gap and stopped inventing source URLs/dates/
-  priority on real reports** (PR #553, 10 Nov 2026, refs #62). A user-reported "internal notes
-  leaking into the UI" issue turned out to be real, live-path content, not a cosmetic string:
-  `submitReportForQa` spreads `generatedDigestContent`'s auto-generated digest straight into a
-  real run's report on the live `/api/reports` path, so Monday's wording fix alone wasn't
-  enough ΓÇö Bhanu's review of it found two deeper issues the same day. Fixed both: `BriefSection`
-  now carries an explicit `pending: boolean`, set by `generatedDigestContent` and cleared only
-  when a reviewer makes a non-empty edit that changes the auto-generated text via QaReviewScreen's existing "Edit" control;
-  `submitQaResult` now refuses to record a QA result while any section is still pending, so a
-  report of entirely unwritten sections can no longer pass. Separately, traced why
-  `criticalHighSignals.primarySourceUrl` had to be invented as a fake `example.test` link at
-  all: `BriefBuilderScreen.toDomainCandidate` was dropping the real `CandidateOut.url` on the
-  floor when mapping to the UI's `Candidate` type. Threaded it through; `nextTriggerDate`/
-  `dueDate` are now `''` and `priority` is `null` rather than a hardcoded value, same
-  "not yet set" convention already used for `owner`. Four new unit and component regressions (two in
-  `reportsStore.test.ts`, two in `QaReviewScreen.test.tsx`) cover both the reject-while-pending
-  and accept-once-edited paths through the real UI, not just the string replacement. 273/273
-  passing.
-- **Week 5, Sunday: sync + report ΓÇö nothing fixed, status checked against the tracker instead
+- **Week 6, Wednesday: research — can a human-review gate actually resist a rubber stamp?**
+  (11 Nov 2026, refs #62). This week's thread, pointed directly at the gap Bhanu's review of
+  Tuesday's QA-gate fix surfaced: the gate only checks that a section's text differs from the
+  auto-generated placeholder, not that the edit is genuinely substantive — his own test cleared
+  it by appending one word. `docs/research/rubber-stamp-review-literature-review.md`, four
+  sources checked against their real DOI/arXiv record on 11 Nov 2026: the EU AI Act names
+  automation bias as the risk to guard against but has no settled empirical fix for it
+  (Laux & Ruschemeier); showing an AI's reasoning doesn't reliably stop rubber-stamping, and can
+  reinforce misplaced trust for less-experienced users (Romeo & Conti); the most direct finding —
+  rubber-stamping follows from an *effort asymmetry* between accepting and disagreeing, with
+  "productive friction" scaled to case uncertainty proposed as the fix (Rubegni et al., clinical
+  AI); and a general text-provenance classifier exists that can grade edit depth, not validated
+  for this use case (Thai et al., EditLens). Concrete options laid out for standup, not decided
+  solo: leave the current floor as-is, add a cheap justification-field friction step, or spike
+  the harder technical measure later.
+- **Week 6, Wednesday: fixed a dead `setState` call that had broken `apps/comms/ui`'s own
+  typecheck and 30 of its 89 tests on `main`** (11 Nov 2026, refs #62). Starting today's research
+  task, `pnpm run typecheck` failed across the whole workspace (sip-ui pulls in comms-ui via a
+  workspace alias) with `Cannot find name 'setState'` in `CommsAssistant.tsx`. `git blame` traced
+  it to Bhanu's own `1f5a647b` (7 Nov 2026): `generateDraft()` called `setState({kind:
+  'loading'})`, but that component uses `draftState`/`setDraftState` (a narrower union with no
+  `'loading'` variant) and a separate `isGenerating` boolean for its real loading UI — `setState`
+  resolves to nothing in that scope, so every test that actually calls `generateDraft()` was
+  throwing a `ReferenceError` and failing. Deleted the dead call (`isGenerating` already drives
+  the loading state correctly). Also removed a second, lint-flagged `setState` inside
+  `DraftApprovalBadge`'s effect — the caller already remounts that component on refresh via a
+  composite `key`, so the effect's own synchronous reset was redundant with `useState`'s own
+  initial value. Not my lane (comms-ui), but a broken build blocks everyone; typecheck/lint/test
+  now clean, 89/89 passing.
+- **Week 6, Tuesday: narrowed the QA gate and stopped inventing source URLs/dates/priority on
+  real reports — corrected 11 Nov after Bhanu's review of this entry, see note at the end** (PR
+  #553, 10 Nov 2026, refs #62). A user-reported "internal notes leaking into the UI" issue turned
+  out to be real, live-path content, not a cosmetic string: `submitReportForQa` spreads
+  `generatedDigestContent`'s auto-generated digest straight into a real run's report on the live
+  `/api/reports` path, so Monday's wording fix alone wasn't enough — Bhanu's review of it found
+  two deeper issues the same day. Addressed both, on the #553 branch at the time (not yet merged
+  to `main` when this entry was first written): `BriefSection` carries an explicit
+  `pending: boolean`, set by `generatedDigestContent` and cleared when a reviewer edits a section
+  via QaReviewScreen's "Edit" control; `submitQaResult` refuses to record a QA result while any
+  section is still pending, so a report of entirely untouched sections cannot pass. **This is
+  narrower than "closed the QA fail-open gap":** it only checks that a section's text differs
+  from the auto-generated original, not that the replacement is genuinely reviewed content — a
+  trivial edit (e.g. appending one word) still clears `pending`, which the PR's own test
+  demonstrated by doing exactly that. Not solved here; raised at standup rather than chased with
+  a fragile heuristic. Separately, traced why `criticalHighSignals.primarySourceUrl` had to be
+  invented as a fake `example.test` link at all: `BriefBuilderScreen.toDomainCandidate` was
+  dropping the real `CandidateOut.url` on the floor when mapping to the UI's `Candidate` type.
+  Threaded it through; `nextTriggerDate`/`dueDate` are now `''` and `priority` is `null` rather
+  than a hardcoded value, same "not yet set" convention already used for `owner`. Four new unit
+  and component regressions (`reportsStore.test.ts`, `QaReviewScreen.test.tsx`) cover the
+  reject-while-pending and accept-once-edited paths through the fixtures used in those test
+  files, not a full API/backend flow. 273/273 passing, as reported by this PR's author; not
+  independently re-verified against CI in this entry.
+
+  **Correction note (11 Nov 2026):** the original version of this entry (merged via PR #554)
+  overclaimed two things, per Bhanu's review of #554 itself: it described #553's fix in finished,
+  integrated terms while #553 was still open and unmerged, and it called the four new tests
+  "end-to-end... through the real UI," which overstates unit/component-level coverage. Also
+  separately fixed: the file had 15 mojibake'd em-dashes (`ΓÇö`) from an encoding slip somewhere
+  in this entry's and Sunday's own authoring pipeline, now corrected across the file.
+- **Week 5, Sunday: sync + report — nothing fixed, status checked against the tracker instead
   of assumed** (8 Nov 2026, refs #62, #60, #127, #128, #129, #195; corrected 9 Nov after
-  Bhanu's review of PR #551 ΓÇö see note at the end). Per the Must-do plan, Sunday is
+  Bhanu's review of PR #551 — see note at the end). Per the Must-do plan, Sunday is
   sync-and-report, not a coding day, so pulled `main` and checked every open item against
   GitHub rather than against memory of what was asked for earlier in the week:
   - Merged to `main` this week: #501, #507, #508, #511, #513, #515, #516, #517, #518, #519.
   - Still open, awaiting the tech lead's review: #525 (Wednesday's research), #541/#542
     (Thursday's Comms status fix + worklog), #549/#550 (Saturday's focus-management fix +
     worklog). None of the lane's remaining Must-do work depends on any of these merging first,
-    so this isn't a blanket blocker per `CONTRIBUTING.md` ΓÇö continued with the next day's
+    so this isn't a blanket blocker per `CONTRIBUTING.md` — continued with the next day's
     independent approved work rather than treating the open-PR backlog as idle time (see
     the Week 6 task on #553).
   - Roshan's three cross-reviews of my Wednesday/Thursday work (#545, #547, #548) are still
-    open; my confirmation comments are posted on all three (Friday/Saturday) ΓÇö nothing further
+    open; my confirmation comments are posted on all three (Friday/Saturday) — nothing further
     needed from me on those specific PRs.
   - The four board-assignment mismatches (#127/#128/#129/#195) are still open and still
-    unresolved a week later ΓÇö re-raised again rather than touched solo, since whose lane they
+    unresolved a week later — re-raised again rather than touched solo, since whose lane they
     belong in is a standup decision, not mine to make unilaterally.
   - Checked, not previously flagged: issue #62 (the agentic SIP-184 orchestrator this whole
     week's daily plan cites `refs #62` against) is itself closed on GitHub, while the actual
@@ -164,29 +206,29 @@ review findings instead (see Done, PR #501) covered Thursday's daily-commit in i
     missing source list) are all still open in the code. Flagging the #62/reality mismatch for
     standup rather than guessing which is stale.
   - Dependabot: `gh api repos/.../dependabot/alerts` queried 8 Nov 2026 returned 0 entries with
-    `state=open` ΓÇö a point-in-time observation from that one query, not independently
+    `state=open` — a point-in-time observation from that one query, not independently
     re-verified beyond it.
 
   **Correction note (9 Nov 2026):** the original version of this entry, PR #551, drew three
-  real findings from Bhanu's review ΓÇö the "nothing further to do"/"nothing pending from my
+  real findings from Bhanu's review — the "nothing further to do"/"nothing pending from my
   side" wording in #551 read as a blanket blocker contrary to `CONTRIBUTING.md`; the branch was
   named `docs/paras/08-nov-sunday-sync-report`, not one of the permitted `feat/`/`fix`/`chore/`
   prefixes; and the PR description carried an AI-attribution footer `PROJECT-RULES.md`
   prohibits. While testing a fix for the branch-name issue, renaming the branch via the GitHub
   API closed PR #551 outright (its head ref no longer resolved) rather than updating it in
-  place ΓÇö an avoidable mistake, not an intended action. This entry (PR #552, branch
+  place — an avoidable mistake, not an intended action. This entry (PR #552, branch
   `chore/paras/09-nov-sunday-report-corrections`) supersedes #551 with the wording and branch
   name fixed and the attribution footer removed; #551 stays closed rather than being
   force-reopened.
-- **Week 5, Saturday: buffer ΓÇö sent focus somewhere after New conversation instead of to
+- **Week 5, Saturday: buffer — sent focus somewhere after New conversation instead of to
   `<body>`** (PR #549, 7 Nov 2026, refs #62). Nothing was broken and nothing was waiting on a
-  fix this week (checked: Roshan's three real review findings on Thursday's/Wednesday's work ΓÇö
-  #545, #547, #548 ΓÇö all confirmed correct and commented on, no further action needed from me),
+  fix this week (checked: Roshan's three real review findings on Thursday's/Wednesday's work —
+  #545, #547, #548 — all confirmed correct and commented on, no further action needed from me),
   so re-read both agent surfaces for a real remaining gap instead of inventing one. Found: `New
   conversation` unmounts itself the instant it's clicked (only rendered while `messages.length`
-  is truthy), and nothing redirected focus afterward ΓÇö a keyboard/screen-reader user's focus
-  silently dropped to `<body>` with no indication of where it went. Implemented in PR #549 ΓÇö
-  pending review/merge, not yet in `main` ΓÇö by moving focus to the question field, the same
+  is truthy), and nothing redirected focus afterward — a keyboard/screen-reader user's focus
+  silently dropped to `<body>` with no indication of where it went. Implemented in PR #549 —
+  pending review/merge, not yet in `main` — by moving focus to the question field, the same
   place a reply already returns it to, plus one new regression test; 270/270 passing on that
   branch (CI: see PR #549's checks).
 - **Week 5, Thursday: added a generation-time status snapshot to Comms history** (PR #541,
