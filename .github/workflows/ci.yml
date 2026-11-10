@@ -94,7 +94,7 @@ jobs:
       # Runs against the container already started above, not a second server — the FTA path
       # needs no database (see Dockerfile), so there's nothing cheaper this could start on its
       # own, and it proves the same build everything above just curled, through a real browser.
-      - uses: pnpm/action-setup@v6.1.0
+      - uses: pnpm/action-setup@v6.1.1
       - uses: actions/setup-node@v7
         with:
           node-version-file: '.nvmrc'
@@ -181,7 +181,7 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.11'
-      - uses: pnpm/action-setup@v6.1.0
+      - uses: pnpm/action-setup@v6.1.1
       - uses: actions/setup-node@v7
         with:
           node-version-file: '.nvmrc'
