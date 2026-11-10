@@ -188,6 +188,9 @@ function DraftApprovalBadge({ draftId, baseUrl, refreshKey }: { draftId: string;
 
   useEffect(() => {
     const controller = new AbortController()
+    // No reset to 'loading' needed here: the caller already remounts this component on refresh
+    // via `key={`${entry.id}-${approvalRefreshKey}`}`, so `useState`'s initial value above is
+    // the reset -- a second, synchronous one here was just an extra render the lint rule caught.
     void getCommsDraftStatus(draftId, { baseUrl, signal: controller.signal })
       .then((status) => {
         if (!controller.signal.aborted) setState({ kind: 'ready', status })
