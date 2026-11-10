@@ -125,11 +125,17 @@ export function QaReviewScreen({ report, onChange }: Props) {
   function updateSectionContent(sectionId: string, content: string) {
     onChange({
       ...report,
-      // Editing is what makes this real, reviewed content rather than auto-generated digest
-      // text -- clears `pending` so submitQaResult (reportsStore.ts) will accept it.
-      sections: report.sections.map((section) =>
-        section.id === sectionId ? { ...section, content, pending: section.pending ? (content.trim() === '' || content.trim() === section.content.trim()) : false } : section,
-      ),
+      // A pending section only clears once the edit actually leaves the auto-generated text
+      // behind -- blank it out or leave it untouched (content equals what it started as) and it
+      // stays pending, so submitQaResult (reportsStore.ts) keeps refusing it (Bhanu, #62). This
+      // does not verify the replacement is *meaningfully* reviewed content rather than a trivial
+      // edit (appending one word still clears it) -- that's a known, undecided limitation, not a
+      // guarantee this function makes.
+      sections: report.sections.map((section) => {
+        if (section.id !== sectionId) return section
+        const stillPlaceholder = content.trim() === '' || content.trim() === section.content.trim()
+        return { ...section, content, pending: section.pending ? stillPlaceholder : false }
+      }),
     })
   }
 
