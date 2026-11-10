@@ -121,6 +121,21 @@ review findings instead (see Done, PR #501) covered Thursday's daily-commit in i
   re-open them.
 
 ## Done
+- **Week 6, Wednesday: research — can a human-review gate actually resist a rubber stamp?**
+  (11 Nov 2026, refs #62). This week's thread, pointed directly at the gap Bhanu's review of
+  Tuesday's QA-gate fix surfaced: the gate only checks that a section's text differs from the
+  auto-generated placeholder, not that the edit is genuinely substantive — his own test cleared
+  it by appending one word. `docs/research/rubber-stamp-review-literature-review.md`, four
+  sources checked against their real DOI/arXiv record on 11 Nov 2026: the EU AI Act names
+  automation bias as the risk to guard against but has no settled empirical fix for it
+  (Laux & Ruschemeier); showing an AI's reasoning doesn't reliably stop rubber-stamping, and can
+  reinforce misplaced trust for less-experienced users (Romeo & Conti); the most direct finding —
+  rubber-stamping follows from an *effort asymmetry* between accepting and disagreeing, with
+  "productive friction" scaled to case uncertainty proposed as the fix (Rubegni et al., clinical
+  AI); and a general text-provenance classifier exists that can grade edit depth, not validated
+  for this use case (Thai et al., EditLens). Concrete options laid out for standup, not decided
+  solo: leave the current floor as-is, add a cheap justification-field friction step, or spike
+  the harder technical measure later.
 - **Week 6, Wednesday: fixed a dead `setState` call that had broken `apps/comms/ui`'s own
   typecheck and 30 of its 89 tests on `main`** (11 Nov 2026, refs #62). Starting today's research
   task, `pnpm run typecheck` failed across the whole workspace (sip-ui pulls in comms-ui via a
