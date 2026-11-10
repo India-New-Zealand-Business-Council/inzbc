@@ -295,7 +295,8 @@ export function CeoDecisionScreen({ report, onChange }: Props) {
             <div key={action.id} className="rounded-md border border-inzbc-navy/10 bg-white shadow-sm p-3 text-sm">
               <p className="text-slate-700">{action.action}</p>
               <p className="mt-1 text-xs text-slate-500">
-                Owner: {action.owner} · Priority: {action.priority} · Due: {action.dueDate}
+                Owner: {action.owner} · Priority: {action.priority ?? 'Not yet set'} · Due:{' '}
+                {action.dueDate || 'Not yet set'}
               </p>
             </div>
           ))

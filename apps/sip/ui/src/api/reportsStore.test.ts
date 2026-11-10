@@ -21,8 +21,18 @@ function submittableReport() {
 
 // `submitQaResult` now needs the report_version_id `POST /api/reports` would have assigned — a
 // fixture built directly, without going through `submitReportForQa` first, stands one in for it.
+// Sections default to already-reviewed (`pending: false`): these tests are about the SIP-188
+// checklist's pass/fail logic, not content review, so a report representing "ready for a QA
+// result" should already be past the separate pending-content gate — see the dedicated
+// 'rejects a QA result while a section is still pending' test below for that gate itself.
 function inProgressReport(overrides: Partial<DailyBriefReport> = {}): DailyBriefReport {
-  return { ...submittableReport(), state: 'QA In Progress', reportVersionId: 'rv-1', ...overrides }
+  return {
+    ...submittableReport(),
+    sections: submittableReport().sections.map((section) => ({ ...section, pending: false })),
+    state: 'QA In Progress',
+    reportVersionId: 'rv-1',
+    ...overrides,
+  }
 }
 
 function allPassingChecklist(): QaChecklistGroup[] {
@@ -174,6 +184,28 @@ describe('submitQaResult', () => {
     await expect(
       submitQaResult(report, allPassingChecklist(), 'Paras', 'Checked all sections.'),
     ).rejects.toThrow(/has not been submitted/i)
+  })
+
+  // Bhanu's review on #553: a report consisting solely of auto-generated digest sections must
+  // not be acceptable as a finished one -- a reviewer clicking Approve on unedited placeholder
+  // text is not the same as reviewing real content.
+  it('rejects a QA result while any section is still pending (unedited auto-generated content)', async () => {
+    const report = inProgressReport()
+    report.sections = report.sections.map((section) => ({ ...section, pending: true }))
+    await expect(
+      submitQaResult(report, allPassingChecklist(), 'Paras', 'Checked all sections.'),
+    ).rejects.toThrow(/still contain auto-generated/i)
+  })
+
+  it('accepts a QA result once every section has been edited (no longer pending)', async () => {
+    const report = inProgressReport()
+    report.sections = report.sections.map((section) => ({
+      ...section,
+      content: `Real content for ${section.title}.`,
+      pending: false,
+    }))
+    const result = await submitQaResult(report, allPassingChecklist(), 'Paras', 'Checked all sections.')
+    expect(result.state).toBe('Awaiting CEO Decision')
   })
 
   it('treats N/A on a Critical item as a failure, not a pass', async () => {

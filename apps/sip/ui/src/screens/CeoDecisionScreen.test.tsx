@@ -67,7 +67,9 @@ describe('CeoDecisionScreen', () => {
   it('renders the CEO action list', () => {
     render(<CeoDecisionScreen report={reportAwaitingDecision()} onChange={vi.fn()} />)
     expect(screen.getByText(/awaiting a recommended ceo action item/i)).toBeInTheDocument()
-    expect(screen.getByText(/owner: not yet assigned/i)).toBeInTheDocument()
+    // Bhanu's review on #553: priority/due date must never be invented — null/'' render as an
+    // honest "Not yet set", not a fabricated 'High'/date.
+    expect(screen.getByText(/owner: not yet assigned.*priority: not yet set.*due: not yet set/i)).toBeInTheDocument()
   })
 
   it('offers exactly one selected report decision at a time, never two combined', async () => {

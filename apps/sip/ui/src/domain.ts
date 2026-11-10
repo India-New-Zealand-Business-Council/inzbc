@@ -54,6 +54,9 @@ export interface Candidate {
   signalStrength: SignalStrength
   sourceConfidence: string
   verificationStatus: VerificationStatus
+  /** `CandidateOut.url` — null when the capture carried none. Not a placeholder; a real digest
+   * must cite this or admit it has none, never invent one (see generatedDigestContent). */
+  sourceUrl: string | null
 }
 
 /** SIP-186 §3 — Critical and High signals (ranked). */
@@ -68,8 +71,10 @@ export interface CriticalHighSignal {
   verificationStatus: VerificationStatus
   recommendedCeoAction: string
   recommendedMemberAction: string
+  /** '' means the candidate carried no source URL — never invented, see generatedDigestContent. */
   primarySourceUrl: string
   registerRouting: string
+  /** '' means not yet set, same convention as SourceOutcome. */
   nextTriggerDate: string
 }
 
@@ -78,7 +83,10 @@ export interface CeoActionItem {
   id: string
   action: string
   owner: string
-  priority: 'High' | 'Medium' | 'Low'
+  /** null until a reviewer actually sets a priority — see generatedDigestContent's docstring;
+   * nothing invents one. */
+  priority: 'High' | 'Medium' | 'Low' | null
+  /** '' means not yet set, same convention as SourceOutcome. */
   dueDate: string
   evidenceRequirement: string
 }
@@ -108,13 +116,22 @@ export interface SourceCoverageRow {
 
 export type ReviewStatus = 'pending' | 'approved' | 'flagged'
 
-/** One free-text SIP-186 section (§§1, 2, 4-6, 8-10) — editable and reviewable in QA. */
+/** One free-text SIP-186 section (§§1, 2, 4-6, 8-10) — editable and reviewable in QA.
+ *
+ * `pending` is distinct from `reviewStatus`: it says whether this is still the auto-generated
+ * digest content from `generatedDigestContent` (lib/fixtures.ts) — true until a reviewer actually
+ * edits it in QaReviewScreen's "Edit" control, at which point it becomes real, human-written
+ * content regardless of whether it then gets approved or flagged. `submitQaResult`
+ * (api/reportsStore.ts) refuses to record a result while any section is still pending, since a
+ * reviewer clicking Approve on unedited auto-generated text is not the same as reviewing real
+ * content. */
 export interface BriefSection {
   id: string
   title: string
   content: string
   reviewStatus: ReviewStatus
   flagReason: string
+  pending: boolean
 }
 
 export const REVIEWABLE_SECTION_TITLES = [

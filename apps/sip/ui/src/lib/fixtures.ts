@@ -168,6 +168,7 @@ export function candidatesFixture(): Candidate[] {
       signalStrength: 'High',
       sourceConfidence: 'Official',
       verificationStatus: 'Verified',
+      sourceUrl: null,
     },
     {
       id: 'cand-2',
@@ -178,6 +179,7 @@ export function candidatesFixture(): Candidate[] {
       signalStrength: 'Critical',
       sourceConfidence: 'Official',
       verificationStatus: 'Verified',
+      sourceUrl: null,
     },
     {
       id: 'cand-3',
@@ -188,6 +190,7 @@ export function candidatesFixture(): Candidate[] {
       signalStrength: 'Medium',
       sourceConfidence: 'Media',
       verificationStatus: 'Unverified',
+      sourceUrl: null,
     },
     {
       id: 'cand-4',
@@ -198,6 +201,7 @@ export function candidatesFixture(): Candidate[] {
       signalStrength: 'High',
       sourceConfidence: 'Official',
       verificationStatus: 'Pending',
+      sourceUrl: null,
     },
   ]
 }
@@ -358,6 +362,14 @@ export function qaChecklistFixture(): QaChecklistGroup[] {
  * pipeline would write connected narrative prose across candidates, which isn't something to
  * fake a per-candidate mapping for here.
  *
+ * Every section carries `pending: true` — `submitQaResult` (reportsStore.ts) refuses to record a
+ * QA result while any section is still pending, and QaReviewScreen's "Edit" control clears it the
+ * moment a reviewer actually writes real content. Structured fields that have no honest fallback
+ * are never invented either: `primarySourceUrl` is the candidate's real `sourceUrl` or `''`, never
+ * a fabricated `example.test` link, and `ceoActionList`'s `priority`/`dueDate` stay `null`/`''`
+ * rather than a hardcoded `'High'`/date. Bhanu's review on #553 found all three reaching a real
+ * run's report looking like genuine evidence.
+ *
  * `criticalHighSignals` and `sourceMix` are derived from `selectedCandidates` — an earlier
  * version of this function ignored its caller entirely and always returned the same two
  * hardcoded signals (a ministerial statement and a tariff update), regardless of what the analyst
@@ -369,7 +381,7 @@ export function generatedDigestContent(
 ): Pick<DailyBriefReport, 'sections' | 'criticalHighSignals' | 'ceoActionList' | 'sourceConfidenceSummary' | 'sourceMix'> {
   const criticalHighSignals = selectedCandidates
     .filter((candidate) => candidate.signalStrength === 'Critical' || candidate.signalStrength === 'High')
-    .map((candidate, index) => ({
+    .map((candidate) => ({
       id: `signal-${candidate.id}`,
       headline: candidate.headline,
       whatHappened: `Not yet written — awaiting an analyst's account of what happened, from ${candidate.sourceName}.`,
@@ -380,9 +392,12 @@ export function generatedDigestContent(
       verificationStatus: candidate.verificationStatus,
       recommendedCeoAction: 'Not yet written — awaiting a recommended CEO action.',
       recommendedMemberAction: 'Not yet written — awaiting a recommended member action.',
-      primarySourceUrl: `https://example.test/fixture-source-${index + 1}`,
+      // The candidate's real captured URL, never invented — Bhanu's review on #553 caught
+      // `https://example.test/fixture-source-N` reaching a real run's report as if it were a
+      // genuine citation. '' (not null) to match every other "not yet set" field on this object.
+      primarySourceUrl: candidate.sourceUrl ?? '',
       registerRouting: 'Action Register',
-      nextTriggerDate: '2026-08-06',
+      nextTriggerDate: '',
     }))
 
   const officialCount = selectedCandidates.filter((c) => c.sourceConfidence === 'Official').length
@@ -400,6 +415,7 @@ export function generatedDigestContent(
         title: '1. Executive judgement',
         content: 'Not yet written — awaiting an analyst’s executive judgement for this run.',
         reviewStatus: 'pending',
+        pending: true,
         flagReason: '',
       },
       {
@@ -407,6 +423,7 @@ export function generatedDigestContent(
         title: '2. Executive summary',
         content: 'Not yet written — awaiting an analyst’s executive summary for this run.',
         reviewStatus: 'pending',
+        pending: true,
         flagReason: '',
       },
       {
@@ -414,6 +431,7 @@ export function generatedDigestContent(
         title: '4. Key bilateral developments',
         content: 'Not yet written — awaiting an analyst’s account of bilateral developments.',
         reviewStatus: 'pending',
+        pending: true,
         flagReason: '',
       },
       {
@@ -421,6 +439,7 @@ export function generatedDigestContent(
         title: '5. Opportunities',
         content: 'Not yet written — awaiting an analyst’s account of opportunities.',
         reviewStatus: 'pending',
+        pending: true,
         flagReason: '',
       },
       {
@@ -428,6 +447,7 @@ export function generatedDigestContent(
         title: '6. Threats and risks',
         content: 'Not yet written — awaiting an analyst’s account of threats and risks.',
         reviewStatus: 'pending',
+        pending: true,
         flagReason: '',
       },
       {
@@ -435,6 +455,7 @@ export function generatedDigestContent(
         title: '8. Member actions',
         content: 'Not yet written — awaiting recommended member actions.',
         reviewStatus: 'pending',
+        pending: true,
         flagReason: '',
       },
       {
@@ -442,6 +463,7 @@ export function generatedDigestContent(
         title: '9. Watch-list updates',
         content: 'Not yet written — awaiting a watch-list update for this run.',
         reviewStatus: 'pending',
+        pending: true,
         flagReason: '',
       },
       {
@@ -449,6 +471,7 @@ export function generatedDigestContent(
         title: '10. Active Carry-Forward',
         content: 'Not yet written — awaiting a carry-forward check for this run.',
         reviewStatus: 'pending',
+        pending: true,
         flagReason: '',
       },
     ],
@@ -460,8 +483,11 @@ export function generatedDigestContent(
               id: 'action-1',
               action: 'Not yet written — awaiting a recommended CEO action item.',
               owner: 'Not yet assigned',
-              priority: 'High',
-              dueDate: '2026-08-06',
+              // Never invent a priority or due date — Bhanu's review on #553 caught a
+              // hardcoded 'High'/2026-08-06 reaching a real run's report as if a reviewer had
+              // actually set them.
+              priority: null,
+              dueDate: '',
               evidenceRequirement: 'Not yet written — awaiting the evidence requirement.',
             },
           ]
@@ -492,24 +518,26 @@ export function newDraftReportFixture(): DailyBriefReport {
     focusNote: '',
     selectedCandidateIds: [],
     sections: [
-      { id: 'sec-1', title: '1. Executive judgement', content: '', reviewStatus: 'pending', flagReason: '' },
-      { id: 'sec-2', title: '2. Executive summary', content: '', reviewStatus: 'pending', flagReason: '' },
+      { id: 'sec-1', title: '1. Executive judgement', content: '', reviewStatus: 'pending', flagReason: '', pending: true },
+      { id: 'sec-2', title: '2. Executive summary', content: '', reviewStatus: 'pending', flagReason: '', pending: true },
       {
         id: 'sec-4',
         title: '4. Key bilateral developments',
         content: '',
         reviewStatus: 'pending',
+        pending: true,
         flagReason: '',
       },
-      { id: 'sec-5', title: '5. Opportunities', content: '', reviewStatus: 'pending', flagReason: '' },
-      { id: 'sec-6', title: '6. Threats and risks', content: '', reviewStatus: 'pending', flagReason: '' },
-      { id: 'sec-8', title: '8. Member actions', content: '', reviewStatus: 'pending', flagReason: '' },
-      { id: 'sec-9', title: '9. Watch-list updates', content: '', reviewStatus: 'pending', flagReason: '' },
+      { id: 'sec-5', title: '5. Opportunities', content: '', reviewStatus: 'pending', flagReason: '', pending: true },
+      { id: 'sec-6', title: '6. Threats and risks', content: '', reviewStatus: 'pending', flagReason: '', pending: true },
+      { id: 'sec-8', title: '8. Member actions', content: '', reviewStatus: 'pending', flagReason: '', pending: true },
+      { id: 'sec-9', title: '9. Watch-list updates', content: '', reviewStatus: 'pending', flagReason: '', pending: true },
       {
         id: 'sec-10',
         title: '10. Active Carry-Forward',
         content: '',
         reviewStatus: 'pending',
+        pending: true,
         flagReason: '',
       },
     ],
