@@ -95,8 +95,8 @@ generation half applies to the Comms Assistant and SIP briefs, not to the FTA an
 
 ### 2.5 Evaluating retrieval and RAG
 
-Ranked retrieval is measured with hit@k and mean reciprocal rank (Manning et al., 2008 [attribution of MRR unverified, section 6B]), which
-is what `apps/fta/eval/` reports. RAGAs (Es et al., 2024) proposes reference-free scores for a
+Ranked retrieval is measured with hit@k and mean reciprocal rank (Voorhees, 1999; Radev et al.,
+2002), which is what `apps/fta/eval/` reports. RAGAs (Es et al., 2024) proposes reference-free scores for a
 whole RAG pipeline: faithfulness (is the answer supported by the retrieved context), answer
 relevance, and context relevance. These are judged by a language model.
 
@@ -437,6 +437,10 @@ World Wide Web Consortium. https://www.w3.org/TR/prov-dm/
 National Institute of Standards and Technology. (2023). *Artificial intelligence risk management
 framework (AI RMF 1.0)* (NIST AI 100-1). https://doi.org/10.6028/NIST.AI.100-1
 
+Radev, D. R., Qi, H., Wu, H., & Fan, W. (2002). Evaluating web-based question answering systems.
+In *Proceedings of the Third International Conference on Language Resources and Evaluation*.
+https://www.lrec-conf.org/proceedings/lrec2002/pdf/301.pdf
+
 Robertson, S., & Zaragoza, H. (2009). The probabilistic relevance framework: BM25 and beyond.
 *Foundations and Trends in Information Retrieval, 3*(4), 333-389.
 https://doi.org/10.1561/1500000019
@@ -445,6 +449,10 @@ Thakur, N., Reimers, N., Rücklé, A., Srivastava, A., & Gurevych, I. (2021). BE
 heterogeneous benchmark for zero-shot evaluation of information retrieval models. In
 *Proceedings of the Neural Information Processing Systems Track on Datasets and Benchmarks*.
 https://arxiv.org/abs/2104.08663
+
+Voorhees, E. M. (1999). The TREC-8 question answering track report. In *Proceedings of the
+Eighth Text REtrieval Conference (TREC-8)* (pp. 77-82). National Institute of Standards and
+Technology. https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication500-246.pdf
 
 ## 6. Check against the originals, 14 Oct 2026
 
@@ -547,14 +555,11 @@ experiment was run and nothing here is evidence about INZBC's corpus.
 | Lewis et al. (2020) | arXiv:2005.11401, sections 1, 2.2, 2.3, 3.3, 4.2, 4.3, 4.5 | DPR bi-encoder retriever over a Wikipedia index ("non-parametric memory") with a BART-large generator ("parametric memory"); "RAG models generate more specific, diverse and factual language than a state-of-the-art parametric-only seq2seq baseline". | The specificity and factuality claim rests on human evaluation of Jeopardy question generation only (452 pairs, RAG-Token vs BART; "more factual in 42.7% of cases"). MS-MARCO support is BLEU/ROUGE-L plus the authors' qualitative reading, and diversity is an automatic distinct-n-gram ratio. Section 2.4's sentence is accurate to the abstract; this is its scope. |
 | Gao et al. (2023) | arXiv:2312.10997 HTML, section II (A to C) | Three paradigms: Naive RAG ("indexing, retrieval, and generation", "Retrieve-Read"), Advanced RAG, Modular RAG; Advanced RAG is "Focusing on enhancing retrieval quality, it employs pre-retrieval and post-retrieval strategies" (query and index optimisation before; reranking and context compression after). | Matches section 2.4. The withdrawn "main lever" claim (section 6, row 8) is still not supported and stays out. |
 
-**Unverified: Manning et al. (2008) as the source for mean reciprocal rank.** The book text
-(nlp.stanford.edu/IR-book) refused the connection on 19 Nov. A third-party lecture-notes PDF of
-chapter 8 lists MAP, precision at k, R-precision and NDCG but does not mention reciprocal rank;
-lecture notes are not the book, so this is not a finding either way. Until chapter 8 (or
-another chapter) is opened and a passage defining reciprocal rank is found, treat the MRR
-citation in section 2.5 as unverified. To resolve: open
-https://nlp.stanford.edu/IR-book/html/htmledition/evaluation-of-ranked-retrieval-results-1.html
-and search for "reciprocal"; if absent, cite a source that defines MRR instead of Manning et al.
+**MRR citation resolved, 20 Nov 2026.** The unreachable Stanford book chapter is no longer
+the attribution for mean reciprocal rank. Section 2.5 now cites the TREC-8 question answering
+track report (Voorhees, 1999) and the web question-answering evaluation paper (Radev et al.,
+2002), both of which define the reciprocal rank measure in question-answering evaluation.
+Manning et al. remains the source for term weighting and vector-space retrieval only.
 
 Still not read at passage level: Carpineto and Romano (2012) (paywalled),
 and Manning et al. chapter 6. The annotations in section 5 remain Bhanu's 23 Oct expansion and
