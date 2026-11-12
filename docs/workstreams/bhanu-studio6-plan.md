@@ -88,8 +88,8 @@ column comes from the same harness, seed and runs (baseline doc, section 5).
 | #64 quality judge | Done, 16 Oct | Advisory only. Agrees with the golden set 8/8 (kappa 1.0, 24 Oct). Agreement with a human reviewer not yet measured |
 | #65 streaming drafts | Done, 16 Oct | Named-reviewer gate unchanged |
 | #344 source outcomes | Decision recorded 24 Oct | Option A, analyst-confirmed manual outcomes. #446 merged |
-| #55 first production run | **Open, checked 6 Nov** | SIP-191 authorisation and PAT reported in place on 24 Oct. The latest 4 Nov handoff still requires trusted permission-checked evidence staging, an authenticated import path and reviewed integration, original SIP-191 authority, 112 real analyst-confirmed mandatory source outcomes and actual run/decision/delivery evidence; see [4 Nov engineering checkpoint](https://github.com/India-New-Zealand-Business-Council/inzbc/issues/55#issuecomment-6618183077) |
-| #189 launch approval | **Closed as completed, 24 Oct; checked 6 Nov** | Production go-ahead reported by the tech lead in [the closure record](https://github.com/India-New-Zealand-Business-Council/inzbc/issues/189#issuecomment-6376253508). The launch-status document still asks for INZBC's original written approval link |
+| #55 first production run | **Open, checked 13 Nov** | SIP-191 authorisation and PAT reported in place on 24 Oct. The latest 4 Nov handoff still requires trusted permission-checked evidence staging, an authenticated import path and reviewed integration, original SIP-191 authority, 112 real analyst-confirmed mandatory source outcomes and actual run/decision/delivery evidence; see [4 Nov engineering checkpoint](https://github.com/India-New-Zealand-Business-Council/inzbc/issues/55#issuecomment-6618183077) |
+| #189 launch approval | **Closed as completed, 24 Oct; checked 13 Nov** | Production go-ahead reported by the tech lead in [the closure record](https://github.com/India-New-Zealand-Business-Council/inzbc/issues/189#issuecomment-6376253508). The launch-status document still asks for INZBC's original written approval link |
 | #303 written residual-risk acceptance | Waiting on INZBC | Verbal acceptance reported; written condition not yet met |
 | #45 site forms | Receiver merged (#433) | Form types, routing, retention and privacy notice are client decisions |
 
@@ -98,7 +98,7 @@ column comes from the same harness, seed and runs (baseline doc, section 5).
 Both moved on 24 Oct ([launch status](../launch-status-2026-10-24.md)). Until then they were the
 client's, and the weekly rows below record them that way:
 
-- **#55 first production run (checked 6 Nov):** open. Authorisation and PAT were reported
+- **#55 first production run (checked 13 Nov):** open. Authorisation and PAT were reported
   available on 24 Oct, but the latest 4 Nov handoff still reports trusted evidence staging,
   an authenticated import path and reviewed integration, original SIP-191 authority, 112 real
   analyst-confirmed mandatory source outcomes, a real run ID, analyst/QA/CEO decisions and
@@ -106,7 +106,7 @@ client's, and the weekly rows below record them that way:
   authorised live run. See the [4 Nov checkpoint](https://github.com/India-New-Zealand-Business-Council/inzbc/issues/55#issuecomment-6618183077).
   These include engineering and authority/evidence dependencies; do not label the whole issue
   as a fresh client-only delay.
-- **#189 launch approval (checked 6 Nov):** closed as completed on 24 Oct, following the tech
+- **#189 launch approval (checked 13 Nov):** closed as completed on 24 Oct, following the tech
   lead's recorded production go-ahead. INZBC's original written approval is still to be linked in
   the [launch-status document](../launch-status-2026-10-24.md). This report does not grant new
   approval or change production, distribution or signing controls.
@@ -157,9 +157,9 @@ opened in early August as the backlog.
 |---|---|---|---|---|---|
 | W2, 12 Oct | 13 | 73.5 (11 completed) | 2 (#46, #201) | #55, #189 | #62 to #65 closed 16 Oct when the four AI builds merged |
 | W3, 19 Oct | 0 | n/a | 0 | #55, #189 | Work went out as PRs instead: #433 to #446 reviewed and merged, #447 to #451 and #456 merged |
-| W4, 26 Oct–1 Nov (complete) | 0 (0 completed) | n/a (no completed issues) | 0 | #55: authority and real-run evidence outstanding; #189 closed | Full NZDT calendar week rechecked 6 Nov; no issue-closure events. PR activity is excluded |
-| W5, 2 Nov (partial) | 1 (1 marked completed: #291) | 83.5 | 0 | #55: authority/source/run evidence outstanding, alongside engineering dependencies; #189 closed | As of Fri 6 Nov 2026, 08:37:45 NZDT. Counts GitHub closure status, not independently verified sponsor attendance or acceptance |
-| W6, 9 Nov | | | | | |
+| W4, 26 Oct–1 Nov (complete) | 0 (0 completed) | n/a (no completed issues) | 0 | #55: authority and real-run evidence outstanding; #189 closed | Full NZDT calendar week rechecked 13 Nov; no issue-closure events. PR activity is excluded |
+| W5, 2–8 Nov (complete) | 1 (1 marked completed: #291) | 83.5 | 0 | #55: authority/source/run evidence outstanding, alongside engineering dependencies; #189 closed | Full NZDT calendar week rechecked 13 Nov. Counts GitHub closure status, not independently verified sponsor attendance or acceptance |
+| W6, 9 Nov (partial) | 0 (0 completed) | n/a (no completed issues) | 0 | #55: latest issue record still lists engineering and authority/run-evidence gaps; #189 closed | As of Fri 13 Nov 2026, 08:53:33 NZDT. #208 closed under roshanaryal1 and is excluded |
 | W7, 16 Nov | | | | | |
 
 
@@ -247,6 +247,55 @@ no open PR matched that filename. The committed report blob
 score bounds, 0 human cases and null human kappa. No live model call or result-file write was
 attempted. Eight actual independent reviewer verdicts with reviewer/date are required;
 fresh, unexposed model-credential availability was not verified. Codex review is not human QA.
+
+
+### W5 final and W6 partial snapshot evidence, 13 Nov 2026
+
+**Windows.** Final W5 covers `2026-11-01T11:00:00Z <= event.created_at < 2026-11-08T11:00:00Z`
+(Mon 2 Nov 00:00 through the end of Sun 8 Nov, NZDT). Partial W6 covers
+`2026-11-08T11:00:00Z <= event.created_at <= 2026-11-12T19:53:33Z`
+(Mon 9 Nov 00:00 through Fri 13 Nov 08:53:33 NZDT). Final W4 was rechecked and remains zero.
+W7 has not started and remains blank. The dated 30 Oct and 6 Nov snapshots above remain history.
+
+**Retrieval and assignment.** Re-ran the
+[all-state repository issue listing](https://api.github.com/repos/India-New-Zealand-Business-Council/inzbc/issues?state=all&since=2026-10-25T11%3A00%3A00Z&sort=updated&direction=desc&per_page=100&page=1)
+through both pages (100 + 37 records), excluding 116 PRs. All 21 actual issues' full event
+histories fit on one page each. The candidate set is the 20 issues listed in the 6 Nov snapshot,
+plus #208. Apply `assigned` and `unassigned` events in chronological order before each closure;
+do not substitute today's assignee or PR author for the assignee at closure.
+
+| Closure in W4–W6 through the cutoff | Closure event (UTC) | Assignee at closure | Treatment |
+|---|---|---|---|
+| [#291](https://github.com/India-New-Zealand-Business-Council/inzbc/issues/291) | 2026-11-03 21:55:26 | bhanuGupta1 | Include in final W5; current reason completed; one closure, no reopen |
+| [#208](https://github.com/India-New-Zealand-Business-Council/inzbc/issues/208) | 2026-11-10 08:59:42 | roshanaryal1 | Exclude from Bhanu's W6 count |
+
+Sources: [#291 events](https://api.github.com/repos/India-New-Zealand-Business-Council/inzbc/issues/291/events)
+(event `35068985760`) and [#208 events](https://api.github.com/repos/India-New-Zealand-Business-Council/inzbc/issues/208/events)
+(event `35662201078`). No other closure falls within W4–W6 through the cutoff.
+Thus W4 remains **0 completed / 0 not planned / 0 total**; final W5 is
+**1 completed / 0 not planned / 1 total**, average **83.5 days open**; partial W6 is
+**0 completed / 0 not planned / 0 total**, with no completed-only average.
+The #291 calculation and evidence limit remain as recorded in the 6 Nov snapshot:
+83.471979 calendar days from issue creation, not effort or proof of the sponsor walkthrough.
+
+**Dependency check.** #55 is still open. Its latest posted
+[4 Nov handoff](https://github.com/India-New-Zealand-Business-Council/inzbc/issues/55#issuecomment-6618183077)
+still lists trusted staging/import integration, original current SIP-191 authority, 112 actual
+analyst-confirmed mandatory source outcomes and real run/QA/CEO/delivery/closeout evidence.
+This is the latest issue record, not a new audit of every implementation PR; it does not establish
+that every engineering gap remains unchanged in code. The launch-status document still has no
+first-run ID/outcome. #189 remains closed as completed on the tech lead's reported approval,
+while its original client written-approval link remains to be filed in the
+[launch-status document](../launch-status-2026-10-24.md).
+No new approval, production activation or signing enforcement is inferred or performed.
+
+**QA and PDR evidence check.** The default branch still has no
+`apps/sip/core/eval/human-qa-labels.csv` (404), and no open PR matched the filename.
+The judge result blob remains `d1946353ed678c3f0bfa6052c2a17f857cb3eefb`: 8 golden
+cases, kappa 1.0, 17/17 bounds, 0 human cases and null human kappa. No live call or result-file
+write was attempted; eight independent reviewer answers with reviewer/date are still required,
+and fresh, unexposed credential availability was not verified. Worksheet section 6 and this
+plan's feedback log remain blank; no PDR feedback or personal journal entry is invented.
 
 ## Peer review and mentoring log (3.2)
 
