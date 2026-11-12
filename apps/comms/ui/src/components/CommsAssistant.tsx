@@ -27,6 +27,9 @@ const CONTENT_TYPES: { value: ContentType; label: string }[] = [
   { value: 'linkedin_post', label: 'LinkedIn Post' },
   { value: 'event_announcement', label: 'Event Announcement' },
   { value: 'member_spotlight', label: 'Member Spotlight' },
+  { value: 'member_alert', label: 'Member Alert' },
+  { value: 'magazine_article', label: 'Kia Ora India Article' },
+  { value: 'press_release', label: 'Press Release' },
 ]
 
 const HISTORY_LIMIT = 3

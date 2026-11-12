@@ -1,6 +1,13 @@
 import { getCsrfToken } from './session'
 
-export type ContentType = 'newsletter' | 'linkedin_post' | 'event_announcement' | 'member_spotlight'
+export type ContentType =
+  | 'newsletter'
+  | 'linkedin_post'
+  | 'event_announcement'
+  | 'member_spotlight'
+  | 'member_alert'
+  | 'magazine_article'
+  | 'press_release'
 
 export type Tone = 'formal' | 'warm' | 'concise'
 

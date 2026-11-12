@@ -72,6 +72,24 @@ describe('CommsAssistant', () => {
     })
   })
 
+  it.each([
+    ['Member Alert', 'member_alert'],
+    ['Kia Ora India Article', 'magazine_article'],
+    ['Press Release', 'press_release'],
+  ])('supports the %s publication format', async (label, contentType) => {
+    const spy = mockFetch(draftBody(`Draft ${label}`))
+    render(<CommsAssistant />)
+    await userEvent.selectOptions(screen.getByLabelText(/content type/i), label)
+    await userEvent.type(screen.getByLabelText(/topic/i), 'November member update')
+    await userEvent.click(screen.getByRole('button', { name: /generate draft/i }))
+
+    expect(await screen.findByText(`Draft ${label}`)).toBeInTheDocument()
+    const call = spy.mock.calls[0]
+    if (!call) throw new Error('fetch was not called')
+    const [, init] = call as [string, RequestInit]
+    expect(JSON.parse(init.body as string)).toMatchObject({ content_type: contentType })
+  })
+
   it('shows a loading state while waiting for the response', async () => {
     let resolveFetch: (value: unknown) => void = () => {}
     vi.stubGlobal(
