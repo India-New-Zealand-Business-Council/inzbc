@@ -222,6 +222,15 @@ export function QaReviewScreen({ report, onChange }: Props) {
 
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-inzbc-navy">Digest content for review</h3>
+        {/* Applies this week's research finding (docs/research/rubber-stamp-review-literature-review.md,
+            Rubegni et al.'s "productive friction" finding): the gate below only proves a section's
+            text was edited, not that the edit is substantive -- say so plainly rather than let
+            "Edit" read as a guarantee it isn't. */}
+        <p className="text-xs text-slate-500">
+          Editing a section clears it for QA once the text differs from the generated draft below
+          — that proves it was touched, not that the replacement is a genuine review. Read each
+          one before approving it.
+        </p>
         {report.sections.map((section) => (
           <div key={section.id} className={`rounded-md border p-3 ${SECTION_CARD_CLASSES[section.reviewStatus]}`}>
             <div className="flex flex-wrap items-center justify-between gap-2">
