@@ -121,6 +121,16 @@ review findings instead (see Done, PR #501) covered Thursday's daily-commit in i
   re-open them.
 
 ## Done
+- **Week 6, Thursday: applied Wednesday's finding — told the reviewer plainly that clearing the
+  QA gate isn't the same as a genuine review** (PR #557, 12 Nov 2026, refs #62). The smallest,
+  uncontroversial slice of Wednesday's three options, not a new friction policy decided solo:
+  Bhanu's review of PR #556 asked to "keep that limitation visible in QA guidance" rather than
+  let the Edit control imply more than it proves. Added one line above the digest sections in
+  QaReviewScreen: editing a section clears it for QA once the text differs from the generated
+  draft, which proves it was touched, not that the replacement is a genuine review — read each
+  one before approving it. The two heavier options from Wednesday's research (a justification
+  field, or an edit-depth classifier) stay standup decisions, not something to build off my own
+  read of the research. One new test, 276/276 passing.
 - **Week 6, Wednesday: research — can a human-review gate actually resist a rubber stamp?**
   (11 Nov 2026, refs #62). This week's thread, pointed directly at the gap Bhanu's review of
   Tuesday's QA-gate fix surfaced: the gate only checks that a section's text differs from the
