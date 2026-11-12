@@ -71,6 +71,13 @@ describe('QaReviewScreen', () => {
     ).toBeInTheDocument()
   })
 
+  // This week's research finding (docs/research/rubber-stamp-review-literature-review.md): the
+  // gate only proves a section was edited, not that the edit is substantive -- the UI must say so.
+  it('tells the reviewer that an edit clearing the gate is not the same as a genuine review', () => {
+    render(<QaReviewScreen report={reportInQa()} onChange={vi.fn()} />)
+    expect(screen.getByText(/proves it was touched, not that the replacement is a genuine review/i)).toBeInTheDocument()
+  })
+
   it('renders every brief section read-only once QA is reachable', () => {
     render(<QaReviewScreen report={reportInQa()} onChange={vi.fn()} />)
     for (const section of generatedDigestContent(candidatesFixture()).sections) {
