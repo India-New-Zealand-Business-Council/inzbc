@@ -220,6 +220,29 @@ describe('CeoDecisionScreen', () => {
     expect(screen.queryByText(/distribution authorised:/i)).not.toBeInTheDocument()
   })
 
+  it('moves focus into the modal on open, traps Tab inside it, and restores focus on Escape', async () => {
+    await stubApprovedAndWaitForAuthoriseEnabled()
+    const openButton = screen.getByRole('button', { name: /yes, authorise/i })
+    await userEvent.click(openButton)
+
+    const cancelButton = screen.getByRole('button', { name: /cancel/i })
+    expect(cancelButton).toHaveFocus()
+
+    const confirmButton = screen.getByRole('button', { name: /confirm authorisation/i })
+    await userEvent.tab()
+    expect(confirmButton).toHaveFocus()
+    // Tab from the last focusable element wraps back to the first, instead of escaping to a
+    // covered background control.
+    await userEvent.tab()
+    expect(cancelButton).toHaveFocus()
+    await userEvent.tab({ shift: true })
+    expect(confirmButton).toHaveFocus()
+
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(openButton).toHaveFocus()
+  })
+
   it('names the authorised recipient and confirms automated channels are off, in the modal', async () => {
     await stubApprovedAndWaitForAuthoriseEnabled()
     await userEvent.click(screen.getByRole('button', { name: /yes, authorise/i }))
