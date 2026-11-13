@@ -122,7 +122,7 @@ review findings instead (see Done, PR #501) covered Thursday's daily-commit in i
 
 ## Done
 - **Week 6, Friday: accessibility — the distribution-authorisation modal didn't trap focus**
-  (PR #558, 13 Nov 2026, refs #62). `AuthoriseDistributionModal` in `CeoDecisionScreen.tsx` had
+  (PR #559, 13 Nov 2026, refs #62). `AuthoriseDistributionModal` in `CeoDecisionScreen.tsx` had
   `role="dialog" aria-modal="true"`, but that attribute alone doesn't move or trap focus (ARIA
   APG dialog pattern) — opening it left focus on the "Yes, authorise" button underneath the
   overlay, so Tab cycled through covered background controls instead of the dialog, and Escape
