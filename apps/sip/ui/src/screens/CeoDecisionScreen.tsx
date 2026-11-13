@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
 import {
   authoriseDistribution,
   fetchDistributionReadiness,
@@ -14,13 +14,48 @@ import { GOVERNANCE_LINE, type DailyBriefReport, type ReportDecisionType } from 
  * declining is "a valid, complete outcome," and gating the safe default behind a confirmation
  * step would misrepresent it as risky.
  */
+// ARIA APG dialog pattern (https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/): a role="dialog"
+// alone doesn't trap focus or move it — without this, opening the modal left focus on the "Yes,
+// authorise" button underneath the overlay, so Tab cycled through covered background controls
+// instead of the dialog, and Escape did nothing.
 function AuthoriseDistributionModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const cancelRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null
+    cancelRef.current?.focus()
+    return () => previouslyFocused?.focus()
+  }, [])
+
+  function onKeyDown(event: KeyboardEvent) {
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      onCancel()
+      return
+    }
+    if (event.key !== 'Tab') return
+    const focusable = dialogRef.current?.querySelectorAll<HTMLElement>('button, a, input, textarea, select')
+    const first = focusable?.[0]
+    const last = focusable?.[focusable.length - 1]
+    if (!first || !last) return
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault()
+      last.focus()
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault()
+      first.focus()
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="authorise-distribution-title"
+        onKeyDown={onKeyDown}
         className="w-full max-w-md rounded-md bg-white p-4 shadow-lg"
       >
         <h3 id="authorise-distribution-title" className="text-sm font-semibold text-inzbc-navy">
@@ -47,6 +82,7 @@ function AuthoriseDistributionModal({ onConfirm, onCancel }: { onConfirm: () => 
         </dl>
         <div className="mt-4 flex justify-end gap-2">
           <button
+            ref={cancelRef}
             type="button"
             onClick={onCancel}
             className="rounded-md border border-inzbc-navy/20 px-3 py-2 text-sm font-medium text-inzbc-navy transition-colors hover:border-inzbc-navy hover:bg-inzbc-navy/5"
