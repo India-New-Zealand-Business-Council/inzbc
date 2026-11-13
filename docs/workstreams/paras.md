@@ -121,6 +121,14 @@ review findings instead (see Done, PR #501) covered Thursday's daily-commit in i
   re-open them.
 
 ## Done
+- **Week 6, Friday: accessibility — the distribution-authorisation modal didn't trap focus**
+  (PR #558, 13 Nov 2026, refs #62). `AuthoriseDistributionModal` in `CeoDecisionScreen.tsx` had
+  `role="dialog" aria-modal="true"`, but that attribute alone doesn't move or trap focus (ARIA
+  APG dialog pattern) — opening it left focus on the "Yes, authorise" button underneath the
+  overlay, so Tab cycled through covered background controls instead of the dialog, and Escape
+  did nothing. Fixed: focus moves to Cancel on open, Tab/Shift+Tab wrap inside the dialog's own
+  focusable elements, Escape closes it, and focus returns to the button that opened it on close.
+  One new test exercising all three; 277/277 passing.
 - **Week 6, Thursday: applied Wednesday's finding — told the reviewer plainly that clearing the
   QA gate isn't the same as a genuine review** (PR #557, 12 Nov 2026, refs #62). The smallest,
   uncontroversial slice of Wednesday's three options, not a new friction policy decided solo:
