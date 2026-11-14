@@ -83,18 +83,27 @@ _RUN_LEVEL_GATES: dict[tuple[RunState, RunState], str] = {
 # execution evidence, not an authority state. Any report-level human gate not listed here keeps
 # the generic "names a decision_records row" check.
 _QA_SIGN_OFF = "qa-sign-off"
+_QA_FAILED = "qa-failed"
 _CEO_GO_RULING = "ceo-go-ruling"
 _MANUAL_SEND = "manual-send"
 _REPORT_LEVEL_GATES: dict[tuple[RunState, RunState], str] = {
     (RunState.QA_IN_PROGRESS, RunState.AWAITING_CEO_DECISION): _QA_SIGN_OFF,
+    (RunState.QA_IN_PROGRESS, RunState.QA_FAILED): _QA_FAILED,
+    (RunState.QA_FAILED, RunState.REPORT_DRAFTED): _QA_FAILED,
+    (RunState.AWAITING_CEO_DECISION, RunState.CONTINUE): "CEO Ruling:Continue",
+    (
+        RunState.AWAITING_CEO_DECISION,
+        RunState.CONTINUE_WITH_CORRECTION,
+    ): "CEO Ruling:Continue With Correction",
+    (RunState.AWAITING_CEO_DECISION, RunState.PAUSED): "CEO Ruling:Pause",
+    (RunState.AWAITING_CEO_DECISION, RunState.STOPPED): "CEO Ruling:Stop",
     (RunState.AWAITING_CEO_DECISION, RunState.APPROVED_FOR_MANUAL_DISTRIBUTION): _CEO_GO_RULING,
     (RunState.APPROVED_FOR_MANUAL_DISTRIBUTION, RunState.DISTRIBUTED): _MANUAL_SEND,
 }
 
-# The CEO rulings that let a run move to Approved for Manual Distribution. Pause and Stop are also
-# CEO Rulings and also legal from Awaiting CEO Decision, but they route elsewhere; citing one to
-# reach Approved for Manual Distribution would be a real ruling for the wrong transition.
-_CEO_GO_VALUES = ("Continue", "Continue With Correction")
+# A corrected ruling routes to `Continue With Correction`, not to manual distribution. Only an
+# unqualified `Continue` is evidence for this gate.
+_CEO_GO_VALUES = ("Continue",)
 
 
 def _verify_report_level_gate(
@@ -102,23 +111,27 @@ def _verify_report_level_gate(
     kind: str,
     run_id: str,
     approval_ref: str,
+    actor_id: str,
 ) -> None:
     """Raise `HumanGateNotSatisfied` unless `approval_ref` names a record of the right kind, for
     this run. Called only for the gates in `_REPORT_LEVEL_GATES`; the id-as-text comparison is
     deliberate (approval_ref is caller-supplied and need not be a uuid).
     """
-    if kind == _QA_SIGN_OFF:
+    if kind in (_QA_SIGN_OFF, _QA_FAILED):
+        expected = "Passed" if kind == _QA_SIGN_OFF else "Failed"
         found = conn.execute(
-            "select 1 from audit_log where id::text = %s and action = 'report.qa' "
-            "and record_type = 'runs' and record_id = %s and new_value = 'Passed'",
-            (approval_ref, run_id),
+            "select 1 from audit_log al "
+            "where al.id::text = %s and al.action = 'report.qa' "
+            "and al.record_type = 'runs' and al.record_id = %s and al.new_value = %s "
+            "and al.user_id::text = %s "
+            "and al.approval_ref = (select rv.id::text from report_versions rv "
+            "where rv.run_id = %s order by rv.version_number desc limit 1)",
+            (approval_ref, run_id, expected, actor_id, run_id),
         ).fetchone()
         if found is None:
             raise HumanGateNotSatisfied(
-                f"approval_ref {approval_ref!r} is not a recorded QA pass for run {run_id}. "
-                "QA In Progress -> Awaiting CEO Decision is the QA sign-off gate; its evidence is "
-                "the append-only report.qa audit row showing qa_status became 'Passed' for this "
-                "run, not a decision record of another kind."
+                f"approval_ref {approval_ref!r} is not a recorded current-report QA {expected} "
+                f"by actor {actor_id!r} for run {run_id}."
             )
         return
     if kind == _CEO_GO_RULING:
@@ -126,31 +139,52 @@ def _verify_report_level_gate(
             "select 1 from decision_records dr join report_versions rv "
             "on rv.id = dr.report_version_id "
             "where dr.id::text = %s and dr.kind = 'CEO Ruling' and rv.run_id = %s "
-            "and dr.value = any(%s)",
-            (approval_ref, run_id, list(_CEO_GO_VALUES)),
+            "and dr.value = any(%s) and dr.actor_id::text = %s "
+            "and rv.id = (select id from report_versions where run_id = %s "
+            "order by version_number desc limit 1)",
+            (approval_ref, run_id, list(_CEO_GO_VALUES), actor_id, run_id),
         ).fetchone()
         if found is None:
             raise HumanGateNotSatisfied(
                 f"approval_ref {approval_ref!r} is not a go CEO Ruling for run {run_id}. "
                 "Awaiting CEO Decision -> Approved for Manual Distribution is the CEO decision "
                 f"gate; its evidence is a CEO Ruling of {' or '.join(_CEO_GO_VALUES)} on this "
-                "run's report version, not a Distribution Authority or a ruling for another run."
+                "run's current report version by this actor, not a Distribution Authority or a "
+                "ruling for another run or version."
+            )
+        return
+    if kind.startswith("CEO Ruling:"):
+        expected_value = kind.partition(":")[2]
+        found = conn.execute(
+            "select 1 from decision_records dr join report_versions rv "
+            "on rv.id = dr.report_version_id "
+            "where dr.id::text = %s and dr.kind = 'CEO Ruling' and dr.value = %s "
+            "and dr.actor_id::text = %s and rv.run_id = %s "
+            "and rv.id = (select id from report_versions where run_id = %s "
+            "order by version_number desc limit 1)",
+            (approval_ref, expected_value, actor_id, run_id, run_id),
+        ).fetchone()
+        if found is None:
+            raise HumanGateNotSatisfied(
+                f"approval_ref {approval_ref!r} is not the current-report CEO Ruling "
+                f"{expected_value!r} by actor {actor_id!r} for run {run_id}."
             )
         return
     if kind == _MANUAL_SEND:
         found = conn.execute(
             "select 1 from distribution_deliveries dd join report_versions rv "
             "on rv.id = dd.report_version_id "
-            "where dd.id::text = %s and rv.run_id = %s",
-            (approval_ref, run_id),
+            "where dd.id::text = %s and rv.run_id = %s and dd.sender_id::text = %s "
+            "and rv.id = (select id from report_versions where run_id = %s "
+            "order by version_number desc limit 1)",
+            (approval_ref, run_id, actor_id, run_id),
         ).fetchone()
         if found is None:
             raise HumanGateNotSatisfied(
                 f"approval_ref {approval_ref!r} is not a distribution delivery for run {run_id}. "
                 "Approved for Manual Distribution -> Distributed is the manual-send gate; its "
-                "evidence is a distribution_deliveries row recording that the send happened, not "
-                "the Distribution Authority that permitted it. Authority to distribute is not "
-                "evidence of distribution."
+                "evidence is a distribution_deliveries row for the current report version "
+                "recorded by this actor, not the Distribution Authority that permitted it."
             )
         return
     raise AssertionError(f"unhandled report-level gate kind {kind!r}")
@@ -409,17 +443,13 @@ class RunRepository:
                         _REPORT_LEVEL_GATES[(current_state, new_state)],
                         run_id,
                         approval_ref,
+                        actor_id,
                     )
                 else:
-                    decided = conn.execute(
-                        "select 1 from decision_records where id::text = %s", (approval_ref,)
-                    ).fetchone()
-                    if decided is None:
-                        raise HumanGateNotSatisfied(
-                            f"approval_ref {approval_ref!r} is not a decision record. Free text "
-                            "cannot authorise a gated transition; decision_records is append-only, "
-                            "so a reference into it cannot later be edited to say something else."
-                        )
+                    raise HumanGateNotSatisfied(
+                        f"{current_state.value!r} -> {new_state.value!r} has no exact gate "
+                        "evidence mapping. Refusing rather than accepting an unrelated record."
+                    )
 
             row = conn.execute(
                 f"update runs set state = %s, version = version + 1 "
