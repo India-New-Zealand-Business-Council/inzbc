@@ -24,6 +24,7 @@ from services.api.decisions import (
     DecisionNotPermittedError,
     DecisionRejected,
     DecisionRepository,
+    QaSelfReviewError,
 )
 from services.api.tests.role_seed import role_id
 
@@ -552,6 +553,19 @@ def test_capture_claims_the_run_for_its_analyst_so_qa_self_review_can_fire() -> 
         "a second capturer must not become the analyst - that would free the original analyst "
         "to record QA on their own run"
     )
+
+
+def test_report_author_cannot_record_qa_when_run_analyst_is_unset(
+    repo: DecisionRepository, seeded: dict
+) -> None:
+    with pytest.raises(QaSelfReviewError, match="authored work"):
+        repo.record_qa(
+            seeded["report_version_id"],
+            result="Pass",
+            critical_failures=0,
+            actor_id=seeded["author_id"],
+            notes="self-review",
+        )
 
 
 def test_authorised_distribution_requires_approval_ruling_and_clean_qa(

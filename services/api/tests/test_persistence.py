@@ -20,9 +20,11 @@ import pytest
 from apps.sip.core.orchestrator import IllegalTransition
 from apps.sip.pipeline.models import RunState
 from services.api.persistence import (
+    _QA_SIGN_OFF,
     ConcurrentModificationError,
     HumanGateNotSatisfied,
     RunRepository,
+    _verify_report_level_gate,
 )
 from services.api.tests.role_seed import authorise_run, grant
 
@@ -550,3 +552,52 @@ def test_a_report_level_gate_needs_a_real_decision_record(repo, initiated_by) ->
         )
 
     assert repo.get_run(run.id).state == RunState.QA_IN_PROGRESS
+
+
+def test_qa_gate_refuses_stale_report_and_wrong_actor(repo, initiated_by) -> None:
+    run = repo.create_run(
+        run_number=_run_number(),
+        prompt_version="SIP-050 v1.1",
+        coverage_start_utc="2026-07-27T07:00:00+12:00",
+        coverage_end_utc="2026-07-28T07:00:00+12:00",
+        initiated_by=initiated_by,
+    )
+    with psycopg.connect(DATABASE_URL) as conn:
+        role = conn.execute(
+            "select role_id from user_roles where user_id = %s limit 1", (initiated_by,)
+        ).fetchone()[0]
+        versions = []
+        for number in (1, 2):
+            versions.append(
+                conn.execute(
+                    "insert into report_versions "
+                    "(run_id, version_number, created_by, created_by_role_id, "
+                    "content_sha256, created_at) "
+                    "values (%s, %s, %s, %s, %s, now()) returning id",
+                    (run.id, number, initiated_by, role, str(number) * 64),
+                ).fetchone()[0]
+            )
+        stale = conn.execute(
+            "insert into audit_log "
+            "(user_id, action, record_type, record_id, new_value, approval_ref) "
+            "values (%s, 'report.qa', 'runs', %s, 'Passed', %s) returning id",
+            (initiated_by, run.id, versions[0]),
+        ).fetchone()[0]
+        current = conn.execute(
+            "insert into audit_log "
+            "(user_id, action, record_type, record_id, new_value, approval_ref) "
+            "values (%s, 'report.qa', 'runs', %s, 'Passed', %s) returning id",
+            (initiated_by, run.id, versions[1]),
+        ).fetchone()[0]
+
+        with pytest.raises(HumanGateNotSatisfied, match="current-report"):
+            _verify_report_level_gate(
+                conn, _QA_SIGN_OFF, run.id, str(stale), initiated_by
+            )
+        with pytest.raises(HumanGateNotSatisfied, match="current-report"):
+            _verify_report_level_gate(
+                conn, _QA_SIGN_OFF, run.id, str(current), str(uuid.uuid4())
+            )
+        _verify_report_level_gate(
+            conn, _QA_SIGN_OFF, run.id, str(current), initiated_by
+        )
