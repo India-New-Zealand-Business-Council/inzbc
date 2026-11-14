@@ -243,6 +243,16 @@ describe('CeoDecisionScreen', () => {
     expect(openButton).toHaveFocus()
   })
 
+  it('restores focus to the opener when the modal is dismissed via Cancel', async () => {
+    await stubApprovedAndWaitForAuthoriseEnabled()
+    const openButton = screen.getByRole('button', { name: /yes, authorise/i })
+    await userEvent.click(openButton)
+
+    await userEvent.click(screen.getByRole('button', { name: /^cancel$/i }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(openButton).toHaveFocus()
+  })
+
   it('names the authorised recipient and confirms automated channels are off, in the modal', async () => {
     await stubApprovedAndWaitForAuthoriseEnabled()
     await userEvent.click(screen.getByRole('button', { name: /yes, authorise/i }))
@@ -259,6 +269,21 @@ describe('CeoDecisionScreen', () => {
 
     expect(await screen.findByText(/distribution authorised:/i)).toHaveTextContent('Yes')
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  // Confirming removes the "Yes, authorise" button itself (the report moves past the state that
+  // renders it), so the modal's cleanup effect has no live opener to return focus to. Calling
+  // .focus() on a now-detached node is a no-op, and removing a focused node from the DOM already
+  // drops focus to <body> on its own — which is the ARIA APG's own documented fallback for this
+  // exact case, not a gap this component needs to patch around.
+  it('leaves focus on the document body when the opener is gone after a successful confirm', async () => {
+    await stubApprovedAndWaitForAuthoriseEnabled()
+    await userEvent.click(screen.getByRole('button', { name: /yes, authorise/i }))
+    await userEvent.click(screen.getByRole('button', { name: /confirm authorisation/i }))
+
+    await screen.findByText(/distribution authorised:/i)
+    expect(screen.queryByRole('button', { name: /yes, authorise/i })).not.toBeInTheDocument()
+    expect(document.body).toHaveFocus()
   })
 
   it('disables "Yes, authorise" until report approval is fetched as Approved, and explains why', async () => {
