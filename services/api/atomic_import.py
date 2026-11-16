@@ -20,6 +20,7 @@ from psycopg.rows import dict_row
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 from apps.sip.collector.capture_manifest import _article, _canonical_bytes, _source_url
+from apps.sip.collector.import_capture import _require_confirmed_source_note
 from apps.sip.collector.mapping import parse_published_at
 from apps.sip.collector.source_register import MANDATORY_SOURCES
 from services.api.audit import record_audit
@@ -209,11 +210,11 @@ class ImportRepository:
                 raise ImportBlockedError("original article list is incomplete")
             try:
                 serialized_raw = _canonical_bytes(raw_articles)
-                if len(serialized_raw) > _MAX_ORIGINAL_EXPORT_BYTES:
-                    raise ImportBlockedError("original export exceeds 10 MiB safety limit")
                 raw_digest = hashlib.sha256(serialized_raw).hexdigest()
             except (ValueError, TypeError) as exc:
                 raise ImportBlockedError("original article payload is invalid") from exc
+            if len(serialized_raw) > _MAX_ORIGINAL_EXPORT_BYTES:
+                raise ImportBlockedError("original export exceeds 10 MiB safety limit")
             if raw_digest != evidence["articles_sha256"]:
                 raise ImportBlockedError("original article checksum mismatch")
             by_url = {}
@@ -247,7 +248,9 @@ class ImportRepository:
             if set(original) != set(by_url):
                 raise ImportBlockedError("original collector URLs do not match staged capture")
             for candidate in batch.candidates:
-                original_article = by_url[candidate.url]
+                original_article = by_url.get(candidate.url)
+                if original_article is None:
+                    raise ImportBlockedError("candidate URL not in server-held capture")
                 if (
                     candidate.headline != original_article["title"]
                     or candidate.summary != (original_article.get("description") or None)
