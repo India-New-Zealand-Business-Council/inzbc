@@ -142,6 +142,6 @@ def test_partial_batch_cannot_skip_server_held_capture_article():
         require_consistent_batch(batch, **args)
 
 
-def test_blank_claim_key_rejected() -> None:
+def test_caller_supplied_claim_key_rejected() -> None:
     with pytest.raises(ValidationError):
-        ImportBatchIn(**{**_valid_payload(), "claim_key": "   "})
+        ImportBatchIn(**{**payload(), "claim_key": "   "})
