@@ -23,6 +23,7 @@ from apps.sip.collector.import_capture import CapturePlan
 from apps.sip.collector.review_packet import review_packet
 from apps.sip.collector.source_register import MANDATORY_SOURCES
 from apps.sip.pipeline.models import Candidate
+from services.api import atomic_import
 from services.api.atomic_import import ImportBlockedError, ImportRepository
 from services.api.candidate_persistence import (
     BatchImportRequiredError,
@@ -426,3 +427,89 @@ def test_collector_to_importer_full_synthetic_path(mandatory_sources, tmp_path):
     assert not outcome.replay
     assert outcome.candidate_count == 1
     assert counts(batch.run_id) == (1, 1, 1)
+
+
+def test_replay_cannot_change_stored_candidate_with_same_digest(mandatory_sources):
+    batch, actor = seed_case(mandatory_sources)
+    repo = ImportRepository(DATABASE_URL)
+    repo.import_reviewed(batch, actor_id=actor)
+    tampered = batch.model_dump(mode="json")
+    tampered["candidates"][0]["headline"] = "Tampered candidate with same digest"
+    forged = ImportBatchIn.model_validate(tampered)
+    assert forged.claim_key == batch.claim_key
+    with pytest.raises(ImportBlockedError, match="replayed request"):
+        repo.import_reviewed(forged, actor_id=actor)
+    assert counts(batch.run_id) == (1, 1, 1)
+
+
+def test_source_check_with_empty_evidence_cannot_pass_import(mandatory_sources):
+    batch, actor = seed_case(mandatory_sources)
+    with psycopg.connect(DATABASE_URL) as conn:
+        conn.execute(
+            "update source_checks set notes = %s where run_id = %s and source_id = %s",
+            ("Analyst-confirmed evidence:  \nFallback trail: Direct access",
+             str(batch.run_id), mandatory_sources[0]),
+        )
+    with pytest.raises(ImportBlockedError, match="invalid recorded source"):
+        ImportRepository(DATABASE_URL).import_reviewed(batch, actor_id=actor)
+    assert counts(batch.run_id) == (0, 0, 0)
+
+
+def test_unrecognised_actor_is_refused_before_any_import(mandatory_sources):
+    batch, _actor = seed_case(mandatory_sources)
+    with pytest.raises(PermissionError, match="active SIP"):
+        ImportRepository(DATABASE_URL).import_reviewed(
+            batch, actor_id=str(uuid.uuid4()),
+        )
+    assert counts(batch.run_id) == (0, 0, 0)
+
+
+def test_run_without_production_enablement_refuses_import(mandatory_sources):
+    batch, actor = seed_case(mandatory_sources)
+    with psycopg.connect(DATABASE_URL) as conn:
+        conn.execute(
+            "update runs set production_enabled=false where id = %s", (str(batch.run_id),)
+        )
+    with pytest.raises(ImportBlockedError, match="not enabled"):
+        ImportRepository(DATABASE_URL).import_reviewed(batch, actor_id=actor)
+    assert counts(batch.run_id) == (0, 0, 0)
+
+
+def test_legacy_per_item_capture_cannot_race_atomic_import(mandatory_sources):
+    # Both paths open independent PostgreSQL connections and lock the same
+    # runs row. The legacy request must be rejected whichever wins the lock.
+    batch, actor = seed_case(mandatory_sources)
+    barrier = Barrier(2)
+
+    def bulk():
+        barrier.wait(timeout=10)
+        return ImportRepository(DATABASE_URL).import_reviewed(batch, actor_id=actor)
+
+    def legacy():
+        barrier.wait(timeout=10)
+        return CandidateRepository(DATABASE_URL).capture(
+            run_id=str(batch.run_id),
+            headline="Forbidden per-item write",
+            source_id=str(mandatory_sources[0]),
+            url="https://example.org/legacy-interleave",
+            summary=None, published_at="2026-10-27T02:00:00+00:00",
+            in_coverage_window=True, actor_id=actor,
+        )
+
+    with ThreadPoolExecutor(max_workers=2) as workers:
+        bulk_task = workers.submit(bulk)
+        legacy_task = workers.submit(legacy)
+        assert bulk_task.result(timeout=25).replay is False
+        with pytest.raises(BatchImportRequiredError, match="atomic batch import"):
+            legacy_task.result(timeout=25)
+    assert counts(batch.run_id) == (1, 1, 1)
+
+
+def test_original_export_payload_limit_blocks_import(mandatory_sources, monkeypatch):
+    batch, actor = seed_case(mandatory_sources)
+    # A small test ceiling exercises the production 10 MiB boundary without
+    # allocating megabytes of synthetic licensed-source-looking material.
+    monkeypatch.setattr(atomic_import, "_MAX_ORIGINAL_EXPORT_BYTES", 64)
+    with pytest.raises(ImportBlockedError, match="10 MiB safety limit"):
+        ImportRepository(DATABASE_URL).import_reviewed(batch, actor_id=actor)
+    assert counts(batch.run_id) == (0, 0, 0)
