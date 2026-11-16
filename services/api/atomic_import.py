@@ -31,7 +31,6 @@ from services.api.import_contract import (
 )
 from services.api.source_checks import RecordSourceCheckIn
 
-
 _MAX_ORIGINAL_EXPORT_BYTES = 10 * 1024 * 1024
 
 
