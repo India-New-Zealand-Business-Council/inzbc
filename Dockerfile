@@ -22,6 +22,7 @@ COPY apps/fta/ui/package.json apps/fta/ui/
 RUN pnpm install --frozen-lockfile
 
 COPY apps/fta/ui/ apps/fta/ui/
+COPY apps/shared/ apps/shared/
 COPY schemas/ schemas/
 RUN pnpm --filter @inzbc/fta-ui build
 
