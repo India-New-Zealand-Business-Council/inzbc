@@ -5,9 +5,11 @@ import json
 import pytest
 
 from apps.sip.core.scoring import (
+    ScoringCandidate,
     ScoringParseError,
     ScoringRecommendation,
     build_scoring_prompt,
+    score_batch,
     score_candidate,
     to_assessment,
 )
@@ -136,3 +138,35 @@ def test_to_assessment_never_sets_verification() -> None:
     assert assessment.verification is None
     assert assessment.signal is SignalStrength.HIGH
     assert assessment.reason == VALID_PAYLOAD["reason"]
+
+
+def test_batch_scoring_keeps_recommendations_keyed_to_candidates() -> None:
+    candidates = [
+        ScoringCandidate(id="candidate-a", **CANDIDATE),
+        ScoringCandidate(id="candidate-b", **CANDIDATE),
+    ]
+    gateway = _gateway([json.dumps(VALID_PAYLOAD), json.dumps(VALID_PAYLOAD)])
+
+    result = score_batch(gateway, candidates)
+
+    assert list(result) == ["candidate-a", "candidate-b"]
+    assert len(gateway._client.responses.calls) == 2
+
+
+def test_batch_scoring_refuses_duplicate_candidate_ids() -> None:
+    candidate = ScoringCandidate(id="duplicate", **CANDIDATE)
+
+    with pytest.raises(ValueError, match="unique"):
+        score_batch(_gateway([]), [candidate, candidate])
+
+
+def test_batch_scoring_refuses_more_than_the_source_register_limit() -> None:
+    from apps.sip.core.scoring import MAX_BATCH_CANDIDATES
+
+    candidates = [
+        ScoringCandidate(id=f"candidate-{index}", **CANDIDATE)
+        for index in range(MAX_BATCH_CANDIDATES + 1)
+    ]
+
+    with pytest.raises(ValueError, match="maximum"):
+        score_batch(_gateway([]), candidates)
