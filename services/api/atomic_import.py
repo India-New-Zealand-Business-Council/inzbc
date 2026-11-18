@@ -266,7 +266,7 @@ class ImportRepository:
                 locked_window_end=run["coverage_end_utc"],
                 captured_articles=original,
             )
-            for candidate in batch.candidates:
+            for index, candidate in enumerate(batch.candidates):
                 row = conn.execute(
                     "insert into candidates "
                     "(run_id, headline, source_id, url, summary, published_at, "
@@ -281,7 +281,8 @@ class ImportRepository:
                 record_audit(
                     conn, user_id=str(actor), action="candidate.import",
                     record_type="candidates", record_id=str(row["id"]),
-                    new_value=candidate.headline,
+                    # Cite the capture, never the exporter's article text (#535).
+                    new_value=f"{evidence['evidence_ref']}#{index}",
                     reason=f"reviewed SIP capture {batch.articles_sha256}",
                 )
             conn.execute(

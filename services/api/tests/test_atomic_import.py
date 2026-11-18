@@ -201,6 +201,25 @@ def test_single_commit_and_idempotent_replay(mandatory_sources):
     assert total == 1  # A replay must not create a second commit event.
 
 
+def test_import_audit_cites_evidence_not_original_article_text(mandatory_sources):
+    """#535: audit rows cite the capture digest and evidence reference, never exporter text."""
+    batch, actor = seed_case(mandatory_sources)
+    ImportRepository(DATABASE_URL).import_reviewed(batch, actor_id=actor)
+    with psycopg.connect(DATABASE_URL) as conn:
+        rows = conn.execute(
+            "select new_value, reason from audit_log where action = 'candidate.import' "
+            "and record_id in (select id::text from candidates where run_id = %s)",
+            (str(batch.run_id),),
+        ).fetchall()
+    assert len(rows) == len(batch.candidates)
+    for (new_value, reason), candidate in zip(rows, batch.candidates):
+        logged = f"{new_value} {reason}"
+        assert candidate.headline not in logged
+        if candidate.summary:
+            assert candidate.summary not in logged
+        assert batch.articles_sha256 in logged
+
+
 def test_concurrent_separate_connections_are_serialised(mandatory_sources):
     batch, actor = seed_case(mandatory_sources)
     repo = ImportRepository(DATABASE_URL)
