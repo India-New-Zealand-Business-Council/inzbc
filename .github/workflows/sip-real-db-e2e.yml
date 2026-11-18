@@ -1,0 +1,117 @@
+name: SIP real-DB E2E (#127, #129)
+
+# Manual only, like sip-dry-run.yml (#55) alongside it. The default `platform` Playwright project
+# is deliberately mocked (playwright.config.ts's own comment explains why: its webServer has no
+# Postgres and no session behind it), so e2e/platform-real-db.spec.ts never runs in default CI.
+# This workflow is what actually runs it, against a real API and a real Postgres row, closing the
+# acceptance proof both #495 and #490 explicitly left open under #127/#129.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-db-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16.2
+        env:
+          POSTGRES_USER: inzbc
+          POSTGRES_PASSWORD: inzbc
+          POSTGRES_DB: inzbc_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://inzbc:inzbc@localhost:5432/inzbc_e2e
+      E2E_CI_USER_ID: 00000000-0000-0000-0000-000000000002
+      E2E_CI_GITHUB_LOGIN: gh-actions-real-db-e2e
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install "uv==0.8.17"
+          uv sync --locked --extra dev
+      - name: Install JS deps
+        run: pnpm install --frozen-lockfile
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Apply database schema
+        run: psql -v ON_ERROR_STOP=1 --single-transaction "$DATABASE_URL" -f database/schema.sql
+      - name: Seed CI user and grant SIP Owner
+        # SIP Owner alone covers every endpoint this spec calls (create_run, authorisations,
+        # start — all `write_access(..., SIP_OWNER)` or `write_access(SIP_OWNER)`), so unlike
+        # sip-dry-run.yml's Analyst-only grant, this needs just the one role.
+        run: |
+          psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -c "
+            insert into users (id, name, email, github_login)
+            values ('$E2E_CI_USER_ID', 'GitHub Actions real-DB E2E',
+                    'gh-actions-real-db-e2e@example.invalid', '$E2E_CI_GITHUB_LOGIN')
+            on conflict (id) do update set github_login = excluded.github_login;
+          "
+          uv run python -c "
+          import psycopg
+          from services.api.tests.role_seed import grant
+          with psycopg.connect('$DATABASE_URL') as conn, conn.transaction():
+              grant(conn, '$E2E_CI_USER_ID', 'SIP Owner')
+          "
+      - name: Start services/api
+        run: |
+          uv run uvicorn services.api.main:app --host 127.0.0.1 --port 8000 &
+          for _ in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:8000/health >/dev/null 2>&1 && break
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:8000/health
+      - name: Start the platform UI
+        # --strictPort rather than letting Vite fall back to another port: this job owns the
+        # runner, so a silent port change here should fail loud, not pick a port the test doesn't
+        # know about.
+        run: |
+          pnpm --filter @inzbc/sip-ui dev --host 127.0.0.1 --port 5173 --strictPort &
+          for _ in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:5173 >/dev/null 2>&1 && break
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:5173 >/dev/null
+      - name: Mint CI session
+        run: |
+          output="$(uv run python -m scripts.dev_session --github-login "$E2E_CI_GITHUB_LOGIN")"
+          cookie="$(echo "$output" | sed -n 's/^cookie:  *inzbc_session=//p')"
+          csrf="$(echo "$output" | sed -n 's/^csrf:  *//p')"
+          if [ -z "$cookie" ] || [ -z "$csrf" ]; then
+            echo "failed to parse session cookie/csrf from dev_session output" >&2
+            exit 1
+          fi
+          echo "::add-mask::$cookie"
+          echo "::add-mask::$csrf"
+          echo "E2E_SESSION_COOKIE=$cookie" >> "$GITHUB_ENV"
+          echo "E2E_CSRF_TOKEN=$csrf" >> "$GITHUB_ENV"
+      - name: Run the real-DB E2E spec
+        env:
+          E2E_BASE_URL: http://127.0.0.1:5173
+          E2E_API_BASE_URL: http://127.0.0.1:8000
+        run: pnpm exec playwright test --config=e2e/real-db.config.ts
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: real-db-e2e-report
+          path: playwright-report/
+          if-no-files-found: ignore
