@@ -3,6 +3,7 @@
 **Snapshot:** 4 November 2026 (Pacific/Auckland)  
 **Status:** Engineering triage for technical-lead review. **Not** a change to client-approved scope, deployment authority, SIP-191, SIP-184, source licences, or production settings.  
 **Tracking:** [#521](https://github.com/India-New-Zealand-Business-Council/inzbc/issues/521)
+**Later status:** see the [19 November handover status update](sunil-handover-update-2026-11-19.md); several PRs listed below as open were merged on 10 November.
 
 ## Read this before taking work
 
