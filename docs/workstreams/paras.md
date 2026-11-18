@@ -200,6 +200,25 @@ review findings instead (see Done, PR #501) covered Thursday's daily-commit in i
   separately fixed: the file had 15 mojibake'd em-dashes (`ΓÇö`) from an encoding slip somewhere
   in this entry's and Sunday's own authoring pipeline, now corrected across the file.
 - **Week 5, Sunday: sync + report — nothing fixed, status checked against the tracker instead
+- **Week 7, Thursday: a real-Postgres Playwright regression for #127/#129, not another mock**
+  (18 Nov 2026, refs #127, #129). #495, #499 and #490 all explicitly left the real acceptance
+  proof open — #490's mock "preserves server-like state across page.reload" but "is NOT a real
+  Postgres persistence/UAT test." Wrote `e2e/platform-real-db.spec.ts`: over the real API it
+  creates a run, records a real Launch authorisation, starts it, then drives the actual browser
+  (a real `inzbc_session` cookie, no `page.route` mock) to confirm the run shows Run Authorised,
+  survives a reload, and that a replayed start with the already-consumed version gets a real 409
+  from Postgres's own compare-and-swap, not a UI-level block. Proved it end to end locally first
+  against `scripts/platform.ps1` before writing anything else, and hit the same `localhost` vs
+  `127.0.0.1` Vite-binding gotcha the platform script's own comment already warns about.
+  Deliberately not wired into the default `platform` Playwright project or default CI — that
+  project's `webServer` has no Postgres or session behind it (its own comment says so), same
+  reason CI's `docker` job can't run it either. Added `e2e/real-db.config.ts` (a separate,
+  minimal config, so nothing about the existing suite changes) and a new manual-dispatch
+  workflow, `sip-real-db-e2e.yml`, mirroring `sip-dry-run.yml`'s proven shape (Postgres service,
+  schema apply, seeded CI user, `dev_session.py`-minted session) rather than inventing a new one.
+  This closes the acceptance gap those three PRs left open, but it's still on-demand, not an
+  automatic merge gate — flagging that distinction rather than claiming more than it proves.
+- **Week 5, Sunday: sync + report — nothing fixed, status checked against the tracker instead
   of assumed** (8 Nov 2026, refs #62, #60, #127, #128, #129, #195; corrected 9 Nov after
   Bhanu's review of PR #551 — see note at the end). Per the Must-do plan, Sunday is
   sync-and-report, not a coding day, so pulled `main` and checked every open item against
