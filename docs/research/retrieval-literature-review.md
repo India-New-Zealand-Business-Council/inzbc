@@ -1,7 +1,7 @@
 # Literature review: retrieval for governed AI
 
 **Authors:** Roshan Aryal and Bhanu Gupta. Section 5 annotations expanded by Bhanu Gupta,
-23 Oct 2026. **Status:** Annotated draft; evaluation caveat and one venue/year correction updated
+23 Oct 2026. **Status:** Annotated draft; passage-level follow-up 19 Nov 2026 (section 6B); evaluation caveat and one venue/year correction updated
 26 Oct 2026.
 The 26 Oct update does not claim full-text verification of sources that were previously checked
 only through publisher records or abstracts. Bibliographic record of all
@@ -60,6 +60,9 @@ That is the synonym result in the baseline.
 Dense retrieval encodes the question and each passage as vectors and ranks by similarity.
 Karpukhin et al. (2020) trained a BERT dual encoder on question-passage pairs (Dense Passage
 Retrieval, DPR) and beat BM25 on top-20 passage accuracy across several open-domain QA sets.
+The exception was SQuAD, where the questions were written by annotators who had seen the passage,
+so high lexical overlap favoured BM25 (section 6B). INZBC's exact-wording questions are closer to
+that case than to the open-domain sets.
 Because the match is on meaning, "lamb" can land near "sheepmeat".
 
 The limit is generalisation. BEIR (Thakur et al., 2021) tested retrievers zero-shot across 18
@@ -92,7 +95,7 @@ generation half applies to the Comms Assistant and SIP briefs, not to the FTA an
 
 ### 2.5 Evaluating retrieval and RAG
 
-Ranked retrieval is measured with hit@k and mean reciprocal rank (Manning et al., 2008), which
+Ranked retrieval is measured with hit@k and mean reciprocal rank (Manning et al., 2008 [attribution of MRR unverified, section 6B]), which
 is what `apps/fta/eval/` reports. RAGAs (Es et al., 2024) proposes reference-free scores for a
 whole RAG pipeline: faithfulness (is the answer supported by the retrieved context), answer
 relevance, and context relevance. These are judged by a language model.
@@ -527,3 +530,31 @@ The Stanford textbook chapter body, other full papers, and any additional passag
 not explicitly named above **were not verified in this follow-up**. The original
 12-source citation/abstract checks and the existing issue #387 acceptance review
 remain separately documented; no new client or human evaluation was performed.
+
+## 6B. Passage-level follow-up, 19 Nov 2026
+
+Open-access full texts (arXiv HTML renderings via ar5iv) were read for four sources whose
+earlier checks stopped at the abstract or record. Quotes are from those texts. The arXiv
+version is not the paginated venue version, so page numbers are not given. No new retrieval
+experiment was run and nothing here is evidence about INZBC's corpus.
+
+| Source | Text read | Supported, with quote | Boundary or correction |
+|---|---|---|---|
+| Karpukhin et al. (2020) | arXiv:2004.04906, sections 3.1, 3.2, 5.1 | "two independent BERT ... networks (base, uncased)" with in-batch negatives over question-passage pairs; "With the exception of SQuAD, DPR performs consistently better than BM25 on all datasets." | SQuAD is the exception: "high lexical overlap between passages and questions ... gives BM25 a clear advantage", and the data came from "only 500+ Wikipedia articles". Section 2.2 now states the exception. |
+| Thakur et al. (2021) | arXiv:2104.08663, abstract, sections 1, 3, 5 | "18 English zero-shot evaluation datasets from 9 heterogeneous retrieval tasks"; "BM25 remains a strong baseline for zero-shot text retrieval"; dense models "on many other datasets perform significantly worse than BM25". | The paper reports average changes relative to BM25 per model, not a count of datasets won or lost, so none is claimed here. Re-ranking and late-interaction models generalised best, which is a cost the FTA Explainer does not currently carry. |
+| Bruch et al. (2024) | arXiv:2210.11934 (preprint of the TOIS article), abstract, sections 4.2, 5, 5.1, 6 | "CC outperforms RRF in in-domain and out-of-domain settings"; RRF is "sensitive to its parameters"; CC needs "only a small set of training examples to tune its only parameter". | The paper also says CC "without score normalization is often ineffective and inconsistent", which is why section 2.3 says *normalised* scores. Read in the preprint, not the journal version; the journal remains the cited venue. |
+| Es et al. (2024) | arXiv:2309.15217, section 3 | Faithfulness ("claims that are made in the answer can be inferred from the context"), answer relevance and context relevance, each measured "by prompting an LLM"; metrics are "fully self-contained and reference-free". | Read in the arXiv version, not the EACL proceedings PDF. Matches section 2.5 as written. |
+
+**Unverified: Manning et al. (2008) as the source for mean reciprocal rank.** The book text
+(nlp.stanford.edu/IR-book) refused the connection on 19 Nov. A third-party lecture-notes PDF of
+chapter 8 lists MAP, precision at k, R-precision and NDCG but does not mention reciprocal rank;
+lecture notes are not the book, so this is not a finding either way. Until chapter 8 (or
+another chapter) is opened and a passage defining reciprocal rank is found, treat the MRR
+citation in section 2.5 as unverified. To resolve: open
+https://nlp.stanford.edu/IR-book/html/htmledition/evaluation-of-ranked-retrieval-results-1.html
+and search for "reciprocal"; if absent, cite a source that defines MRR instead of Manning et al.
+
+Still not read at passage level: Lewis et al. (2020) and Gao et al. (2023) beyond the earlier
+proceedings-PDF and HTML-heading checks in section 6, Carpineto and Romano (2012) (paywalled),
+and Manning et al. chapter 6. The annotations in section 5 remain Bhanu's 23 Oct expansion and
+have not yet been reviewed and rewritten in Roshan's own words, which #387 still requires.
