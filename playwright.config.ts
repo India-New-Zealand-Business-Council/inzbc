@@ -36,7 +36,7 @@ export default defineConfig({
     // (e2e/support/platformApi.ts): it needs Postgres and a session the docker image has not got.
     {
       name: 'platform',
-      testMatch: /(platform|platform-transition|platform-reflow|keyboard)\.spec\.ts/,
+      testMatch: /(?:^|[\\/])(platform|platform-transition|platform-reflow|keyboard)\.spec\.ts$/,
       use: { ...devices['Desktop Chrome'], baseURL: PLATFORM_URL },
     },
     {
@@ -45,7 +45,7 @@ export default defineConfig({
       // 320px (WCAG 2.2 Success Criterion 1.4.10's own reference width), so a custom viewport
       // rather than a named device preset.
       name: '320px-reflow',
-      testMatch: /reflow\.spec\.ts/,
+      testMatch: /(?:^|[\\/])reflow\.spec\.ts$/,
       use: { ...devices['Desktop Chrome'], viewport: { width: 320, height: 640 } },
     },
   ],
