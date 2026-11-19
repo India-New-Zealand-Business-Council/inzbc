@@ -229,6 +229,19 @@ jobs:
       # five prevents a newly added story or token import from drifting outside CI.
       - name: Build Storybook (compile check)
         run: pnpm -r --workspace-concurrency=1 --if-present build-storybook
+      # `storybook build` does not run the a11y addon's checks, so this step does: axe scans every
+      # built story against WCAG 2.2 AA and fails on any violation. It cannot prove focus order or
+      # keyboard paths; the keyboard specs in e2e/ cover those for the flows they exercise.
+      - name: Install Playwright (Chromium)
+        run: |
+          for attempt in 1 2 3; do
+            pnpm exec playwright install --with-deps chromium && exit 0
+            echo "Playwright install attempt ${attempt} failed; retrying..." >&2
+            sleep 15
+          done
+          exit 1
+      - name: Storybook accessibility (axe, WCAG 2.2 AA)
+        run: node scripts/storybook_a11y.mjs
 
   sast:
     runs-on: ubuntu-latest
