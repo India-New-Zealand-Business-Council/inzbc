@@ -246,7 +246,7 @@ class ImportRepository:
                 original[captured.url] = (captured.source_id, captured.published_at)
             if set(original) != set(by_url):
                 raise ImportBlockedError("original collector URLs do not match staged capture")
-            for candidate in batch.candidates:
+            for index, candidate in enumerate(batch.candidates):
                 original_article = by_url.get(candidate.url)
                 if original_article is None:
                     raise ImportBlockedError("candidate URL not in server-held capture")
@@ -281,7 +281,7 @@ class ImportRepository:
                 record_audit(
                     conn, user_id=str(actor), action="candidate.import",
                     record_type="candidates", record_id=str(row["id"]),
-                    new_value=candidate.headline,
+                    new_value=f"{evidence['evidence_ref']}#{index}",
                     reason=f"reviewed SIP capture {batch.articles_sha256}",
                 )
             conn.execute(
