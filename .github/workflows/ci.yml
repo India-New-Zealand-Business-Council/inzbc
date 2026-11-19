@@ -225,11 +225,10 @@ jobs:
         run: pnpm -r --if-present coverage
       - name: Build
         run: pnpm -r --if-present build
-      # Compile check only: proves the stories and Storybook config build. It does NOT run the
-      # a11y addon's checks — that needs the Storybook test-runner and lands with Playwright in
-      # task 1.2. Do not read a green tick here as accessibility compliance.
+      # Every UI has a Storybook that imports the shared design system and a11y addon. Building all
+      # five prevents a newly added story or token import from drifting outside CI.
       - name: Build Storybook (compile check)
-        run: pnpm --filter @inzbc/fta-ui run build-storybook
+        run: pnpm -r --workspace-concurrency=1 --if-present build-storybook
 
   sast:
     runs-on: ubuntu-latest

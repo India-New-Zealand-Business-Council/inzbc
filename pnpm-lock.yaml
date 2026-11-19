@@ -53,6 +53,12 @@ importers:
       '@eslint/js':
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.8.0(jiti@2.7.0))
+      '@storybook/addon-a11y':
+        specifier: ^10.5.4
+        version: 10.5.4(storybook@10.6.2(@types/react@19.2.17)(react@19.2.8))
+      '@storybook/react-vite':
+        specifier: ^10.5.4
+        version: 10.5.4(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(esbuild@0.28.2)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(storybook@10.6.2(@types/react@19.2.17)(react@19.2.8))(typescript@5.9.3)(vite@8.1.6(@types/node@26.1.1)(esbuild@0.28.2)(jiti@2.7.0))
       '@tailwindcss/vite':
         specifier: ^4.1.15
         version: 4.3.3(vite@8.1.6(@types/node@26.1.1)(esbuild@0.28.2)(jiti@2.7.0))
@@ -92,6 +98,9 @@ importers:
       jsdom:
         specifier: ^29.1.1
         version: 29.1.1
+      storybook:
+        specifier: ^10.6.2
+        version: 10.6.2(@types/react@19.2.17)(react@19.2.8)
       tailwindcss:
         specifier: ^4.1.15
         version: 4.3.3
@@ -123,6 +132,12 @@ importers:
       '@eslint/js':
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.8.0(jiti@2.7.0))
+      '@storybook/addon-a11y':
+        specifier: ^10.5.4
+        version: 10.5.4(storybook@10.6.2(@types/react@19.2.17)(react@19.2.8))
+      '@storybook/react-vite':
+        specifier: ^10.5.4
+        version: 10.5.4(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(esbuild@0.28.2)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(storybook@10.6.2(@types/react@19.2.17)(react@19.2.8))(typescript@5.9.3)(vite@8.1.6(@types/node@26.1.1)(esbuild@0.28.2)(jiti@2.7.0))
       '@tailwindcss/vite':
         specifier: ^4.1.15
         version: 4.3.3(vite@8.1.6(@types/node@26.1.1)(esbuild@0.28.2)(jiti@2.7.0))
@@ -165,6 +180,9 @@ importers:
       openapi-typescript:
         specifier: ^7.13.0
         version: 7.13.0(typescript@5.9.3)
+      storybook:
+        specifier: ^10.6.2
+        version: 10.6.2(@types/react@19.2.17)(react@19.2.8)
       tailwindcss:
         specifier: ^4.1.15
         version: 4.3.3
@@ -293,6 +311,12 @@ importers:
       '@eslint/js':
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.8.0(jiti@2.7.0))
+      '@storybook/addon-a11y':
+        specifier: ^10.5.4
+        version: 10.5.4(storybook@10.6.2(@types/react@19.2.17)(react@19.2.8))
+      '@storybook/react-vite':
+        specifier: ^10.5.4
+        version: 10.5.4(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(esbuild@0.28.2)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(storybook@10.6.2(@types/react@19.2.17)(react@19.2.8))(typescript@5.9.3)(vite@8.1.6(@types/node@26.1.1)(esbuild@0.28.2)(jiti@2.7.0))
       '@tailwindcss/vite':
         specifier: ^4.1.15
         version: 4.3.3(vite@8.1.6(@types/node@26.1.1)(esbuild@0.28.2)(jiti@2.7.0))
@@ -332,6 +356,9 @@ importers:
       jsdom:
         specifier: ^29.1.1
         version: 29.1.1
+      storybook:
+        specifier: ^10.6.2
+        version: 10.6.2(@types/react@19.2.17)(react@19.2.8)
       tailwindcss:
         specifier: ^4.1.15
         version: 4.3.3
@@ -366,6 +393,12 @@ importers:
       '@eslint/js':
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.8.0(jiti@2.7.0))
+      '@storybook/addon-a11y':
+        specifier: ^10.5.4
+        version: 10.5.4(storybook@10.6.2(@types/react@19.2.17)(react@19.2.8))
+      '@storybook/react-vite':
+        specifier: ^10.5.4
+        version: 10.5.4(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(esbuild@0.28.2)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(storybook@10.6.2(@types/react@19.2.17)(react@19.2.8))(typescript@5.9.3)(vite@8.1.6(@types/node@26.1.1)(esbuild@0.28.2)(jiti@2.7.0))
       '@tailwindcss/vite':
         specifier: ^4.1.15
         version: 4.3.3(vite@8.1.6(@types/node@26.1.1)(esbuild@0.28.2)(jiti@2.7.0))
@@ -408,6 +441,9 @@ importers:
       openapi-typescript:
         specifier: ^7.13.0
         version: 7.13.0(typescript@5.9.3)
+      storybook:
+        specifier: ^10.6.2
+        version: 10.6.2(@types/react@19.2.17)(react@19.2.8)
       tailwindcss:
         specifier: ^4.1.15
         version: 4.3.3
