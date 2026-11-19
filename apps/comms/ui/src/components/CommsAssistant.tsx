@@ -188,7 +188,6 @@ function DraftApprovalBadge({ draftId, baseUrl, refreshKey }: { draftId: string;
 
   useEffect(() => {
     const controller = new AbortController()
-    setState({ kind: 'loading' })
     void getCommsDraftStatus(draftId, { baseUrl, signal: controller.signal })
       .then((status) => {
         if (!controller.signal.aborted) setState({ kind: 'ready', status })
@@ -197,7 +196,7 @@ function DraftApprovalBadge({ draftId, baseUrl, refreshKey }: { draftId: string;
         if (!controller.signal.aborted) setState({ kind: 'error' })
       })
     return () => controller.abort()
-  }, [draftId, baseUrl, refreshKey])
+  }, [baseUrl, draftId, refreshKey])
 
   const approved = state.kind === 'ready' && state.status === 'Approved'
   const label = state.kind === 'loading'
@@ -287,7 +286,6 @@ export function CommsAssistant({ baseUrl = '' }: { baseUrl?: string }) {
 
     inFlight.current?.abort()
     const controller = new AbortController()
-    setState({ kind: 'loading' })
     inFlight.current = controller
     setCopyStatus('idle')
     setSubmitError(null)
