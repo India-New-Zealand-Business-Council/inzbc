@@ -74,6 +74,11 @@ the account owner.
    written record should be filed privately by INZBC and linked from #521.
 8. **Future modules.** Member portal (#198), events (#199), sponsors (#200), newsletter (#193) and
    sector briefs (#194) are proposals, not commitments. Sunil sets their priority.
+9. **Google Sheet tab ([news-agent #11](https://github.com/India-New-Zealand-Business-Council/daily-india-nz-news-agent/issues/11)).**
+   The daily agent's writes to the `Production_Run_Register` tab are dropped because the tab does
+   not exist. The Apps Script and spreadsheet sit in Sunil's Google account, which the team cannot
+   edit. Either add a tab with that exact name, or apply the one-line auto-create fix described in
+   the issue and redeploy the script. No change to this repository is needed.
 
 ## 4. What this note does not claim
 
