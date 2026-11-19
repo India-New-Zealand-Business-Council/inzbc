@@ -74,20 +74,20 @@ by this dated check.
   30 Oct, and dense/hybrid numbers require real approved full-ranking
   captures, independent labels and held-out no-match/product questions.
 
-## In review (19 Nov 2026, GitHub-verified)
+## In review (20 Nov 2026, GitHub-verified)
 Awaiting tech-lead review. Nothing here is a production run, deployment or client approval.
 - [ ] **inzbc#561** Restore importer validation and six regression tests lost after #540.
-  Local real-Postgres run: 1680 passed, 4 skipped, coverage 95.30%. Frontend and docker checks
-  fail only because `main` does not build (type error in `apps/comms/ui/src/components/CommsAssistant.tsx`).
+  Local real-Postgres run: 1680 passed, 4 skipped, coverage 95.30%. On 20 Nov Bhanu added the
+  Comms build fix (`main` fails on a type error in `apps/comms/ui/src/components/CommsAssistant.tsx`)
+  to this branch; all nine checks now pass.
 - [ ] **inzbc#564** (stacked on #561) Keep original article text out of the SIP import audit (#535).
 - [ ] **inzbc#562** (draft) Passage-level source checks for the retrieval review (#387); the Manning
   et al. citation for mean reciprocal rank is still unverified.
 - [ ] **inzbc#563** Handover status update for Sunil and SIP issue acceptance check (#521, #526 to #539).
-- [ ] **daily-india-nz-news-agent#26** Fail closed on invalid source-health timestamps.
-- [ ] **daily-india-nz-news-agent#30** Daily run uses the hourly feed list and rights block (#17).
+- [ ] **inzbc#566** This worklog update.
 
 The 26 Oct "In review" items have all merged: inzbc #469, #471, #472, #473 and #474 on 26 Oct,
-and news-agent #14 and #15 on 10 Nov (see Done).
+and news-agent #14 and #15 on 10 Nov (see Done). News-agent #26 and #30 merged on 20 Nov.
 
 ## Next up (verified 26 Oct 2026; rechecked 19 Nov)
 - [ ] **#387** Review/own the 12 annotated literature entries, verify remaining full-text
@@ -116,6 +116,9 @@ and news-agent #14 and #15 on 10 Nov (see Done).
   changes priorities. `inzview` work is paused at the client's request (26 Oct).
 
 ## Done
+- [x] **daily-india-nz-news-agent#26** fail closed on invalid source-health timestamps and
+  **#30** daily run uses the hourly feed list and rights block (#17) (both merged 20 Nov).
+  News-agent `main` test suite: 196 passed locally on 20 Nov.
 - [x] **inzbc#469** offline dense/hybrid harness, **#471** literature review method update,
   **#472** collector manifest validator, **#473** DST ambiguity tests, **#474** read-only import
   preflight (all merged 26 Oct). **news-agent#14** source freshness and **#15** review-only
