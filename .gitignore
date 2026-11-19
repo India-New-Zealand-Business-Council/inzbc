@@ -77,6 +77,9 @@ board-before-*.json
 # Scratch space for one-off analysis and rendering. Working files, not project state.
 .tmp/
 .gstack/
+.codex-presentation-build/
+.codex-presentation-output/
+output/
 
 # Generated deliverables and the working directories that build them. These are outputs, not
 # project state: the decks are rebuilt from `ppt_group_report_work/build_group_final.mjs` on
