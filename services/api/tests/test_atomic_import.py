@@ -221,6 +221,23 @@ def test_import_audit_cites_evidence_not_original_article_text(mandatory_sources
         assert batch.articles_sha256 in reason
 
 
+def test_each_import_audit_cites_its_own_article_index(mandatory_sources):
+    batch, actor = seed_case(mandatory_sources, candidates=2)
+    ImportRepository(DATABASE_URL).import_reviewed(batch, actor_id=actor)
+    with psycopg.connect(DATABASE_URL) as conn:
+        refs = conn.execute(
+            "select a.new_value from audit_log a "
+            "join candidates c on c.id::text = a.record_id "
+            "where a.action = 'candidate.import' and c.run_id = %s "
+            "order by c.headline",
+            (str(batch.run_id),),
+        ).fetchall()
+    assert refs == [
+        ("SYNTHETIC-ONLY-REVIEW-EVIDENCE#0",),
+        ("SYNTHETIC-ONLY-REVIEW-EVIDENCE#1",),
+    ]
+
+
 def test_concurrent_separate_connections_are_serialised(mandatory_sources):
     batch, actor = seed_case(mandatory_sources)
     repo = ImportRepository(DATABASE_URL)

@@ -624,7 +624,8 @@ class ReportRepository:
 
         with psycopg.connect(self._database_url, row_factory=dict_row) as conn, conn.transaction():
             row = conn.execute(
-                "select rv.run_id, r.analyst_id, r.qa_status from report_versions rv "
+                "select rv.run_id, rv.created_by, r.analyst_id, r.qa_status "
+                "from report_versions rv "
                 "join runs r on r.id = rv.run_id where rv.id = %s for update of r",
                 (report_version_id,),
             ).fetchone()
@@ -632,10 +633,18 @@ class ReportRepository:
                 raise KeyError(f"no report version {report_version_id!r}")
 
             analyst = canonical_actor(row["analyst_id"])
-            if analyst is not None and analyst == canonical_actor(actor_id):
+            reviewed_actor = canonical_actor(actor_id)
+            if (
+                reviewed_actor is not None
+                and (
+                    analyst == reviewed_actor
+                    or canonical_actor(row["created_by"]) == reviewed_actor
+                )
+            ):
                 raise QaSelfReviewError(
-                    f"{actor_id!r} is the analyst on this run and may not also record its QA "
-                    "result. SIP-188 requires the reviewer to be someone other than the analyst."
+                    f"{actor_id!r} authored work in this report and may not also record its QA "
+                    "result. SIP-188 requires the reviewer to be someone other than the analyst "
+                    "or report author."
                 )
 
             # `Failed` rather than `Fail` because `runs.qa_status` feeds the dashboard's gate
@@ -651,6 +660,7 @@ class ReportRepository:
                 old_value=row["qa_status"],
                 new_value=qa_status,
                 reason=notes,
+                approval_ref=report_version_id,
             )
         return QaResult(qa_status=qa_status, evidence_ref=str(audit_id))
 

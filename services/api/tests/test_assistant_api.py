@@ -84,12 +84,30 @@ def _clear_gateway():
     app.dependency_overrides.pop(get_model_gateway, None)
 
 
+@pytest.fixture(autouse=True)
+def _release_external_model(monkeypatch):
+    monkeypatch.setenv("COMMS_EXTERNAL_MODEL_ENABLED", "true")
+
+
 client = TestClient(app)
 
 
 def _ask(question: str, history: list[dict[str, str]] | None = None):
     messages = [*(history or []), {"role": "user", "content": question}]
     return client.post("/api/assistant/chat", json={"messages": messages})
+
+
+def test_assistant_is_release_gated_before_provider_access(
+    repo: FakeRunRepository, monkeypatch
+) -> None:
+    monkeypatch.delenv("COMMS_EXTERNAL_MODEL_ENABLED")
+    gateway = ScriptedGateway([json.dumps({"answer": "unexpected"})])
+    _use(gateway)
+
+    response = _ask("Where do I do QA?")
+
+    assert response.status_code == 503
+    assert gateway.prompts == []
 
 
 def test_a_direct_answer_is_returned_with_the_disclaimer(repo: FakeRunRepository) -> None:

@@ -246,7 +246,7 @@ class ImportRepository:
                 original[captured.url] = (captured.source_id, captured.published_at)
             if set(original) != set(by_url):
                 raise ImportBlockedError("original collector URLs do not match staged capture")
-            for index, candidate in enumerate(batch.candidates):
+            for candidate in batch.candidates:
                 original_article = by_url.get(candidate.url)
                 if original_article is None:
                     raise ImportBlockedError("candidate URL not in server-held capture")
@@ -266,7 +266,7 @@ class ImportRepository:
                 locked_window_end=run["coverage_end_utc"],
                 captured_articles=original,
             )
-            for candidate in batch.candidates:
+            for index, candidate in enumerate(batch.candidates):
                 row = conn.execute(
                     "insert into candidates "
                     "(run_id, headline, source_id, url, summary, published_at, "
