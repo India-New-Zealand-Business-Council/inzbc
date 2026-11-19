@@ -25,6 +25,7 @@ from services.api.decisions import (
     DecisionRejected,
     DecisionRepository,
     QaSelfReviewError,
+    ReportRepository,
 )
 from services.api.tests.role_seed import role_id
 
@@ -559,7 +560,7 @@ def test_report_author_cannot_record_qa_when_run_analyst_is_unset(
     repo: DecisionRepository, seeded: dict
 ) -> None:
     with pytest.raises(QaSelfReviewError, match="authored work"):
-        repo.record_qa(
+        ReportRepository(DATABASE_URL).record_qa(
             seeded["report_version_id"],
             result="Pass",
             critical_failures=0,

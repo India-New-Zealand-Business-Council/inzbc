@@ -544,7 +544,7 @@ def test_a_report_level_gate_needs_a_real_decision_record(repo, initiated_by) ->
             actor_id=initiated_by, reason="walk to the QA gate", approval_ref=ref,
         )
 
-    with pytest.raises(HumanGateNotSatisfied, match="not a recorded QA pass"):
+    with pytest.raises(HumanGateNotSatisfied, match="current-report QA Passed"):
         repo.apply_transition(
             run.id, expected_version=len(walk), new_state=RunState.AWAITING_CEO_DECISION,
             actor_id=initiated_by, reason="QA sign-off",
