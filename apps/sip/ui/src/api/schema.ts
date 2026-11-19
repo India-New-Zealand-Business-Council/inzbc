@@ -1794,7 +1794,7 @@ export interface components {
              * Content Type
              * @enum {string}
              */
-            content_type: "newsletter" | "linkedin_post" | "event_announcement" | "member_spotlight";
+            content_type: "newsletter" | "linkedin_post" | "event_announcement" | "member_spotlight" | "member_alert" | "magazine_article" | "press_release";
             /** Topic */
             topic: string;
             /** Key Points */

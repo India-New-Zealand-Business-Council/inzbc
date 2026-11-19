@@ -49,6 +49,9 @@ def test_generate_draft_passes_the_brief_through_to_the_prompt() -> None:
         ("linkedin_post", "LinkedIn post"),
         ("event_announcement", "event announcement"),
         ("member_spotlight", "member spotlight"),
+        ("member_alert", "time-sensitive member alert"),
+        ("magazine_article", "Kia Ora India magazine article"),
+        ("press_release", "press release"),
     ],
 )
 def test_build_prompt_names_the_content_type(content_type, expected_label: str) -> None:

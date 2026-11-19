@@ -5497,7 +5497,10 @@
               "newsletter",
               "linkedin_post",
               "event_announcement",
-              "member_spotlight"
+              "member_spotlight",
+              "member_alert",
+              "magazine_article",
+              "press_release"
             ],
             "title": "Content Type"
           },

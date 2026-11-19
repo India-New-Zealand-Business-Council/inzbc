@@ -198,7 +198,7 @@ def test_draft_persists_before_returning(
 
 
 def test_draft_rejects_an_unknown_content_type(client: TestClient) -> None:
-    response = _post_draft(client, content_type="press_release")
+    response = _post_draft(client, content_type="unknown_format")
     assert response.status_code == 422
 
 

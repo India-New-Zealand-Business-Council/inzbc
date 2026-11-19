@@ -32,7 +32,15 @@ from typing import Literal
 from services.api.model_gateway import GatewayResult, ModelGateway
 from services.api.prompt_boundary import PromptSource
 
-ContentType = Literal["newsletter", "linkedin_post", "event_announcement", "member_spotlight"]
+ContentType = Literal[
+    "newsletter",
+    "linkedin_post",
+    "event_announcement",
+    "member_spotlight",
+    "member_alert",
+    "magazine_article",
+    "press_release",
+]
 
 Tone = Literal["formal", "warm", "concise"]
 
@@ -47,6 +55,9 @@ _CONTENT_TYPE_LABELS: dict[ContentType, str] = {
     "linkedin_post": "LinkedIn post",
     "event_announcement": "event announcement",
     "member_spotlight": "member spotlight",
+    "member_alert": "time-sensitive member alert",
+    "magazine_article": "Kia Ora India magazine article",
+    "press_release": "press release",
 }
 
 
