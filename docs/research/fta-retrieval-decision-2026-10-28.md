@@ -8,9 +8,9 @@
 
 **Keep the current keyword + curated synonyms + product-framing guard** in `apps/fta/explainer.py` for the existing confirmed FTA corpus. Do not switch production to bare BM25, BM25 with synonyms, or dense/hybrid retrieval based on these measurements. Prepare a separately labelled, broader blind set and a verified complete-ranking embedding capture before reopening this decision.
 
-## Recorded comparison (not rerun for this note)
+## Recorded comparison
 
-Source files: `apps/fta/eval/results/variants.json`, `variants-held-out.json`, `variants-held-out-nonoverlap.json`, `variant_errors*.json`. Comparisons are *exactly these committed records*; the results have not been freshly regenerated here.
+Source files: `apps/fta/eval/results/variants.json`, `variants-held-out.json`, `variants-held-out-nonoverlap.json`, `variant_errors*.json`. Comparisons are *exactly these committed records*. They were not regenerated when this note was written on 28 October; a rerun on 20 November reproduced them exactly (see "Reproducibility check" below).
 
 | Ranker | Development hit@1 (45 answerable) | Development no-match (10) | Held-out hit@1 (10 synonym queries) | Non-overlapping held-out hit@1 (8) |
 | --- | ---: | ---: | ---: | ---: |
@@ -42,6 +42,24 @@ A production dense/hybrid change requires: approved model/data boundary under AD
 - [x] Proposed choice justified by the local evidence and retrieval literature (see `docs/research/retrieval-literature-review.md`).
 - [ ] Independent blind no-match and product-framing questions with reviewed labels; confirm no development overlap.
 - [ ] Complete real dense/hybrid snapshot and a preregistered threshold, if embeddings are approved.
-- [ ] Rerun/version checks for the committed reports and technical lead acceptance.
+- [x] Rerun/version check for the committed reports (20 November 2026, see below).
+- [ ] Technical lead acceptance.
 
 **Disposition:** keep #393 open until the outstanding acceptance criteria are evidenced. No production ranking change is implied.
+
+## Reproducibility check, 20 November 2026
+
+Rerun on a clean, detached worktree of `main` at `3567604`, Python 3.13.15, uv 0.12.19, with dependencies installed the way CI installs them:
+
+    uv sync --locked --extra dev
+    uv run python -m apps.fta.eval.run_eval --write current
+    uv run python -m apps.fta.eval.variants --write
+    uv run pytest apps/fta -q
+
+- Both commands rewrote `current.json`, `variants.json`, `variant_errors.json`, `variants-held-out.json`, `variant_errors-held-out.json`, `variants-held-out-nonoverlap.json`, `variant_errors-held-out-nonoverlap.json` and `held-out-overlap.json`. Afterwards `git status` showed no change to any tracked file, so each regenerated report is byte-identical to the committed one.
+- Every figure in the table above was recomputed from the regenerated reports and matches. The wrong-answer lists also match the error analysis: the live ranker misses H07 and H09 only; bare BM25 adds H01, H02 and H05 on held-out and gets Q47 to Q50 wrong on development.
+- `baseline.json` and `synonyms.json` are snapshots of earlier rankers and were not regenerated.
+- `run_eval --write current` also writes `results/current-held-out.json`. That file is not tracked and nothing reads it; its held-out figures (8/10 hit@1) equal the `keyword` row of `variants-held-out.json`. Delete it after a rerun rather than committing it.
+- 154 FTA tests passed. Without `--extra dev` the tests fail to import `psycopg`; that is an install step, not a code fault.
+
+This check covers the lexical comparison only. It adds no dense or hybrid scores and no new labels, and it does not change the decision proposed above.
