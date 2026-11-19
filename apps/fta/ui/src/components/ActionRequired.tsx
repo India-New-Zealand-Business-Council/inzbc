@@ -39,7 +39,7 @@ export function ActionRequired({ result }: { result: ActionRequiredModel }) {
         <dt>Status</dt>
         <dd>{result.status_line}</dd>
       </dl>
-      <p className="mt-3 border-t border-inzbc-crimson/20 pt-2 text-xs text-slate-500">{result.disclaimer}</p>
+      <p className="mt-3 border-t border-inzbc-crimson/20 pt-2 text-xs text-slate-600">{result.disclaimer}</p>
     </section>
   )
 }
