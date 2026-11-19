@@ -102,7 +102,12 @@ jobs:
       - name: Install Playwright
         run: |
           pnpm install --frozen-lockfile
-          pnpm exec playwright install --with-deps chromium
+          for attempt in 1 2 3; do
+            pnpm exec playwright install --with-deps chromium && exit 0
+            echo "Playwright install attempt ${attempt} failed; retrying..." >&2
+            sleep 15
+          done
+          exit 1
       - name: End-to-end tests (#100)
         run: pnpm run test:e2e
       - name: Container logs on failure
