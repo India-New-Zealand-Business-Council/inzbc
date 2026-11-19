@@ -65,6 +65,17 @@ def test_create_persists_the_draft_in_draft_status(repo: CommsDraftRepository) -
     assert record.draft_text == "generated text"
 
 
+@pytest.mark.parametrize(
+    "content_type",
+    ["member_alert", "magazine_article", "press_release"],
+)
+def test_create_persists_each_publication_format(
+    repo: CommsDraftRepository, content_type: str
+) -> None:
+    record = repo.create(content_type, "brief", "text", authored_by=_make_user("Author"))
+    assert record.content_type == content_type
+
+
 def test_create_writes_one_audit_row(repo: CommsDraftRepository) -> None:
     author = _make_user("Author")
     record = repo.create("linkedin_post", "brief", "text", authored_by=author)

@@ -249,7 +249,15 @@ create table candidate_sod_exceptions (
 -- Correction/Superseded, none of which this module has a code path for. Storing a value the API
 -- can never write would let a reader assume a capability that does not exist. This narrows to
 -- exactly what is built: a draft becomes Approved, once, or it does not.
-create type comms_content_type as enum ('newsletter','linkedin_post','event_announcement','member_spotlight');
+create type comms_content_type as enum (
+  'newsletter',
+  'linkedin_post',
+  'event_announcement',
+  'member_spotlight',
+  'member_alert',
+  'magazine_article',
+  'press_release'
+);
 create type comms_draft_status as enum ('Draft','Approved');
 
 create table comms_drafts (
