@@ -76,46 +76,50 @@ by this dated check.
 
 ## In review (20 Nov 2026, GitHub-verified)
 Awaiting tech-lead review. Nothing here is a production run, deployment or client approval.
-- [ ] **inzbc#561** Restore importer validation and six regression tests lost after #540.
-  Local real-Postgres run: 1680 passed, 4 skipped, coverage 95.30%. On 20 Nov Bhanu added the
-  Comms build fix (`main` fails on a type error in `apps/comms/ui/src/components/CommsAssistant.tsx`)
-  to this branch; all nine checks now pass.
-- [ ] **inzbc#564** (stacked on #561) Keep original article text out of the SIP import audit (#535).
-- [ ] **inzbc#562** (draft) Passage-level source checks for the retrieval review (#387); the Manning
-  et al. citation for mean reciprocal rank is still unverified.
-- [ ] **inzbc#563** Handover status update for Sunil and SIP issue acceptance check (#521, #526 to #539).
-- [ ] **inzbc#566** This worklog update.
+- [ ] **inzbc#574** Record the 20 Nov rerun of the #393 retrieval reports. All eight committed
+  reports regenerate byte-identical on `main` at `3567604` and 154 FTA tests pass. Docs only;
+  #393 stays open.
+- [ ] This worklog update.
 
-The 26 Oct "In review" items have all merged: inzbc #469, #471, #472, #473 and #474 on 26 Oct,
-and news-agent #14 and #15 on 10 Nov (see Done). News-agent #26 and #30 merged on 20 Nov.
+The 19 Nov "In review" items are closed. Bhanu merged inzbc #561, #563 and #566 on 20 Nov
+(NZDT), and #562, in which he also resolved the mean reciprocal rank attribution
+(`bb32c08`). #564 was closed unmerged; its change to the SIP import audit (#535) landed
+through Bhanu's #568. Earlier items: inzbc #469, #471, #472, #473 and #474 merged on 26 Oct,
+news-agent #14 and #15 on 10 Nov, and news-agent #26 and #30 on 20 Nov (see Done).
 
-## Next up (verified 26 Oct 2026; rechecked 19 Nov)
-- [ ] **#387** Review/own the 12 annotated literature entries, verify remaining full-text
-  claims and APA 7, and complete the academic submission by 30 Oct. The existing
-  annotations were expanded by Bhanu on 23 Oct; do not represent them as Roshan's
-  individually written reflections without his review.
-- [ ] **#393** Finish the FTA comparison after #469: collect authorised gateway-based
-  dense scores, lock a justified similarity threshold before inspecting held-out
-  answers, and evaluate independently labelled no-match/product-framing questions.
-  Existing held-out questions are synonym-only and H03/H04 duplicate development
-  queries. Experimental results do not authorise production changes.
-- [ ] **#55** Execute and evidence a real SIP-184 end-to-end run. Tech lead reports
-  SIP-191 authority and the collection PAT in place as of 24 Oct; issue is **unblocked**,
-  not completed. A real run ID/outcome and source evidence must be recorded before closure.
-  Do not infer a production run from the local/dry-run proof.
+**#55 was closed by #561's description, not by run evidence.** GitHub closed #55 as completed
+on 20 Nov when #561 merged (GitHub lists #561 as the closer). #561's description contained the
+sentence "Do not close #55 ...", and GitHub reads "close #55" as a closing keyword even after
+"Do not". The closure is not evidence of a SIP-184 run. Whether to reopen it is the tech lead's
+decision. In future PR text, never put a closing verb directly before an issue number unless
+the PR should close that issue.
+
+## Next up (verified 26 Oct 2026; rechecked 20 Nov)
+- [ ] **#393** Lexical comparison reproduced on 20 Nov (#574). Still needed: authorised
+  gateway-based dense scores with a similarity threshold locked before inspecting
+  held-out answers, independently labelled no-match/product-framing questions, and
+  tech-lead acceptance. Existing held-out questions are synonym-only and H03/H04
+  duplicate development queries. Experimental results do not authorise production changes.
+- [ ] **#55** Closed on GitHub on 20 Nov through #561 (see above). Do not infer a production
+  run from the issue state or from the local/dry-run proof.
 - [ ] **Independent expected-answer validation, evidence gap after #406 closure.**
   #406 is marked closed (23 Oct), but `apps/fta/eval/questions.csv` still has blank
   `checked_by` cells. #439 provided a blinded review protocol, not ten real reviewer
   labels. Do not claim completion of the human verification from the issue state alone;
   a named checker and actual rows are still required before citing independent labels.
-  Rechecked 19 Nov: all 55 rows in `questions.csv` still have a blank `checked_by`.
+  Rechecked 20 Nov: all 55 rows in `questions.csv` still have a blank `checked_by`.
 - #392 (FTA depth endpoint), #344 (analyst-confirmed source outcome contract),
   and #63 (server-side embeddings) are **closed**. Their implementation belongs
   to the responsible lanes; do not reopen/reimplement them.
-- #64 and #38 remain with Bhanu; #193 and #194 are not committed scope unless the client
-  changes priorities. `inzview` work is paused at the client's request (26 Oct).
+- #64 and #38 (Bhanu) closed in October and #193 closed on 20 Nov. #194 is still open and
+  is not committed scope unless the client changes priorities; closing it is the tech
+  lead's decision. `inzview` work is paused at the client's request (26 Oct).
 
 ## Done
+- [x] **inzbc#561** importer validation and regression tests, **#563** handover status update
+  for Sunil, **#566** worklog, **#562** passage-level source checks for the retrieval review
+  (all merged 20 Nov). **#387** closed as completed on 20 Nov. The #535 audit fix landed
+  through #568.
 - [x] **daily-india-nz-news-agent#26** fail closed on invalid source-health timestamps and
   **#30** daily run uses the hourly feed list and rights block (#17) (both merged 20 Nov).
   News-agent `main` test suite: 196 passed locally on 20 Nov.
