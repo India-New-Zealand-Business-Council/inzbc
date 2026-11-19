@@ -34,6 +34,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from apps.fta.explainer import answer_query
 from services.api.auth import STAFF_READ, Principal
+from services.api.comms import require_external_model_release
 from services.api.model_gateway import (
     GatewayCallError,
     GatewayNotConfiguredError,
@@ -81,8 +82,9 @@ GUIDE: dict[str, str] = {
         "with no match is routed to INZBC rather than answered with a guess."
     ),
     "comms-assistant": (
-        "The Comms Assistant drafts newsletters, event announcements, LinkedIn posts and member "
-        "spotlights from a short structured brief; a Secretariat member or SIP Owner generates it. "
+        "The Comms Assistant drafts newsletters, member alerts, magazine articles, press releases, "
+        "event announcements, LinkedIn posts and member spotlights from a short structured brief; "
+        "a Secretariat member or SIP Owner generates it. "
         "It produces drafts only: a Reviewer or SIP Owner who is not the draft's author approves "
         "it, and nothing is published or sent from it. Do not put member personal data in a brief."
     ),
@@ -295,6 +297,7 @@ def run_assistant(gateway: ModelGateway, repo: RunRepository, messages: list[Tur
 def chat(
     body: ChatIn,
     principal: Principal = Depends(write_access(*STAFF_READ)),
+    _: None = Depends(require_external_model_release),
     gateway: ModelGateway = Depends(get_model_gateway),
     repo: RunRepository = Depends(get_run_repository),
 ) -> ChatOut:
