@@ -533,7 +533,7 @@ remain separately documented; no new client or human evaluation was performed.
 
 ## 6B. Passage-level follow-up, 19 Nov 2026
 
-Open-access full texts (arXiv HTML renderings via ar5iv) were read for four sources whose
+Open-access full texts (arXiv HTML renderings via ar5iv and arXiv) were read for six sources whose
 earlier checks stopped at the abstract or record. Quotes are from those texts. The arXiv
 version is not the paginated venue version, so page numbers are not given. No new retrieval
 experiment was run and nothing here is evidence about INZBC's corpus.
@@ -544,6 +544,8 @@ experiment was run and nothing here is evidence about INZBC's corpus.
 | Thakur et al. (2021) | arXiv:2104.08663, abstract, sections 1, 3, 5 | "18 English zero-shot evaluation datasets from 9 heterogeneous retrieval tasks"; "BM25 remains a strong baseline for zero-shot text retrieval"; dense models "on many other datasets perform significantly worse than BM25". | The paper reports average changes relative to BM25 per model, not a count of datasets won or lost, so none is claimed here. Re-ranking and late-interaction models generalised best, which is a cost the FTA Explainer does not currently carry. |
 | Bruch et al. (2024) | arXiv:2210.11934 (preprint of the TOIS article), abstract, sections 4.2, 5, 5.1, 6 | "CC outperforms RRF in in-domain and out-of-domain settings"; RRF is "sensitive to its parameters"; CC needs "only a small set of training examples to tune its only parameter". | The paper also says CC "without score normalization is often ineffective and inconsistent", which is why section 2.3 says *normalised* scores. Read in the preprint, not the journal version; the journal remains the cited venue. |
 | Es et al. (2024) | arXiv:2309.15217, section 3 | Faithfulness ("claims that are made in the answer can be inferred from the context"), answer relevance and context relevance, each measured "by prompting an LLM"; metrics are "fully self-contained and reference-free". | Read in the arXiv version, not the EACL proceedings PDF. Matches section 2.5 as written. |
+| Lewis et al. (2020) | arXiv:2005.11401, sections 1, 2.2, 2.3, 3.3, 4.2, 4.3, 4.5 | DPR bi-encoder retriever over a Wikipedia index ("non-parametric memory") with a BART-large generator ("parametric memory"); "RAG models generate more specific, diverse and factual language than a state-of-the-art parametric-only seq2seq baseline". | The specificity and factuality claim rests on human evaluation of Jeopardy question generation only (452 pairs, RAG-Token vs BART; "more factual in 42.7% of cases"). MS-MARCO support is BLEU/ROUGE-L plus the authors' qualitative reading, and diversity is an automatic distinct-n-gram ratio. Section 2.4's sentence is accurate to the abstract; this is its scope. |
+| Gao et al. (2023) | arXiv:2312.10997 HTML, section II (A to C) | Three paradigms: Naive RAG ("indexing, retrieval, and generation", "Retrieve-Read"), Advanced RAG, Modular RAG; Advanced RAG is "Focusing on enhancing retrieval quality, it employs pre-retrieval and post-retrieval strategies" (query and index optimisation before; reranking and context compression after). | Matches section 2.4. The withdrawn "main lever" claim (section 6, row 8) is still not supported and stays out. |
 
 **Unverified: Manning et al. (2008) as the source for mean reciprocal rank.** The book text
 (nlp.stanford.edu/IR-book) refused the connection on 19 Nov. A third-party lecture-notes PDF of
@@ -554,7 +556,6 @@ citation in section 2.5 as unverified. To resolve: open
 https://nlp.stanford.edu/IR-book/html/htmledition/evaluation-of-ranked-retrieval-results-1.html
 and search for "reciprocal"; if absent, cite a source that defines MRR instead of Manning et al.
 
-Still not read at passage level: Lewis et al. (2020) and Gao et al. (2023) beyond the earlier
-proceedings-PDF and HTML-heading checks in section 6, Carpineto and Romano (2012) (paywalled),
+Still not read at passage level: Carpineto and Romano (2012) (paywalled),
 and Manning et al. chapter 6. The annotations in section 5 remain Bhanu's 23 Oct expansion and
 have not yet been reviewed and rewritten in Roshan's own words, which #387 still requires.
