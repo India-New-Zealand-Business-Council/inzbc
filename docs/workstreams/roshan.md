@@ -74,35 +74,22 @@ by this dated check.
   30 Oct, and dense/hybrid numbers require real approved full-ranking
   captures, independent labels and held-out no-match/product questions.
 
-## In review (historical 26 Oct snapshot; superseded above)
-- [ ] **daily-india-nz-news-agent#14** Source freshness, recovery and fail-closed gate
-  (#208 days 2 to 4). Review findings addressed 13 Oct; still open in the other repository.
-  No merge or live automated distribution is implied.
-- [ ] **#469** Offline FTA dense/hybrid retrieval comparison harness (#393), opened
-  26 Oct. No real embedding results recorded, no production ranker changed, and no
-  threshold/operational decision taken. CI and tech-lead review must finish before merge.
+## In review (19 Nov 2026, GitHub-verified)
+Awaiting tech-lead review. Nothing here is a production run, deployment or client approval.
+- [ ] **inzbc#561** Restore importer validation and six regression tests lost after #540.
+  Local real-Postgres run: 1680 passed, 4 skipped, coverage 95.30%. Frontend and docker checks
+  fail only because `main` does not build (type error in `apps/comms/ui/src/components/CommsAssistant.tsx`).
+- [ ] **inzbc#564** (stacked on #561) Keep original article text out of the SIP import audit (#535).
+- [ ] **inzbc#562** (draft) Passage-level source checks for the retrieval review (#387); the Manning
+  et al. citation for mean reciprocal rank is still unverified.
+- [ ] **inzbc#563** Handover status update for Sunil and SIP issue acceptance check (#521, #526 to #539).
+- [ ] **daily-india-nz-news-agent#26** Fail closed on invalid source-health timestamps.
+- [ ] **daily-india-nz-news-agent#30** Daily run uses the hourly feed list and rights block (#17).
 
-- [ ] **daily-india-nz-news-agent#15** Review-only live-source capture exporter (#55,
-  #208) stacked on #14; five CI jobs green. Produces a checksum-backed, run-scoped
-  manifest with observed fetch health but cannot authorise production or infer
-  112 SIP-185 outcomes.
-- [ ] **inzbc#471** Retrieval literature review methodology update (#387).
-  Corrects the EACL 2024 RAGAs citation, records source-verification limits and
-  held-out query overlap; all nine CI jobs green. Roshan still owns the final
-  academic check and wording for the 30 Oct deadline.
-- [ ] **inzbc#472** Offline collector manifest validator (#55); all nine CI
-  jobs green. This is read-only validation of #15's export, not an operational
-  run or human decision.
-- [ ] **inzbc#473** Local 07:00 versus elapsed 24-hour DST ambiguity tests
-  (#55); all nine CI jobs green. SOP policy remains with the authorised owner.
-- [ ] **inzbc#474** Operator-controlled import into an *existing* scanning run
-  (#55), stacked on #472. **Read-only preflight only**: Bhanu's 26 Oct review
-  found client-side POSTs could permit two concurrent imports; the write mode is
-  disabled until the SIP API owner supplies transactional locking/idempotency.
-  Human source evidence requires the Brief Builder confirmation contract, not
-  generic notes. Latest CI green; pending lead review and API-owner decision.
+The 26 Oct "In review" items have all merged: inzbc #469, #471, #472, #473 and #474 on 26 Oct,
+and news-agent #14 and #15 on 10 Nov (see Done).
 
-## Next up (verified 26 Oct 2026)
+## Next up (verified 26 Oct 2026; rechecked 19 Nov)
 - [ ] **#387** Review/own the 12 annotated literature entries, verify remaining full-text
   claims and APA 7, and complete the academic submission by 30 Oct. The existing
   annotations were expanded by Bhanu on 23 Oct; do not represent them as Roshan's
@@ -121,6 +108,7 @@ by this dated check.
   `checked_by` cells. #439 provided a blinded review protocol, not ten real reviewer
   labels. Do not claim completion of the human verification from the issue state alone;
   a named checker and actual rows are still required before citing independent labels.
+  Rechecked 19 Nov: all 55 rows in `questions.csv` still have a blank `checked_by`.
 - #392 (FTA depth endpoint), #344 (analyst-confirmed source outcome contract),
   and #63 (server-side embeddings) are **closed**. Their implementation belongs
   to the responsible lanes; do not reopen/reimplement them.
@@ -128,6 +116,10 @@ by this dated check.
   changes priorities. `inzview` work is paused at the client's request (26 Oct).
 
 ## Done
+- [x] **inzbc#469** offline dense/hybrid harness, **#471** literature review method update,
+  **#472** collector manifest validator, **#473** DST ambiguity tests, **#474** read-only import
+  preflight (all merged 26 Oct). **news-agent#14** source freshness and **#15** review-only
+  capture exporter (merged 10 Nov).
 - [x] **#382** FTA eval set and baseline (#384). ADR-0008 kept as analysis, not adopted (#385).
 - [x] **#383** FTA synonym map (#386). Synonym hit@1 0.200 to 1.000.
 - [x] **#394** Eval gate in CI and named products ranked first (#389, #391).
