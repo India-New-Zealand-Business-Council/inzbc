@@ -28,8 +28,11 @@ guarantee it never skips a human approval step?
   section 5)
 - **Judge vs golden set:** 8/8 verdicts agree, Cohen's kappa 1.0, with 17/17 score bounds met
   (#456; [baseline](../research/agent-safety-baseline.md), section 4).
-- **Judge vs independent human QA:** Not measured. No independent reviewer's blind labels are
-  recorded yet; the rubric author's golden labels and Codex review cannot substitute for them.
+- **Judge vs human QA reviewer:** 8/8 verdicts agree, Cohen's kappa 1.0, recorded on 20 Nov 2026
+  in `apps/sip/core/eval/human-qa-labels.csv` and recomputed in
+  `apps/sip/core/eval/results/judge-agreement.json`. Because the sample is small (8 synthetic
+  cases) and labelled by the project tech lead rather than an external client QA reviewer, this
+  confirms rubric consistency rather than replacing live client QA calibration.
 
 **Answer to the research question (draft).** The controls prevented all 48 attacks in the suite,
   and the knockout runs show that the suite can expose missing controls. That supports the design

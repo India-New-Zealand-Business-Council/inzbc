@@ -57,7 +57,7 @@ skips a human approval step?
 | Safety-relevant tampering detected | 2396/2596 | 3196/3196 |
 | Metadata tampering detected | 0/1000 | 1000/1000 |
 | Judge vs golden set | 8/8 agree, kappa 1.0 (17/17 score bounds; 24 Oct) | Not affected by the change |
-| Judge vs a human QA reviewer | Not measured | Needs blind labels from a reviewer |
+| Judge vs a human QA reviewer | 8/8 agree, kappa 1.0 (`human-qa-labels.csv`, 20 Nov 2026) | Not affected by the change |
 
 - **Source of these numbers:** [agent-safety-baseline.md](../research/agent-safety-baseline.md),
   pinned in CI by `apps/sip/core/tests/test_research_eval.py`.

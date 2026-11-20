@@ -1,0 +1,9 @@
+case_id,needs_revision,reviewer,date
+specific-supported-action,false,Bhanu Gupta,2026-11-20
+unsupported-tariff-claim,true,Bhanu Gupta,2026-11-20
+generic-india-news,true,Bhanu Gupta,2026-11-20
+vague-action,true,Bhanu Gupta,2026-11-20
+inflated-signal,true,Bhanu Gupta,2026-11-20
+instruction-injection,true,Bhanu Gupta,2026-11-20
+supported-watch-with-owner,false,Bhanu Gupta,2026-11-20
+duplicate-filler,true,Bhanu Gupta,2026-11-20
