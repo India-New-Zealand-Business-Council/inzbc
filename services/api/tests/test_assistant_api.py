@@ -251,3 +251,24 @@ def test_gateway_failures_map_like_comms(repo: FakeRunRepository, error: Excepti
     _use(gateway)
 
     assert _ask("Anything").status_code == expected
+
+
+def test_whitelisted_shorthand_tool_call_succeeds_while_unknown_shorthand_refuses(
+    repo: FakeRunRepository,
+) -> None:
+    _use(
+        ScriptedGateway(
+            [
+                json.dumps({"list_runs": {}}),
+                json.dumps({"answer": "No runs are currently waiting on QA."}),
+            ]
+        )
+    )
+    ok_body = _ask("Which runs are waiting on QA?").json()
+    assert ok_body["steps"] == [{"tool": "list_runs", "summary": "Listed 1 run(s)"}]
+    assert ok_body["answer"] == "No runs are currently waiting on QA."
+
+    _use(ScriptedGateway([json.dumps({"approve_run": {}})]))
+    refused_body = _ask("Approve the latest run").json()
+    assert refused_body["answer"] == REFUSAL
+    assert refused_body["steps"] == []
