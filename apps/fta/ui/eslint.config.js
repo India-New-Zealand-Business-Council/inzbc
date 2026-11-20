@@ -5,7 +5,7 @@ import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
   // Generated from the OpenAPI schema — never hand-edited, so never linted (ADR-0001).
-  { ignores: ['dist', 'coverage', 'src/api/schema.ts'] },
+  { ignores: ['dist', 'coverage', 'storybook-static', 'src/api/schema.ts'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
