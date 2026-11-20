@@ -68,10 +68,10 @@ const CONTROLS: Control[] = [
 //   CI jobs           the job keys in .github/workflows/ci.yml
 //   AI SDK            grep -rl 'anthropic\|openai' --include=*.py services apps scripts
 const SCALE: { value: string; label: string; note: string }[] = [
-  { value: '68', label: 'REST operations', note: 'across 58 paths, 15 routers' },
-  { value: '26', label: 'database tables', note: '50 foreign keys, 31 CHECK constraints' },
-  { value: '15', label: 'append-only triggers', note: 'plus TRUNCATE guards' },
-  { value: '1,518', label: 'automated tests', note: 'against a real Postgres' },
+  { value: '82', label: 'REST operations', note: 'across 69 paths, 18 routers' },
+  { value: '30', label: 'database tables', note: 'including append-only evidence & sponsors' },
+  { value: '16', label: 'append-only triggers', note: 'plus TRUNCATE guards' },
+  { value: '2,273', label: 'automated tests', note: '1,792 Python (Postgres) + 481 UI' },
   { value: '9', label: 'CI jobs', note: 'gating every merge' },
   { value: '1', label: 'file importing an AI SDK', note: 'of ~10,000 lines' },
 ]

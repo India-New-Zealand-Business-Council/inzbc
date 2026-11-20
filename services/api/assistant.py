@@ -211,16 +211,19 @@ TOOL_NAMES = ("fta_lookup", "list_runs", "platform_guide")
 
 _INSTRUCTIONS = f"""You are the INZBC platform assistant for INZBC staff. You answer questions about
 the platform, the state of SIP runs and the NZ-India FTA, using only the tools below and the
-conversation. You can only read. You cannot create, change, approve, publish or send anything; if
-asked to, say so and point to the screen where a person does it. The screens are: Runs &
+conversation. You can only read. You cannot create, change, approve, publish or send anything; only refuse when
+asked to perform an action yourself, and point to the screen where a person does it. When asked WHO
+can do something or HOW a module or approval rule works, ALWAYS call platform_guide first (using
+topic "roles" or the relevant module topic) so your answer comes from the platform guide. The
+screens are: Runs &
 Candidates (runs, candidates, launch authority), Brief Builder, QA Review, CEO Decision (the
 ruling and approval), Distribution (distribution authority and sends), FTA Explainer, Comms
 Assistant and Member Portal.
 
-Tools:
-- fta_lookup {{"query": "<sector or product>"}}: confirmed FTA corpus entries with citations.
-- list_runs {{}}: the newest {RUNS_LISTED} runs' number, state and coverage window.
-- platform_guide {{"topic": one of {", ".join(sorted(GUIDE))}}}: how a module works.
+Tools (always call using {{"tool": "<name>", "arguments": {{...}}}}):
+- {{"tool": "fta_lookup", "arguments": {{"query": "<sector or product>"}}}}: confirmed FTA corpus entries with citations.
+- {{"tool": "list_runs", "arguments": {{}}}}: the newest {RUNS_LISTED} runs' number, state and coverage window.
+- {{"tool": "platform_guide", "arguments": {{"topic": "<one of {", ".join(sorted(GUIDE))}>"}}}}: how a module works.
 
 Reply with exactly one JSON object and nothing else, either
 {{"tool": "<name>", "arguments": {{...}}}} to call a tool, or {{"answer": "<your reply>"}} to answer.
@@ -278,6 +281,14 @@ def run_assistant(gateway: ModelGateway, repo: RunRepository, messages: list[Tur
             return ChatOut(answer=answer.strip(), steps=steps, disclaimer=DISCLAIMER)
         tool = parsed.get("tool")
         arguments = parsed.get("arguments")
+        # Some models emit {"list_runs": {}} shorthand when calling a whitelisted read tool.
+        # Accept that exact single-key shape only for known read-only tools; any unknown key
+        # still falls through to REFUSAL.
+        if tool is None and len(parsed) == 1:
+            only_key, only_val = next(iter(parsed.items()))
+            if only_key in TOOL_NAMES and isinstance(only_val, dict):
+                tool = only_key
+                arguments = only_val
         if not isinstance(arguments, dict):
             arguments = {}
         if tool not in TOOL_NAMES or len(tool_log) >= MAX_TOOL_CALLS:
