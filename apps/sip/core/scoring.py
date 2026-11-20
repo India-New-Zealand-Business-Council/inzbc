@@ -47,6 +47,17 @@ class ScoringRecommendation(SipModel):
     reason: str
 
 
+class ScoringCandidate(SipModel):
+    """One source article in a batch, retaining the stable ID for result pairing."""
+
+    id: str = Field(min_length=1)
+    headline: str
+    source: str
+    published: str
+    url: str
+    summary: str
+
+
 _PROMPT_TEMPLATE = """You are the assessment step of INZBC's Strategic Intelligence Platform,
 operating under the SIP-050 Master Prompt v1.1 framework.
 
@@ -128,6 +139,42 @@ def score_candidate(
         return ScoringRecommendation(**payload)
     except (ValidationError, TypeError) as error:
         raise ScoringParseError("model output did not match the scoring contract") from error
+
+
+MAX_BATCH_CANDIDATES = 112
+
+
+def score_batch(
+    gateway: ModelGateway,
+    candidates: list[ScoringCandidate],
+) -> dict[str, ScoringRecommendation]:
+    """Score a bounded candidate batch without applying any result.
+
+    The return value is keyed by candidate id so callers cannot accidentally pair a
+    recommendation with the wrong source article. Any invalid batch or model result raises
+    before a caller receives a partial result, keeping the persistence handoff all-or-nothing.
+    """
+    if not candidates:
+        return {}
+    if len(candidates) > MAX_BATCH_CANDIDATES:
+        raise ValueError(
+            f"batch contains {len(candidates)} candidates; maximum is {MAX_BATCH_CANDIDATES}"
+        )
+    candidate_ids = [candidate.id for candidate in candidates]
+    if len(set(candidate_ids)) != len(candidate_ids):
+        raise ValueError("batch candidate ids must be unique")
+
+    recommendations: dict[str, ScoringRecommendation] = {}
+    for candidate in candidates:
+        recommendations[candidate.id] = score_candidate(
+            gateway,
+            headline=candidate.headline,
+            source=candidate.source,
+            published=candidate.published,
+            url=candidate.url,
+            summary=candidate.summary,
+        )
+    return recommendations
 
 
 def to_assessment(recommendation: ScoringRecommendation) -> CandidateAssessment:
