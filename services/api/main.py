@@ -57,6 +57,7 @@ from services.api.registers import (
 from services.api.reports import router as reports_router
 from services.api.run_authorisations import router as run_authorisations_router
 from services.api.runs import router as runs_router
+from services.api.sector_briefs import router as sector_briefs_router
 from services.api.session import (
     get_session_repository,
     require_principal,
@@ -70,6 +71,7 @@ from services.api.site_forms import (
 )
 from services.api.source_checks import router as source_checks_router
 from services.api.source_library import router as source_library_router
+from services.api.sponsors import sponsors_router, trade_services_router
 
 # Roles permitted to request `depth=member` and `depth=internal` on `/api/fta/query` (#392).
 # Public is unauthenticated; member requires any recognised signed-in role; internal is restricted
@@ -107,6 +109,9 @@ app.include_router(exceptions_router)
 app.include_router(facts_router)
 app.include_router(webhook_router)
 app.include_router(site_forms_router)
+app.include_router(sector_briefs_router)
+app.include_router(sponsors_router)
+app.include_router(trade_services_router)
 
 
 class AnswerOut(BaseModel):

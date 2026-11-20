@@ -411,6 +411,26 @@ EXPECTED_ROLES: dict[tuple[str, str], set[str]] = {
     # webhook endpoint.
     ("GET", "/api/site-forms"): set(STAFF_READ),
     ("GET", "/api/site-forms/{submission_id}"): set(STAFF_READ),
+    # On-demand Sector Opportunity Briefs (#194): advisory drafts reusing the SIP-050 scorer.
+    ("GET", "/api/sector-briefs/corridors"): set(STAFF_READ),
+    ("POST", "/api/sector-briefs/generate"): {"Analyst", "Reviewer", "SIP Owner"},
+    # Sponsors & Trade Services (#200): sponsor pipeline, append-only benefit delivery evidence,
+    # trade-service requests, and confidentiality/dual-consent gated introductions.
+    ("POST", "/api/sponsors"): {"Analyst", "SIP Owner"},
+    ("GET", "/api/sponsors"): set(STAFF_READ),
+    ("GET", "/api/sponsors/{sponsor_id}"): set(STAFF_READ),
+    ("POST", "/api/sponsors/{sponsor_id}/stage"): {"Analyst", "SIP Owner"},
+    ("POST", "/api/sponsors/{sponsor_id}/benefits"): {"Analyst", "Reviewer", "SIP Owner"},
+    ("GET", "/api/sponsors/{sponsor_id}/benefits"): set(STAFF_READ),
+    ("POST", "/api/trade-services/requests"): {"Analyst", "SIP Owner"},
+    ("GET", "/api/trade-services/requests"): set(STAFF_READ),
+    ("POST", "/api/trade-services/requests/{request_id}/status"): {"Analyst", "SIP Owner"},
+    ("POST", "/api/trade-services/introductions"): {"Reviewer", "SIP Owner"},
+    ("GET", "/api/trade-services/introductions"): {"Reviewer", "SIP Owner"},
+    ("POST", "/api/trade-services/introductions/{introduction_id}/status"): {
+        "Reviewer",
+        "SIP Owner",
+    },
 }
 
 
