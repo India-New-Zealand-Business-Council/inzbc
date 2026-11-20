@@ -1194,6 +1194,180 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sector-briefs/corridors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Corridors */
+        get: operations["get_corridors_api_sector_briefs_corridors_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sector-briefs/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate Sector Brief */
+        post: operations["generate_sector_brief_api_sector_briefs_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sponsors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Sponsors */
+        get: operations["list_sponsors_api_sponsors_get"];
+        put?: never;
+        /** Create Sponsor */
+        post: operations["create_sponsor_api_sponsors_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sponsors/{sponsor_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Sponsor */
+        get: operations["get_sponsor_api_sponsors__sponsor_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sponsors/{sponsor_id}/stage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update Sponsor Stage */
+        post: operations["update_sponsor_stage_api_sponsors__sponsor_id__stage_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sponsors/{sponsor_id}/benefits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Sponsor Benefits */
+        get: operations["list_sponsor_benefits_api_sponsors__sponsor_id__benefits_get"];
+        put?: never;
+        /** Record Sponsor Benefit */
+        post: operations["record_sponsor_benefit_api_sponsors__sponsor_id__benefits_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/trade-services/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Trade Requests */
+        get: operations["list_trade_requests_api_trade_services_requests_get"];
+        put?: never;
+        /** Create Trade Request */
+        post: operations["create_trade_request_api_trade_services_requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/trade-services/requests/{request_id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update Trade Request Status */
+        post: operations["update_trade_request_status_api_trade_services_requests__request_id__status_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/trade-services/introductions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Introductions */
+        get: operations["list_introductions_api_trade_services_introductions_get"];
+        put?: never;
+        /** Create Introduction */
+        post: operations["create_introduction_api_trade_services_introductions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/trade-services/introductions/{introduction_id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update Introduction Status */
+        post: operations["update_introduction_status_api_trade_services_introductions__introduction_id__status_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/fta/query": {
         parameters: {
             query?: never;
@@ -1436,6 +1610,25 @@ export interface components {
              */
             decided_at: string;
         };
+        /** BenefitDeliveryOut */
+        BenefitDeliveryOut: {
+            /** Id */
+            id: string;
+            /** Sponsor Id */
+            sponsor_id: string;
+            /** Benefit Title */
+            benefit_title: string;
+            /** Promised Summary */
+            promised_summary: string;
+            /** Evidence Ref */
+            evidence_ref: string;
+            /** Delivered At */
+            delivered_at: string;
+            /** Recorded By */
+            recorded_by: string;
+            /** Created At */
+            created_at: string;
+        };
         /** CandidateOut */
         CandidateOut: {
             /** Id */
@@ -1585,6 +1778,34 @@ export interface components {
             /** Evidence Ref */
             evidence_ref?: string | null;
         };
+        /** CreateIntroductionIn */
+        CreateIntroductionIn: {
+            /** Party A Org */
+            party_a_org: string;
+            /** Party B Org */
+            party_b_org: string;
+            /** Purpose */
+            purpose: string;
+            /** Sponsor Id */
+            sponsor_id?: string | null;
+            /** Request Id */
+            request_id?: string | null;
+            /**
+             * Consent Party A
+             * @default false
+             */
+            consent_party_a: boolean;
+            /**
+             * Consent Party B
+             * @default false
+             */
+            consent_party_b: boolean;
+            /**
+             * Confidentiality
+             * @default restricted
+             */
+            confidentiality: string;
+        };
         /** CreateRunIn */
         CreateRunIn: {
             /** Run Number */
@@ -1595,6 +1816,46 @@ export interface components {
             coverage_start_utc: string;
             /** Coverage End Utc */
             coverage_end_utc: string;
+        };
+        /** CreateSponsorIn */
+        CreateSponsorIn: {
+            /** Name */
+            name: string;
+            /** Tier */
+            tier: string;
+            /**
+             * Stage
+             * @default prospect
+             */
+            stage: string;
+            /** Owner Id */
+            owner_id?: string | null;
+            /** Owner Text */
+            owner_text?: string | null;
+            /** Annual Value Nzd */
+            annual_value_nzd?: number | null;
+            /** Renewal Date */
+            renewal_date?: string | null;
+            /** Notes */
+            notes?: string | null;
+        };
+        /** CreateTradeRequestIn */
+        CreateTradeRequestIn: {
+            /** Requester Org */
+            requester_org: string;
+            /** Corridor */
+            corridor: string;
+            /** Service Type */
+            service_type: string;
+            /** Summary */
+            summary: string;
+            /**
+             * Confidentiality
+             * @default internal
+             */
+            confidentiality: string;
+            /** Owner Text */
+            owner_text?: string | null;
         };
         /** CreateWatchIn */
         CreateWatchIn: {
@@ -1918,10 +2179,49 @@ export interface components {
             /** Distribution Recipient */
             distribution_recipient: string | null;
         };
+        /** GenerateSectorBriefIn */
+        GenerateSectorBriefIn: {
+            /** Corridor Slug */
+            corridor_slug: string;
+            /** Candidates */
+            candidates: components["schemas"]["SectorCandidateIn"][];
+            /**
+             * Min Signal
+             * @default Medium
+             */
+            min_signal: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** IntroductionOut */
+        IntroductionOut: {
+            /** Id */
+            id: string;
+            /** Sponsor Id */
+            sponsor_id: string | null;
+            /** Request Id */
+            request_id: string | null;
+            /** Party A Org */
+            party_a_org: string;
+            /** Party B Org */
+            party_b_org: string;
+            /** Purpose */
+            purpose: string;
+            /** Consent Party A */
+            consent_party_a: boolean;
+            /** Consent Party B */
+            consent_party_b: boolean;
+            /** Confidentiality */
+            confidentiality: string;
+            /** Status */
+            status: string;
+            /** Created At */
+            created_at: string;
+            /** Updated At */
+            updated_at: string;
         };
         /** MergeIn */
         MergeIn: {
@@ -1947,6 +2247,19 @@ export interface components {
             /** Overdue */
             overdue: boolean;
         };
+        /** PriorityCorridorOut */
+        PriorityCorridorOut: {
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string;
+            /** Focus */
+            focus: string;
+            /** Register Source Count */
+            register_source_count: number;
+            /** Mandatory Source Count */
+            mandatory_source_count: number;
+        };
         /** QaResultOut */
         QaResultOut: {
             /** Report Version Id */
@@ -1957,6 +2270,17 @@ export interface components {
             critical_failures: number;
             /** Evidence Ref */
             evidence_ref: string;
+        };
+        /** RecordBenefitIn */
+        RecordBenefitIn: {
+            /** Benefit Title */
+            benefit_title: string;
+            /** Promised Summary */
+            promised_summary: string;
+            /** Evidence Ref */
+            evidence_ref: string;
+            /** Delivered At */
+            delivered_at: string;
         };
         /**
          * RecordDeliveryIn
@@ -2197,6 +2521,77 @@ export interface components {
             /** Reason */
             reason: string;
         };
+        /** SectorCandidateIn */
+        SectorCandidateIn: {
+            /** Id */
+            id: string;
+            /** Source Id */
+            source_id: string;
+            /** Headline */
+            headline: string;
+            /** Published */
+            published: string;
+            /** Url */
+            url: string;
+            /** Summary */
+            summary?: string | null;
+        };
+        /** SectorOpportunityBriefOut */
+        SectorOpportunityBriefOut: {
+            /** Corridor Slug */
+            corridor_slug: string;
+            /** Corridor Name */
+            corridor_name: string;
+            /** Corridor Focus */
+            corridor_focus: string;
+            /** Evaluated Count */
+            evaluated_count: number;
+            /** Included Count */
+            included_count: number;
+            /** Advisory Only */
+            advisory_only: boolean;
+            /** Requires Human Review */
+            requires_human_review: boolean;
+            /** Approved */
+            approved: boolean;
+            /** Distribution Permitted */
+            distribution_permitted: boolean;
+            /** Notice */
+            notice: string;
+            /** Items */
+            items: components["schemas"]["SectorOpportunityItemOut"][];
+        };
+        /** SectorOpportunityItemOut */
+        SectorOpportunityItemOut: {
+            /** Candidate Id */
+            candidate_id: string;
+            /** Source Id */
+            source_id: string;
+            /** Source Name */
+            source_name: string;
+            /** Source Layer */
+            source_layer: number;
+            /** Headline */
+            headline: string;
+            /** Url */
+            url: string;
+            /** Published */
+            published: string;
+            /** Nz Relevance */
+            nz_relevance: number;
+            /** India Relevance */
+            india_relevance: number;
+            /** Member Relevance */
+            member_relevance: number;
+            /** Signal */
+            signal: string;
+            /** Confidence */
+            confidence: string;
+            /** Reason */
+            reason: string;
+            /** Requires Verification */
+            requires_verification: boolean;
+        };
         /** SessionOut */
         SessionOut: {
             /** User Id */
@@ -2314,6 +2709,31 @@ export interface components {
          * @enum {string}
          */
         SourceOutcome: "Included" | "Context" | "Suppressed" | "Inaccessible" | "Excluded" | "No Qualifying Item";
+        /** SponsorOut */
+        SponsorOut: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Tier */
+            tier: string;
+            /** Stage */
+            stage: string;
+            /** Owner Id */
+            owner_id: string | null;
+            /** Owner Text */
+            owner_text: string | null;
+            /** Annual Value Nzd */
+            annual_value_nzd: number | null;
+            /** Renewal Date */
+            renewal_date: string | null;
+            /** Notes */
+            notes: string | null;
+            /** Created At */
+            created_at: string;
+            /** Updated At */
+            updated_at: string;
+        };
         /** StepOut */
         StepOut: {
             /** Tool */
@@ -2352,6 +2772,29 @@ export interface components {
             /** At */
             at: string;
         };
+        /** TradeServiceRequestOut */
+        TradeServiceRequestOut: {
+            /** Id */
+            id: string;
+            /** Requester Org */
+            requester_org: string;
+            /** Corridor */
+            corridor: string;
+            /** Service Type */
+            service_type: string;
+            /** Summary */
+            summary: string;
+            /** Status */
+            status: string;
+            /** Confidentiality */
+            confidentiality: string;
+            /** Owner Text */
+            owner_text: string | null;
+            /** Created At */
+            created_at: string;
+            /** Updated At */
+            updated_at: string;
+        };
         /**
          * TransitionIn
          * @description Body shared by all four lifecycle commands. `approval_ref` is optional at the schema level
@@ -2383,6 +2826,27 @@ export interface components {
             status: string;
             /** Evidence Ref */
             evidence_ref?: string | null;
+        };
+        /** UpdateIntroductionStatusIn */
+        UpdateIntroductionStatusIn: {
+            /** Status */
+            status: string;
+            /** Consent Party A */
+            consent_party_a?: boolean | null;
+            /** Consent Party B */
+            consent_party_b?: boolean | null;
+        };
+        /** UpdateSponsorStageIn */
+        UpdateSponsorStageIn: {
+            /** Stage */
+            stage: string;
+            /** Notes */
+            notes?: string | null;
+        };
+        /** UpdateTradeRequestStatusIn */
+        UpdateTradeRequestStatusIn: {
+            /** Status */
+            status: string;
         };
         /** UpdateWatchStatusIn */
         UpdateWatchStatusIn: {
@@ -5435,6 +5899,616 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SiteFormSubmissionOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_corridors_api_sector_briefs_corridors_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriorityCorridorOut"][];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    generate_sector_brief_api_sector_briefs_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateSectorBriefIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectorOpportunityBriefOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_sponsors_api_sponsors_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SponsorOut"][];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    create_sponsor_api_sponsors_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSponsorIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SponsorOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_sponsor_api_sponsors__sponsor_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sponsor_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SponsorOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_sponsor_stage_api_sponsors__sponsor_id__stage_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sponsor_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSponsorStageIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SponsorOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_sponsor_benefits_api_sponsors__sponsor_id__benefits_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sponsor_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BenefitDeliveryOut"][];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_sponsor_benefit_api_sponsors__sponsor_id__benefits_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sponsor_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordBenefitIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BenefitDeliveryOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_trade_requests_api_trade_services_requests_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TradeServiceRequestOut"][];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    create_trade_request_api_trade_services_requests_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTradeRequestIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TradeServiceRequestOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_trade_request_status_api_trade_services_requests__request_id__status_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTradeRequestStatusIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TradeServiceRequestOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_introductions_api_trade_services_introductions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntroductionOut"][];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    create_introduction_api_trade_services_introductions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateIntroductionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntroductionOut"];
+                };
+            };
+            /** @description No session, or the session has expired or been idle too long. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated and refused: the CSRF token is missing or wrong, the account is no longer active, or the caller does not hold a role permitted this operation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_introduction_status_api_trade_services_introductions__introduction_id__status_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                introduction_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateIntroductionStatusIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntroductionOut"];
                 };
             };
             /** @description No session, or the session has expired or been idle too long. */
