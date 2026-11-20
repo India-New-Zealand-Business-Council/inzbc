@@ -121,6 +121,16 @@ review findings instead (see Done, PR #501) covered Thursday's daily-commit in i
   re-open them.
 
 ## Done
+- **Week 7, Friday: a 320px reflow guard for the platform shell, not just the FTA Explainer**
+  (20 Nov 2026). Checked `e2e/platform.spec.ts` before writing anything — it already runs an
+  axe WCAG 2.2 AA scan across all 10 platform-shell screens, so that part of the a11y pass was
+  already covered (caught this by actually running a duplicate spec first, then deleting it).
+  The real gap: `e2e/reflow.spec.ts` (#100) only guards the FTA Explainer's query flow at 320px;
+  nothing guarded the platform shell, and Brief Builder is denser than anything FTA renders — a
+  112-row mandatory-source table plus the scored candidate list, both real content from
+  `lib/fixtures.ts`, not placeholder text. Added `e2e/platform-reflow.spec.ts`: checks no
+  horizontal scroll and no clipped landmarks at 320px with the source table expanded. Passes
+  today — a guard against a regression that hasn't happened yet, not a fix for one that has.
 - **Week 6, Friday: accessibility — the distribution-authorisation modal didn't trap focus**
   (PR #559, 13 Nov 2026, refs #62). `AuthoriseDistributionModal` in `CeoDecisionScreen.tsx` had
   `role="dialog" aria-modal="true"`, but that attribute alone doesn't move or trap focus (ARIA
