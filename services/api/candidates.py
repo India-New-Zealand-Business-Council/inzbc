@@ -232,7 +232,7 @@ def score_candidate(
     }
     if not scored:
         raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="Supply at least one scoring field; a reason alone records nothing.",
         )
     try:
