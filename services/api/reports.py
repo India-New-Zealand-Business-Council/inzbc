@@ -282,7 +282,7 @@ def record_qa(
     except QaSelfReviewError as error:
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail=str(error)) from error
     except ValueError as error:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(error)) from error
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error)) from error
     return QaResultOut(
         report_version_id=report_version_id,
         qa_status=result.qa_status,
@@ -492,7 +492,7 @@ def _record_decision(
     except DecisionConflictError as error:
         raise HTTPException(status.HTTP_409_CONFLICT, detail=str(error)) from error
     except DecisionRejected as error:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(error)) from error
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error)) from error
     return _decision_out(record)
 
 
@@ -553,7 +553,7 @@ def record_distribution(
     """
     if body.value == "Authorised" and not body.distribution_recipient:
         raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="an Authorised distribution must name its recipient; authorising a send to "
                    "nobody in particular is not an authorisation anyone can audit",
         )
@@ -569,7 +569,7 @@ def record_distribution(
         # send to a named recipient is a more useful record than refusing in the abstract — it says
         # what was proposed as well as what was decided. Found by adversarial review.
         raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="a Not Authorised decision must still name the recipient it refuses; "
                    "'we did not authorise sending to X' is the record, and a refusal naming "
                    "nobody does not say what was declined",
@@ -658,7 +658,7 @@ def record_delivery(
             idempotency_key=body.idempotency_key,
         )
     except DeliveryRejected as error:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(error)) from error
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error)) from error
     return DeliveryOut(
         id=delivery.id,
         report_version_id=delivery.report_version_id,
