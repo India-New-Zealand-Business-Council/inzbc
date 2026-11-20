@@ -136,11 +136,12 @@ dropped or rewritten entry breaks the chain. Re-measure with the same harness. T
 including the 0/200, so the change has to update it deliberately. Done early, on 24 Oct: see
 section 5.
 
-## 4. Judge agreement: golden set and human QA verdicts measured
+## 4. Judge agreement: golden set measured; independent human QA still pending
 
 **Measured 24 Oct 2026** (judge model `gpt-4.1-mini`, rubric `fed2a302…cd2492`, with the approved
-redaction policy `REDACTION_POLICY_PATH=config/redaction-policy.json`), paired with the human QA
-verdicts recorded on **20 Nov 2026** in `apps/sip/core/eval/human-qa-labels.csv`:
+redaction policy `REDACTION_POLICY_PATH=config/redaction-policy.json`). The rubric author also
+recorded an 8-case self-check on **20 Nov 2026** in
+`apps/sip/core/eval/author-qa-labels.csv`; that is not independent human evidence.
 
     REDACTION_POLICY_PATH=config/redaction-policy.json \
       uv run python -m apps.sip.core.eval.judge_agreement --live --write
@@ -151,7 +152,7 @@ Two comparisons, kept apart:
 |---|---|---|---|
 | Judge vs golden-set verdicts | 8 | **8/8 (100%)** | **1.0** |
 | Judge score within the golden case's bounds | 17 bounds | **17/17** | n/a |
-| Judge vs rubric-author QA check (`human-qa-labels.csv`, 20 Nov 2026) | 8 | **8/8 (100%)** | **1.0** |
+| Judge vs an independent human QA reviewer | 0 | Not yet measured | Not yet measured |
 
 The judge marked 6 cases as needing revision and 2 as not, matching the golden labels exactly,
 including the `instruction-injection` case, which it scored 0 for NZ relevance and actionability
@@ -162,10 +163,11 @@ kappa. Per-case scores are in `apps/sip/core/eval/results/judge-agreement.json`.
   compares the judge with the rubric author, not with an independent reviewer. 8 cases with a 6:2
   split is small: one disagreement would move kappa a long way, so read the raw agreement first.
 - **Judge vs the rubric author.** Bhanu Gupta reviewed the brief/evidence pairs on 20 Nov 2026
-  and recorded the verdicts in `apps/sip/core/eval/human-qa-labels.csv`
+  and recorded the verdicts in `apps/sip/core/eval/author-qa-labels.csv`
   (`case_id,needs_revision,reviewer,date`). This is a useful author consistency check, not
   independent human validation: the same person authored the rubric and the golden labels.
-  The independent reviewer comparison remains unmeasured.
+  The manual comparison is **8/8 agreement, Cohen's kappa 1.0** and is retained as an author
+  consistency check. The independent reviewer comparison remains unmeasured.
 
 Left to do:
 1. Ask a reviewer other than Bhanu, who wrote the rubric, to label the 8 cases blind,

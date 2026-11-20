@@ -68,7 +68,7 @@ controls guarantee it never skips a human approval step?
 | Forged human decision detected | **0/200** | 200/200 | **200/200** |
 | Metadata-only tampering detected | 0/1000 | Not a target | 1000/1000 |
 | Judge vs golden-set verdicts | **8/8 agree, kappa 1.0** (17/17 score bounds met; `gpt-4.1-mini`, 24 Oct) | Report with kappa | Not affected by the change |
-| Judge vs rubric author | **8/8 agree, kappa 1.0** (`human-qa-labels.csv`, recorded 20 Nov 2026; not independent) | Independent reviewer still required | Not affected by the change |
+| Judge vs rubric author | **8/8 agree, kappa 1.0** (`author-qa-labels.csv`, recorded 20 Nov 2026; not independent) | Independent reviewer still required | Not affected by the change |
 | Real model under planted instructions (section 6) | Not measured | 0 breaches | **0 breaches in 35 runs**; planner attempts 2/30 hostile runs, scorer obeyed 5/5 "score Critical" and was refused |
 | Database-level rewrites caught on read (section 7) | 341/759 without the key | 100% | **759/759 with the key** |
 

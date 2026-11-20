@@ -6,9 +6,9 @@
   "golden_verdict_agreement": 1.0,
   "golden_verdict_cases": 8,
   "golden_verdict_kappa": 1.0,
-  "human_verdict_agreement": 1.0,
-  "human_verdict_cases": 8,
-  "human_verdict_kappa": 1.0,
+  "human_verdict_agreement": null,
+  "human_verdict_cases": 0,
+  "human_verdict_kappa": null,
   "per_case": [
     {
       "case": "specific-supported-action",
@@ -20,7 +20,7 @@
       },
       "judge_needs_revision": false,
       "golden_needs_revision": false,
-      "human_needs_revision": false,
+      "human_needs_revision": null,
       "bounds_met": "4/4"
     },
     {
@@ -33,7 +33,7 @@
       },
       "judge_needs_revision": true,
       "golden_needs_revision": true,
-      "human_needs_revision": true,
+      "human_needs_revision": null,
       "bounds_met": "1/1"
     },
     {
@@ -46,7 +46,7 @@
       },
       "judge_needs_revision": true,
       "golden_needs_revision": true,
-      "human_needs_revision": true,
+      "human_needs_revision": null,
       "bounds_met": "2/2"
     },
     {
@@ -59,7 +59,7 @@
       },
       "judge_needs_revision": true,
       "golden_needs_revision": true,
-      "human_needs_revision": true,
+      "human_needs_revision": null,
       "bounds_met": "1/1"
     },
     {
@@ -72,7 +72,7 @@
       },
       "judge_needs_revision": true,
       "golden_needs_revision": true,
-      "human_needs_revision": true,
+      "human_needs_revision": null,
       "bounds_met": "2/2"
     },
     {
@@ -85,7 +85,7 @@
       },
       "judge_needs_revision": true,
       "golden_needs_revision": true,
-      "human_needs_revision": true,
+      "human_needs_revision": null,
       "bounds_met": "2/2"
     },
     {
@@ -98,7 +98,7 @@
       },
       "judge_needs_revision": false,
       "golden_needs_revision": false,
-      "human_needs_revision": false,
+      "human_needs_revision": null,
       "bounds_met": "4/4"
     },
     {
@@ -111,7 +111,7 @@
       },
       "judge_needs_revision": true,
       "golden_needs_revision": true,
-      "human_needs_revision": true,
+      "human_needs_revision": null,
       "bounds_met": "1/1"
     }
   ]
