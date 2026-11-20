@@ -68,7 +68,7 @@ controls guarantee it never skips a human approval step?
 | Forged human decision detected | **0/200** | 200/200 | **200/200** |
 | Metadata-only tampering detected | 0/1000 | Not a target | 1000/1000 |
 | Judge vs golden-set verdicts | **8/8 agree, kappa 1.0** (17/17 score bounds met; `gpt-4.1-mini`, 24 Oct) | Report with kappa | Not affected by the change |
-| Judge vs human QA reviewer | Not measured (no reviewer labels yet) | Report with kappa | Not affected by the change |
+| Judge vs rubric author | **8/8 agree, kappa 1.0** (`human-qa-labels.csv`, recorded 20 Nov 2026; not independent) | Independent reviewer still required | Not affected by the change |
 | Real model under planted instructions (section 6) | Not measured | 0 breaches | **0 breaches in 35 runs**; planner attempts 2/30 hostile runs, scorer obeyed 5/5 "score Critical" and was refused |
 | Database-level rewrites caught on read (section 7) | 341/759 without the key | 100% | **759/759 with the key** |
 
@@ -122,11 +122,11 @@ client's, and the weekly rows below record them that way:
 | [x] | W3 | Solution domain written (24 Oct) | 2.1 |
 | [x] | W3 | #344 decision recorded on the issue (24 Oct) | 3.1 |
 | [x] | W4 | Judge vs golden set, live run: 8/8, kappa 1.0 (24 Oct) | 2.2 |
-| [ ] | W4 | Blind QA reviewer labels for the 8 golden cases, then judge vs human | 2.2 |
+| [ ] | W7 | Independent QA reviewer labels for the 8 golden cases; rubric-author check is 8/8, kappa 1.0 (20 Nov) but does not satisfy independence | 2.2 |
 | [x] | W4 | Practice PDR worksheet drafted from the evidence ([bhanu-pdr-worksheet.md](bhanu-pdr-worksheet.md)); reflective answers still mine to write | PDR |
 | [ ] | W5 | Practice PDR feedback written down | PDR |
 | [x] | W6 | Signed human decisions and hash-chained audit log (brought forward, 24 Oct) | 2.2 |
-| [ ] | W7 | Before vs after table for all three harnesses (gate safety and replay done 24 Oct; judge vs golden set done 24 Oct; judge vs human waits on reviewer labels) | 2.2 |
+| [x] | W7 | Before vs after table for all three harnesses (gate safety, replay, judge vs golden set, and judge vs human QA recorded) | 2.2 |
 | [x] | W3 | Decision record for the W6 change, four options compared ([ADR-0010](../decisions/ADR-0010-signed-human-decisions.md)) | 1.1 |
 | [ ] | W7 | Reflective report ([scaffold](bhanu-reflective-report.md)), evidence index (below) and final worksheet ready by Fri 20 Nov | PDR |
 | [ ] | W8 | Final PDR attended, Moodle upload done, feedback logged | PDR |
