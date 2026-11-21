@@ -210,6 +210,33 @@ review findings instead (see Done, PR #501) covered Thursday's daily-commit in i
   separately fixed: the file had 15 mojibake'd em-dashes (`ΓÇö`) from an encoding slip somewhere
   in this entry's and Sunday's own authoring pipeline, now corrected across the file.
 - **Week 5, Sunday: sync + report — nothing fixed, status checked against the tracker instead
+- **Week 7, Wednesday: project board audit — checked real git/PR history against board status,
+  not just issue state** (18 Nov 2026). Went through every open issue assigned to me and found
+  two genuinely stale: #128 (audit history view) and #195 (board metric definitions) were both
+  fully delivered by Roshan on 27–28 Oct, matching their issue's exact scope, but never closed —
+  board moved to Done, flagged for sign-off rather than closed solo. #127/#129 were undersold as
+  Todo despite three real partial-progress PRs already landed against them — moved to In
+  Progress. #198/#199 confirmed still genuinely Blocked (the Member Jungle retain/integrate
+  decision, C1, is still `PROPOSED`, not client-confirmed). Opened #560 to replace the stale
+  #510 weekly tracker — three weeks of merged work (#540, then #553/#554/#556/#557/#559) had no
+  board representation at all. Posted one consolidated flag to Bhanu on #510 covering #60/#62.
+- **Week 7, Tuesday: full cross-app integration pass against the real backend, not fixture
+  screenshots** (17 Nov 2026). Brought up Postgres, the API and the single platform UI shell
+  locally (`scripts/platform.ps1`; `inzbc-demo-db` container didn't exist yet, first-time setup
+  needed), then drove it with a real dev-session cookie through Playwright rather than clicking
+  by hand. All 8 nav-reachable module screens load clean, zero console/page errors, and
+  run-selection state correctly persists across Brief Builder → QA Review → CEO Decision with no
+  refresh — confirming "one UI, not five" actually holds, not just that it's documented. Real
+  gap found and flagged rather than silently patched: reopening Brief Builder for a run already
+  at "Report Drafted" shows all 112 mandatory-source outcomes and every candidate checkbox as
+  unselected/unsaved, which doesn't match what that status name implies.
+- **Week 7, Monday: chased the three stacked, unmerged PRs rather than adding a fourth on top**
+  (16 Nov 2026, refs #556, #557, #559). Re-verified all three against GitHub directly (not
+  memory): all still `OPEN`, `MERGEABLE`, 8/9 CI green each, the ninth the same pre-existing
+  Python failure every time, no new reviewer feedback since my last reply on any of them. Posted
+  one nudge comment on #556, the bottom of the stack, since it had been quiet since 10 Nov and
+  was blocking the other two behind it. No code change today — the point was unsticking the
+  queue, not adding to it.
 - **Week 7, Thursday: a real-Postgres Playwright regression for #127/#129, not another mock**
   (18 Nov 2026, refs #127, #129). #495, #499 and #490 all explicitly left the real acceptance
   proof open — #490's mock "preserves server-like state across page.reload" but "is NOT a real
