@@ -57,5 +57,7 @@ only. Production writes stay disabled until #55's gates are met. The acceptance 
 
 - Reference issues with `Refs #N` only. Any phrase containing "close #N", "fixes #N" or "resolves #N",
   including "Do not close #N", closes the issue on merge.
-- Keep related pull requests independent rather than stacked; a stack merged together on 10 Nov left
-  main without importer validation and tests until #561.
+- Prefer focused independent pull requests when feasible. For genuinely dependent changes, follow the
+  documented stacked-PR rebase/retarget procedure in CONTRIBUTING.md and validate the combined result
+  after each merge; do not assume stacked CI covers the final `main` integration. On 10 Nov the merged
+  result lost importer validation and tests until #561 restored them.
