@@ -313,3 +313,31 @@ def test_trade_introduction_requires_dual_consent_before_introduced(client: Test
     assert allowed.status_code == 200
     assert allowed.json()["status"] == "introduced"
     assert allowed.json()["consent_party_b"] is True
+
+
+def test_sponsors_persistence_record_audit_calls_match_canonical_signature() -> None:
+    """Verify every `record_audit` call in sponsors_persistence uses valid kwargs."""
+    import ast
+    import inspect
+    from pathlib import Path
+
+    from services.api import audit, sponsors_persistence
+
+    allowed_kwargs = set(inspect.signature(audit.record_audit).parameters) - {"conn"}
+    tree = ast.parse(Path(sponsors_persistence.__file__).read_text(encoding="utf-8"))
+    calls = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id == "record_audit"
+    ]
+    assert len(calls) == 7
+    for call in calls:
+        used = {kw.arg for kw in call.keywords if kw.arg is not None}
+        assert used <= allowed_kwargs, f"unexpected kwargs: {used - allowed_kwargs}"
+        assert "action" in used
+
+    valid_uuid = str(uuid.uuid4())
+    assert sponsors_persistence._audit_actor(valid_uuid) == (valid_uuid, None)
+    assert sponsors_persistence._audit_actor("dev-operator") == (None, "actor=dev-operator")

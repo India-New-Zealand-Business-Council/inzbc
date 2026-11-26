@@ -12,13 +12,23 @@ Implements three operational domain areas from Module 4 of the AIOS programme br
 
 from __future__ import annotations
 
+import json
 import os
+import uuid
 from dataclasses import dataclass
 
 import psycopg
 from psycopg.rows import dict_row
 
 from services.api.audit import record_audit
+
+
+def _audit_actor(actor_id: str) -> tuple[str | None, str | None]:
+    """Return `(user_id, reason)` compatible with `audit_log.user_id` UUID FK."""
+    try:
+        return str(uuid.UUID(actor_id)), None
+    except (TypeError, ValueError):
+        return None, f"actor={actor_id}"
 
 SPONSOR_STAGES: frozenset[str] = frozenset({"prospect", "proposal", "active", "renewal", "lapsed"})
 REQUEST_STATUSES: frozenset[str] = frozenset({"open", "in_progress", "fulfilled", "declined"})
@@ -206,13 +216,18 @@ class SponsorRepository:
                 ),
             ).fetchone()
             record = _sponsor_row(row)
+            audit_user_id, audit_reason = _audit_actor(actor_id)
             record_audit(
                 conn,
-                entity_type="sponsor",
-                entity_id=record.id,
                 action="sponsor.create",
-                actor_id=actor_id,
-                after={"name": record.name, "tier": record.tier, "stage": record.stage},
+                user_id=audit_user_id,
+                record_type="sponsor",
+                record_id=record.id,
+                new_value=json.dumps(
+                    {"name": record.name, "tier": record.tier, "stage": record.stage},
+                    sort_keys=True,
+                ),
+                reason=audit_reason,
             )
             return record
 
@@ -245,14 +260,16 @@ class SponsorRepository:
                 (stage, notes, sponsor_id),
             ).fetchone()
             record = _sponsor_row(row)
+            audit_user_id, audit_reason = _audit_actor(actor_id)
             record_audit(
                 conn,
-                entity_type="sponsor",
-                entity_id=record.id,
                 action="sponsor.stage_update",
-                actor_id=actor_id,
-                before={"stage": before["stage"]},
-                after={"stage": record.stage},
+                user_id=audit_user_id,
+                record_type="sponsor",
+                record_id=record.id,
+                old_value=json.dumps({"stage": before["stage"]}, sort_keys=True),
+                new_value=json.dumps({"stage": record.stage}, sort_keys=True),
+                reason=audit_reason,
             )
             return record
 
@@ -317,17 +334,22 @@ class SponsorRepository:
                 ),
             ).fetchone()
             record = _benefit_row(row)
+            audit_user_id, audit_reason = _audit_actor(actor_id)
             record_audit(
                 conn,
-                entity_type="sponsor_benefit_delivery",
-                entity_id=record.id,
                 action="sponsor.benefit_delivered",
-                actor_id=actor_id,
-                after={
-                    "sponsor_id": record.sponsor_id,
-                    "benefit_title": record.benefit_title,
-                    "evidence_ref": record.evidence_ref,
-                },
+                user_id=audit_user_id,
+                record_type="sponsor_benefit_delivery",
+                record_id=record.id,
+                new_value=json.dumps(
+                    {
+                        "sponsor_id": record.sponsor_id,
+                        "benefit_title": record.benefit_title,
+                        "evidence_ref": record.evidence_ref,
+                    },
+                    sort_keys=True,
+                ),
+                reason=audit_reason,
             )
             return record
 
@@ -390,17 +412,22 @@ class TradeServiceRepository:
                 ),
             ).fetchone()
             record = _request_row(row)
+            audit_user_id, audit_reason = _audit_actor(actor_id)
             record_audit(
                 conn,
-                entity_type="trade_service_request",
-                entity_id=record.id,
                 action="trade_service.request_create",
-                actor_id=actor_id,
-                after={
-                    "corridor": record.corridor,
-                    "service_type": record.service_type,
-                    "confidentiality": record.confidentiality,
-                },
+                user_id=audit_user_id,
+                record_type="trade_service_request",
+                record_id=record.id,
+                new_value=json.dumps(
+                    {
+                        "corridor": record.corridor,
+                        "service_type": record.service_type,
+                        "confidentiality": record.confidentiality,
+                    },
+                    sort_keys=True,
+                ),
+                reason=audit_reason,
             )
             return record
 
@@ -427,14 +454,16 @@ class TradeServiceRepository:
                 (status, request_id),
             ).fetchone()
             record = _request_row(row)
+            audit_user_id, audit_reason = _audit_actor(actor_id)
             record_audit(
                 conn,
-                entity_type="trade_service_request",
-                entity_id=record.id,
                 action="trade_service.request_status",
-                actor_id=actor_id,
-                before={"status": before["status"]},
-                after={"status": record.status},
+                user_id=audit_user_id,
+                record_type="trade_service_request",
+                record_id=record.id,
+                old_value=json.dumps({"status": before["status"]}, sort_keys=True),
+                new_value=json.dumps({"status": record.status}, sort_keys=True),
+                reason=audit_reason,
             )
             return record
 
@@ -491,17 +520,22 @@ class TradeServiceRepository:
                 ),
             ).fetchone()
             record = _intro_row(row)
+            audit_user_id, audit_reason = _audit_actor(actor_id)
             record_audit(
                 conn,
-                entity_type="trade_introduction",
-                entity_id=record.id,
                 action="trade_service.introduction_create",
-                actor_id=actor_id,
-                after={
-                    "status": record.status,
-                    "confidentiality": record.confidentiality,
-                    "dual_consent": record.consent_party_a and record.consent_party_b,
-                },
+                user_id=audit_user_id,
+                record_type="trade_introduction",
+                record_id=record.id,
+                new_value=json.dumps(
+                    {
+                        "status": record.status,
+                        "confidentiality": record.confidentiality,
+                        "dual_consent": record.consent_party_a and record.consent_party_b,
+                    },
+                    sort_keys=True,
+                ),
+                reason=audit_reason,
             )
             return record
 
@@ -549,17 +583,22 @@ class TradeServiceRepository:
                 (status, next_a, next_b, introduction_id),
             ).fetchone()
             record = _intro_row(row)
+            audit_user_id, audit_reason = _audit_actor(actor_id)
             record_audit(
                 conn,
-                entity_type="trade_introduction",
-                entity_id=record.id,
                 action="trade_service.introduction_status",
-                actor_id=actor_id,
-                before={"status": before["status"]},
-                after={
-                    "status": record.status,
-                    "dual_consent": record.consent_party_a and record.consent_party_b,
-                },
+                user_id=audit_user_id,
+                record_type="trade_introduction",
+                record_id=record.id,
+                old_value=json.dumps({"status": before["status"]}, sort_keys=True),
+                new_value=json.dumps(
+                    {
+                        "status": record.status,
+                        "dual_consent": record.consent_party_a and record.consent_party_b,
+                    },
+                    sort_keys=True,
+                ),
+                reason=audit_reason,
             )
             return record
 
