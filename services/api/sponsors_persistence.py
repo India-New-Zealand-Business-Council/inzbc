@@ -12,13 +12,44 @@ Implements three operational domain areas from Module 4 of the AIOS programme br
 
 from __future__ import annotations
 
+import json
 import os
+import uuid
 from dataclasses import dataclass
 
 import psycopg
 from psycopg.rows import dict_row
 
 from services.api.audit import record_audit
+
+
+def _record_domain_audit(
+    conn: psycopg.Connection,
+    *,
+    record_type: str,
+    record_id: str,
+    action: str,
+    actor_id: str,
+    before: dict[str, object] | None = None,
+    after: dict[str, object] | None = None,
+) -> int:
+    """Write a transactional audit row using the canonical `record_audit` contract."""
+    user_id: str | None = None
+    reason: str | None = None
+    try:
+        user_id = str(uuid.UUID(actor_id))
+    except (TypeError, ValueError):
+        reason = f"actor={actor_id}"
+    return record_audit(
+        conn,
+        action=action,
+        user_id=user_id,
+        record_type=record_type,
+        record_id=record_id,
+        old_value=json.dumps(before, sort_keys=True) if before is not None else None,
+        new_value=json.dumps(after, sort_keys=True) if after is not None else None,
+        reason=reason,
+    )
 
 SPONSOR_STAGES: frozenset[str] = frozenset({"prospect", "proposal", "active", "renewal", "lapsed"})
 REQUEST_STATUSES: frozenset[str] = frozenset({"open", "in_progress", "fulfilled", "declined"})
@@ -206,10 +237,10 @@ class SponsorRepository:
                 ),
             ).fetchone()
             record = _sponsor_row(row)
-            record_audit(
+            _record_domain_audit(
                 conn,
-                entity_type="sponsor",
-                entity_id=record.id,
+                record_type="sponsor",
+                record_id=record.id,
                 action="sponsor.create",
                 actor_id=actor_id,
                 after={"name": record.name, "tier": record.tier, "stage": record.stage},
@@ -245,10 +276,10 @@ class SponsorRepository:
                 (stage, notes, sponsor_id),
             ).fetchone()
             record = _sponsor_row(row)
-            record_audit(
+            _record_domain_audit(
                 conn,
-                entity_type="sponsor",
-                entity_id=record.id,
+                record_type="sponsor",
+                record_id=record.id,
                 action="sponsor.stage_update",
                 actor_id=actor_id,
                 before={"stage": before["stage"]},
@@ -317,10 +348,10 @@ class SponsorRepository:
                 ),
             ).fetchone()
             record = _benefit_row(row)
-            record_audit(
+            _record_domain_audit(
                 conn,
-                entity_type="sponsor_benefit_delivery",
-                entity_id=record.id,
+                record_type="sponsor_benefit_delivery",
+                record_id=record.id,
                 action="sponsor.benefit_delivered",
                 actor_id=actor_id,
                 after={
@@ -390,10 +421,10 @@ class TradeServiceRepository:
                 ),
             ).fetchone()
             record = _request_row(row)
-            record_audit(
+            _record_domain_audit(
                 conn,
-                entity_type="trade_service_request",
-                entity_id=record.id,
+                record_type="trade_service_request",
+                record_id=record.id,
                 action="trade_service.request_create",
                 actor_id=actor_id,
                 after={
@@ -427,10 +458,10 @@ class TradeServiceRepository:
                 (status, request_id),
             ).fetchone()
             record = _request_row(row)
-            record_audit(
+            _record_domain_audit(
                 conn,
-                entity_type="trade_service_request",
-                entity_id=record.id,
+                record_type="trade_service_request",
+                record_id=record.id,
                 action="trade_service.request_status",
                 actor_id=actor_id,
                 before={"status": before["status"]},
@@ -491,10 +522,10 @@ class TradeServiceRepository:
                 ),
             ).fetchone()
             record = _intro_row(row)
-            record_audit(
+            _record_domain_audit(
                 conn,
-                entity_type="trade_introduction",
-                entity_id=record.id,
+                record_type="trade_introduction",
+                record_id=record.id,
                 action="trade_service.introduction_create",
                 actor_id=actor_id,
                 after={
@@ -549,10 +580,10 @@ class TradeServiceRepository:
                 (status, next_a, next_b, introduction_id),
             ).fetchone()
             record = _intro_row(row)
-            record_audit(
+            _record_domain_audit(
                 conn,
-                entity_type="trade_introduction",
-                entity_id=record.id,
+                record_type="trade_introduction",
+                record_id=record.id,
                 action="trade_service.introduction_status",
                 actor_id=actor_id,
                 before={"status": before["status"]},
