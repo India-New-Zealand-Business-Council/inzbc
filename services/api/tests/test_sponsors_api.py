@@ -315,68 +315,29 @@ def test_trade_introduction_requires_dual_consent_before_introduced(client: Test
     assert allowed.json()["consent_party_b"] is True
 
 
-def test_record_domain_audit_matches_canonical_record_audit_contract(monkeypatch) -> None:
-    """Verify sponsors/trade persistence passes canonical kwargs to `record_audit`."""
-    from services.api import sponsors_persistence
+def test_sponsors_persistence_record_audit_calls_match_canonical_signature() -> None:
+    """Verify every `record_audit` call in sponsors_persistence uses valid kwargs."""
+    import ast
+    import inspect
+    from pathlib import Path
 
-    captured: list[dict[str, object]] = []
+    from services.api import audit, sponsors_persistence
 
-    def _spy_record_audit(
-        conn,
-        *,
-        action: str,
-        user_id: str | None = None,
-        record_type: str | None = None,
-        record_id: str | None = None,
-        old_value: str | None = None,
-        new_value: str | None = None,
-        reason: str | None = None,
-        approval_ref: str | None = None,
-        decision_signature: str | None = None,
-    ) -> int:
-        captured.append(
-            {
-                "conn": conn,
-                "action": action,
-                "user_id": user_id,
-                "record_type": record_type,
-                "record_id": record_id,
-                "old_value": old_value,
-                "new_value": new_value,
-                "reason": reason,
-                "approval_ref": approval_ref,
-                "decision_signature": decision_signature,
-            }
-        )
-        return 42
-
-    monkeypatch.setattr(sponsors_persistence, "record_audit", _spy_record_audit)
+    allowed_kwargs = set(inspect.signature(audit.record_audit).parameters) - {"conn"}
+    tree = ast.parse(Path(sponsors_persistence.__file__).read_text(encoding="utf-8"))
+    calls = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id == "record_audit"
+    ]
+    assert len(calls) == 7
+    for call in calls:
+        used = {kw.arg for kw in call.keywords if kw.arg is not None}
+        assert used <= allowed_kwargs, f"unexpected kwargs: {used - allowed_kwargs}"
+        assert "action" in used
 
     valid_uuid = str(uuid.uuid4())
-    row_id = sponsors_persistence._record_domain_audit(
-        object(),
-        record_type="trade_introduction",
-        record_id="intro-1",
-        action="trade_service.introduction_create",
-        actor_id=valid_uuid,
-        before={"status": "proposed"},
-        after={"status": "consented"},
-    )
-    assert row_id == 42
-    assert captured[0]["user_id"] == valid_uuid
-    assert captured[0]["record_type"] == "trade_introduction"
-    assert captured[0]["record_id"] == "intro-1"
-    assert captured[0]["old_value"] == '{"status": "proposed"}'
-    assert captured[0]["new_value"] == '{"status": "consented"}'
-    assert captured[0]["reason"] is None
-
-    sponsors_persistence._record_domain_audit(
-        object(),
-        record_type="sponsor",
-        record_id="sp-1",
-        action="sponsor.create",
-        actor_id="dev-operator",
-        after={"stage": "active"},
-    )
-    assert captured[1]["user_id"] is None
-    assert captured[1]["reason"] == "actor=dev-operator"
+    assert sponsors_persistence._audit_actor(valid_uuid) == (valid_uuid, None)
+    assert sponsors_persistence._audit_actor("dev-operator") == (None, "actor=dev-operator")
